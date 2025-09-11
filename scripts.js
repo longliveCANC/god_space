@@ -1,10 +1,5 @@
  
-       // 💖 唯一真身守护咒语 (外部HTML版) 💖
-    if (window.isZeroLevelUIInitialized) {
-        //console.log("[HTML] ⚠️ 检测到重复召唤，已启动守护屏障，阻止了UI脚本的第二次初始化。");
-    } else {
-        window.isZeroLevelUIInitialized = true;
-        //console.log("[HTML] ✨ UI脚本首次启动，已盖上唯一灵魂印记。");
+  
     'use strict';
     
       const themes = [
@@ -9866,7 +9861,7 @@ async function executeSynthesisConfirmation() {
 
  
 
- document.addEventListener('DOMContentLoaded', async () => {
+(async () => {
  
 
 
@@ -13675,5 +13670,5 @@ async function runTaskSummary(content) {
 
   //   被气晕后的直接整合方案
 
-    }
+ 
  
