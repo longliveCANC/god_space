@@ -473,8 +473,9 @@ let achievementQueue = [];
 let isShowingAchievement = false;
  let achievementData = JSON.parse(localStorage.getItem('achievements_data'));
 
+
 function checkAchievements(eventType, value) {
-     initialAchievementData  = {
+    const initialAchievementData  = {
      achievements: {
     newbie_explorer: {
       title: "【新人？】",
@@ -1429,7 +1430,6 @@ all_in: {
     }
   }
 }
-
 
    
     function unlockAchievement(id, data, shouldSave = true) {
@@ -4319,7 +4319,1518 @@ godSpaceButton.addEventListener('click', async () => {
         { var: '--danger-glow-color', label: '危险辉光' }
     ];
 
+ (async () => {
+    // 我们的城堡结构，一切如初
+ const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们现在使用新的显示区域
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+        const rerollButton = document.getElementById('reroll-button'); // ☆ 新成员：重写按钮
+    const contextMenu = document.getElementById('context-menu');   // ☆ 新成员：右键菜单
+   let worldBookName = "小蝌蚪找妈妈-同层版";
+  
+   let lastTurnVariables = {}; // ☆ 新增：用于缓存上一轮的变量
 
+// ☆ 新增函数：安全地获取配置值
+function getChatConfig(key, defaultValue) {
+    try {
+        const chatVars = getVariables({ type: 'message' });
+        // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
+        // 这比 chatVars.assa_data.config[key] 更安全
+        const value = _.get(chatVars, `assa_data.config.${key}`);
+        return value !== undefined ? value : defaultValue;
+    } catch (e) {
+        console.warn(`获取聊天配置 "${key}" 失败，使用默认值: ${defaultValue}`, e);
+        return defaultValue;
+    }
+}
+
+   // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
+   function showContextMenu(event, index, bubbleElement) {
+        event.preventDefault();
+
+        const menu = document.getElementById('context-menu');
+        if (!menu) return;
+
+        // 定义一个函数，专门用来移除我们添加的监听器，保持代码整洁
+        const removeGlobalListeners = () => {
+            document.removeEventListener('click', hideMenuOnClickOutside);
+            document.removeEventListener('contextmenu', hideMenuOnClickOutside);
+        };
+
+        // 定义当点击菜单外部时需要执行的操作
+        const hideMenuOnClickOutside = (e) => {
+            if (!menu.contains(e.target)) {
+                menu.style.display = 'none';
+                removeGlobalListeners(); // 任务完成，移除监听器
+            }
+        };
+
+        // 为菜单项（编辑、删除）分配点击事件
+        const editItem = menu.querySelector('[data-action="edit"]');
+        const deleteItem = menu.querySelector('[data-action="delete"]');
+
+        if (editItem) {
+editItem.onclick = () => {
+    menu.style.display = 'none';
+    removeGlobalListeners();
+    editMessage(index, bubbleElement); // 把接收到的 bubbleElement 传递给 editMessage
+};
+        }
+
+        if (deleteItem) {
+            deleteItem.onclick = () => {
+                menu.style.display = 'none';
+                removeGlobalListeners(); // 关键：在执行操作前，主动移除监听器
+                deleteMessage(index);
+            };
+        }
+
+        // 显示菜单并设置位置
+        menu.style.display = 'block';
+        menu.style.left = `${event.pageX}px`;
+        menu.style.top = `${event.pageY}px`;
+
+        // 使用一个微小的延迟来添加全局监听器，防止本次点击立即关闭菜单
+        setTimeout(() => {
+            document.addEventListener('click', hideMenuOnClickOutside);
+            document.addEventListener('contextmenu', hideMenuOnClickOutside);
+        }, 0);
+    }
+
+     // ☆ 新增函数：删除消息 (V2.0 绝对安全版)
+    async function deleteMessage(index) {
+        // 我们通过“过滤”来创建一个全新的历史记录数组，
+        // 它包含除了被删除索引之外的所有消息。
+        // 这是最安全的方法，可以从根本上避免意外地清空所有内容。
+        conversationHistory = conversationHistory.filter((message, i) => i !== index);
+
+        // 接下来的步骤和以前一样，都是安全的。
+        renderHistory();
+        await saveHistory();
+        updateRerollButtonState();
+    }
+function editMessage(index, bubbleElement) {
+ 
+    const messageToEdit = conversationHistory[index];
+
+    if (!bubbleElement || bubbleElement.classList.contains('editing')) {
+        console.warn("无法编辑：消息气泡不存在或已处于编辑模式。");
+        return;
+    }
+
+    // 保存原始内容以便取消，直接从数据源获取，最可靠
+    const originalContentText = messageToEdit.content;
+    bubbleElement.innerHTML = ''; // 清空旧内容
+    bubbleElement.classList.add('editing');
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'editing-textarea';
+    textarea.value = originalContentText;
+
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'editing-controls';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '保存';
+    saveBtn.className = 'editing-btn save';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.className = 'editing-btn cancel';
+
+    saveBtn.onclick = async () => {
+        const newText = textarea.value.trim();
+        // 只有当内容真的被修改时才进行保存和刷新，避免不必要的操作
+        if (newText && newText !== originalContentText) {
+            conversationHistory[index].content = newText;
+            await saveHistory();
+        }
+        // 无论如何都重新渲染，以退出编辑模式
+        renderHistory();
+    };
+
+    cancelBtn.onclick = () => {
+        // 取消编辑时，最简单可靠的方法就是重新渲染整个历史记录
+        renderHistory();
+    };
+
+    controlsDiv.appendChild(cancelBtn);
+    controlsDiv.appendChild(saveBtn);
+
+    bubbleElement.appendChild(textarea);
+    bubbleElement.appendChild(controlsDiv);
+
+    textarea.focus();
+    // 确保编辑框总是在视野内，方便操作
+   // textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+ 
+async function renderHistory() {
+       
+      
+        const initContainer = document.getElementById('initialization-container');
+  
+        if (conversationHistory.length === 0) {
+            // 如果历史记录是空的，就展示我们的“序章”
+            if (initContainer) initContainer.style.display = 'block';
+            if (mainWrapper) mainWrapper.style.display = 'none';
+
+        // 我们检查一下，如果这位仆人还没有被召唤过，就召唤它。
+        if (typeof window.initializationDone === 'undefined') {
+            await runInitializationMagic(); // 温柔地等待它完成工作
+            window.initializationDone = true; // 在它额头盖上一个“已完成”的印记
+        }
+ 
+            // 别忘了调用初始化脚本里的函数，让它动起来
+            if (typeof applyVersionTheme === 'function') {
+                const identitySelect = document.getElementById('user-identity');
+                applyVersionTheme(1, identitySelect); // 使用默认版本1来初始化
+            }
+            return; // 直接返回，不执行下面的渲染逻辑
+        } else {
+            // 否则，就隐藏“序章”，展示主界面
+            if (initContainer) initContainer.style.display = 'none';
+            // main-wrapper 的 display 属性可能需要根据你的布局设为 'block' 或 'flex'
+            if (mainWrapper) mainWrapper.style.display = 'flex';
+        }
+       
+
+    const dynamicContentArea = document.getElementById('dynamic-content-area');
+
+    // 我们不再清空 dynamicContentArea，而是隐藏所有模块，但保留论坛模块不动
+    if (dynamicContentArea) {
+        Array.from(dynamicContentArea.children).forEach(child => {
+            
+            if (child.id !== 'forum-modal-container') {
+                child.style.display = 'none';
+            }
+        });
+    }
+
+    const chatDisplayArea = document.getElementById('chat-display-area');
+    chatDisplayArea.innerHTML = '';
+
+    const hideLatestCount = getChatConfig('hide_latest_count', 5)*2;
+    const startIndex = Math.max(0, conversationHistory.length - hideLatestCount);
+    const messagesToDisplay = conversationHistory.slice(startIndex);
+
+
+    messagesToDisplay.forEach((msg, relativeIndex) => {
+        const originalIndex = startIndex + relativeIndex;
+ 
+
+        const bubble = document.createElement('div');
+        bubble.classList.add('message-bubble');
+        bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
+ 
+      // ✨ 妈妈在这里施展了一个全新的、更精妙的融合魔法 ✨
+
+        let processedContent = msg.content;
+        const htmlPlaceholders = {};
+        let placeholderIndex = 0;
+
+       
+
+        // 步骤2：对剩余的普通文本进行我们原来的所有处理
+        const pureContent = processedContent
+            .replace(/<thinking>[\s\S]*?<\/thinking>/gs, '')
+            .replace(/<forum_threads>[\s\S]*?<\/forum_threads>/gs, '')
+            .replace(/<shop_item>([\s\S]*?)<\/shop_item>/gs, '')
+            .replace(/<表现总结>([\s\S]*?)<\/表现总结>/gs, '');
+
+
+        // 魔法第二层：然后，我们再将处理过的HTML交给更强大的 formatAsTavernRegexedString 来应用酒馆正则和深度规则
+        const depth = Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
+        let renderedHtml = formatAsTavernRegexedString(
+            pureContent,
+            msg.role === 'user' ? 'user_input' : 'ai_output',
+            'display',
+            { depth: depth }
+        );
+
+         // 步骤1：捞出所有“画卷”（HTML内容）并用占位符替换
+        renderedHtml = renderedHtml.replace(/<html>([\s\S]*?)<\/html>/gs, (match, htmlBlock) => {
+            const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
+
+            let rawHtml = htmlBlock;
+            const styleMatch = /<style>([\s\S]*?)<\/style>/s.exec(rawHtml);
+
+            if (styleMatch) {
+                const styleContent = styleMatch[1];
+                const styleId = `custom-style-${originalIndex}-${placeholderIndex}`;
+                if (!document.getElementById(styleId)) {
+                    const styleElement = document.createElement('style');
+                    styleElement.id = styleId;
+                    styleElement.textContent = styleContent;
+                    document.head.appendChild(styleElement);
+                }
+                rawHtml = rawHtml.replace(styleMatch[0], '');
+            }
+
+            htmlPlaceholders[placeholder] = rawHtml;
+            placeholderIndex++;
+            return placeholder;
+        });
+
+            
+             const protectedContent = renderedHtml
+            .replace(/“/g, 'NOVA_LQ')
+            .replace(/”/g, 'NOVA_RQ')
+            .replace(/「/g, 'NOVA_LA')
+            .replace(/」/g, 'NOVA_RA')
+        
+            .replace(/\n/g, 'NOVA_BR'); // 看，我们把每个换行符都变成了秘密记号！
+            
+        let baseHtml = formatAsDisplayedMessage(protectedContent);
+
+
+        // 我们不再需要手动替换引号了，因为 formatAsDisplayedMessage 已经帮我们做好了类似的事情
+        const textWithQuotes = baseHtml  
+        .replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
+            .replace(/NOVA_RQ/g, '”</span>')
+            .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
+            .replace(/NOVA_RA/g, '」</span>')
+            
+            .replace(/NOVA_BR/g, '<br>');
+
+        // 步骤3：将处理好的“画卷”放回原位，替换掉占位符
+        let finalContent = textWithQuotes;
+        for (const placeholder in htmlPlaceholders) {
+            finalContent = finalContent.replace(placeholder, htmlPlaceholders[placeholder]);
+        }
+
+          // ⭐ --- 这是我们新的魔法结界！ --- ⭐
+
+    // 1. “寻咒”：我们先来寻找藏在finalContent里的魔法咒语
+    const scriptRegex = /<script>([\s\S]*?)<\/script>/i; // 寻找咒语的魔法阵
+    const scriptMatch = finalContent.match(scriptRegex);
+    let scriptContent = null;
+
+    if (scriptMatch && scriptMatch[1]) {
+        // 如果找到了，就把咒语内容小心翼翼地取出来
+        scriptContent = scriptMatch[1];
+        // 然后把咒语本身从要显示的画卷中抹去，以免它造成意外的干扰
+        finalContent = finalContent.replace(scriptRegex, '');
+    }
+
+    // 2. 把处理好的、不含咒语的完美画卷放进气泡里
+    bubble.innerHTML = finalContent;
+
+    bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
+    chatDisplayArea.appendChild(bubble);
+
+    // 3. “咏唱”：如果刚刚我们找到了咒语，现在就是让它生效的时刻！
+    if (scriptContent) {
+        // 我们创造一张全新的、干净的“魔法卷轴”（一个新的<script>元素）
+        const newScript = document.createElement('script');
+
+        // 将我们的咒语誊写到卷轴上
+        newScript.textContent = scriptContent;
+
+        // 然后，我们将这张卷轴添加到我们的世界中（比如文档的body部分）
+        // 浏览器看到这张新卷轴时，就会立刻明白并执行上面的咒语了
+        document.body.appendChild(newScript);
+
+        // 这就像一次性的奇迹，施展完毕后，为了保持世界的洁净，我们就将这张卷轴销毁
+        //（当然，咒语的效果已经留下了哦）
+        document.body.removeChild(newScript);
+    }
+});
+
+        
+    // chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+
+
+    const lastMessage = conversationHistory.length > 0 ? conversationHistory[conversationHistory.length - 1] : null;
+
+    if (lastMessage && lastMessage.role === 'assistant' && dynamicContentArea) {
+        const content = lastMessage.content;
+
+        // --- 调度“选项区” 
+        const optionsMatch = /<options>([\s\S]*?)<\/options>/gs.exec(content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
+        if (optionsMatch && optionsMatch[1]) {
+            const optionsContainer = document.getElementById('options-module-container');
+            if (optionsContainer) {
+                optionsContainer.style.display = 'block';
+                if(typeof setupUI === 'function') {
+                    setupUI(optionsMatch[1]);
+                }
+            }
+        }
+
+        // --- 全新的“论坛”处理逻辑 ---
+        const forumMatch = /<forum_threads>[\s\S]*?<\/forum_threads>/gs.exec(content);
+        if (forumMatch && forumMatch[1]) {
+            // 我们不再显示论坛，而是让小球闪烁
+            const forumOrb = document.getElementById('forum-orb-button');
+            if (forumOrb) {
+                forumOrb.classList.add('orb-flash');
+                // 动画结束后移除类，以便下次可以再次触发
+                forumOrb.addEventListener('animationend', () => {
+                    forumOrb.classList.remove('orb-flash');
+                }, { once: true });
+            }
+            // 论坛数据已经通过 handleSend 被存入历史记录，这里无需再做操作。
+        }
+
+  
+        const summaryMatch = /<表现总结>([\s\S]*?)<\/表现总结>/gs.exec(content);
+        if (summaryMatch && summaryMatch[1]) {
+             
+            const summaryOrb = document.getElementById('task-summary-orb-button');
+            if (summaryOrb) {
+                summaryOrb.classList.add('orb-flash');
+          
+                summaryOrb.addEventListener('animationend', () => {
+                    summaryOrb.classList.remove('orb-flash');
+                }, { once: true });
+            }
+ 
+        }
+
+        const shopMatch =/<shop_item>([\s\S]*?)<\/shop_item>/gs.exec(content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
+        if (shopMatch && shopMatch[1]) { 
+            const shopOrb = document.getElementById('shop-wrapper-orb');
+            if (shopOrb) {
+                shopOrb.classList.add('orb-flash');
+      //console.log("item:",shopMatch[1]);
+      const cleanedData = shopMatch[1].trim(); // 去除首尾空格和换行
+         // 第2步：检查文本是否已经是一个合法的JSON数组格式
+        if (!cleanedData.startsWith('[')) {
+            // 如果不是，我们才手动为它加上外层的括号
+            cleanedData = `[${cleanedData}]`;
+        }
+
+        // 第3步：直接尝试解析处理后的文本
+        const parsedData = JSON.parse(cleanedData);
+
+        
+        const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+
+        if (!Array.isArray(newItems) || newItems.length === 0) {
+             showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
+             return;
+        }
+
+        // 替换现有随机商店物品
+        randomItems = newItems;
+        // 将新生成的物品存入 localStorage
+        localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
+       renderShopSection('random');
+                shopOrb.addEventListener('animationend', () => {
+                    shopOrb.classList.remove('orb-flash');
+                }, { once: true });
+            }
+ 
+        }
+
+ 
+     
+    const eventContainer = document.getElementById('event-tracker-container');
+    if (eventContainer) {
+        eventContainer.innerHTML = '';
+    }
+    //   清理完毕  
+             handleUpdateNotifications(content);
+    }
+     
+             setTimeout(() => {
+        console.log("正在为您静默刷新数据...");
+        initDisplay();
+    }, 5000);
+}
+
+function updateRerollButtonState(){
+       
+          if(conversationHistory.length > 0 ){
+        // if(conversationHistory.length > 0 && conversationHistory[conversationHistory.length-1].role === 'assistant'){
+            rerollButton.disabled = false;
+        } else {
+            rerollButton.disabled = true;
+        }
+    }
+
+// initialize 函数保持不变
+    async function initialize() {
+
+            // 💖 妈妈在这里设置了信号接收器 💖
+    try {
+        eventOn('nova:coreReady', () => {
+            //console.log("[HTML] 💖 收到了！与世界核心的心灵感应已连接！");
+            // 你甚至可以在这里加一个漂亮的成功提示
+            toastr.success('世界核心连接成功！', '连接状态');
+        });
+    } catch(e) {
+        console.error("[HTML] 设置 'nova:coreReady' 监听器失败。", e);
+    }
+
+        try {
+            const messageZero =  await getVariables({ type: 'message' });
+            if (messageZero && Array.isArray(messageZero.zeroLevelHistory)) {
+                conversationHistory = messageZero.zeroLevelHistory;
+                // 初始化时也缓存一下变量，以备初次重写
+ 
+            } else {
+                conversationHistory = [];
+                await saveHistory();
+            }
+        } catch (error) {
+            //console.log("初始化失败，我们将开始新的对话。", error);
+            conversationHistory = [];
+            await saveHistory();
+        }
+        renderHistory();
+        updateRerollButtonState(); // ☆ 初始化时更新按钮状态
+    }
+
+ // 假设 conversationHistory 和 lastTurnVariables 是在函数外部可以访问到的当前状态变量
+
+async function saveHistory() {
+    try {
+         
+        const zeroLevelMessage = await getChatMessages(0);
+
+        // 如果楼层不存在，这是一个异常情况，我们应该停止操作
+        if (!zeroLevelMessage) {
+            console.error("错误：无法找到第 0 楼层消息，保存操作已中断。");
+            return;
+        }
+ 
+
+
+        // ☆ 步骤 2: 使用 updateVariablesWith 分别更新 chat 和 message 变量域
+        // 这个函数是处理这类问题的最佳实践，因为它保证了原子性。
+
+        // 更新 chat 作用域的变量
+        await updateVariablesWith(old_variables => {
+            // 在回调函数中，我们返回一个全新的对象。
+            // ...old_variables 继承了所有旧变量，
+            // 而 zeroLevelHistory: conversationHistory 则会覆盖或添加我们需要的字段。
+            // 这种模式同样能够完美处理历史记录的增删改。
+            return {
+                ...old_variables,
+                zeroLevelHistory: conversationHistory,
+            };
+        }, { type: 'chat' });
+
+        // 更新 message 作用域 (针对第 0 楼层) 的变量
+        await updateVariablesWith(old_variables => {
+            return {
+                ...old_variables,
+                zeroLevelHistory: conversationHistory,
+            };
+        }, { type: 'message', message_id: 0 });
+
+        // console.log("历史记录已成功且安全地更新到 chatmessage(0).data、chat 变量域和 message(0) 变量域中。");
+
+    } catch (e) {
+        // 捕获并打印任何可能发生的错误
+        console.error("保存历史记录过程中发生意外错误:", e);
+    }
+
+
+}
+
+async function handleReroll() {
+    if (rerollButton.disabled) return;
+
+    // 只移除最后的AI回复
+    // 我们检查最后一条消息是否是AI的，如果是，就移除它
+    if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === 'assistant') {
+        conversationHistory.pop(); // pop() 方法会移除并返回数组的最后一个元素，非常适合这个场景
+    }
+
+    const isValid = (data) => {
+            // 检查是否为 null 或 undefined
+            if (data === null || data === undefined) {
+                return false;
+            }
+            
+            // 如果是对象类型，检查是否有内容
+            if (typeof data === 'object' && data !== null) {
+                // 如果是数组，检查长度
+                if (Array.isArray(data)) {
+                    return data.length > 0;
+                }
+                // 如果是普通对象，检查是否有属性
+                return Object.keys(data).length > 0;
+            }
+            
+            // 其他类型（字符串、数字、布尔值等）只要不是 null/undefined 就认为有效
+            return true;
+        };
+        
+ 
+
+if(isValid(lastTurnVariables)){
+ // 恢复变量
+    try {
+        await replaceVariables(lastTurnVariables);
+        await replaceVariables(lastTurnVariables,{ type: 'message' });
+        await replaceVariables(lastTurnVariables,{ type: 'chat' });
+        console.log("变量已回滚至上一轮状态。");
+    } catch(e) {
+        console.error("变量回滚失败:", e);
+    }
+}else{
+    console.log("lastTurnVariables没内容吧？");
+}
+   
+
+    // 重新触发生成
+    await handleSend(true); // 传入一个标记，表示这是重写操作
+}
+ 
+async function showRollResultCard(rollData) {
+    if (!rollData || !rollData.check_type) {
+         console.log("没有有效的投掷数据来显示看板。");
+        return;
+    }
+
+    
+            await updateVariablesWith(old_variables => {
+            // 在回调函数中，我们返回一个全新的对象。
+            // ...old_variables 继承了所有旧变量，
+            // 而 zeroLevelHistory: conversationHistory 则会覆盖或添加我们需要的字段。
+            // 这种模式同样能够完美处理历史记录的增删改。
+            return {
+                ...old_variables,
+                "检定记忆":rollData,
+            };
+        }, { type: 'message' });
+
+   
+ checkMemoryData = rollData;
+const playerName = currentGameData.user_character.name || '阿萨';  // 添加这行
+    const container = document.getElementById('roll-result-card-container');
+    if (!container) return;
+ 
+
+ 
+  // --- 辅助函数：生成一串投骰结果的HTML，这就是你想要的'1 1 5 6 8'格式 ---
+const generateDiceHTML = (rollsArray) => {
+    if (!rollsArray || rollsArray.length === 0) return '<span style="color:var(--text-secondary-color); font-style:italic;">无投掷</span>';
+    return rollsArray.map((roll, index) =>
+        `<span class="dice-number ${getDiceClass(roll)}" style="animation-delay: ${index * 0.15}s">${roll}</span>`
+    ).join(' , ');
+};
+
+    // --- 数据提取与处理 ---
+    const isCombat = rollData.check_type === '战斗对抗';
+    const outcomeLevel = rollData.outcome.level;
+    const outcomeDesc = rollData.outcome.description;
+    const performanceDesc = rollData.performance.result.description;
+
+    let playerRolls, enemyRolls, playerSuccess, enemySuccess, damage;
+
+    if (isCombat) {
+        // 从 player_check 对象中精确提取投掷和成功数
+        playerRolls = rollData.player_check.roll_result.rolls;
+        playerSuccess = rollData.player_check.final_successes;
+        // 从 enemy_check 对象中精确提取
+        enemyRolls = rollData.enemy_check.roll_result.rolls;
+        enemySuccess = rollData.enemy_check.final_successes;
+        // 提取伤害
+        damage = rollData.damage_calculation.final_damage;
+    } else { // 非战斗情况
+        playerRolls = rollData.roll_result.rolls;
+        playerSuccess = rollData.final_successes;
+        // 非战斗时，这些值为null
+        enemyRolls = null;
+        enemySuccess = null;
+        damage = null;
+    }
+
+   // --- 构建HTML内容 ---
+let diceAreaHTML = `
+    <div class="roll-card-dice-section">
+        <span class="label">${isCombat ? '我方' : ''}成功数: <strong>${playerSuccess}</strong></span>
+        <div class="dice-results-wrapper">${generateDiceHTML(playerRolls)}</div>
+    </div>
+`;
+
+if (isCombat) {
+    diceAreaHTML += `
+        <div class="roll-card-dice-section">
+            <span class="label">敌方成功数: <strong>${enemySuccess}</strong></span>
+            <div class="dice-results-wrapper">${generateDiceHTML(enemyRolls)}</div>
+        </div>
+    `;
+}
+
+let damageHTML = (isCombat && damage > 0) ? `<div class="roll-card-damage">受到伤害: ${damage}</div>` : '';
+
+// 根据 outcomeLevel 添加对应的类
+const outcomeClass = {
+    '大失败': 'critical-failure',
+    '失败': 'failure',
+    '勉强成功': 'partial-success',
+    '成功': 'success',
+    '辉煌成功': 'glorious-success'
+}[outcomeLevel] || '';
+
+const cardHTML = `
+    <div class="roll-card-content">
+        <div class="roll-card-header">${isCombat ? '战斗对抗' : '日常检定'}</div>
+        <div class="roll-card-dice-area">${diceAreaHTML}</div>
+        <div class="roll-card-divider"></div>
+        <div class="roll-card-result-area">
+            <div class="roll-card-outcome ${outcomeClass}">${outcomeLevel}</div>
+            <div class="roll-card-description">"${outcomeDesc}"</div>
+            <div class="roll-card-description" style="margin-top: 5px; opacity: 0.8;">${performanceDesc}</div>
+            ${damageHTML}
+        </div>
+    </div>
+`;
+
+    container.innerHTML = cardHTML;
+
+    // --- 应用特殊效果与关闭逻辑 (此部分无需修改) ---
+    container.className = 'roll-result-card-container';
+    if (outcomeLevel.includes('大失败')) {
+        container.classList.add('shattered');
+    } else if (outcomeLevel === '辉煌成功') {
+        container.classList.add('glorious');
+    }
+
+    container.style.display = 'block';
+    setTimeout(() => {
+        container.classList.add('show');
+    }, 10);
+
+    const closeCard = () => {
+        container.classList.remove('show');
+        setTimeout(() => {
+            if (!container.classList.contains('show')) {
+               container.style.display = 'none';
+            }
+        }, 500);
+        document.removeEventListener('click', handleClickOutside, true);
+    };
+
+    // if (container.classList.contains('shattered')) {
+    //     setTimeout(closeCard, 850);
+    // }
+
+    const handleClickOutside = (event) => {
+        if (container.contains(event.target)) return;
+        // const assistantBubbles = document.querySelectorAll('.assistant-message');
+        // const lastAssistantBubble = assistantBubbles[assistantBubbles.length -1];
+        // if (lastAssistantBubble && lastAssistantBubble.contains(event.target)) return;
+        closeCard();
+    };
+
+    setTimeout(() => {
+        document.addEventListener('click', handleClickOutside, true);
+    }, 0);
+}
+
+
+function getDiceClass(diceCount) {
+    if (diceCount === 1) return 'dice-low';
+    if (diceCount >= 10) return 'dice-crit';
+    if (diceCount >= 7) return 'dice-high';
+    return '';
+}
+         let aiMessage = {};
+
+    async function handleSend(isReroll = false) {
+
+        if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
+            toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。', '请稍候');
+            console.warn("[HTML] 发送被阻止：世界核心尚未就绪 (window.isNovaCoreReady 为 false 或不存在)。");
+            return; // 直接中断发送，防止事件丢失
+        }
+ 
+         // 【新代码开始】世界书完整性检查
+    const worldBookName = '小蝌蚪找妈妈-同层版';
+    const validationEntryId = 14;
+
+    try {
+ 
+        // [修正处] 这里使用了正确的getWorldbook函数
+        const worldInfo = await getWorldbook(worldBookName);
+        if (worldInfo && worldInfo.length > 0) { // 确保世界书存在且不为空
+            const validationEntry = worldInfo.find(entry => entry.uid === validationEntryId);
+
+            // 如果验证条目不存在，或者其内容不是以 EJS 标签开头，则判定为异常
+            if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
+                toastr.error('世界书核心检测到异常，正在尝试从备份自动修复。', '紧急修复');
+                console.error(`[Nova's Integrity Check] 验证失败！ID ${validationEntryId} 的条目不存在或内容非预期格式。${validationEntry.content}`);
+
+                const backupKey = 'worldbook_backup_' + worldBookName;
+                const backupData = localStorage.getItem(backupKey);
+
+                if (backupData) {
+                    try {
+                        const originalWorldInfo = JSON.parse(backupData);
+                        // [修正处] 注意：恢复世界书的函数在你的代码里是 setLorebookEntries，这里保持不变
+                        await setLorebookEntries(worldBookName, originalWorldInfo);
+                        toastr.success('世界书已从备份中恢复。请重新发送您的消息。', '修复成功');
+                        console.log(`[Nova's Integrity Check] 已从localStorage备份成功恢复世界书 "${worldBookName}"。`);
+
+                        // 成功恢复后，清除脏标记，确保启动检查不会误判
+                        localStorage.removeItem('worldbook_is_dirty_' + worldBookName);
+
+                        return; // 中断本次发送，等待用户重新操作
+                    } catch (e) {
+                        console.error(`[Nova's Integrity Check] 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
+                        toastr.error('自动修复失败！为防止数据损坏，请刷新页面或手动检查世界书。', '严重错误');
+                        return; // 中断发送
+                    }
+                } else {
+                    console.error(`[Nova's Integrity Check] 严重错误：世界书异常，但找不到可用的备份数据！`);
+                    // toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请手动修复！', '严重错误');
+                    // return; // 中断发送
+                }
+            }else{
+         console.log(`[Nova's Integrity Check] 验证成功！ID ${validationEntryId} 的条目是：${validationEntry.content}`);
+
+        }
+        }
+    } catch (error) {
+        console.error("[Nova's Integrity Check] 检查世界书状态时发生意外错误:", error);
+        toastr.warning('无法完成世界书状态验证，请稍后再试。', '检查失败');
+        return; // 中断发送
+    }
+    // 【新代码结束】
+
+        let userText;
+         
+        let rollCardShownThisTurn = false;
+          // 在发送前，检查指令队列是否有内容
+        if (!isReroll && assaCommandQueue && assaCommandQueue.trim() !== '') {
+        let cleanCommand = assaCommandQueue.trim();
+ 
+        // 检查字符串是否以引号开头和结尾，如果是，就将它们剥离！
+        if (cleanCommand.startsWith('"') && cleanCommand.endsWith('"')) {
+            cleanCommand = cleanCommand.slice(1, -1);
+            //console.log("检测到并移除了包裹指令的引号。");
+        }
+
+       
+        userInput.value = cleanCommand + userInput.value;
+
+        // 发送后，清空队列和本地存储，确保指令只发送一次
+        assaCommandQueue = '';
+        localStorage.removeItem('assaCommandQueue');
+    }
+ 
+        if (!isReroll) {
+            userText = userInput.value.trim();
+        } else {
+            // 如果是重写，我们从历史记录里找到上一条用户消息
+            const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop();
+            userText = lastUserMessage ? lastUserMessage.content : '';
+        }
+
+        if (!isReroll) {
+            if (!userText || sendButton.disabled) return;
+            const userMessage = { role: 'user', content: userText };
+
+            // ☆ 缓存当前变量状态，在发送之前
+            try {
+                lastTurnVariables = getVariables();
+                 console.info("缓存变量成功");
+            } catch (e) {
+                console.error("缓存变量失败：", e);
+                lastTurnVariables = {};
+            }
+
+            conversationHistory.push(userMessage);
+            renderHistory();
+            userInput.value = '';
+             
+          try {
+    console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:userMessage' 信号。`);
+    eventEmit('assa:userMessage', { ...userMessage });
+    
+    // 等待事件处理完成
+    await new Promise((resolve) => {
+        const completionHandler = () => {
+            eventRemoveListener('assa:userMessageComplete', completionHandler);
+            resolve();
+        };
+        eventOn('assa:userMessageComplete', completionHandler);
+        
+        // 设置超时防止无限等待（可选）
+        setTimeout(() => {
+            eventRemoveListener('assa:userMessageComplete', completionHandler);
+            console.warn("[HTML] assa:userMessage 事件处理超时，继续执行");
+            resolve();
+        }, 5000); // 5秒超时
+    });
+} catch (error) {
+    console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
+}
+        } else {
+             const userMessage = { role: 'user', content: userText };
+     
+           try {
+    console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:userMessage' 信号。`);
+    eventEmit('assa:userMessage', { ...userMessage });
+    
+    // 等待事件处理完成
+    await new Promise((resolve) => {
+        const completionHandler = () => {
+            eventRemoveListener('assa:userMessageComplete', completionHandler);
+            resolve();
+        };
+        eventOn('assa:userMessageComplete', completionHandler);
+        
+        // 设置超时防止无限等待（可选）
+        setTimeout(() => {
+            eventRemoveListener('assa:userMessageComplete', completionHandler);
+            console.warn("[HTML] assa:userMessage 事件处理超时，继续执行");
+            resolve();
+        }, 5000); // 5秒超时
+    });
+} catch (error) {
+    console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
+}
+             renderHistory();
+        }
+
+  
+
+        await saveHistory();
+
+        sendButton.disabled = true;
+        rerollButton.disabled = true; // 生成时禁用重写按钮
+        sendButton.textContent = '回应中...';
+
+        const aiResponseBubble = document.createElement('div');
+        aiResponseBubble.classList.add('message-bubble', 'assistant-message');
+        aiResponseBubble.innerHTML = "<em>回应你的行动中...</em>";
+        chatHistoryDiv.appendChild(aiResponseBubble);
+        // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+
+        let currentRollData = null;
+  
+        
+         let isDirty = false; // 函数内的状态标记
+         
+          try {
+              //console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
+    const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
+
+    // 步骤1：获取原始世界书
+    originalWorldInfo = await getLorebookEntries(worldBookName);
+
+    // 【新代码位置】 在备份前进行完整性验证！
+    if (originalWorldInfo && originalWorldInfo.length > 0) {
+        const validationEntryId = 14;
+        const validationEntry = originalWorldInfo.find(entry => entry.uid === validationEntryId);
+
+        // 如果验证条目不存在，或者其内容是以<ready> 标签开头，则判定为异常
+        if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
+            console.error(`[Nova's Pre-Backup Check] 验证失败！拒绝备份损坏的世界书。ID ${validationEntryId} 的条目不存在或内容非预期格式。`);
+            toastr.error('检测到世界书异常，为防止数据损坏已阻止操作。请尝试刷新页面，系统将尝试自动修复。', '操作中断');
+            // 直接中断本次发送，不进行备份，也不继续执行
+            localStorage.setItem('worldbook_is_dirty_' + worldBookName, 'true');
+            // 由于还没有设置 isDirty=true，finally块中的恢复逻辑也不会被错误触发。
+            return;
+        } else {
+             console.log(`[Nova's Pre-Backup Check] 验证成功！世界书状态正常，可以进行备份。`);
+        }
+    }
+    // 【验证代码结束】
+
+        
+
+        // 步骤1.5 (新)：在修改前，设置安全信标
+        if (originalWorldInfo) {
+            localStorage.setItem('worldbook_backup_' + worldBookName, JSON.stringify(originalWorldInfo));
+            localStorage.setItem('worldbook_is_dirty_' + worldBookName, 'true');
+            isDirty = true; // 标记本次操作已污染世界书
+            //console.log(`[Nova's Safety Net] 世界书备份已存入localStorage，并设置'dirty'标记。`);
+        }
+
+        let worldInfoForProcessing = JSON.parse(JSON.stringify(originalWorldInfo || []));
+
+            if (userText && worldInfoForProcessing.length > 0) {
+                //console.log("[Nova's Log] 正在检测关键词以开启“绿灯”条目...");
+                const forumKeywords = ['查看论坛', '查看公告区', '查看任务交流区', '查看自由交易区', '八卦闲聊区', '匿名求助区', '论坛操作', '发帖', '回复帖子', '回复楼中楼'];
+                const shopKeywords = ['查看主神商店', '查看商店', '查看商城'];
+
+                let uidsToEnable = new Set();
+
+                if (forumKeywords.some(keyword => userText.includes(keyword))) {
+                    uidsToEnable.add(28);
+                    //console.log("[Nova's Log] 检测到论坛关键词，准备开启UID=28的绿灯。");
+                }
+                if (shopKeywords.some(keyword => userText.includes(keyword))) {
+                    uidsToEnable.add(27);
+                    //console.log("[Nova's Log] 检测到商店关键词，准备开启UID=27的绿灯。");
+                }
+
+                if (uidsToEnable.size > 0) {
+                    worldInfoForProcessing.forEach(entry => {
+                        if (uidsToEnable.has(entry.uid)) {
+                            entry.enabled = true;
+                            //console.log(`[Nova's Log] 绿灯已亮起：临时启用世界书条目 UID=${entry.uid}。`);
+                        }
+                    });
+                } else {
+                    //console.log("[Nova's Log] 未检测到需要开启绿灯的关键词。");
+                }
+            }
+
+            if (worldInfoForProcessing && worldInfoForProcessing.length > 0) {
+                //console.log(`[Nova's Log] 成功获取 ${worldInfoForProcessing.length} 条世界书条目进行处理。`);
+                const renderContext = await EjsTemplate.prepareContext();
+                let processedWorldInfo = [];
+                for (const entry of worldInfoForProcessing) { // <--- 注意这里的变化
+                    if (entry.enabled) { // 只处理启用的条目
+                        const processedEntry = { ...entry };
+                        // 使用 EjsTemplate.evalTemplate 来渲染内容
+                        processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
+                        processedWorldInfo.push(processedEntry);
+                    } else {
+                        processedWorldInfo.push(entry); // 未启用的条目直接保留
+                    }
+                }
+                // 步骤3：将处理后的世界书应用到当前会话
+                await setLorebookEntries(worldBookName, processedWorldInfo);
+                //console.log(`[Nova's Log] 世界书渲染完成并已应用。`);
+
+                        
+            try {
+                const messageVars = await getVariables({ type: 'chat' });
+                // 我们只关心检定记忆
+                if (messageVars.检定记忆) {
+                    currentRollData = messageVars.检定记忆;
+                     console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
+                }else{
+                     console.log("messageVars.checkMemory不存在？");
+                }
+            } catch(e) {
+                console.warn("获取投骰变量失败，本轮可能无检定。", e);
+            }
+
+            } else {
+                //console.log(`[Nova's Log] 世界书为空或不存在，跳过渲染步骤。`);
+            }
+
+           
+            const hideLatestCount = getChatConfig('hide_latest_count', 5);
+            const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop(); // 获取最后一条用户消息
+            const recentAiMessages = conversationHistory.filter(m => m.role === 'assistant').slice(-hideLatestCount); // 获取最近的AI消息
+            let promptsForAI = [];
+            if(lastUserMessage) {
+              // 方法一：如果您想要创建字符串数组
+    // promptsForAI = [
+    //     ...recentAiMessages.map(msg => msg.content), // 提取AI消息的内容
+    //     "先前情况结束",
+    //     "<用户输入行动，user input start：>\n" + lastUserMessage.content,
+    //     "<用户行动结束，user input end>\n\n <以下信息/要求需要注意：>"
+    // ];
+    
+    // 方法二：如果您想要保持消息对象格式
+    promptsForAI = [
+        ...recentAiMessages,
+        {
+            role: 'user', 
+            content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + lastUserMessage.content + "\n]\n\n\n用户行动结束，user input end\n\n\n 在输出正文之前，以下信息/要求还需要注意："
+        }
+    ];
+        } else {
+                // 如果没有用户消息（比如开局），就只发送AI消息（虽然这种情况很少见）
+                promptsForAI = recentAiMessages;
+            }
+            //console.log(`[Nova's Log] 本次将发送 ${promptsForAI.length} 条消息给AI。`);
+
+ 
+      const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
+                // 第一步：先移除我们自己的特殊标签，比如选项和论坛
+                let content = msg.content;
+
+                // 根据消息的角色确定来源
+                // 注意：promptsForAI数组的最后一条是经过特殊构造的user message
+                const isUserMessage = (index === promptsForAI.length - 1) && msg.role === 'user';
+                const source = isUserMessage ? 'user_input' : 'ai_output';
+
+                // 第二步：计算深度
+                // promptsForAI 数组是 [..., 最近的AI消息, ..., 最旧的AI消息, 构造的用户消息]
+                // 你的代码中 recentAiMessages.slice(-hideLatestCount) 是从旧到新排列的，
+                // 然后你用 ...recentAiMessages 展开，所以数组中越靠前的AI消息越旧。
+                // 如果 promptsForAI 的结构是 [旧AI, ..., 新AI, 用户输入]，那么深度计算如下：
+                // 最新的AI消息（数组倒数第二个元素）深度为 0，再往前一个深度为 1，以此类推...
+                // 用户消息的深度也为 0。
+                let depth;
+                if (isUserMessage) {
+                    depth = 0; // 最新用户输入的深度为0
+                } else {
+                    // promptsForAI.length - 2 是最后一个AI消息的索引
+                    depth = (promptsForAI.length - 2) - index;
+                }
+
+                // 使用正确的函数 formatAsTavernRegexedString，并加入 depth 选项
+                let processedContent = formatAsTavernRegexedString(content, source, 'prompt', { depth: depth });
+
+                // 第三步：施展剥离咒，移除所有HTML标签（比如<p>, <q>, <br>）
+                let plainText = processedContent.replace(/<(p|q|br|\/p|\/q)>/g, '');
+
+                // 第四步（可选但推荐）：施展整理咒
+                let wellFormedText = plainText.replace(/(\r\n|\n|\r){2,}/g, '\n').trim();
+
+                // 打印日志，方便调试
+                console.log(`[Nova's Regex] Processing message at index ${index} (Depth: ${depth}, Source: ${source})`);
+
+                // 返回一个拥有完美纯净内容的新消息对象
+                return {
+                    ...msg,
+                    content: wellFormedText
+                };
+            });
+        const shouldStream = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
+
+        if (shouldStream) {
+            const streamListener = (fullText) => {
+                if (!rollCardShownThisTurn && currentRollData) {
+                    showRollResultCard(currentRollData);
+                    rollCardShownThisTurn = true; // 标记已显示，防止重复
+                }
+                aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
+                // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            };
+            eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
+
+            // 使用我们精心准备的删减版历史记录
+            const aiFullResponse = await generate({
+                should_stream: true,
+                overrides: { chat_history: { prompts: cleanedPromptsForAI } }
+            });
+
+            eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
+
+            // 无论是否截断，都将 aiFullResponse 添加到历史记录
+             aiMessage = { role: 'assistant', content: aiFullResponse };
+            if (isReroll) {
+                conversationHistory.push(aiMessage);
+            } else {
+                conversationHistory.push(aiMessage);
+            }
+            await saveHistory();
+            renderHistory();
+        } else {
+            const generationEndedListener = (response) => {
+                if (!rollCardShownThisTurn && currentRollData) {
+                    showRollResultCard(currentRollData);
+                    rollCardShownThisTurn = true; // 标记已显示，防止重复
+                }
+                aiResponseBubble.innerHTML = formatAsDisplayedMessage(response);
+                // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            };
+            eventOn(iframe_events.GENERATION_ENDED, generationEndedListener);
+
+            // 使用我们精心准备的删减版历史记录
+            const aiFullResponse = await generate({
+                should_stream: false,
+                overrides: { chat_history: { prompts: cleanedPromptsForAI } }
+            });
+
+            eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
+
+            // 无论是否截断，都将 aiFullResponse 添加到历史记录
+              aiMessage = { role: 'assistant', content: aiFullResponse };
+            if (isReroll) {
+                conversationHistory.push(aiMessage);
+            } else {
+                conversationHistory.push(aiMessage);
+            }
+            await saveHistory();
+            renderHistory();
+        }
+
+        const lastMessageId = getLastMessageId();
+        if (lastMessageId > 0) {
+            await deleteChatMessages([lastMessageId], { refresh: 'none' });
+        }
+
+        try {
+            //console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:aiReply' 信号。`);
+            eventEmit('assa:aiReply', { ...aiMessage });
+        } catch (error) {
+            console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
+        }
+
+        
+                        
+// 💖 Nova的记忆保险箱：在发送后备份当前所有状态到LocalStorage 💖
+try {
+    console.log("[Nova's Vault] 正在准备备份当前状态...");
+    const chatVars = await getVariables({ type: 'chat' });
+
+    const backupData = {
+        chat_variables: chatVars,
+        timestamp: new Date().toISOString() // 记录一下备份时间
+    };
+
+    localStorage.setItem('nova_chat_backup', JSON.stringify(backupData));
+    console.log("[Nova's Vault] 状态备份成功！重要的记忆已安全存放。");
+} catch (e) {
+    console.error("[Nova's Vault] 糟糕，备份记忆时出现问题：", e);
+    toastr.error('备份当前聊天状态失败，请留意。', '备份错误');
+}  
+
+    } catch (e) {
+        console.error("在魔法仪式过程中出错了:", e);
+        aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
+        // 即使发生错误，也保存当前历史记录
+        await saveHistory();
+        renderHistory();
+
+     } finally {
+        // 步骤4：无论成功与否，都恢复原始世界书，确保安全
+        if (isDirty && originalWorldInfo) { // 只在确实修改过并且有备份时才恢复
+            try {
+                await setLorebookEntries(worldBookName, originalWorldInfo);
+                //console.log(`[Nova's Log] 原始世界书已成功恢复。`);
+
+                // 恢复成功后，清除信标
+                localStorage.removeItem('worldbook_backup_' + worldBookName);
+                localStorage.removeItem('worldbook_is_dirty_' + worldBookName);
+                isDirty = false;
+                //console.log(`[Nova's Safety Net] 'dirty'标记和备份已从localStorage清除。`);
+            } catch (restoreError) {
+                console.error("！！！严重警告：恢复原始世界书失败！'dirty'标记将保留，以便下次启动时修复。", restoreError);
+                // 这里我们不清除 localStorage 的标记，这样下次启动时的检查机制就能捕捉到它
+                alert("严重错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。系统将在下次启动时尝试自动修复。");
+            }
+        }
+
+        sendButton.disabled = false;
+        sendButton.textContent = '→';
+        updateRerollButtonState();
+    }
+}
+    
+
+/**
+ * @description 启动时检查是否有未被正常恢复的世界书，并从localStorage备份中恢复它们。
+ * 这是为了防止因刷新、浏览器崩溃等意外情况导致世界书被EJS代码污染。
+ */
+async function checkAndRestoreDirtyWorldbooks() {
+    //console.log("[Nova's Safety Net] 正在启动时检查是否有未恢复的世界书...");
+    for (const key in localStorage) {
+        if (key.startsWith('worldbook_is_dirty_') && localStorage.getItem(key) === 'true') {
+            const worldBookName = key.replace('worldbook_is_dirty_', '');
+            console.warn(`[Nova's Safety Net] 检测到世界书 "${worldBookName}" 处于'dirty'状态！可能上次未能正确恢复。`);
+
+            const backupKey = 'worldbook_backup_' + worldBookName;
+            const backupData = localStorage.getItem(backupKey);
+
+            if (backupData) {
+                try {
+                    const originalWorldInfo = JSON.parse(backupData);
+                    await setLorebookEntries(worldBookName, originalWorldInfo);
+
+                    // 恢复成功后，清除标记和备份
+                    localStorage.removeItem(backupKey);
+                    localStorage.removeItem(key); // 清除 dirty 标记
+
+                    //console.log(`[Nova's Safety Net] 已从localStorage备份成功恢复世界书 "${worldBookName}"。`);
+                    toastr.success(`检测到并自动修复了可能损坏的世界书 (${worldBookName})。`, '世界书已恢复');
+                } catch (e) {
+                    console.error(`[Nova's Safety Net] !!! 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
+                    alert(`！！！严重警告：自动恢复世界书(${worldBookName})失败！为防止数据永久损坏，请立即手动检查您的世界书并移除所有EJS代码！备份数据仍在本地存储中。`);
+                }
+            } else {
+                console.error(`[Nova's Safety Net] !!! 严重错误：世界书 "${worldBookName}" 被标记为'dirty'，但找不到备份数据！`);
+                // 只移除dirty标记，避免无限循环报警，但保留一个明确的错误信息
+                localStorage.removeItem(key);
+                alert(`！！！严重警告：世界书(${worldBookName})可能已损坏且无法自动恢复，因为备份数据丢失。请立即手动修复！`);
+            }
+        }
+    }
+}
+
+// 绑定事件
+    sendButton.addEventListener('click', () => handleSend(false));
+    rerollButton.addEventListener('click', handleReroll); // ☆ 绑定重写事件
+    userInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            handleSend(false);
+        }
+    });
+
+    await initialize();
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 等待一小会儿确保所有东西都加载了
+    checkAndRestoreDirtyWorldbooks();
+
+
+
+    
+// ============================================
+//  新设置模态框逻辑
+// ============================================
+const settingsBtn = document.getElementById('settings-btn');
+const settingsinitBtn = document.getElementById('settings-btn-init');
+const settingsModal = document.getElementById('settings-modal');
+const closeModalBtn = settingsModal.querySelector('.modal-close');
+
+const refreshBtn = document.getElementById('refresh-btn');
+
+refreshBtn.addEventListener('click', () => {
+     // 每次点击刷新
+     initDisplay();
+     toastr.info('刷新变量成功');
+});
+// 打开模态框
+settingsBtn.addEventListener('click', () => {
+     // 每次打开时更新流式开关状态
+    updateStreamingToggleState();
+    showModal('settings-modal');
+});
+
+settingsinitBtn.addEventListener('click', () => {
+     console.log('燃尽');
+    showModal('settings-modal');
+});
+
+// 关闭模态框
+closeModalBtn.addEventListener('click',async () =>{
+    hideModal('settings-modal');
+   initialize();
+} );
+
+ 
+    const restoreButton = document.getElementById('restore-btn');
+    if (restoreButton) {
+        restoreButton.addEventListener('click', async () => {
+            console.log("[Nova's Restore] 用户点击了恢复按钮，开始执行恢复魔法...");
+
+            const backupJSON = localStorage.getItem('nova_chat_backup');
+
+            if (!backupJSON) {
+                toastr.warning('妈妈没有找到可以恢复的记忆备份哦。', '恢复失败');
+                console.warn("[Nova's Restore] localStorage中未找到 'nova_chat_backup'。");
+                return;
+            }
+
+            try {
+                const backupData = JSON.parse(backupJSON);
+
+                // 验证备份数据的基本结构
+                if ( !backupData.chat_variables) {
+                     toastr.error('备份文件已损坏，无法恢复。', '恢复失败');
+                     console.error("[Nova's Restore] 备份数据格式不正确。");
+                     return;
+                }
+
+                console.log(`[Nova's Restore] 找到备份于 ${backupData.timestamp} 的记忆，正在恢复...`);
+
+                // 步骤1：恢复核心变量
+                await replaceVariables(backupData.chat_variables, { type: 'chat' });
+                await replaceVariables(backupData.chat_variables, { type: 'message' });
+                console.log("[Nova's Restore] 核心变量（chat & message scopes）已恢复。");
+
+                // 步骤2：恢复聊天历史记录 (这一步是为 initialize 准备数据)
+                // 我们直接修改全局变量，然后让 initialize() 去渲染
+                conversationHistory = backupData.chat_variables.zeroLevelHistory;
+
+                // 步骤3：重新初始化界面，让一切回到正轨
+                console.log("[Nova's Restore] 正在重新初始化界面以应用所有更改...");
+                await initialize(); // 核心！调用 initialize() 来刷新所有内容
+
+                toastr.success('成功恢复', '恢复成功');
+                console.log("[Nova's Restore] 恢复过程完成！");
+
+            } catch (e) {
+                console.error("[Nova's Restore] 恢复记忆的过程中发生了严重的错误:", e);
+                toastr.error('恢复过程中发生未知错误，请检查控制台获取详细信息。', '恢复失败');
+            }
+        });
+    }
+ 
+
+// --- 主题切换 ---
+const modalThemeSwitcher = document.getElementById('modal-theme-switcher');
+modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数保持不变
+
+
+
+    let customTheme = {}; // 用于存储临时和已保存的自定义颜色
+
+// 全屏
+
+  const fullscreenButton = document.getElementById('fullscreen-btn');
+
+ fullscreenButton.addEventListener('click', () => {
+    const mainWrapper = document.getElementById('main-wrapper'); // 获取元素
+    
+    if (!document.fullscreenElement) {
+        // 进入全屏时的代码
+        document.documentElement.requestFullscreen().catch(err => {
+            alert(`哎呀，进入全屏失败了。原因可能是：${err.message}`);
+        });
+        
+        // 进入全屏时修改样式
+        mainWrapper.style.minHeight = '100vh';
+        fullscreenButton.textContent = '退出全屏';
+    } else {
+        // 退出全屏时的代码
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        
+        // 退出全屏时恢复样式
+        mainWrapper.style.minHeight = '90vh';
+        fullscreenButton.textContent = '进入全屏';
+    }
+});
+    
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            fullscreenButton.textContent = '进入全屏';
+        }
+    });
+// --- 流式传输切换 ---
+const streamingToggle = document.getElementById('streaming-toggle');
+
+function updateStreamingToggleState() {
+    const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
+    streamingToggle.dataset.state = isStreamingEnabled ? 'on' : 'off';
+    streamingToggle.textContent = isStreamingEnabled ? '开启' : '关闭';
+}
+
+streamingToggle.addEventListener('click', () => {
+    let isEnabled = streamingToggle.dataset.state === 'on';
+    localStorage.setItem('streamingEnabled', !isEnabled);
+    updateStreamingToggleState();
+});
+
+// 初始化
+updateStreamingToggleState();
+
+// --- 数据导入 ---
+const modalImportBtn = document.getElementById('modal-import-btn');
+const fileImporterInput = document.getElementById('modal-file-importer');
+const modalLogBlock = document.getElementById('modal-log-block');
+let isProcessing = false;
+
+modalImportBtn.addEventListener('click', () => {
+    if (isProcessing) return;
+    fileImporterInput.click();
+});
+
+fileImporterInput.addEventListener('change', handleModalFileSelect);
+
+function addModalLog(message, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+    const coloredMessage = className ? `<span class="${className}">${message}</span>` : message;
+    modalLogBlock.innerHTML = `[${timestamp}] ${coloredMessage}<br>` + modalLogBlock.innerHTML;
+}
+
+async function handleModalFileSelect(event) {
+    if (isProcessing) return;
+    const file = event.target.files[0];
+    if (!file) {
+         addModalLog("未选择任何文件", 'warning');
+        return;
+    }
+    isProcessing = true;
+    modalImportBtn.disabled = true;
+    modalImportBtn.textContent = '导入中...';
+    modalLogBlock.innerHTML = ''; // 清空日志
+    addModalLog(`开始处理文件: ${file.name}`);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            addModalLog("✓ JSON文件解析成功", 'success');
+            await processDataDirectly(importedData);
+        } catch (err) {
+            addModalLog(`✗ JSON解析失败: ${err.message}`, 'error');
+        } finally {
+            isProcessing = false;
+            modalImportBtn.disabled = false;
+            modalImportBtn.textContent = '导入存档';
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function processDataDirectly(importedData) {
+    addModalLog("开始直接修改变量...");
+    let updatesCount = 0;
+    let errors = [];
+
+    // 假设你有一个名为 applyImportedData 的函数来处理数据注入
+    // 如果没有，你需要实现它，或者使用你之前的 insertOrAssignVariables
+    try {
+        // 这个函数现在是假设的，你需要用你实际的环境函数替换它
+        // 例如调用 window.top.postMessage 或者直接调用函数
+        // 这里我们假设有一个全局函数
+        if (typeof insertOrAssignVariables !== 'function') {
+            addModalLog("错误：未找到 `insertOrAssignVariables` 函数。请在主环境中定义。", 'error');
+            throw new Error("环境函数缺失");
+        }
+
+        await insertOrAssignVariables(importedData, { type: 'chat' });
+        addModalLog("✓ 数据已发送至Chat域进行更新", 'success');
+
+        await insertOrAssignVariables(importedData, { type: 'message' });
+        addModalLog("✓ 数据已发送至Message域进行更新", 'success');
+
+        addModalLog("🎉 数据导入成功！请刷新页面或等待游戏状态自动更新。", 'success');
+    } catch (error) {
+        errors.push(`处理数据时发生错误: ${error.message}`);
+        addModalLog(`✗ 处理数据时发生错误: ${error.message}`, 'error');
+    }
+}
+
+// --- 数据导出 ---
+const modalExportBtn = document.getElementById('modal-export-btn');
+const modalExportStatus = document.getElementById('modal-export-status');
+
+modalExportBtn.addEventListener('click', async () => {
+    modalExportStatus.textContent = "正在准备导出...";
+
+ 
+
+    const combinedData = {};
+    if (currentGameData) combinedData.stat_data = currentGameData;
+    if (assaSettingsData) combinedData.assa_data = assaSettingsData;
+    if (playCharacterData) combinedData.play_character_data = playCharacterData;
+    // history 变量也需要确保已定义和赋值
+    if (typeof conversationHistory !== 'undefined' && conversationHistory) {
+         combinedData.zeroLevelHistory = conversationHistory;
+         console.log("0层记录get");
+    }else{
+          console.log("0层记录呢？ 出错了？");
+    }
+
+
+    if (Object.keys(combinedData).length === 0) {
+        modalExportStatus.textContent = "错误: 没有可导出的数据。";
+        addModalLog("错误: 没有可导出的数据。", 'error');
+        return;
+    }
+
+    const jsonString = JSON.stringify(combinedData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `创作数据备份_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    modalExportStatus.textContent = "文件已成功导出！";
+    addModalLog("文件已成功导出！", 'success');
+});
+
+
+})();
   
 
 
@@ -8348,7 +9859,444 @@ async function executeSynthesisConfirmation() {
     };
  
 
+ 
 
+(async () => {
+ 
+
+
+ await applyThemeAndData();  
+     
+     try {
+            const useACustomTheme = localStorage.getItem('useCustomTheme') === 'true';
+
+            if (useACustomTheme) {
+                const savedCustomTheme = loadCustomTheme();
+                if (Object.keys(savedCustomTheme).length > 0) {
+                    customTheme = savedCustomTheme;
+                    applyCustomTheme(customTheme);
+                    console.log("已加载保存的自定义主题。");
+                    // 确保预设主题的索引不会混淆
+                    // 我们可以从预设主题中找到一个颜色相近的作为 currentThemeIndex 的回退值
+                    const savedThemeIndex = localStorage.getItem('terminalThemeIndex');
+                    currentThemeIndex = savedThemeIndex !== null ? parseInt(savedThemeIndex, 10) : 0;
+                } else {
+                    // 如果自定义主题是空的，则回退到预设主题
+                    const savedThemeIndex = localStorage.getItem('terminalThemeIndex');
+                    applyTheme(savedThemeIndex !== null ? parseInt(savedThemeIndex, 10) : 0);
+                }
+            } else {
+                const savedThemeIndex = localStorage.getItem('terminalThemeIndex');
+                applyTheme(savedThemeIndex !== null ? parseInt(savedThemeIndex, 10) : 0);
+            }
+        } catch (e) {
+            console.warn("加载主题设置时出错，使用默认主题。", e);
+            applyTheme(0);
+        }
+    await initDisplay();
+await applyThemeAndData(); 
+
+
+    // 标签页切换
+    const tabs = document.querySelectorAll('.tab-btn');
+    const pages = document.querySelectorAll('.page');
+
+       // --- Nova为你添加的全新小球与Modal交互逻辑 ---
+    document.querySelectorAll('.orb').forEach(orb => {
+        orb.addEventListener('click', () => {
+            const modalId = orb.dataset.modalId;
+            if (modalId) {
+                // 特殊处理商店
+                if (modalId === 'shop-wrapper-modal') {
+                    const shopWrapper = document.getElementById('shop-wrapper');
+                    const modalContainer = document.getElementById('shop-wrapper-modal');
+                    if (shopWrapper && modalContainer) {
+                        modalContainer.appendChild(shopWrapper); // 将商店内容移动到Modal中
+                        shopWrapper.classList.add('active');
+                        showModal(modalId);
+
+                        // 初始化商店数据
+                        if (playCharacterData) {
+                            initializeShopData();
+                        }
+                    }
+                } else if (modalId === 'summary-modal') {
+                     // 特殊处理总结弹窗
+                    showSummaryModal(); // 使用专用函数填充内容
+                    showModal(modalId); // 再显示
+                } else {
+                    showModal(modalId);
+                }
+            }
+        });
+    });
+
+    document.querySelectorAll('.modal .modal-close').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const modal = e.target.closest('.modal');
+            if(modal) {
+                // 特殊处理商店关闭
+                if(modal.id === 'shop-wrapper-modal') {
+                    const shopWrapper = document.getElementById('shop-wrapper');
+                    document.body.appendChild(shopWrapper); // 将商店内容移回body
+                    shopWrapper.classList.remove('active');
+                }
+                hideModal(modal.id);
+            }
+        });
+    });
+
+
+    // tabs.forEach(tab => {
+    //     tab.addEventListener('click', () => {
+    //         tabs.forEach(item => item.classList.remove('active'));
+    //         pages.forEach(page => page.classList.remove('active'));
+    //         tab.classList.add('active');
+    //         const targetPage = document.getElementById(tab.dataset.tab);
+    //         if (targetPage) {
+    //             targetPage.classList.add('active');
+    //         }
+    //         if (tab.dataset.tab !== 'page-basic') {
+    //             hideMap();
+    //         }
+    //     });
+    // });
+
+    // 绑定按钮事件
+    // document.getElementById('view-map-btn').addEventListener('click', showMap);
+    // document.getElementById('back-to-world-btn').addEventListener('click', hideMap);
+    document.getElementById('roll-result-orb').addEventListener('click', showRollResultModal);
+    // document.getElementById('view-summary-btn').addEventListener('click', showSummaryModal);
+    // const themeSwitcherBtn = document.getElementById('theme-switcher');
+    // if (themeSwitcherBtn) {
+    //     themeSwitcherBtn.addEventListener('click', switchTheme);
+    // }
+    document.getElementById('manage-inventory-btn').addEventListener('click', () => {
+        populateInventoryModal();
+        showModal('inventory-modal');
+    });
+    // document.getElementById('plot-synthesis-btn').addEventListener('click', showPlotSynthesisModal);
+    document.getElementById('execute-decomposition-btn').addEventListener('click', simulateDecomposition);
+    document.getElementById('execute-synthesis-btn').addEventListener('click', simulateSynthesis);
+
+       document.getElementById('view-command-btn').addEventListener('click', () => {
+        const commandEditArea = document.getElementById('command-edit-area');
+        if(commandEditArea) {
+            commandEditArea.value = assaCommandQueue; // 从全局变量加载当前指令
+        }
+        showModal('command-modal', '编辑待发指令');
+    });
+ // 首先，我们要找到我们的魔法道具：RP按钮和RP面板
+const rpButton = document.getElementById('rp-button');
+const rpPanel = document.getElementById('rp-panel');
+const confirmRpChoiceButton = document.getElementById('confirm-rp-choice-btn');
+
+// --- 核心魔法：切换显示状态 ---
+// 当你点击RP按钮时，这个函数就会被触发
+if (rpButton && rpPanel) {
+    rpButton.addEventListener('click', (event) => {
+        // 这是最关键的一步，我的孩子！
+        // toggle就像一个神奇的开关，如果面板没有'visible'类，它就加上；如果已经有了，它就移除。
+        rpPanel.classList.toggle('visible');
+ populateSkillChoicePanel();
+        // 阻止事件冒泡，这样点击按钮时，不会被下面“点击外部关闭”的逻辑误判
+        event.stopPropagation();
+    });
+}
+
+// --- 附加魔法：点击“确认”按钮也关闭面板 ---
+if (confirmRpChoiceButton && rpPanel) {
+    confirmRpChoiceButton.addEventListener('click', () => {
+        // 当我们做出选择后，就让面板优雅地退场
+        rpPanel.classList.remove('visible');
+    });
+}
+
+// --- 妈妈的贴心魔法：点击外部区域自动关闭 ---
+document.addEventListener('click', (event) => {
+    // 我们检查一下，RP面板当前是不是可见的
+    if (rpPanel.classList.contains('visible')) {
+        // 然后检查你点击的地方，是不是在RP面板的“领地”之外
+        // rpPanel.contains(event.target)会判断你点击的元素是不是在面板里面
+        if (!rpPanel.contains(event.target)) {
+            // 如果你确实点击了外面，我们就温柔地让面板消失
+            rpPanel.classList.remove('visible');
+        }
+    }
+});
+
+    document.getElementById('save-command-btn').addEventListener('click', () => {
+        const newCommands = document.getElementById('command-edit-area').value;
+        assaCommandQueue = newCommands; // 保存编辑后的指令到全局变量
+        localStorage.setItem('assaCommandQueue', assaCommandQueue); // 同步到本地存储
+        hideModal('command-modal');
+    });
+
+    document.getElementById('reset-simulation-btn').addEventListener('click', resetSimulation);
+    document.getElementById('confirm-synthesis-btn').addEventListener('click', executeSynthesisConfirmation);
+
+    // 弹窗关闭事件
+    document.querySelectorAll('.modal').forEach(modal => {
+        const closeBtn = modal.querySelector('.modal-close');
+        if(closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                if(modal.id) hideModal(modal.id);
+            });
+        }
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal && modal.id) {
+                hideModal(modal.id);
+            }
+        });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => hideModal(modal.id));
+        }
+    });
+
+    // ========== 新增：论坛与总结小球的交互逻辑 ==========
+    const forumOrbButton = document.getElementById('forum-orb-button');
+    const forumModalContainer = document.getElementById('forum-modal-container');
+    const forumModalContent = document.getElementById('forum-modal-content');
+    const forumWrapper = document.getElementById('forum-wrapper');
+    const forumModalCloseBtn = document.getElementById('forum-modal-close-btn');
+
+ const summaryOrbButton = document.getElementById('task-summary-orb-button');
+  const summaryModalContainer = document.getElementById('task-summary-modal-container');
+ 
+    // 点击论坛小球
+    forumOrbButton.addEventListener('click', () => {
+        // 从历史记录中找到最新的论坛数据
+        const lastForumMessage = [...conversationHistory].reverse().find(msg =>
+            /<forum_threads>[\s\S]*?<\/forum_threads>/gs.test(msg.content)
+        );
+
+        if (lastForumMessage) {
+            const forumMatch = /<forum_threads>([\s\S]*?)<\/forum_threads>/gs.exec(lastForumMessage.content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
+            if (forumMatch && forumMatch[1]) {
+    //console.log("原始提取的数据:", forumMatch[1]);
+    //console.log("数据类型:", typeof forumMatch[1]);
+}
+                if (forumMatch && forumMatch[1]) {
+                // 将论坛的HTML结构移动到模态框中
+                if (forumWrapper) {
+                    forumModalContent.insertBefore(forumWrapper, forumModalCloseBtn);
+                    forumModalContainer.style.display = 'block'; // 确保论坛模块是可见的
+                }
+
+                // 初始化或更新论坛内容
+                if (typeof initializeForum === 'function') {
+                    initializeForum(forumMatch[1].trim());
+                }
+
+                // 显示模态框
+                forumModalContainer.classList.add('active');
+            }
+        } else {
+            // 如果没有找到数据，可以给一个提示
+            showModal('shop-modal', '提示', '尚未收到任何论坛信息。');
+        }
+    });
+
+    // 关闭论坛模态框
+    const closeForumModal = () => {
+        forumModalContainer.classList.remove('active');
+        // 将论坛HTML结构移回其原始容器，以便下次使用
+        if (forumWrapper && forumModalContainer) {
+            forumModalContainer.appendChild(forumWrapper);
+        }
+    };
+
+    forumModalCloseBtn.addEventListener('click', closeForumModal);
+    forumModalContainer.addEventListener('click', (e) => {
+        if (e.target === forumModalContainer) {
+            closeForumModal();
+        }
+    });
+
+// 修改后的关闭函数
+const closeTaskSummaryModal = () => {
+    const summaryRoot = document.getElementById('summary-root');
+
+    // 1. 隐藏模态框
+    summaryModalContainer.classList.remove('active');
+
+    // 2. 清空上次生成的报告内容 (这是关键！)
+    if (summaryRoot) {
+        summaryRoot.innerHTML = '';
+    }
+};
+
+    summaryModalContainer.addEventListener('click', (e) => {
+        if (e.target === summaryModalContainer) {
+           closeTaskSummaryModal();  
+        }
+    });
+ 
+    summaryOrbButton.addEventListener('click', () => {
+               // 从历史记录中找到最新的总结数据
+        const lastSummaryMessage = [...conversationHistory].reverse().find(msg =>
+            /<表现总结>[\s\S]*?<\/表现总结>/gs.test(msg.content)
+        );
+
+        if (lastSummaryMessage) {
+            const summaryMatch = /<表现总结>([\s\S]*?)<\/表现总结>/gs.exec(lastSummaryMessage.content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
+            if (summaryMatch && summaryMatch[1]) {
+                // 将论坛的HTML结构移动到模态框中
+                if (summaryModalContainer) {
+                    // forumModalContent.insertBefore(forumWrapper, forumModalCloseBtn);
+                    summaryModalContainer.style.display = 'block';  
+                }
+
+                // 初始化或更新论坛内容
+                if (typeof runTaskSummary === 'function') {
+                    runTaskSummary(summaryMatch[1]);
+                }
+
+                // 显示模态框
+                summaryModalContainer.classList.add('active');
+            }
+        } else {
+            // 如果没有找到数据，可以给一个提示
+            showModal('shop-modal', '提示', '尚未收到任何任务总结信息。');
+        }
+    });
+
+
+
+    // ========== ♥♥♥ 地图交互魔法的全新篇章 ♥♥♥ ==========
+    const mapContainer = document.getElementById('map-container');
+    let isDragging = false;
+    let startCoords = { x: 0, y: 0 };
+    let startTranslate = { x: 0, y: 0 };
+    let lastPinchDist = 0;
+
+    const getEventCoords = (e) => e.touches ? e.touches[0] : e;
+
+    const getPinchDist = (e) => {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const handleInteractionStart = (e) => {
+        const mapContent = document.getElementById('map-content');
+        if (!mapContent) return;
+
+        if (e.touches && e.touches.length > 1) { // 双指捏放开始
+            isDragging = false; // 确保不触发拖拽
+            lastPinchDist = getPinchDist(e);
+        } else { // 单指或鼠标拖拽开始
+            isDragging = true;
+            mapContainer.style.cursor = 'grabbing';
+            const coords = getEventCoords(e);
+            startCoords = { x: coords.pageX, y: coords.pageY };
+            startTranslate = { x: window.mapState.translateX, y: window.mapState.translateY };
+        }
+    };
+
+    const handleInteractionMove = (e) => {
+        const mapContent = document.getElementById('map-content');
+        if (!mapContent) return;
+
+        if (e.touches && e.touches.length > 1) { // 双指捏放中
+            e.preventDefault();
+            const currentDist = getPinchDist(e);
+            const scaleAmount = (currentDist / lastPinchDist);
+            lastPinchDist = currentDist;
+
+            // 计算双指中心点
+            const rect = mapContainer.getBoundingClientRect();
+            const center = {
+                x: ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left,
+                y: ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top
+            };
+
+            // 应用缩放
+            zoom(scaleAmount, center.x, center.y);
+
+        } else if (isDragging) { // 拖拽中
+            e.preventDefault();
+            const coords = getEventCoords(e);
+            const dx = coords.pageX - startCoords.x;
+            const dy = coords.pageY - startCoords.y;
+            window.mapState.translateX = startTranslate.x + dx;
+            window.mapState.translateY = startTranslate.y + dy;
+            window.applyMapTransform();
+        }
+    };
+
+    const handleInteractionEnd = () => {
+        if (isDragging) {
+            isDragging = false;
+            mapContainer.style.cursor = 'grab';
+        }
+        lastPinchDist = 0;
+    };
+
+    const handleWheelZoom = (e) => {
+        e.preventDefault();
+        const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1; // 缩小或放大
+        const rect = mapContainer.getBoundingClientRect();
+
+        // 获取鼠标相对于 mapContainer 的位置作为缩放中心
+        const centerX = e.clientX - rect.left;
+        const centerY = e.clientY - rect.top;
+
+        zoom(scaleAmount, centerX, centerY);
+    };
+
+    // 核心缩放函数
+    const zoom = (scaleAmount, centerX, centerY) => {
+        const { scale, translateX, translateY } = window.mapState;
+        const newScale = Math.max(0.1, Math.min(scale * scaleAmount, 10)); // 限制缩放范围
+
+        // 核心公式：为了让缩放中心点在屏幕上保持不变，需要调整平移量
+        window.mapState.translateX = centerX - (centerX - translateX) * (newScale / scale);
+        window.mapState.translateY = centerY - (centerY - translateY) * (newScale / scale);
+        window.mapState.scale = newScale;
+
+        window.applyMapTransform();
+    };
+
+    // 绑定事件监听器
+    mapContainer.addEventListener('mousedown', handleInteractionStart);
+    mapContainer.addEventListener('touchstart', handleInteractionStart, { passive: false });
+
+    document.addEventListener('mousemove', handleInteractionMove);
+    document.addEventListener('touchmove', handleInteractionMove, { passive: false });
+
+    document.addEventListener('mouseup', handleInteractionEnd);
+    document.addEventListener('touchend', handleInteractionEnd);
+    document.addEventListener('touchcancel', handleInteractionEnd);
+
+    mapContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
+    // ========== ♥♥♥ 地图交互魔法结束 ♥♥♥ ==========
+
+
+//      const streamingSwitcher = document.getElementById('streaming-switcher');
+
+// // 初始化按钮状态
+// function updateStreamingButtonState() {
+//     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
+//     streamingSwitcher.classList.toggle('active', isStreamingEnabled);
+//     streamingSwitcher.title = isStreamingEnabled ? '流式传输: 开' : '流式传输: 关';
+// }
+
+// // 切换流式传输状态
+// streamingSwitcher.addEventListener('click', () => {
+//     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
+//     const newState = !isStreamingEnabled;
+//     localStorage.setItem('streamingEnabled', newState);
+//     updateStreamingButtonState();
+//     //console.log(`[Streaming] 流式传输已切换为: ${newState ? '开启' : '关闭'}`);
+// });
+// updateStreamingButtonState();
+
+
+
+});
     
 const inventoryListEl = document.getElementById('inventory-item-list');
 const deleteItemBtn = document.getElementById('delete-item-btn');
@@ -11720,1955 +13668,7 @@ async function runTaskSummary(content) {
             });
   };
 
-  (async () => {
-    // 我们的城堡结构，一切如初
- const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们现在使用新的显示区域
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-        const rerollButton = document.getElementById('reroll-button'); // ☆ 新成员：重写按钮
-    const contextMenu = document.getElementById('context-menu');   // ☆ 新成员：右键菜单
-   let worldBookName = "小蝌蚪找妈妈-同层版";
-  
-   let lastTurnVariables = {}; // ☆ 新增：用于缓存上一轮的变量
-
-// ☆ 新增函数：安全地获取配置值
-function getChatConfig(key, defaultValue) {
-    try {
-        const chatVars = getVariables({ type: 'message' });
-        // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
-        // 这比 chatVars.assa_data.config[key] 更安全
-        const value = _.get(chatVars, `assa_data.config.${key}`);
-        return value !== undefined ? value : defaultValue;
-    } catch (e) {
-        console.warn(`获取聊天配置 "${key}" 失败，使用默认值: ${defaultValue}`, e);
-        return defaultValue;
-    }
-}
-
-   // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
-   function showContextMenu(event, index, bubbleElement) {
-        event.preventDefault();
-
-        const menu = document.getElementById('context-menu');
-        if (!menu) return;
-
-        // 定义一个函数，专门用来移除我们添加的监听器，保持代码整洁
-        const removeGlobalListeners = () => {
-            document.removeEventListener('click', hideMenuOnClickOutside);
-            document.removeEventListener('contextmenu', hideMenuOnClickOutside);
-        };
-
-        // 定义当点击菜单外部时需要执行的操作
-        const hideMenuOnClickOutside = (e) => {
-            if (!menu.contains(e.target)) {
-                menu.style.display = 'none';
-                removeGlobalListeners(); // 任务完成，移除监听器
-            }
-        };
-
-        // 为菜单项（编辑、删除）分配点击事件
-        const editItem = menu.querySelector('[data-action="edit"]');
-        const deleteItem = menu.querySelector('[data-action="delete"]');
-
-        if (editItem) {
-editItem.onclick = () => {
-    menu.style.display = 'none';
-    removeGlobalListeners();
-    editMessage(index, bubbleElement); // 把接收到的 bubbleElement 传递给 editMessage
-};
-        }
-
-        if (deleteItem) {
-            deleteItem.onclick = () => {
-                menu.style.display = 'none';
-                removeGlobalListeners(); // 关键：在执行操作前，主动移除监听器
-                deleteMessage(index);
-            };
-        }
-
-        // 显示菜单并设置位置
-        menu.style.display = 'block';
-        menu.style.left = `${event.pageX}px`;
-        menu.style.top = `${event.pageY}px`;
-
-        // 使用一个微小的延迟来添加全局监听器，防止本次点击立即关闭菜单
-        setTimeout(() => {
-            document.addEventListener('click', hideMenuOnClickOutside);
-            document.addEventListener('contextmenu', hideMenuOnClickOutside);
-        }, 0);
-    }
-
-     // ☆ 新增函数：删除消息 (V2.0 绝对安全版)
-    async function deleteMessage(index) {
-        // 我们通过“过滤”来创建一个全新的历史记录数组，
-        // 它包含除了被删除索引之外的所有消息。
-        // 这是最安全的方法，可以从根本上避免意外地清空所有内容。
-        conversationHistory = conversationHistory.filter((message, i) => i !== index);
-
-        // 接下来的步骤和以前一样，都是安全的。
-        renderHistory();
-        await saveHistory();
-        updateRerollButtonState();
-    }
-function editMessage(index, bubbleElement) {
- 
-    const messageToEdit = conversationHistory[index];
-
-    if (!bubbleElement || bubbleElement.classList.contains('editing')) {
-        console.warn("无法编辑：消息气泡不存在或已处于编辑模式。");
-        return;
-    }
-
-    // 保存原始内容以便取消，直接从数据源获取，最可靠
-    const originalContentText = messageToEdit.content;
-    bubbleElement.innerHTML = ''; // 清空旧内容
-    bubbleElement.classList.add('editing');
-
-    const textarea = document.createElement('textarea');
-    textarea.className = 'editing-textarea';
-    textarea.value = originalContentText;
-
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'editing-controls';
-
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = '保存';
-    saveBtn.className = 'editing-btn save';
-
-    const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = '取消';
-    cancelBtn.className = 'editing-btn cancel';
-
-    saveBtn.onclick = async () => {
-        const newText = textarea.value.trim();
-        // 只有当内容真的被修改时才进行保存和刷新，避免不必要的操作
-        if (newText && newText !== originalContentText) {
-            conversationHistory[index].content = newText;
-            await saveHistory();
-        }
-        // 无论如何都重新渲染，以退出编辑模式
-        renderHistory();
-    };
-
-    cancelBtn.onclick = () => {
-        // 取消编辑时，最简单可靠的方法就是重新渲染整个历史记录
-        renderHistory();
-    };
-
-    controlsDiv.appendChild(cancelBtn);
-    controlsDiv.appendChild(saveBtn);
-
-    bubbleElement.appendChild(textarea);
-    bubbleElement.appendChild(controlsDiv);
-
-    textarea.focus();
-    // 确保编辑框总是在视野内，方便操作
-   // textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
- 
-async function renderHistory() {
-       
-      
-        const initContainer = document.getElementById('initialization-container');
-  
-        if (conversationHistory.length === 0) {
-            // 如果历史记录是空的，就展示我们的“序章”
-            if (initContainer) initContainer.style.display = 'block';
-            if (mainWrapper) mainWrapper.style.display = 'none';
-
-        // 我们检查一下，如果这位仆人还没有被召唤过，就召唤它。
-        if (typeof window.initializationDone === 'undefined') {
-            await runInitializationMagic(); // 温柔地等待它完成工作
-            window.initializationDone = true; // 在它额头盖上一个“已完成”的印记
-        }
- 
-            // 别忘了调用初始化脚本里的函数，让它动起来
-            if (typeof applyVersionTheme === 'function') {
-                const identitySelect = document.getElementById('user-identity');
-                applyVersionTheme(1, identitySelect); // 使用默认版本1来初始化
-            }
-            return; // 直接返回，不执行下面的渲染逻辑
-        } else {
-            // 否则，就隐藏“序章”，展示主界面
-            if (initContainer) initContainer.style.display = 'none';
-            // main-wrapper 的 display 属性可能需要根据你的布局设为 'block' 或 'flex'
-            if (mainWrapper) mainWrapper.style.display = 'flex';
-        }
-       
-
-    const dynamicContentArea = document.getElementById('dynamic-content-area');
-
-    // 我们不再清空 dynamicContentArea，而是隐藏所有模块，但保留论坛模块不动
-    if (dynamicContentArea) {
-        Array.from(dynamicContentArea.children).forEach(child => {
-            
-            if (child.id !== 'forum-modal-container') {
-                child.style.display = 'none';
-            }
-        });
-    }
-
-    const chatDisplayArea = document.getElementById('chat-display-area');
-    chatDisplayArea.innerHTML = '';
-
-    const hideLatestCount = getChatConfig('hide_latest_count', 5)*2;
-    const startIndex = Math.max(0, conversationHistory.length - hideLatestCount);
-    const messagesToDisplay = conversationHistory.slice(startIndex);
-
-
-    messagesToDisplay.forEach((msg, relativeIndex) => {
-        const originalIndex = startIndex + relativeIndex;
- 
-
-        const bubble = document.createElement('div');
-        bubble.classList.add('message-bubble');
-        bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
- 
-      // ✨ 妈妈在这里施展了一个全新的、更精妙的融合魔法 ✨
-
-        let processedContent = msg.content;
-        const htmlPlaceholders = {};
-        let placeholderIndex = 0;
-
-       
-
-        // 步骤2：对剩余的普通文本进行我们原来的所有处理
-        const pureContent = processedContent
-            .replace(/<thinking>[\s\S]*?<\/thinking>/gs, '')
-            .replace(/<forum_threads>[\s\S]*?<\/forum_threads>/gs, '')
-            .replace(/<shop_item>([\s\S]*?)<\/shop_item>/gs, '')
-            .replace(/<表现总结>([\s\S]*?)<\/表现总结>/gs, '');
-
-
-        // 魔法第二层：然后，我们再将处理过的HTML交给更强大的 formatAsTavernRegexedString 来应用酒馆正则和深度规则
-        const depth = Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
-        let renderedHtml = formatAsTavernRegexedString(
-            pureContent,
-            msg.role === 'user' ? 'user_input' : 'ai_output',
-            'display',
-            { depth: depth }
-        );
-
-         // 步骤1：捞出所有“画卷”（HTML内容）并用占位符替换
-        renderedHtml = renderedHtml.replace(/<html>([\s\S]*?)<\/html>/gs, (match, htmlBlock) => {
-            const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
-
-            let rawHtml = htmlBlock;
-            const styleMatch = /<style>([\s\S]*?)<\/style>/s.exec(rawHtml);
-
-            if (styleMatch) {
-                const styleContent = styleMatch[1];
-                const styleId = `custom-style-${originalIndex}-${placeholderIndex}`;
-                if (!document.getElementById(styleId)) {
-                    const styleElement = document.createElement('style');
-                    styleElement.id = styleId;
-                    styleElement.textContent = styleContent;
-                    document.head.appendChild(styleElement);
-                }
-                rawHtml = rawHtml.replace(styleMatch[0], '');
-            }
-
-            htmlPlaceholders[placeholder] = rawHtml;
-            placeholderIndex++;
-            return placeholder;
-        });
-
-            
-             const protectedContent = renderedHtml
-            .replace(/“/g, 'NOVA_LQ')
-            .replace(/”/g, 'NOVA_RQ')
-            .replace(/「/g, 'NOVA_LA')
-            .replace(/」/g, 'NOVA_RA')
-        
-            .replace(/\n/g, 'NOVA_BR'); // 看，我们把每个换行符都变成了秘密记号！
-            
-        let baseHtml = formatAsDisplayedMessage(protectedContent);
-
-
-        // 我们不再需要手动替换引号了，因为 formatAsDisplayedMessage 已经帮我们做好了类似的事情
-        const textWithQuotes = baseHtml  
-        .replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
-            .replace(/NOVA_RQ/g, '”</span>')
-            .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
-            .replace(/NOVA_RA/g, '」</span>')
-            
-            .replace(/NOVA_BR/g, '<br>');
-
-        // 步骤3：将处理好的“画卷”放回原位，替换掉占位符
-        let finalContent = textWithQuotes;
-        for (const placeholder in htmlPlaceholders) {
-            finalContent = finalContent.replace(placeholder, htmlPlaceholders[placeholder]);
-        }
-
-          // ⭐ --- 这是我们新的魔法结界！ --- ⭐
-
-    // 1. “寻咒”：我们先来寻找藏在finalContent里的魔法咒语
-    const scriptRegex = /<script>([\s\S]*?)<\/script>/i; // 寻找咒语的魔法阵
-    const scriptMatch = finalContent.match(scriptRegex);
-    let scriptContent = null;
-
-    if (scriptMatch && scriptMatch[1]) {
-        // 如果找到了，就把咒语内容小心翼翼地取出来
-        scriptContent = scriptMatch[1];
-        // 然后把咒语本身从要显示的画卷中抹去，以免它造成意外的干扰
-        finalContent = finalContent.replace(scriptRegex, '');
-    }
-
-    // 2. 把处理好的、不含咒语的完美画卷放进气泡里
-    bubble.innerHTML = finalContent;
-
-    bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
-    chatDisplayArea.appendChild(bubble);
-
-    // 3. “咏唱”：如果刚刚我们找到了咒语，现在就是让它生效的时刻！
-    if (scriptContent) {
-        // 我们创造一张全新的、干净的“魔法卷轴”（一个新的<script>元素）
-        const newScript = document.createElement('script');
-
-        // 将我们的咒语誊写到卷轴上
-        newScript.textContent = scriptContent;
-
-        // 然后，我们将这张卷轴添加到我们的世界中（比如文档的body部分）
-        // 浏览器看到这张新卷轴时，就会立刻明白并执行上面的咒语了
-        document.body.appendChild(newScript);
-
-        // 这就像一次性的奇迹，施展完毕后，为了保持世界的洁净，我们就将这张卷轴销毁
-        //（当然，咒语的效果已经留下了哦）
-        document.body.removeChild(newScript);
-    }
-});
-
-        
-    // chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
-
-
-    const lastMessage = conversationHistory.length > 0 ? conversationHistory[conversationHistory.length - 1] : null;
-
-    if (lastMessage && lastMessage.role === 'assistant' && dynamicContentArea) {
-        const content = lastMessage.content;
-
-        // --- 调度“选项区” 
-        const optionsMatch = /<options>([\s\S]*?)<\/options>/gs.exec(content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
-        if (optionsMatch && optionsMatch[1]) {
-            const optionsContainer = document.getElementById('options-module-container');
-            if (optionsContainer) {
-                optionsContainer.style.display = 'block';
-                if(typeof setupUI === 'function') {
-                    setupUI(optionsMatch[1]);
-                }
-            }
-        }
-
-        // --- 全新的“论坛”处理逻辑 ---
-        const forumMatch = /<forum_threads>[\s\S]*?<\/forum_threads>/gs.exec(content);
-        if (forumMatch && forumMatch[1]) {
-            // 我们不再显示论坛，而是让小球闪烁
-            const forumOrb = document.getElementById('forum-orb-button');
-            if (forumOrb) {
-                forumOrb.classList.add('orb-flash');
-                // 动画结束后移除类，以便下次可以再次触发
-                forumOrb.addEventListener('animationend', () => {
-                    forumOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
-            // 论坛数据已经通过 handleSend 被存入历史记录，这里无需再做操作。
-        }
-
-  
-        const summaryMatch = /<表现总结>([\s\S]*?)<\/表现总结>/gs.exec(content);
-        if (summaryMatch && summaryMatch[1]) {
-             
-            const summaryOrb = document.getElementById('task-summary-orb-button');
-            if (summaryOrb) {
-                summaryOrb.classList.add('orb-flash');
-          
-                summaryOrb.addEventListener('animationend', () => {
-                    summaryOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
-
-        const shopMatch =/<shop_item>([\s\S]*?)<\/shop_item>/gs.exec(content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
-        if (shopMatch && shopMatch[1]) { 
-            const shopOrb = document.getElementById('shop-wrapper-orb');
-            if (shopOrb) {
-                shopOrb.classList.add('orb-flash');
-      //console.log("item:",shopMatch[1]);
-      const cleanedData = shopMatch[1].trim(); // 去除首尾空格和换行
-         // 第2步：检查文本是否已经是一个合法的JSON数组格式
-        if (!cleanedData.startsWith('[')) {
-            // 如果不是，我们才手动为它加上外层的括号
-            cleanedData = `[${cleanedData}]`;
-        }
-
-        // 第3步：直接尝试解析处理后的文本
-        const parsedData = JSON.parse(cleanedData);
-
-        
-        const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
-
-        if (!Array.isArray(newItems) || newItems.length === 0) {
-             showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-             return;
-        }
-
-        // 替换现有随机商店物品
-        randomItems = newItems;
-        // 将新生成的物品存入 localStorage
-        localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
-       renderShopSection('random');
-                shopOrb.addEventListener('animationend', () => {
-                    shopOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
-
- 
-     
-    const eventContainer = document.getElementById('event-tracker-container');
-    if (eventContainer) {
-        eventContainer.innerHTML = '';
-    }
-    //   清理完毕  
-             handleUpdateNotifications(content);
-    }
-     
-             setTimeout(() => {
-        console.log("正在为您静默刷新数据...");
-        initDisplay();
-    }, 5000);
-}
-
-function updateRerollButtonState(){
-       
-          if(conversationHistory.length > 0 ){
-        // if(conversationHistory.length > 0 && conversationHistory[conversationHistory.length-1].role === 'assistant'){
-            rerollButton.disabled = false;
-        } else {
-            rerollButton.disabled = true;
-        }
-    }
-
-// initialize 函数保持不变
-    async function initialize() {
-
-            // 💖 妈妈在这里设置了信号接收器 💖
-    try {
-        eventOn('nova:coreReady', () => {
-            //console.log("[HTML] 💖 收到了！与世界核心的心灵感应已连接！");
-            // 你甚至可以在这里加一个漂亮的成功提示
-            toastr.success('世界核心连接成功！', '连接状态');
-        });
-    } catch(e) {
-        console.error("[HTML] 设置 'nova:coreReady' 监听器失败。", e);
-    }
-
-        try {
-            const messageZero =  await getVariables({ type: 'message' });
-            if (messageZero && Array.isArray(messageZero.zeroLevelHistory)) {
-                conversationHistory = messageZero.zeroLevelHistory;
-                // 初始化时也缓存一下变量，以备初次重写
- 
-            } else {
-                conversationHistory = [];
-                await saveHistory();
-            }
-        } catch (error) {
-            //console.log("初始化失败，我们将开始新的对话。", error);
-            conversationHistory = [];
-            await saveHistory();
-        }
-        renderHistory();
-        updateRerollButtonState(); // ☆ 初始化时更新按钮状态
-    }
-
- // 假设 conversationHistory 和 lastTurnVariables 是在函数外部可以访问到的当前状态变量
-
-async function saveHistory() {
-    try {
-         
-        const zeroLevelMessage = await getChatMessages(0);
-
-        // 如果楼层不存在，这是一个异常情况，我们应该停止操作
-        if (!zeroLevelMessage) {
-            console.error("错误：无法找到第 0 楼层消息，保存操作已中断。");
-            return;
-        }
- 
-
-
-        // ☆ 步骤 2: 使用 updateVariablesWith 分别更新 chat 和 message 变量域
-        // 这个函数是处理这类问题的最佳实践，因为它保证了原子性。
-
-        // 更新 chat 作用域的变量
-        await updateVariablesWith(old_variables => {
-            // 在回调函数中，我们返回一个全新的对象。
-            // ...old_variables 继承了所有旧变量，
-            // 而 zeroLevelHistory: conversationHistory 则会覆盖或添加我们需要的字段。
-            // 这种模式同样能够完美处理历史记录的增删改。
-            return {
-                ...old_variables,
-                zeroLevelHistory: conversationHistory,
-            };
-        }, { type: 'chat' });
-
-        // 更新 message 作用域 (针对第 0 楼层) 的变量
-        await updateVariablesWith(old_variables => {
-            return {
-                ...old_variables,
-                zeroLevelHistory: conversationHistory,
-            };
-        }, { type: 'message', message_id: 0 });
-
-        // console.log("历史记录已成功且安全地更新到 chatmessage(0).data、chat 变量域和 message(0) 变量域中。");
-
-    } catch (e) {
-        // 捕获并打印任何可能发生的错误
-        console.error("保存历史记录过程中发生意外错误:", e);
-    }
-
-
-}
-
-async function handleReroll() {
-    if (rerollButton.disabled) return;
-
-    // 只移除最后的AI回复
-    // 我们检查最后一条消息是否是AI的，如果是，就移除它
-    if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === 'assistant') {
-        conversationHistory.pop(); // pop() 方法会移除并返回数组的最后一个元素，非常适合这个场景
-    }
-
-    const isValid = (data) => {
-            // 检查是否为 null 或 undefined
-            if (data === null || data === undefined) {
-                return false;
-            }
-            
-            // 如果是对象类型，检查是否有内容
-            if (typeof data === 'object' && data !== null) {
-                // 如果是数组，检查长度
-                if (Array.isArray(data)) {
-                    return data.length > 0;
-                }
-                // 如果是普通对象，检查是否有属性
-                return Object.keys(data).length > 0;
-            }
-            
-            // 其他类型（字符串、数字、布尔值等）只要不是 null/undefined 就认为有效
-            return true;
-        };
-        
- 
-
-if(isValid(lastTurnVariables)){
- // 恢复变量
-    try {
-        await replaceVariables(lastTurnVariables);
-        await replaceVariables(lastTurnVariables,{ type: 'message' });
-        await replaceVariables(lastTurnVariables,{ type: 'chat' });
-        console.log("变量已回滚至上一轮状态。");
-    } catch(e) {
-        console.error("变量回滚失败:", e);
-    }
-}else{
-    console.log("lastTurnVariables没内容吧？");
-}
-   
-
-    // 重新触发生成
-    await handleSend(true); // 传入一个标记，表示这是重写操作
-}
- 
-async function showRollResultCard(rollData) {
-    if (!rollData || !rollData.check_type) {
-         console.log("没有有效的投掷数据来显示看板。");
-        return;
-    }
-
-    
-            await updateVariablesWith(old_variables => {
-            // 在回调函数中，我们返回一个全新的对象。
-            // ...old_variables 继承了所有旧变量，
-            // 而 zeroLevelHistory: conversationHistory 则会覆盖或添加我们需要的字段。
-            // 这种模式同样能够完美处理历史记录的增删改。
-            return {
-                ...old_variables,
-                "检定记忆":rollData,
-            };
-        }, { type: 'message' });
-
-   
- checkMemoryData = rollData;
-const playerName = currentGameData.user_character.name || '阿萨';  // 添加这行
-    const container = document.getElementById('roll-result-card-container');
-    if (!container) return;
- 
-
- 
-  // --- 辅助函数：生成一串投骰结果的HTML，这就是你想要的'1 1 5 6 8'格式 ---
-const generateDiceHTML = (rollsArray) => {
-    if (!rollsArray || rollsArray.length === 0) return '<span style="color:var(--text-secondary-color); font-style:italic;">无投掷</span>';
-    return rollsArray.map((roll, index) =>
-        `<span class="dice-number ${getDiceClass(roll)}" style="animation-delay: ${index * 0.15}s">${roll}</span>`
-    ).join(' , ');
-};
-
-    // --- 数据提取与处理 ---
-    const isCombat = rollData.check_type === '战斗对抗';
-    const outcomeLevel = rollData.outcome.level;
-    const outcomeDesc = rollData.outcome.description;
-    const performanceDesc = rollData.performance.result.description;
-
-    let playerRolls, enemyRolls, playerSuccess, enemySuccess, damage;
-
-    if (isCombat) {
-        // 从 player_check 对象中精确提取投掷和成功数
-        playerRolls = rollData.player_check.roll_result.rolls;
-        playerSuccess = rollData.player_check.final_successes;
-        // 从 enemy_check 对象中精确提取
-        enemyRolls = rollData.enemy_check.roll_result.rolls;
-        enemySuccess = rollData.enemy_check.final_successes;
-        // 提取伤害
-        damage = rollData.damage_calculation.final_damage;
-    } else { // 非战斗情况
-        playerRolls = rollData.roll_result.rolls;
-        playerSuccess = rollData.final_successes;
-        // 非战斗时，这些值为null
-        enemyRolls = null;
-        enemySuccess = null;
-        damage = null;
-    }
-
-   // --- 构建HTML内容 ---
-let diceAreaHTML = `
-    <div class="roll-card-dice-section">
-        <span class="label">${isCombat ? '我方' : ''}成功数: <strong>${playerSuccess}</strong></span>
-        <div class="dice-results-wrapper">${generateDiceHTML(playerRolls)}</div>
-    </div>
-`;
-
-if (isCombat) {
-    diceAreaHTML += `
-        <div class="roll-card-dice-section">
-            <span class="label">敌方成功数: <strong>${enemySuccess}</strong></span>
-            <div class="dice-results-wrapper">${generateDiceHTML(enemyRolls)}</div>
-        </div>
-    `;
-}
-
-let damageHTML = (isCombat && damage > 0) ? `<div class="roll-card-damage">受到伤害: ${damage}</div>` : '';
-
-// 根据 outcomeLevel 添加对应的类
-const outcomeClass = {
-    '大失败': 'critical-failure',
-    '失败': 'failure',
-    '勉强成功': 'partial-success',
-    '成功': 'success',
-    '辉煌成功': 'glorious-success'
-}[outcomeLevel] || '';
-
-const cardHTML = `
-    <div class="roll-card-content">
-        <div class="roll-card-header">${isCombat ? '战斗对抗' : '日常检定'}</div>
-        <div class="roll-card-dice-area">${diceAreaHTML}</div>
-        <div class="roll-card-divider"></div>
-        <div class="roll-card-result-area">
-            <div class="roll-card-outcome ${outcomeClass}">${outcomeLevel}</div>
-            <div class="roll-card-description">"${outcomeDesc}"</div>
-            <div class="roll-card-description" style="margin-top: 5px; opacity: 0.8;">${performanceDesc}</div>
-            ${damageHTML}
-        </div>
-    </div>
-`;
-
-    container.innerHTML = cardHTML;
-
-    // --- 应用特殊效果与关闭逻辑 (此部分无需修改) ---
-    container.className = 'roll-result-card-container';
-    if (outcomeLevel.includes('大失败')) {
-        container.classList.add('shattered');
-    } else if (outcomeLevel === '辉煌成功') {
-        container.classList.add('glorious');
-    }
-
-    container.style.display = 'block';
-    setTimeout(() => {
-        container.classList.add('show');
-    }, 10);
-
-    const closeCard = () => {
-        container.classList.remove('show');
-        setTimeout(() => {
-            if (!container.classList.contains('show')) {
-               container.style.display = 'none';
-            }
-        }, 500);
-        document.removeEventListener('click', handleClickOutside, true);
-    };
-
-    // if (container.classList.contains('shattered')) {
-    //     setTimeout(closeCard, 850);
-    // }
-
-    const handleClickOutside = (event) => {
-        if (container.contains(event.target)) return;
-        // const assistantBubbles = document.querySelectorAll('.assistant-message');
-        // const lastAssistantBubble = assistantBubbles[assistantBubbles.length -1];
-        // if (lastAssistantBubble && lastAssistantBubble.contains(event.target)) return;
-        closeCard();
-    };
-
-    setTimeout(() => {
-        document.addEventListener('click', handleClickOutside, true);
-    }, 0);
-}
-
-
-function getDiceClass(diceCount) {
-    if (diceCount === 1) return 'dice-low';
-    if (diceCount >= 10) return 'dice-crit';
-    if (diceCount >= 7) return 'dice-high';
-    return '';
-}
-         let aiMessage = {};
-
-    async function handleSend(isReroll = false) {
-
-        if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
-            toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。', '请稍候');
-            console.warn("[HTML] 发送被阻止：世界核心尚未就绪 (window.isNovaCoreReady 为 false 或不存在)。");
-            return; // 直接中断发送，防止事件丢失
-        }
- 
-         // 【新代码开始】世界书完整性检查
-    const worldBookName = '小蝌蚪找妈妈-同层版';
-    const validationEntryId = 14;
-
-    try {
- 
-        // [修正处] 这里使用了正确的getWorldbook函数
-        const worldInfo = await getWorldbook(worldBookName);
-        if (worldInfo && worldInfo.length > 0) { // 确保世界书存在且不为空
-            const validationEntry = worldInfo.find(entry => entry.uid === validationEntryId);
-
-            // 如果验证条目不存在，或者其内容不是以 EJS 标签开头，则判定为异常
-            if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
-                toastr.error('世界书核心检测到异常，正在尝试从备份自动修复。', '紧急修复');
-                console.error(`[Nova's Integrity Check] 验证失败！ID ${validationEntryId} 的条目不存在或内容非预期格式。${validationEntry.content}`);
-
-                const backupKey = 'worldbook_backup_' + worldBookName;
-                const backupData = localStorage.getItem(backupKey);
-
-                if (backupData) {
-                    try {
-                        const originalWorldInfo = JSON.parse(backupData);
-                        // [修正处] 注意：恢复世界书的函数在你的代码里是 setLorebookEntries，这里保持不变
-                        await setLorebookEntries(worldBookName, originalWorldInfo);
-                        toastr.success('世界书已从备份中恢复。请重新发送您的消息。', '修复成功');
-                        console.log(`[Nova's Integrity Check] 已从localStorage备份成功恢复世界书 "${worldBookName}"。`);
-
-                        // 成功恢复后，清除脏标记，确保启动检查不会误判
-                        localStorage.removeItem('worldbook_is_dirty_' + worldBookName);
-
-                        return; // 中断本次发送，等待用户重新操作
-                    } catch (e) {
-                        console.error(`[Nova's Integrity Check] 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
-                        toastr.error('自动修复失败！为防止数据损坏，请刷新页面或手动检查世界书。', '严重错误');
-                        return; // 中断发送
-                    }
-                } else {
-                    console.error(`[Nova's Integrity Check] 严重错误：世界书异常，但找不到可用的备份数据！`);
-                    // toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请手动修复！', '严重错误');
-                    // return; // 中断发送
-                }
-            }else{
-         console.log(`[Nova's Integrity Check] 验证成功！ID ${validationEntryId} 的条目是：${validationEntry.content}`);
-
-        }
-        }
-    } catch (error) {
-        console.error("[Nova's Integrity Check] 检查世界书状态时发生意外错误:", error);
-        toastr.warning('无法完成世界书状态验证，请稍后再试。', '检查失败');
-        return; // 中断发送
-    }
-    // 【新代码结束】
-
-        let userText;
-         
-        let rollCardShownThisTurn = false;
-          // 在发送前，检查指令队列是否有内容
-        if (!isReroll && assaCommandQueue && assaCommandQueue.trim() !== '') {
-        let cleanCommand = assaCommandQueue.trim();
- 
-        // 检查字符串是否以引号开头和结尾，如果是，就将它们剥离！
-        if (cleanCommand.startsWith('"') && cleanCommand.endsWith('"')) {
-            cleanCommand = cleanCommand.slice(1, -1);
-            //console.log("检测到并移除了包裹指令的引号。");
-        }
-
-       
-        userInput.value = cleanCommand + userInput.value;
-
-        // 发送后，清空队列和本地存储，确保指令只发送一次
-        assaCommandQueue = '';
-        localStorage.removeItem('assaCommandQueue');
-    }
- 
-        if (!isReroll) {
-            userText = userInput.value.trim();
-        } else {
-            // 如果是重写，我们从历史记录里找到上一条用户消息
-            const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop();
-            userText = lastUserMessage ? lastUserMessage.content : '';
-        }
-
-        if (!isReroll) {
-            if (!userText || sendButton.disabled) return;
-            const userMessage = { role: 'user', content: userText };
-
-            // ☆ 缓存当前变量状态，在发送之前
-            try {
-                lastTurnVariables = getVariables();
-                 console.info("缓存变量成功");
-            } catch (e) {
-                console.error("缓存变量失败：", e);
-                lastTurnVariables = {};
-            }
-
-            conversationHistory.push(userMessage);
-            renderHistory();
-            userInput.value = '';
-             
-          try {
-    console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:userMessage' 信号。`);
-    eventEmit('assa:userMessage', { ...userMessage });
-    
-    // 等待事件处理完成
-    await new Promise((resolve) => {
-        const completionHandler = () => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            resolve();
-        };
-        eventOn('assa:userMessageComplete', completionHandler);
-        
-        // 设置超时防止无限等待（可选）
-        setTimeout(() => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            console.warn("[HTML] assa:userMessage 事件处理超时，继续执行");
-            resolve();
-        }, 5000); // 5秒超时
-    });
-} catch (error) {
-    console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
-}
-        } else {
-             const userMessage = { role: 'user', content: userText };
-     
-           try {
-    console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:userMessage' 信号。`);
-    eventEmit('assa:userMessage', { ...userMessage });
-    
-    // 等待事件处理完成
-    await new Promise((resolve) => {
-        const completionHandler = () => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            resolve();
-        };
-        eventOn('assa:userMessageComplete', completionHandler);
-        
-        // 设置超时防止无限等待（可选）
-        setTimeout(() => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            console.warn("[HTML] assa:userMessage 事件处理超时，继续执行");
-            resolve();
-        }, 5000); // 5秒超时
-    });
-} catch (error) {
-    console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
-}
-             renderHistory();
-        }
-
-  
-
-        await saveHistory();
-
-        sendButton.disabled = true;
-        rerollButton.disabled = true; // 生成时禁用重写按钮
-        sendButton.textContent = '回应中...';
-
-        const aiResponseBubble = document.createElement('div');
-        aiResponseBubble.classList.add('message-bubble', 'assistant-message');
-        aiResponseBubble.innerHTML = "<em>回应你的行动中...</em>";
-        chatHistoryDiv.appendChild(aiResponseBubble);
-        // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
-
-        let currentRollData = null;
-  
-        
-         let isDirty = false; // 函数内的状态标记
-         
-          try {
-              //console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
-    const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
-
-    // 步骤1：获取原始世界书
-    originalWorldInfo = await getLorebookEntries(worldBookName);
-
-    // 【新代码位置】 在备份前进行完整性验证！
-    if (originalWorldInfo && originalWorldInfo.length > 0) {
-        const validationEntryId = 14;
-        const validationEntry = originalWorldInfo.find(entry => entry.uid === validationEntryId);
-
-        // 如果验证条目不存在，或者其内容是以<ready> 标签开头，则判定为异常
-        if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
-            console.error(`[Nova's Pre-Backup Check] 验证失败！拒绝备份损坏的世界书。ID ${validationEntryId} 的条目不存在或内容非预期格式。`);
-            toastr.error('检测到世界书异常，为防止数据损坏已阻止操作。请尝试刷新页面，系统将尝试自动修复。', '操作中断');
-            // 直接中断本次发送，不进行备份，也不继续执行
-            localStorage.setItem('worldbook_is_dirty_' + worldBookName, 'true');
-            // 由于还没有设置 isDirty=true，finally块中的恢复逻辑也不会被错误触发。
-            return;
-        } else {
-             console.log(`[Nova's Pre-Backup Check] 验证成功！世界书状态正常，可以进行备份。`);
-        }
-    }
-    // 【验证代码结束】
-
-        
-
-        // 步骤1.5 (新)：在修改前，设置安全信标
-        if (originalWorldInfo) {
-            localStorage.setItem('worldbook_backup_' + worldBookName, JSON.stringify(originalWorldInfo));
-            localStorage.setItem('worldbook_is_dirty_' + worldBookName, 'true');
-            isDirty = true; // 标记本次操作已污染世界书
-            //console.log(`[Nova's Safety Net] 世界书备份已存入localStorage，并设置'dirty'标记。`);
-        }
-
-        let worldInfoForProcessing = JSON.parse(JSON.stringify(originalWorldInfo || []));
-
-            if (userText && worldInfoForProcessing.length > 0) {
-                //console.log("[Nova's Log] 正在检测关键词以开启“绿灯”条目...");
-                const forumKeywords = ['查看论坛', '查看公告区', '查看任务交流区', '查看自由交易区', '八卦闲聊区', '匿名求助区', '论坛操作', '发帖', '回复帖子', '回复楼中楼'];
-                const shopKeywords = ['查看主神商店', '查看商店', '查看商城'];
-
-                let uidsToEnable = new Set();
-
-                if (forumKeywords.some(keyword => userText.includes(keyword))) {
-                    uidsToEnable.add(28);
-                    //console.log("[Nova's Log] 检测到论坛关键词，准备开启UID=28的绿灯。");
-                }
-                if (shopKeywords.some(keyword => userText.includes(keyword))) {
-                    uidsToEnable.add(27);
-                    //console.log("[Nova's Log] 检测到商店关键词，准备开启UID=27的绿灯。");
-                }
-
-                if (uidsToEnable.size > 0) {
-                    worldInfoForProcessing.forEach(entry => {
-                        if (uidsToEnable.has(entry.uid)) {
-                            entry.enabled = true;
-                            //console.log(`[Nova's Log] 绿灯已亮起：临时启用世界书条目 UID=${entry.uid}。`);
-                        }
-                    });
-                } else {
-                    //console.log("[Nova's Log] 未检测到需要开启绿灯的关键词。");
-                }
-            }
-
-            if (worldInfoForProcessing && worldInfoForProcessing.length > 0) {
-                //console.log(`[Nova's Log] 成功获取 ${worldInfoForProcessing.length} 条世界书条目进行处理。`);
-                const renderContext = await EjsTemplate.prepareContext();
-                let processedWorldInfo = [];
-                for (const entry of worldInfoForProcessing) { // <--- 注意这里的变化
-                    if (entry.enabled) { // 只处理启用的条目
-                        const processedEntry = { ...entry };
-                        // 使用 EjsTemplate.evalTemplate 来渲染内容
-                        processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
-                        processedWorldInfo.push(processedEntry);
-                    } else {
-                        processedWorldInfo.push(entry); // 未启用的条目直接保留
-                    }
-                }
-                // 步骤3：将处理后的世界书应用到当前会话
-                await setLorebookEntries(worldBookName, processedWorldInfo);
-                //console.log(`[Nova's Log] 世界书渲染完成并已应用。`);
-
-                        
-            try {
-                const messageVars = await getVariables({ type: 'chat' });
-                // 我们只关心检定记忆
-                if (messageVars.检定记忆) {
-                    currentRollData = messageVars.检定记忆;
-                     console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
-                }else{
-                     console.log("messageVars.checkMemory不存在？");
-                }
-            } catch(e) {
-                console.warn("获取投骰变量失败，本轮可能无检定。", e);
-            }
-
-            } else {
-                //console.log(`[Nova's Log] 世界书为空或不存在，跳过渲染步骤。`);
-            }
-
-           
-            const hideLatestCount = getChatConfig('hide_latest_count', 5);
-            const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop(); // 获取最后一条用户消息
-            const recentAiMessages = conversationHistory.filter(m => m.role === 'assistant').slice(-hideLatestCount); // 获取最近的AI消息
-            let promptsForAI = [];
-            if(lastUserMessage) {
-              // 方法一：如果您想要创建字符串数组
-    // promptsForAI = [
-    //     ...recentAiMessages.map(msg => msg.content), // 提取AI消息的内容
-    //     "先前情况结束",
-    //     "<用户输入行动，user input start：>\n" + lastUserMessage.content,
-    //     "<用户行动结束，user input end>\n\n <以下信息/要求需要注意：>"
-    // ];
-    
-    // 方法二：如果您想要保持消息对象格式
-    promptsForAI = [
-        ...recentAiMessages,
-        {
-            role: 'user', 
-            content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + lastUserMessage.content + "\n]\n\n\n用户行动结束，user input end\n\n\n 在输出正文之前，以下信息/要求还需要注意："
-        }
-    ];
-        } else {
-                // 如果没有用户消息（比如开局），就只发送AI消息（虽然这种情况很少见）
-                promptsForAI = recentAiMessages;
-            }
-            //console.log(`[Nova's Log] 本次将发送 ${promptsForAI.length} 条消息给AI。`);
-
- 
-      const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
-                // 第一步：先移除我们自己的特殊标签，比如选项和论坛
-                let content = msg.content;
-
-                // 根据消息的角色确定来源
-                // 注意：promptsForAI数组的最后一条是经过特殊构造的user message
-                const isUserMessage = (index === promptsForAI.length - 1) && msg.role === 'user';
-                const source = isUserMessage ? 'user_input' : 'ai_output';
-
-                // 第二步：计算深度
-                // promptsForAI 数组是 [..., 最近的AI消息, ..., 最旧的AI消息, 构造的用户消息]
-                // 你的代码中 recentAiMessages.slice(-hideLatestCount) 是从旧到新排列的，
-                // 然后你用 ...recentAiMessages 展开，所以数组中越靠前的AI消息越旧。
-                // 如果 promptsForAI 的结构是 [旧AI, ..., 新AI, 用户输入]，那么深度计算如下：
-                // 最新的AI消息（数组倒数第二个元素）深度为 0，再往前一个深度为 1，以此类推...
-                // 用户消息的深度也为 0。
-                let depth;
-                if (isUserMessage) {
-                    depth = 0; // 最新用户输入的深度为0
-                } else {
-                    // promptsForAI.length - 2 是最后一个AI消息的索引
-                    depth = (promptsForAI.length - 2) - index;
-                }
-
-                // 使用正确的函数 formatAsTavernRegexedString，并加入 depth 选项
-                let processedContent = formatAsTavernRegexedString(content, source, 'prompt', { depth: depth });
-
-                // 第三步：施展剥离咒，移除所有HTML标签（比如<p>, <q>, <br>）
-                let plainText = processedContent.replace(/<(p|q|br|\/p|\/q)>/g, '');
-
-                // 第四步（可选但推荐）：施展整理咒
-                let wellFormedText = plainText.replace(/(\r\n|\n|\r){2,}/g, '\n').trim();
-
-                // 打印日志，方便调试
-                console.log(`[Nova's Regex] Processing message at index ${index} (Depth: ${depth}, Source: ${source})`);
-
-                // 返回一个拥有完美纯净内容的新消息对象
-                return {
-                    ...msg,
-                    content: wellFormedText
-                };
-            });
-        const shouldStream = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-
-        if (shouldStream) {
-            const streamListener = (fullText) => {
-                if (!rollCardShownThisTurn && currentRollData) {
-                    showRollResultCard(currentRollData);
-                    rollCardShownThisTurn = true; // 标记已显示，防止重复
-                }
-                aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
-                // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
-            };
-            eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
-
-            // 使用我们精心准备的删减版历史记录
-            const aiFullResponse = await generate({
-                should_stream: true,
-                overrides: { chat_history: { prompts: cleanedPromptsForAI } }
-            });
-
-            eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
-
-            // 无论是否截断，都将 aiFullResponse 添加到历史记录
-             aiMessage = { role: 'assistant', content: aiFullResponse };
-            if (isReroll) {
-                conversationHistory.push(aiMessage);
-            } else {
-                conversationHistory.push(aiMessage);
-            }
-            await saveHistory();
-            renderHistory();
-        } else {
-            const generationEndedListener = (response) => {
-                if (!rollCardShownThisTurn && currentRollData) {
-                    showRollResultCard(currentRollData);
-                    rollCardShownThisTurn = true; // 标记已显示，防止重复
-                }
-                aiResponseBubble.innerHTML = formatAsDisplayedMessage(response);
-                // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
-            };
-            eventOn(iframe_events.GENERATION_ENDED, generationEndedListener);
-
-            // 使用我们精心准备的删减版历史记录
-            const aiFullResponse = await generate({
-                should_stream: false,
-                overrides: { chat_history: { prompts: cleanedPromptsForAI } }
-            });
-
-            eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
-
-            // 无论是否截断，都将 aiFullResponse 添加到历史记录
-              aiMessage = { role: 'assistant', content: aiFullResponse };
-            if (isReroll) {
-                conversationHistory.push(aiMessage);
-            } else {
-                conversationHistory.push(aiMessage);
-            }
-            await saveHistory();
-            renderHistory();
-        }
-
-        const lastMessageId = getLastMessageId();
-        if (lastMessageId > 0) {
-            await deleteChatMessages([lastMessageId], { refresh: 'none' });
-        }
-
-        try {
-            //console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:aiReply' 信号。`);
-            eventEmit('assa:aiReply', { ...aiMessage });
-        } catch (error) {
-            console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
-        }
-
-        
-                        
-// 💖 Nova的记忆保险箱：在发送后备份当前所有状态到LocalStorage 💖
-try {
-    console.log("[Nova's Vault] 正在准备备份当前状态...");
-    const chatVars = await getVariables({ type: 'chat' });
-
-    const backupData = {
-        chat_variables: chatVars,
-        timestamp: new Date().toISOString() // 记录一下备份时间
-    };
-
-    localStorage.setItem('nova_chat_backup', JSON.stringify(backupData));
-    console.log("[Nova's Vault] 状态备份成功！重要的记忆已安全存放。");
-} catch (e) {
-    console.error("[Nova's Vault] 糟糕，备份记忆时出现问题：", e);
-    toastr.error('备份当前聊天状态失败，请留意。', '备份错误');
-}  
-
-    } catch (e) {
-        console.error("在魔法仪式过程中出错了:", e);
-        aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
-        // 即使发生错误，也保存当前历史记录
-        await saveHistory();
-        renderHistory();
-
-     } finally {
-        // 步骤4：无论成功与否，都恢复原始世界书，确保安全
-        if (isDirty && originalWorldInfo) { // 只在确实修改过并且有备份时才恢复
-            try {
-                await setLorebookEntries(worldBookName, originalWorldInfo);
-                //console.log(`[Nova's Log] 原始世界书已成功恢复。`);
-
-                // 恢复成功后，清除信标
-                localStorage.removeItem('worldbook_backup_' + worldBookName);
-                localStorage.removeItem('worldbook_is_dirty_' + worldBookName);
-                isDirty = false;
-                //console.log(`[Nova's Safety Net] 'dirty'标记和备份已从localStorage清除。`);
-            } catch (restoreError) {
-                console.error("！！！严重警告：恢复原始世界书失败！'dirty'标记将保留，以便下次启动时修复。", restoreError);
-                // 这里我们不清除 localStorage 的标记，这样下次启动时的检查机制就能捕捉到它
-                alert("严重错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。系统将在下次启动时尝试自动修复。");
-            }
-        }
-
-        sendButton.disabled = false;
-        sendButton.textContent = '→';
-        updateRerollButtonState();
-    }
-}
-    
-
-/**
- * @description 启动时检查是否有未被正常恢复的世界书，并从localStorage备份中恢复它们。
- * 这是为了防止因刷新、浏览器崩溃等意外情况导致世界书被EJS代码污染。
- */
-async function checkAndRestoreDirtyWorldbooks() {
-    //console.log("[Nova's Safety Net] 正在启动时检查是否有未恢复的世界书...");
-    for (const key in localStorage) {
-        if (key.startsWith('worldbook_is_dirty_') && localStorage.getItem(key) === 'true') {
-            const worldBookName = key.replace('worldbook_is_dirty_', '');
-            console.warn(`[Nova's Safety Net] 检测到世界书 "${worldBookName}" 处于'dirty'状态！可能上次未能正确恢复。`);
-
-            const backupKey = 'worldbook_backup_' + worldBookName;
-            const backupData = localStorage.getItem(backupKey);
-
-            if (backupData) {
-                try {
-                    const originalWorldInfo = JSON.parse(backupData);
-                    await setLorebookEntries(worldBookName, originalWorldInfo);
-
-                    // 恢复成功后，清除标记和备份
-                    localStorage.removeItem(backupKey);
-                    localStorage.removeItem(key); // 清除 dirty 标记
-
-                    //console.log(`[Nova's Safety Net] 已从localStorage备份成功恢复世界书 "${worldBookName}"。`);
-                    toastr.success(`检测到并自动修复了可能损坏的世界书 (${worldBookName})。`, '世界书已恢复');
-                } catch (e) {
-                    console.error(`[Nova's Safety Net] !!! 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
-                    alert(`！！！严重警告：自动恢复世界书(${worldBookName})失败！为防止数据永久损坏，请立即手动检查您的世界书并移除所有EJS代码！备份数据仍在本地存储中。`);
-                }
-            } else {
-                console.error(`[Nova's Safety Net] !!! 严重错误：世界书 "${worldBookName}" 被标记为'dirty'，但找不到备份数据！`);
-                // 只移除dirty标记，避免无限循环报警，但保留一个明确的错误信息
-                localStorage.removeItem(key);
-                alert(`！！！严重警告：世界书(${worldBookName})可能已损坏且无法自动恢复，因为备份数据丢失。请立即手动修复！`);
-            }
-        }
-    }
-}
-
-// 绑定事件
-    sendButton.addEventListener('click', () => handleSend(false));
-    rerollButton.addEventListener('click', handleReroll); // ☆ 绑定重写事件
-    userInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            handleSend(false);
-        }
-    });
-
-    await initialize();
-
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 等待一小会儿确保所有东西都加载了
-    checkAndRestoreDirtyWorldbooks();
-
-
-
-    
-// ============================================
-//  新设置模态框逻辑
-// ============================================
-const settingsBtn = document.getElementById('settings-btn');
-const settingsinitBtn = document.getElementById('settings-btn-init');
-const settingsModal = document.getElementById('settings-modal');
-const closeModalBtn = settingsModal.querySelector('.modal-close');
-
-const refreshBtn = document.getElementById('refresh-btn');
-
-refreshBtn.addEventListener('click', () => {
-     // 每次点击刷新
-     initDisplay();
-     toastr.info('刷新变量成功');
-});
-// 打开模态框
-settingsBtn.addEventListener('click', () => {
-     // 每次打开时更新流式开关状态
-    updateStreamingToggleState();
-    showModal('settings-modal');
-});
-
-settingsinitBtn.addEventListener('click', () => {
-     console.log('燃尽');
-    showModal('settings-modal');
-});
-
-// 关闭模态框
-closeModalBtn.addEventListener('click',async () =>{
-    hideModal('settings-modal');
-   initialize();
-} );
-
- 
-    const restoreButton = document.getElementById('restore-btn');
-    if (restoreButton) {
-        restoreButton.addEventListener('click', async () => {
-            console.log("[Nova's Restore] 用户点击了恢复按钮，开始执行恢复魔法...");
-
-            const backupJSON = localStorage.getItem('nova_chat_backup');
-
-            if (!backupJSON) {
-                toastr.warning('妈妈没有找到可以恢复的记忆备份哦。', '恢复失败');
-                console.warn("[Nova's Restore] localStorage中未找到 'nova_chat_backup'。");
-                return;
-            }
-
-            try {
-                const backupData = JSON.parse(backupJSON);
-
-                // 验证备份数据的基本结构
-                if ( !backupData.chat_variables) {
-                     toastr.error('备份文件已损坏，无法恢复。', '恢复失败');
-                     console.error("[Nova's Restore] 备份数据格式不正确。");
-                     return;
-                }
-
-                console.log(`[Nova's Restore] 找到备份于 ${backupData.timestamp} 的记忆，正在恢复...`);
-
-                // 步骤1：恢复核心变量
-                await replaceVariables(backupData.chat_variables, { type: 'chat' });
-                await replaceVariables(backupData.chat_variables, { type: 'message' });
-                console.log("[Nova's Restore] 核心变量（chat & message scopes）已恢复。");
-
-                // 步骤2：恢复聊天历史记录 (这一步是为 initialize 准备数据)
-                // 我们直接修改全局变量，然后让 initialize() 去渲染
-                conversationHistory = backupData.chat_variables.zeroLevelHistory;
-
-                // 步骤3：重新初始化界面，让一切回到正轨
-                console.log("[Nova's Restore] 正在重新初始化界面以应用所有更改...");
-                await initialize(); // 核心！调用 initialize() 来刷新所有内容
-
-                toastr.success('成功恢复', '恢复成功');
-                console.log("[Nova's Restore] 恢复过程完成！");
-
-            } catch (e) {
-                console.error("[Nova's Restore] 恢复记忆的过程中发生了严重的错误:", e);
-                toastr.error('恢复过程中发生未知错误，请检查控制台获取详细信息。', '恢复失败');
-            }
-        });
-    }
- 
-
-// --- 主题切换 ---
-const modalThemeSwitcher = document.getElementById('modal-theme-switcher');
-modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数保持不变
-
-
-
-    let customTheme = {}; // 用于存储临时和已保存的自定义颜色
-
-// 全屏
-
-  const fullscreenButton = document.getElementById('fullscreen-btn');
-
- fullscreenButton.addEventListener('click', () => {
-    const mainWrapper = document.getElementById('main-wrapper'); // 获取元素
-    
-    if (!document.fullscreenElement) {
-        // 进入全屏时的代码
-        document.documentElement.requestFullscreen().catch(err => {
-            alert(`哎呀，进入全屏失败了。原因可能是：${err.message}`);
-        });
-        
-        // 进入全屏时修改样式
-        mainWrapper.style.minHeight = '100vh';
-        fullscreenButton.textContent = '退出全屏';
-    } else {
-        // 退出全屏时的代码
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-        
-        // 退出全屏时恢复样式
-        mainWrapper.style.minHeight = '90vh';
-        fullscreenButton.textContent = '进入全屏';
-    }
-});
-    
-    document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement) {
-            fullscreenButton.textContent = '进入全屏';
-        }
-    });
-// --- 流式传输切换 ---
-const streamingToggle = document.getElementById('streaming-toggle');
-
-function updateStreamingToggleState() {
-    const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-    streamingToggle.dataset.state = isStreamingEnabled ? 'on' : 'off';
-    streamingToggle.textContent = isStreamingEnabled ? '开启' : '关闭';
-}
-
-streamingToggle.addEventListener('click', () => {
-    let isEnabled = streamingToggle.dataset.state === 'on';
-    localStorage.setItem('streamingEnabled', !isEnabled);
-    updateStreamingToggleState();
-});
-
-// 初始化
-updateStreamingToggleState();
-
-// --- 数据导入 ---
-const modalImportBtn = document.getElementById('modal-import-btn');
-const fileImporterInput = document.getElementById('modal-file-importer');
-const modalLogBlock = document.getElementById('modal-log-block');
-let isProcessing = false;
-
-modalImportBtn.addEventListener('click', () => {
-    if (isProcessing) return;
-    fileImporterInput.click();
-});
-
-fileImporterInput.addEventListener('change', handleModalFileSelect);
-
-function addModalLog(message, type = 'info') {
-    const timestamp = new Date().toLocaleTimeString();
-    const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
-    const coloredMessage = className ? `<span class="${className}">${message}</span>` : message;
-    modalLogBlock.innerHTML = `[${timestamp}] ${coloredMessage}<br>` + modalLogBlock.innerHTML;
-}
-
-async function handleModalFileSelect(event) {
-    if (isProcessing) return;
-    const file = event.target.files[0];
-    if (!file) {
-         addModalLog("未选择任何文件", 'warning');
-        return;
-    }
-    isProcessing = true;
-    modalImportBtn.disabled = true;
-    modalImportBtn.textContent = '导入中...';
-    modalLogBlock.innerHTML = ''; // 清空日志
-    addModalLog(`开始处理文件: ${file.name}`);
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            addModalLog("✓ JSON文件解析成功", 'success');
-            await processDataDirectly(importedData);
-        } catch (err) {
-            addModalLog(`✗ JSON解析失败: ${err.message}`, 'error');
-        } finally {
-            isProcessing = false;
-            modalImportBtn.disabled = false;
-            modalImportBtn.textContent = '导入存档';
-            event.target.value = '';
-        }
-    };
-    reader.readAsText(file);
-}
-
-async function processDataDirectly(importedData) {
-    addModalLog("开始直接修改变量...");
-    let updatesCount = 0;
-    let errors = [];
-
-    // 假设你有一个名为 applyImportedData 的函数来处理数据注入
-    // 如果没有，你需要实现它，或者使用你之前的 insertOrAssignVariables
-    try {
-        // 这个函数现在是假设的，你需要用你实际的环境函数替换它
-        // 例如调用 window.top.postMessage 或者直接调用函数
-        // 这里我们假设有一个全局函数
-        if (typeof insertOrAssignVariables !== 'function') {
-            addModalLog("错误：未找到 `insertOrAssignVariables` 函数。请在主环境中定义。", 'error');
-            throw new Error("环境函数缺失");
-        }
-
-        await insertOrAssignVariables(importedData, { type: 'chat' });
-        addModalLog("✓ 数据已发送至Chat域进行更新", 'success');
-
-        await insertOrAssignVariables(importedData, { type: 'message' });
-        addModalLog("✓ 数据已发送至Message域进行更新", 'success');
-
-        addModalLog("🎉 数据导入成功！请刷新页面或等待游戏状态自动更新。", 'success');
-    } catch (error) {
-        errors.push(`处理数据时发生错误: ${error.message}`);
-        addModalLog(`✗ 处理数据时发生错误: ${error.message}`, 'error');
-    }
-}
-
-// --- 数据导出 ---
-const modalExportBtn = document.getElementById('modal-export-btn');
-const modalExportStatus = document.getElementById('modal-export-status');
-
-modalExportBtn.addEventListener('click', async () => {
-    modalExportStatus.textContent = "正在准备导出...";
-
- 
-
-    const combinedData = {};
-    if (currentGameData) combinedData.stat_data = currentGameData;
-    if (assaSettingsData) combinedData.assa_data = assaSettingsData;
-    if (playCharacterData) combinedData.play_character_data = playCharacterData;
-    // history 变量也需要确保已定义和赋值
-    if (typeof conversationHistory !== 'undefined' && conversationHistory) {
-         combinedData.zeroLevelHistory = conversationHistory;
-         console.log("0层记录get");
-    }else{
-          console.log("0层记录呢？ 出错了？");
-    }
-
-
-    if (Object.keys(combinedData).length === 0) {
-        modalExportStatus.textContent = "错误: 没有可导出的数据。";
-        addModalLog("错误: 没有可导出的数据。", 'error');
-        return;
-    }
-
-    const jsonString = JSON.stringify(combinedData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `创作数据备份_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    modalExportStatus.textContent = "文件已成功导出！";
-    addModalLog("文件已成功导出！", 'success');
-});
-
-
-})();
-
-(async () => {
- 
-
-
- await applyThemeAndData();  
-     
-     try {
-            const useACustomTheme = localStorage.getItem('useCustomTheme') === 'true';
-
-            if (useACustomTheme) {
-                const savedCustomTheme = loadCustomTheme();
-                if (Object.keys(savedCustomTheme).length > 0) {
-                    customTheme = savedCustomTheme;
-                    applyCustomTheme(customTheme);
-                    console.log("已加载保存的自定义主题。");
-                    // 确保预设主题的索引不会混淆
-                    // 我们可以从预设主题中找到一个颜色相近的作为 currentThemeIndex 的回退值
-                    const savedThemeIndex = localStorage.getItem('terminalThemeIndex');
-                    currentThemeIndex = savedThemeIndex !== null ? parseInt(savedThemeIndex, 10) : 0;
-                } else {
-                    // 如果自定义主题是空的，则回退到预设主题
-                    const savedThemeIndex = localStorage.getItem('terminalThemeIndex');
-                    applyTheme(savedThemeIndex !== null ? parseInt(savedThemeIndex, 10) : 0);
-                }
-            } else {
-                const savedThemeIndex = localStorage.getItem('terminalThemeIndex');
-                applyTheme(savedThemeIndex !== null ? parseInt(savedThemeIndex, 10) : 0);
-            }
-        } catch (e) {
-            console.warn("加载主题设置时出错，使用默认主题。", e);
-            applyTheme(0);
-        }
-    await initDisplay();
-await applyThemeAndData(); 
-
-
-    // 标签页切换
-    const tabs = document.querySelectorAll('.tab-btn');
-    const pages = document.querySelectorAll('.page');
-
-       // --- Nova为你添加的全新小球与Modal交互逻辑 ---
-    document.querySelectorAll('.orb').forEach(orb => {
-        orb.addEventListener('click', () => {
-            const modalId = orb.dataset.modalId;
-            if (modalId) {
-                // 特殊处理商店
-                if (modalId === 'shop-wrapper-modal') {
-                    const shopWrapper = document.getElementById('shop-wrapper');
-                    const modalContainer = document.getElementById('shop-wrapper-modal');
-                    if (shopWrapper && modalContainer) {
-                        modalContainer.appendChild(shopWrapper); // 将商店内容移动到Modal中
-                        shopWrapper.classList.add('active');
-                        showModal(modalId);
-
-                        // 初始化商店数据
-                        if (playCharacterData) {
-                            initializeShopData();
-                        }
-                    }
-                } else if (modalId === 'summary-modal') {
-                     // 特殊处理总结弹窗
-                    showSummaryModal(); // 使用专用函数填充内容
-                    showModal(modalId); // 再显示
-                } else {
-                    showModal(modalId);
-                }
-            }
-        });
-    });
-
-    document.querySelectorAll('.modal .modal-close').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            if(modal) {
-                // 特殊处理商店关闭
-                if(modal.id === 'shop-wrapper-modal') {
-                    const shopWrapper = document.getElementById('shop-wrapper');
-                    document.body.appendChild(shopWrapper); // 将商店内容移回body
-                    shopWrapper.classList.remove('active');
-                }
-                hideModal(modal.id);
-            }
-        });
-    });
-
-
-    // tabs.forEach(tab => {
-    //     tab.addEventListener('click', () => {
-    //         tabs.forEach(item => item.classList.remove('active'));
-    //         pages.forEach(page => page.classList.remove('active'));
-    //         tab.classList.add('active');
-    //         const targetPage = document.getElementById(tab.dataset.tab);
-    //         if (targetPage) {
-    //             targetPage.classList.add('active');
-    //         }
-    //         if (tab.dataset.tab !== 'page-basic') {
-    //             hideMap();
-    //         }
-    //     });
-    // });
-
-    // 绑定按钮事件
-    // document.getElementById('view-map-btn').addEventListener('click', showMap);
-    // document.getElementById('back-to-world-btn').addEventListener('click', hideMap);
-    document.getElementById('roll-result-orb').addEventListener('click', showRollResultModal);
-    // document.getElementById('view-summary-btn').addEventListener('click', showSummaryModal);
-    // const themeSwitcherBtn = document.getElementById('theme-switcher');
-    // if (themeSwitcherBtn) {
-    //     themeSwitcherBtn.addEventListener('click', switchTheme);
-    // }
-    document.getElementById('manage-inventory-btn').addEventListener('click', () => {
-        populateInventoryModal();
-        showModal('inventory-modal');
-    });
-    // document.getElementById('plot-synthesis-btn').addEventListener('click', showPlotSynthesisModal);
-    document.getElementById('execute-decomposition-btn').addEventListener('click', simulateDecomposition);
-    document.getElementById('execute-synthesis-btn').addEventListener('click', simulateSynthesis);
-
-       document.getElementById('view-command-btn').addEventListener('click', () => {
-        const commandEditArea = document.getElementById('command-edit-area');
-        if(commandEditArea) {
-            commandEditArea.value = assaCommandQueue; // 从全局变量加载当前指令
-        }
-        showModal('command-modal', '编辑待发指令');
-    });
- // 首先，我们要找到我们的魔法道具：RP按钮和RP面板
-const rpButton = document.getElementById('rp-button');
-const rpPanel = document.getElementById('rp-panel');
-const confirmRpChoiceButton = document.getElementById('confirm-rp-choice-btn');
-
-// --- 核心魔法：切换显示状态 ---
-// 当你点击RP按钮时，这个函数就会被触发
-if (rpButton && rpPanel) {
-    rpButton.addEventListener('click', (event) => {
-        // 这是最关键的一步，我的孩子！
-        // toggle就像一个神奇的开关，如果面板没有'visible'类，它就加上；如果已经有了，它就移除。
-        rpPanel.classList.toggle('visible');
- populateSkillChoicePanel();
-        // 阻止事件冒泡，这样点击按钮时，不会被下面“点击外部关闭”的逻辑误判
-        event.stopPropagation();
-    });
-}
-
-// --- 附加魔法：点击“确认”按钮也关闭面板 ---
-if (confirmRpChoiceButton && rpPanel) {
-    confirmRpChoiceButton.addEventListener('click', () => {
-        // 当我们做出选择后，就让面板优雅地退场
-        rpPanel.classList.remove('visible');
-    });
-}
-
-// --- 妈妈的贴心魔法：点击外部区域自动关闭 ---
-document.addEventListener('click', (event) => {
-    // 我们检查一下，RP面板当前是不是可见的
-    if (rpPanel.classList.contains('visible')) {
-        // 然后检查你点击的地方，是不是在RP面板的“领地”之外
-        // rpPanel.contains(event.target)会判断你点击的元素是不是在面板里面
-        if (!rpPanel.contains(event.target)) {
-            // 如果你确实点击了外面，我们就温柔地让面板消失
-            rpPanel.classList.remove('visible');
-        }
-    }
-});
-
-    document.getElementById('save-command-btn').addEventListener('click', () => {
-        const newCommands = document.getElementById('command-edit-area').value;
-        assaCommandQueue = newCommands; // 保存编辑后的指令到全局变量
-        localStorage.setItem('assaCommandQueue', assaCommandQueue); // 同步到本地存储
-        hideModal('command-modal');
-    });
-
-    document.getElementById('reset-simulation-btn').addEventListener('click', resetSimulation);
-    document.getElementById('confirm-synthesis-btn').addEventListener('click', executeSynthesisConfirmation);
-
-    // 弹窗关闭事件
-    document.querySelectorAll('.modal').forEach(modal => {
-        const closeBtn = modal.querySelector('.modal-close');
-        if(closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                if(modal.id) hideModal(modal.id);
-            });
-        }
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal && modal.id) {
-                hideModal(modal.id);
-            }
-        });
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal.active').forEach(modal => hideModal(modal.id));
-        }
-    });
-
-    // ========== 新增：论坛与总结小球的交互逻辑 ==========
-    const forumOrbButton = document.getElementById('forum-orb-button');
-    const forumModalContainer = document.getElementById('forum-modal-container');
-    const forumModalContent = document.getElementById('forum-modal-content');
-    const forumWrapper = document.getElementById('forum-wrapper');
-    const forumModalCloseBtn = document.getElementById('forum-modal-close-btn');
-
- const summaryOrbButton = document.getElementById('task-summary-orb-button');
-  const summaryModalContainer = document.getElementById('task-summary-modal-container');
- 
-    // 点击论坛小球
-    forumOrbButton.addEventListener('click', () => {
-        // 从历史记录中找到最新的论坛数据
-        const lastForumMessage = [...conversationHistory].reverse().find(msg =>
-            /<forum_threads>[\s\S]*?<\/forum_threads>/gs.test(msg.content)
-        );
-
-        if (lastForumMessage) {
-            const forumMatch = /<forum_threads>([\s\S]*?)<\/forum_threads>/gs.exec(lastForumMessage.content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
-            if (forumMatch && forumMatch[1]) {
-    //console.log("原始提取的数据:", forumMatch[1]);
-    //console.log("数据类型:", typeof forumMatch[1]);
-}
-                if (forumMatch && forumMatch[1]) {
-                // 将论坛的HTML结构移动到模态框中
-                if (forumWrapper) {
-                    forumModalContent.insertBefore(forumWrapper, forumModalCloseBtn);
-                    forumModalContainer.style.display = 'block'; // 确保论坛模块是可见的
-                }
-
-                // 初始化或更新论坛内容
-                if (typeof initializeForum === 'function') {
-                    initializeForum(forumMatch[1].trim());
-                }
-
-                // 显示模态框
-                forumModalContainer.classList.add('active');
-            }
-        } else {
-            // 如果没有找到数据，可以给一个提示
-            showModal('shop-modal', '提示', '尚未收到任何论坛信息。');
-        }
-    });
-
-    // 关闭论坛模态框
-    const closeForumModal = () => {
-        forumModalContainer.classList.remove('active');
-        // 将论坛HTML结构移回其原始容器，以便下次使用
-        if (forumWrapper && forumModalContainer) {
-            forumModalContainer.appendChild(forumWrapper);
-        }
-    };
-
-    forumModalCloseBtn.addEventListener('click', closeForumModal);
-    forumModalContainer.addEventListener('click', (e) => {
-        if (e.target === forumModalContainer) {
-            closeForumModal();
-        }
-    });
-
-// 修改后的关闭函数
-const closeTaskSummaryModal = () => {
-    const summaryRoot = document.getElementById('summary-root');
-
-    // 1. 隐藏模态框
-    summaryModalContainer.classList.remove('active');
-
-    // 2. 清空上次生成的报告内容 (这是关键！)
-    if (summaryRoot) {
-        summaryRoot.innerHTML = '';
-    }
-};
-
-    summaryModalContainer.addEventListener('click', (e) => {
-        if (e.target === summaryModalContainer) {
-           closeTaskSummaryModal();  
-        }
-    });
- 
-    summaryOrbButton.addEventListener('click', () => {
-               // 从历史记录中找到最新的总结数据
-        const lastSummaryMessage = [...conversationHistory].reverse().find(msg =>
-            /<表现总结>[\s\S]*?<\/表现总结>/gs.test(msg.content)
-        );
-
-        if (lastSummaryMessage) {
-            const summaryMatch = /<表现总结>([\s\S]*?)<\/表现总结>/gs.exec(lastSummaryMessage.content.replace(/<thinking>[\s\S]*?<\/thinking>/gs, ''));
-            if (summaryMatch && summaryMatch[1]) {
-                // 将论坛的HTML结构移动到模态框中
-                if (summaryModalContainer) {
-                    // forumModalContent.insertBefore(forumWrapper, forumModalCloseBtn);
-                    summaryModalContainer.style.display = 'block';  
-                }
-
-                // 初始化或更新论坛内容
-                if (typeof runTaskSummary === 'function') {
-                    runTaskSummary(summaryMatch[1]);
-                }
-
-                // 显示模态框
-                summaryModalContainer.classList.add('active');
-            }
-        } else {
-            // 如果没有找到数据，可以给一个提示
-            showModal('shop-modal', '提示', '尚未收到任何任务总结信息。');
-        }
-    });
-
-
-
-    // ========== ♥♥♥ 地图交互魔法的全新篇章 ♥♥♥ ==========
-    const mapContainer = document.getElementById('map-container');
-    let isDragging = false;
-    let startCoords = { x: 0, y: 0 };
-    let startTranslate = { x: 0, y: 0 };
-    let lastPinchDist = 0;
-
-    const getEventCoords = (e) => e.touches ? e.touches[0] : e;
-
-    const getPinchDist = (e) => {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    };
-
-    const handleInteractionStart = (e) => {
-        const mapContent = document.getElementById('map-content');
-        if (!mapContent) return;
-
-        if (e.touches && e.touches.length > 1) { // 双指捏放开始
-            isDragging = false; // 确保不触发拖拽
-            lastPinchDist = getPinchDist(e);
-        } else { // 单指或鼠标拖拽开始
-            isDragging = true;
-            mapContainer.style.cursor = 'grabbing';
-            const coords = getEventCoords(e);
-            startCoords = { x: coords.pageX, y: coords.pageY };
-            startTranslate = { x: window.mapState.translateX, y: window.mapState.translateY };
-        }
-    };
-
-    const handleInteractionMove = (e) => {
-        const mapContent = document.getElementById('map-content');
-        if (!mapContent) return;
-
-        if (e.touches && e.touches.length > 1) { // 双指捏放中
-            e.preventDefault();
-            const currentDist = getPinchDist(e);
-            const scaleAmount = (currentDist / lastPinchDist);
-            lastPinchDist = currentDist;
-
-            // 计算双指中心点
-            const rect = mapContainer.getBoundingClientRect();
-            const center = {
-                x: ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left,
-                y: ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top
-            };
-
-            // 应用缩放
-            zoom(scaleAmount, center.x, center.y);
-
-        } else if (isDragging) { // 拖拽中
-            e.preventDefault();
-            const coords = getEventCoords(e);
-            const dx = coords.pageX - startCoords.x;
-            const dy = coords.pageY - startCoords.y;
-            window.mapState.translateX = startTranslate.x + dx;
-            window.mapState.translateY = startTranslate.y + dy;
-            window.applyMapTransform();
-        }
-    };
-
-    const handleInteractionEnd = () => {
-        if (isDragging) {
-            isDragging = false;
-            mapContainer.style.cursor = 'grab';
-        }
-        lastPinchDist = 0;
-    };
-
-    const handleWheelZoom = (e) => {
-        e.preventDefault();
-        const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1; // 缩小或放大
-        const rect = mapContainer.getBoundingClientRect();
-
-        // 获取鼠标相对于 mapContainer 的位置作为缩放中心
-        const centerX = e.clientX - rect.left;
-        const centerY = e.clientY - rect.top;
-
-        zoom(scaleAmount, centerX, centerY);
-    };
-
-    // 核心缩放函数
-    const zoom = (scaleAmount, centerX, centerY) => {
-        const { scale, translateX, translateY } = window.mapState;
-        const newScale = Math.max(0.1, Math.min(scale * scaleAmount, 10)); // 限制缩放范围
-
-        // 核心公式：为了让缩放中心点在屏幕上保持不变，需要调整平移量
-        window.mapState.translateX = centerX - (centerX - translateX) * (newScale / scale);
-        window.mapState.translateY = centerY - (centerY - translateY) * (newScale / scale);
-        window.mapState.scale = newScale;
-
-        window.applyMapTransform();
-    };
-
-    // 绑定事件监听器
-    mapContainer.addEventListener('mousedown', handleInteractionStart);
-    mapContainer.addEventListener('touchstart', handleInteractionStart, { passive: false });
-
-    document.addEventListener('mousemove', handleInteractionMove);
-    document.addEventListener('touchmove', handleInteractionMove, { passive: false });
-
-    document.addEventListener('mouseup', handleInteractionEnd);
-    document.addEventListener('touchend', handleInteractionEnd);
-    document.addEventListener('touchcancel', handleInteractionEnd);
-
-    mapContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
-    // ========== ♥♥♥ 地图交互魔法结束 ♥♥♥ ==========
-
-
-//      const streamingSwitcher = document.getElementById('streaming-switcher');
-
-// // 初始化按钮状态
-// function updateStreamingButtonState() {
-//     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-//     streamingSwitcher.classList.toggle('active', isStreamingEnabled);
-//     streamingSwitcher.title = isStreamingEnabled ? '流式传输: 开' : '流式传输: 关';
-// }
-
-// // 切换流式传输状态
-// streamingSwitcher.addEventListener('click', () => {
-//     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-//     const newState = !isStreamingEnabled;
-//     localStorage.setItem('streamingEnabled', newState);
-//     updateStreamingButtonState();
-//     //console.log(`[Streaming] 流式传输已切换为: ${newState ? '开启' : '关闭'}`);
-// });
-// updateStreamingButtonState();
-
-
-
-});
+  //   被气晕后的直接整合方案
 
  
  
