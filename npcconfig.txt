@@ -1,0 +1,4 @@
+Gender: [男, 女],
+Age: [青年, 中年],
+HairColor: [黑发, 银发, 金发],
+StateDescription: [平静, 战损, 悲伤, 微笑, 愤怒]
