@@ -1,0 +1,5 @@
+{
+"PrimarySceneType": ["拱门建筑室内","现代建筑群","Wasteland"," ModernUrbanStreet"," AncientWesternTown"," AncientChineseCity"," WesternMarket"," Campus","Forest"," Ocean"," River"," Grassland"," Snowfield"," Underwater","SimpleRoom"," LuxuryRoom"," ChineseInn"," ModernLobby"," Corridor"," Laboratory"," Cave"," Prison","StarshipInterior","FloatingIsland","RadiationWasteland"," Cyberpunk"," OuterSpace"],
+"TimeAndLight": ["BrightDay","OvercastDay","GoldenHour","DeepNight"],
+"AtmosphereAndCondition": ["Peaceful","Decay","Dynamic"]
+}
