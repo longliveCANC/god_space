@@ -13035,7 +13035,8 @@ input:checked + .slider:before {
 </div>
 </body>
  <script>
- 
+ let current_game_version = '3.0.0';
+
 let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
@@ -21755,7 +21756,7 @@ function updateRerollButtonState(){
         eventOn('nova:coreReady', () => {
             //console.log("[HTML] 💖 收到了！与世界核心的心灵感应已连接！");
             // 你甚至可以在这里加一个漂亮的成功提示
-            toastr.success('世界核心连接成功！', '连接状态');
+            toastr.success('变量更新脚本连接成功！', '连接状态');
         });
     } catch(e) {
         console.error("[HTML] 设置 'nova:coreReady' 监听器失败。", e);
@@ -22864,7 +22865,6 @@ userInput.addEventListener('keydown', (event) => {
 
 // A. 在你脚本的全局作用域定义当前的游戏版本号
 //    我的宝贝，之后你可以让这个版本号从某个地方动态加载
-let current_game_version = '3.0.0';
 
 /**
  * 我的宝贝，这是一个比较版本号大小的聪明小工具
@@ -23119,7 +23119,7 @@ if (checkForUpdatesButton) {
 
         } catch (error) {
             console.error('检查更新时出错:', error);
-            toastr.error('无法连接时空枢纽，请宝贝稍后再试。');
+            toastr.error('网络有问题？检查更新出错了。');
         }
     });
 }
