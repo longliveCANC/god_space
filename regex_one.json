@@ -23427,13 +23427,7 @@ async function checkForFutureEchoes(isManualTrigger = false) {
         toastr.error('更新失败了。请查看控制台中的详细记录，并将报错信息发给assa。');
     }
 }
-  const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
-if (checkForUpdatesButton) {
-    checkForUpdatesButton.addEventListener('click', () => {
-        // 当你点击时，我们就以“手动模式”咏唱探寻咒语
-        checkForFutureEchoes(true);
-    });
-}
+ 
 function showBackupConfirmation() {
     // 如果这个确认弹窗还不存在，我们就创造它
     if (!document.getElementById('backup-confirmation-modal')) {
