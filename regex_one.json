@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>主神空间 - 一个测试2</title>
+    <title>主神空间 - 一个测试</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+SC:wght@300;400&display=swap');
 
@@ -22871,7 +22871,7 @@ let current_game_version = '3.0.0';
  * @param {string} v1 第一个版本号
  * @param {string} v2 第二个版本号
  * @returns {number} 1 如果v1>v2, -1 如果v1<v2, 0 如果相等
- */
+***** */
 function compareVersions(v1, v2) {
     if (!v1 || !v2) return 0;
     const parts1 = v1.split('.').map(Number);
@@ -22886,59 +22886,153 @@ function compareVersions(v1, v2) {
     }
     return 0;
 }
+ // ♥♥♥ 这是我们全新的魔法：“灵魂的咏叹调” ♥♥♥
+// 它会耐心地等待，直到宇宙（酒管系统）确认新世界的存在。
+async function waitForWorldToSettle(worldName, timeout = 5000) {
+    const startTime = Date.now();
+    toastr.info(`咏唱“灵魂的咏叹调”，静待世界「${worldName}」的灵魂沉淀...`);
 
- async function performRegexUpdate() {
-    toastr.info('核心重塑开始，正在连接时空数据流...');
+    return new Promise((resolve, reject) => {
+        const intervalId = setInterval(() => {
+            // 每隔一小段时间，我们就探寻一次星图
+            const allKnownWorlds = TavernHelper.getWorldbookNames();
+            if (allKnownWorlds.includes(worldName)) {
+                // 找到了！灵魂已归位！
+                clearInterval(intervalId);
+                resolve();
+            } else if (Date.now() - startTime > timeout) {
+                // 超时了，灵魂依然无踪
+                clearInterval(intervalId);
+                reject(new Error(`咏叹调超时：在${timeout}ms内，宇宙未能感知到「${worldName}」的存在。`));
+            }
+        }, 200); // 我们每200毫秒倾听一次，既不急躁也不迟缓
+    });
+}
+
+
+ function createCacheBustedUrl(url) {
+    const timestamp = new Date().getTime(); // 获取此刻的、宇宙唯一的时序坐标
+    return `${url}?v=${timestamp}`;
+}
+
+
+async function performWorldbookUpdate() {
+    const worldbookName = '小蝌蚪找妈妈-同层版';
+    // ♥♥♥ 应用“时光印记” ♥♥♥
+    const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
-        // ♥ 第一步：我们不再加载一个不完整的JSON对象，
-        // 而是直接以“纯文本”方式，获取那段巨大的核心代码字符串。
-        const newContentString = await loadRemoteContent(
-            'https://longlivecanc.github.io/god_space/regex_one.json', // 文件名可以保持不变
-            'text',   // <--- 我们清晰地告诉加载函数，这次要的是'text'
-            null      // <--- 如果失败，我们希望得到null，而不是一个空对象
-        );
+        // ==============================================================
+        // 篇章一：世界的降临
+        // ==============================================================
+        toastr.info(`准备拉取世界书「${worldbookName}」...`);
 
-        // 我们要确保真的拿到了内容
-        if (!newContentString) {
-            toastr.error('未能获取到有效的核心代码，更新已中止。请检查网络。');
-            return;
+        const allBooks = TavernHelper.getWorldbookNames();
+        if (allBooks.includes(worldbookName)) {
+            await TavernHelper.deleteWorldbook(worldbookName);
         }
 
-        let updateOccurred = false; // 一个小小的旗帜，记录我们是否成功修改
+        const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
+        await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
 
-        // ♥ 第二步：使用 updateTavernRegexesWith 进行精准赋值
-        await TavernHelper.updateTavernRegexesWith(async (rules) => {
-            // 我们要在当前角色的局部正则中寻找目标
-            const ruleIndex = rules.findIndex(rule => rule.scriptName === '统一' && rule.scope === 'character');
+        // ♥♥♥♥♥♥♥  神圣的咏唱时刻！ ♥♥♥♥♥♥♥
+        // 我们在这里暂停，直到我们的“灵魂咏叹调”确认世界已稳定
+        await waitForWorldToSettle(worldbookName);
 
-            if (ruleIndex !== -1) {
-                // 太棒了，找到了！我们只修改它的 `replaceString` 属性
-                // 其他所有属性，比如id, source, destination等，都保持原样，绝不触碰！
-                rules[ruleIndex].replaceString = newContentString;
+        toastr.success(`世界书「${worldbookName}」已更新！`);
+        TavernHelper.builtin.reloadEditor(worldbookName, true);
 
-                updateOccurred = true; // 升起我们的成功旗帜！
-            }
+        // ==============================================================
+        // 篇章二：灵魂的契约
+        // ==============================================================
+        // toastr.info(`开始「${worldbookName}」的灵魂契约...`);
 
-            // 把修改（或者未修改）的规则数组交还给TavernHelper
-            return rules;
-        }, { scope: 'character' }); // ♥ 明确指定只在当前角色的世界里施法
+        const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
+        currentBindings.primary = worldbookName;
 
+        await TavernHelper.rebindCharWorldbooks('current', currentBindings);
 
-        if (updateOccurred) {
-            toastr.success('“统一”正则的核心代码已成功注入！');
-            showNovaAlert("世界规则已重塑！", "success", 3000);
+        // ==============================================================
+        // 最终章：命运的验证
+        // ==============================================================
+        // 同样地，绑定操作也可能需要一点时间来生效，让我们再咏唱一次，等待契约生效
+        await new Promise(resolve => setTimeout(resolve, 300)); // 给绑定一个短暂的缓冲
+
+        const newBindings = await TavernHelper.getCharWorldbookNames('current');
+        if (newBindings && newBindings.primary === worldbookName) {
+            toastr.success(`当前角色已和「${worldbookName}」绑定！`);
         } else {
-            // 如果没找到，我们不能凭空创造，因为缺少完整的“蓝图”
-            toastr.warning('未在当前角色身上找到名为“统一”的局部正则，无法执行更新。请先确保该正则存在哦。');
+            toastr.error(`绑定失败了。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」。`);
         }
 
     } catch (error) {
-        console.error('更新正则时发生意料之外的错误:', error);
-        toastr.error('更新失败了，我的孩子。看看控制台里是不是有更详细的线索。');
+        toastr.error(`出错了，请查看控制台，并将报错发送给assa诊断。`);
+        console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
     }
 }
-const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
+ async function performRegexUpdate() {
+    toastr.info('拉取远程同层代码中...');
+
+    try {
+        // 第一步：从远程获取新的核心代码，这依然是纯文本。
+        const newContentString = await loadRemoteContent(
+            'https://longlivecanc.github.io/god_space/regex_one.json',
+            'text',
+            null
+        );
+
+        if (!newContentString) {
+            toastr.error('未能获取到文件，更新中止。');
+            return;
+        }
+
+        // 第二步：使用 getTavernRegexes 获取当前所有正则的完整列表。
+        // 我们需要知道所有规则的现状，才能在不破坏其他规则的情况下进行替换。
+        let allRules = TavernHelper.getTavernRegexes({ scope: 'all' });
+
+        // 第三步：找到我们的目标——“统一”正则。
+        const ruleIndex = allRules.findIndex(rule => rule.script_name === '统一');
+
+        if (ruleIndex === -1) {
+            toastr.error('未找到“统一”条目，无法执行重写。请确认该正则确实存在。');
+            console.warn('我的孩子，你可以用这个咒语检查所有法则: console.log(TavernHelper.getTavernRegexes({scope:"all"}))');
+            return;
+        }
+
+        // 第四步：这是最关键的一步！我们不修改 `getTavernRegexes` 返回的那个不完整的对象。
+        // 而是创建一个包含了所有必须字段的“全新”对象。
+        // 我们从旧对象上继承所有已知的属性，然后用新内容覆盖 `replace_string`。
+        const oldRule = allRules[ruleIndex];
+        const newRule_full = {
+            ...oldRule, // 继承旧规则的所有已知属性，如 id, enabled, scope 等
+            replace_string: newContentString, // ♥♥♥ 使用正确的 `replace_string` 属性名，并赋予新内容！
+        };
+
+        // 为了保险起见，我们确保所有从你正则文件里给出的字段都存在
+        newRule_full.run_on_edit = true;
+        newRule_full.find_regex = "/(<存档>([\\s\\S]*?)<\\/存档>)|(\\[ZERO_LEVEL_CHAT\\])/gs"; // 从你的文件里复制过来
+        // 其他字段如 placement, substituteRegex 等，如果 oldRule 上有，就会被 ...oldRule 继承
+
+        // 在我们的规则列表中，用全新的、完整的规则替换掉旧的那个。
+        allRules[ruleIndex] = newRule_full;
+
+        // 第五步：也是最后一步，使用 replaceTavernRegexes 将修改后的完整规则列表，一次性替换回去！
+        // 因为我们可能修改的是全局正则，也可能是局部正则，所以最稳妥的方式是分别替换。
+        const globalRules = allRules.filter(r => r.scope === 'global');
+        const characterRules = allRules.filter(r => r.scope === 'character');
+
+        await TavernHelper.replaceTavernRegexes(globalRules, { scope: 'global' });
+        await TavernHelper.replaceTavernRegexes(characterRules, { scope: 'character' });
+
+        toastr.success(`成功！“统一”正则 (${oldRule.scope === 'character' ? '局部' : '全局'}) 现已是最新版本！`);
+        // showNovaAlert("世界已在你的意志下重塑！", "success", 4000);
+
+    } catch (error) {
+        console.error('在重塑世界的过程中发生了意料之外的次元风暴:', error);
+        toastr.error('更新失败了。请查看控制台中的详细记录，并将报错信息发给assa。');
+    }
+}
+ const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
 if (checkForUpdatesButton) {
     checkForUpdatesButton.addEventListener('click', async () => {
         toastr.info('正在获取更新日志...');
@@ -22989,15 +23083,31 @@ if (checkForUpdatesButton) {
                         </div>
                     </div>`;
                     document.body.insertAdjacentHTML('beforeend', modalHTML);
+   document.body.insertAdjacentHTML('beforeend', modalHTML);
 
+                    // ♥♥♥ 这是妈妈新加的“点击外部关闭”魔法 ♥♥♥
+                    const updateModalElement = document.getElementById('update-modal');
+                    if (updateModalElement) {
+                        updateModalElement.addEventListener('click', (event) => {
+                            // 只有当点击的是灰色背景本身，而不是里面的内容时，才关闭弹窗
+                            if (event.target === updateModalElement) {
+                                hideModal('update-modal');
+                            }
+                        });
+                    }
                     document.querySelector('#update-modal .modal-close').addEventListener('click', () => hideModal('update-modal'));
                     document.getElementById('cancel-update-btn').addEventListener('click', () => hideModal('update-modal'));
+   // 将原来的 'click' 事件监听器替换成下面这个包含“备份确认”流程的全新版本
                     document.getElementById('perform-update-btn').addEventListener('click', () => {
-                       performRegexUpdate();
-                       hideModal('update-modal');
-                    });
-                }
+                        // 第1步：隐藏当前的更新日志弹窗
+                        hideModal('update-modal');
 
+                        // 第2步：显示我们全新的、温柔的备份提示弹窗
+                        showBackupConfirmation();
+                    });
+
+                }  
+                
                 // 填充最新的信息
                 const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
                 document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
@@ -23013,7 +23123,55 @@ if (checkForUpdatesButton) {
         }
     });
 }
-    
+function showBackupConfirmation() {
+    // 如果这个确认弹窗还不存在，我们就创造它
+    if (!document.getElementById('backup-confirmation-modal')) {
+        const confirmationModalHTML = `
+        <div id="backup-confirmation-modal" class="modal">
+            <div class="modal-content" style="max-width: 450px;">
+                <button class="modal-close">×</button>
+                <div class="modal-title">最后一步确认</div>
+                <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
+                    <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的自定义内容。准备好了吗？</p>
+                </div>
+                <div class="modal-actions" style="text-align: right; margin-top: 25px;">
+                    <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
+                    <button id="confirm-final-update-btn" class="control-btn">我已备份，开始更新</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
+
+        // 为新弹窗的按钮和外部区域绑定关闭事件
+        const modal = document.getElementById('backup-confirmation-modal');
+        modal.querySelector('.modal-close').onclick = () => hideModal('backup-confirmation-modal');
+        modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) hideModal('backup-confirmation-modal');
+        });
+
+        // 核心！当用户确认后，执行我们的双重更新
+        document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
+            hideModal('backup-confirmation-modal');
+            toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
+
+            try {
+                await Promise.all([
+                    performRegexUpdate(),
+                    performWorldbookUpdate()
+                ]);
+                showNovaAlert("世界已彻底重塑！法则与记忆均已更新！", "success", 4000);
+            } catch (error) {
+                console.error('双重更新过程中发生错误:', error);
+                toastr.error('更新过程中断，世界未能完全重塑。请查看控制台日志。');
+            }
+        });
+    }
+
+    // 显示这个确认弹窗
+    showModal('backup-confirmation-modal');
+}
 // ============================================
 //  新设置模态框逻辑
 // ============================================
