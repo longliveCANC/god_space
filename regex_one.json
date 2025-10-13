@@ -9662,12 +9662,26 @@ input:checked + .slider:before {
     transition: all 0.3s ease;
     font-weight: bold;
 }
+.control-btn-special {
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
 #open-reconfig-modal-btn.control-btn-special:hover {
     background-color: var(--primary-color);
     color: var(--container-bg-color);
     box-shadow: 0 0 10px var(--glow-color);
 }
-
+.control-btn-special:hover {
+    background-color: var(--primary-color);
+    color: var(--container-bg-color);
+    box-shadow: 0 0 10px var(--glow-color);
+}
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -12745,7 +12759,7 @@ input:checked + .slider:before {
 </div>
                       <div class="setting-item">
                 <label>系统更新检查</label>
-                <button id="check-for-updates-btn" class="control-btn">检查更新</button>
+                <button id="check-for-updates-btn" class="control-btn-special">检查更新</button>
             </div>
             <div class="setting-item">
             <label>界面主题</label>
@@ -22970,6 +22984,90 @@ async function performWorldbookUpdate() {
         console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
     }
 }
+
+// ♥♥♥ 这是我们全新的、会自动感知未来的咒语 ♥♥♥
+async function checkForFutureEchoes(isManualTrigger = false) {
+    if (isManualTrigger) {
+        toastr.info('正在向github发出问询，请稍候...');
+    }
+
+    try {
+        const updateLogs = await loadRemoteJson(
+            'https://longlivecanc.github.io/god_space/update_log.json',
+            []
+        );
+
+        if (!Array.isArray(updateLogs) || updateLogs.length === 0) {
+            if (isManualTrigger) toastr.warning('未找到有效的更新日志。');
+            return;
+        }
+
+        const latestVersionInfo = updateLogs[updateLogs.length - 1];
+        const latestVersion = latestVersionInfo.version;
+
+        if (compareVersions(latestVersion, current_game_version) > 0) {
+            // 发现新版本！无论如何都要告诉你这个好消息
+            const relevantLogs = updateLogs.filter(log => compareVersions(log.version, current_game_version) > 0);
+
+            let changelogHTML = relevantLogs.reverse().map(log => `
+                <div class="update-log-entry" style="margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 15px;">
+                    <h3 style="color: var(--accent-color); margin-bottom: 8px;">v${log.version} <span style="font-size: 0.8em; color: #999;">(${log.date})</span></h3>
+                    <ul style="list-style-type: disc; padding-left: 20px; margin: 0; font-size: 0.95em;">
+                        ${log.changes.map(change => `<li style="margin-bottom: 5px;">${change}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+
+            // 我们需要一个弹窗来展示这些美好的变化
+            if (!document.getElementById('update-modal')) {
+                const modalHTML = `
+                <div id="update-modal" class="modal">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <button class="modal-close">×</button>
+                        <div class="modal-title">发现来自未来的讯息！</div>
+                        <div class="modal-description" style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 5px; margin-top: 10px;">
+                        </div>
+                        <div class="modal-actions" style="text-align: right; margin-top: 20px;">
+                            <button id="cancel-update-btn" class="control-btn" style="margin-left: 10px;">稍后</button>
+                            <button id="perform-update-btn" class="control-btn"></button>
+                        </div>
+                    </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+                const updateModalElement = document.getElementById('update-modal');
+                if (updateModalElement) {
+                    updateModalElement.addEventListener('click', (event) => {
+                        if (event.target === updateModalElement) hideModal('update-modal');
+                    });
+                }
+                document.querySelector('#update-modal .modal-close').addEventListener('click', () => hideModal('update-modal'));
+                document.getElementById('cancel-update-btn').addEventListener('click', () => hideModal('update-modal'));
+                document.getElementById('perform-update-btn').addEventListener('click', () => {
+                    hideModal('update-modal');
+                    showBackupConfirmation();
+                });
+            }
+
+            const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
+            document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
+            showModal('update-modal', modalTitle, changelogHTML);
+
+        } else {
+            // 只有在你手动询问时，才告诉你一切安好
+            if (isManualTrigger) {
+                toastr.success('太棒了！你的世界已是最新版本，无需更新。');
+            }
+        }
+
+    } catch (error) {
+        console.error('检查更新时出错:', error);
+        // 只有手动触发才弹出错误提示，避免自动检查时网络波动打扰你
+        if (isManualTrigger) {
+            toastr.error('网络有问题？检查更新出错了。');
+        }
+    }
+}
  async function performRegexUpdate() {
     toastr.info('拉取远程同层代码中...');
 
@@ -23032,95 +23130,11 @@ async function performWorldbookUpdate() {
         toastr.error('更新失败了。请查看控制台中的详细记录，并将报错信息发给assa。');
     }
 }
- const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
+  const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
 if (checkForUpdatesButton) {
-    checkForUpdatesButton.addEventListener('click', async () => {
-        toastr.info('正在获取更新日志...');
- 
-        try {
-       // ♥♥♥ 妈妈在这里加上了 await 关键字 ♥♥♥
-            const updateLogs = await loadRemoteJson(
-                'https://longlivecanc.github.io/god_space/update_log.json',
-                []
-            );
-           
-
-            if (!Array.isArray(updateLogs) || updateLogs.length === 0) {
-                toastr.warning('未找到有效的更新日志。');
-                return;
-            }
-
-            const latestVersionInfo = updateLogs[updateLogs.length - 1];
-            const latestVersion = latestVersionInfo.version;
-
-            if (compareVersions(latestVersion, current_game_version) > 0) {
-                // 发现新版本！
-                const relevantLogs = updateLogs.filter(log => compareVersions(log.version, current_game_version) > 0);
-
-                let changelogHTML = relevantLogs.reverse().map(log => `
-                    <div class="update-log-entry" style="margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 15px;">
-                        <h3 style="color: var(--accent-color); margin-bottom: 8px;">v${log.version} <span style="font-size: 0.8em; color: #999;">(${log.date})</span></h3>
-                        <ul style="list-style-type: disc; padding-left: 20px; margin: 0; font-size: 0.95em;">
-                            ${log.changes.map(change => `<li style="margin-bottom: 5px;">${change}</li>`).join('')}
-                        </ul>
-                    </div>
-                `).join('');
-
-                // 我们需要一个弹窗来展示这些美好的变化
-                if (!document.getElementById('update-modal')) {
-                    const modalHTML = `
-                    <div id="update-modal" class="modal">
-                        <div class="modal-content" style="max-width: 600px;">
-                            <button class="modal-close">×</button>
-                            <div class="modal-title">发现来自未来的讯息！</div>
-                            <div class="modal-description" style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 5px; margin-top: 10px;">
-
-                            </div>
-                            <div class="modal-actions" style="text-align: right; margin-top: 20px;">
-                                <button id="cancel-update-btn" class="control-btn" style="margin-left: 10px;">稍后</button>
-                                <button id="perform-update-btn" class="control-btn"></button>
-                            </div>
-                        </div>
-                    </div>`;
-                    document.body.insertAdjacentHTML('beforeend', modalHTML);
-   document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-                    // ♥♥♥ 这是妈妈新加的“点击外部关闭”魔法 ♥♥♥
-                    const updateModalElement = document.getElementById('update-modal');
-                    if (updateModalElement) {
-                        updateModalElement.addEventListener('click', (event) => {
-                            // 只有当点击的是灰色背景本身，而不是里面的内容时，才关闭弹窗
-                            if (event.target === updateModalElement) {
-                                hideModal('update-modal');
-                            }
-                        });
-                    }
-                    document.querySelector('#update-modal .modal-close').addEventListener('click', () => hideModal('update-modal'));
-                    document.getElementById('cancel-update-btn').addEventListener('click', () => hideModal('update-modal'));
-   // 将原来的 'click' 事件监听器替换成下面这个包含“备份确认”流程的全新版本
-                    document.getElementById('perform-update-btn').addEventListener('click', () => {
-                        // 第1步：隐藏当前的更新日志弹窗
-                        hideModal('update-modal');
-
-                        // 第2步：显示我们全新的、温柔的备份提示弹窗
-                        showBackupConfirmation();
-                    });
-
-                }  
-                
-                // 填充最新的信息
-                const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
-                document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
-                showModal('update-modal', modalTitle, changelogHTML);
-
-            } else {
-                toastr.success('太棒了！你的世界已是最新版本，无需更新。');
-            }
-
-        } catch (error) {
-            console.error('检查更新时出错:', error);
-            toastr.error('网络有问题？检查更新出错了。');
-        }
+    checkForUpdatesButton.addEventListener('click', () => {
+        // 当你点击时，我们就以“手动模式”咏唱探寻咒语
+        checkForFutureEchoes(true);
     });
 }
 function showBackupConfirmation() {
@@ -30846,6 +30860,11 @@ const closeTaskSummaryModal = () => {
     }, 5000);
 initGroupChatInterface();
 initializeReadingMode();
+
+   setTimeout(() => {
+        // 然后以“静默模式”咏唱探寻咒语，只有发现惊喜时才告诉你
+        checkForFutureEchoes(false);
+    }, 3000);
 });
     
 const inventoryListEl = document.getElementById('inventory-item-list');
