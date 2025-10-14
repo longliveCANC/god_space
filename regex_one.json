@@ -12760,7 +12760,10 @@ input:checked + .slider:before {
                       <div class="setting-item">
                 <label>系统更新检查</label>
                 <button id="check-for-updates-btn" class="control-btn-special">检查更新</button>
-            </div>
+            
+            <button id="force-update-worldbook-btn" class="control-btn-special" style="margin-left: 10px;">强制更新世界书</button>
+<button id="force-update-regex-btn" class="control-btn-special" style="margin-left: 10px;">强制更新正则</button>
+</div>
             <div class="setting-item">
             <label>界面主题</label>
             <button id="modal-theme-switcher" class="control-btn">切换主题</button>
@@ -13049,7 +13052,7 @@ input:checked + .slider:before {
 </div>
 </body>
  <script>
- let current_game_version = '3.0.1';
+ let current_game_version = '3.0.2';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -20484,14 +20487,11 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
 async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    // ♥♥♥ 应用“时光印记” ♥♥♥
+   
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
-        // ==============================================================
-        // 篇章一：世界的降临
-        // ==============================================================
-     
+ 
 
         const allBooks = TavernHelper.getWorldbookNames();
         if (allBooks.includes(worldbookName)) {
@@ -20508,20 +20508,13 @@ async function performWorldbookUpdate() {
         toastr.success(`世界书「${worldbookName}」已更新！`);
         TavernHelper.builtin.reloadEditor(worldbookName, true);
 
-        // ==============================================================
-        // 篇章二：灵魂的契约
-        // ==============================================================
-        // toastr.info(`开始「${worldbookName}」的灵魂契约...`);
-
+ 
         const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
         currentBindings.primary = worldbookName;
 
         await TavernHelper.rebindCharWorldbooks('current', currentBindings);
 
-        // ==============================================================
-        // 最终章：命运的验证
-        // ==============================================================
-        // 同样地，绑定操作也可能需要一点时间来生效，让我们再咏唱一次，等待契约生效
+       
         await new Promise(resolve => setTimeout(resolve, 300)); // 给绑定一个短暂的缓冲
 
         const newBindings = await TavernHelper.getCharWorldbookNames('current');
@@ -20608,8 +20601,7 @@ async function checkForFutureEchoes(isManualTrigger = false) {
         } else {
             // 只有在你手动询问时，才告诉你一切安好
             if (isManualTrigger) {
-                  toastr.success(`太棒了！你的世界已是最新版本(${current_game_version})，无需更新。`);
-
+                toastr.success(`太棒了！你的世界已是最新版本(${current_game_version})，无需更新。`);
             }
         }
 
@@ -20623,8 +20615,9 @@ async function checkForFutureEchoes(isManualTrigger = false) {
 }
 /* existing code before the function */
 
+ 
 async function performRegexUpdate() {
-    toastr.info('拉取远程正则...');
+    toastr.info('拉取远程同层代码...');
 
     try {
         // 第一步：从远方获取“统一”法则所需要的核心力量
@@ -20639,55 +20632,57 @@ async function performRegexUpdate() {
             return;
         }
 
-        // 第二步：只审视“角色”领域，找到现存的“统一”法则
+        // 第二步：只审视“角色”领域，找到我们将要升级的两大基石法则
         const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
-        const ruleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
+        const unifiedRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
+        const purgeRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '去除1');
 
-        if (ruleIndex === -1) {
-            toastr.error('错误！在“角色”法则中未找到“统一”条目，无法执行更新。请确认它存在于角色正则中。');
-            console.warn('我的孩子，你可以用这个咒语检查所有角色法则: console.log(TavernHelper.getTavernRegexes({scope:"character"}))');
+        // ♥♥♥ 严格检查基石是否存在 ♥♥♥
+        if (unifiedRuleIndex === -1) {
+            toastr.error('错误！在“角色”法则中未找到名为“统一”的基石，无法执行重塑。');
+            console.warn('我的孩子，请确保你的角色法则中存在一个名为“统一”的正则。');
+            return;
+        }
+        if (purgeRuleIndex === -1) {
+            toastr.error('错误！在“角色”法则中未找到名为“去除1”的基石，无法执行重塑。');
+            console.warn('我的孩子，请确保你的角色法则中存在一个名为“去除1”的正则，我们将以它为模板。');
             return;
         }
 
-        // 第三步：以旧的“统一”法则为基础，注入新的力量，创造出支柱一
-        const oldUnifiedRule = allCharacterRules[ruleIndex];
+        // 第三步：以旧法则为基础，注入新的力量，锻造出全新的两大支柱
+
+        // 支柱一：更新后的“统一”法则
+        const oldUnifiedRule = allCharacterRules[unifiedRuleIndex];
         const updatedUnifiedRule = {
             ...oldUnifiedRule,
             replace_string: newContentString, // 注入新的核心力量
         };
 
-        // 第四步：创造你的第二个支柱——“统一去除1”法则
-        const purgeRule = {
-            id: "afaa02c3-b0be-4a3f-9e17-81b8896dc3d6",
-            script_name: "统一去除1",
-            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs",
-            replace_string: "",
-            enabled: true,
-            run_on_edit: true,
-            scope: 'character',
-            source: { user_input: true, ai_output: true, slash_command: true, world_info: true },
-            destination: { display: false, prompt: true },
-            min_depth: null,
-            max_depth: null,
+        // 支柱二：根据你的天才构想，以“去除1”为模板，锻造出全新的“统一去除1”
+        const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
+        const updatedPurgeRule = {
+            ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
+            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+            // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
-         
-        const finalCharacterRules = [
-            updatedUnifiedRule,  
-            purgeRule,           
+
+        // 第四步：构建全新的、纯净的角色法则世界！这个世界里，只有你指定的两大支柱。
+ const finalCharacterRules = [
+            updatedPurgeRule,   // ♥ 净化法则在前！
+            updatedUnifiedRule, // ♥ 统一法则在后！
         ];
 
-        // 第六步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
+        // 第五步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
         await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
 
-        toastr.success(`世界已在你的意志下重塑！角色法则已被净化，仅留下“统一”与“统一去除1”两大支柱！`);
+        toastr.success(`正则已仅留下“统一”与“统一去除1”！`);
 
     } catch (error) {
         console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
-        toastr.error('更新失败了。请查看控制台中的详细记录，并将风暴信息告知妈妈。');
+        toastr.error('更新失败了。请查看控制台中的详细记录，并将信息告知assa。');
     }
 }
-
 /* existing code after the function */
  
 const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
@@ -20697,6 +20692,28 @@ if (checkForUpdatesButton) {
         checkForFutureEchoes(true);
     });
 }
+
+// 强制更新世界书的守护者
+const forceUpdateWorldbookButton = document.getElementById('force-update-worldbook-btn');
+if (forceUpdateWorldbookButton) {
+    forceUpdateWorldbookButton.addEventListener('click', () => {
+        toastr.info('收到强制指令！正在从远方重新拉取世界书...');
+        // 直接召唤世界书更新的魔法
+        performWorldbookUpdate();
+    });
+}
+
+// 强制更新正则的守护者
+const forceUpdateRegexButton = document.getElementById('force-update-regex-btn');
+if (forceUpdateRegexButton) {
+    forceUpdateRegexButton.addEventListener('click', () => {
+        toastr.info('收到强制指令！正在执行角色法则的强制重塑...');
+        // 直接召唤正则更新的魔法
+        performRegexUpdate();
+    });
+}
+
+
 function showBackupConfirmation() {
     // 如果这个确认弹窗还不存在，我们就创造它
     if (!document.getElementById('backup-confirmation-modal')) {
@@ -23527,8 +23544,10 @@ async function checkForFutureEchoes(isManualTrigger = false) {
 }
  /* existing code before the function */
 
+ /* existing code before the function */
+
 async function performRegexUpdate() {
-    toastr.info('拉取远程正则...');
+    toastr.info('拉取远程同层代码...');
 
     try {
         // 第一步：从远方获取“统一”法则所需要的核心力量
@@ -23543,52 +23562,55 @@ async function performRegexUpdate() {
             return;
         }
 
-        // 第二步：只审视“角色”领域，找到现存的“统一”法则
+        // 第二步：只审视“角色”领域，找到我们将要升级的两大基石法则
         const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
-        const ruleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
+        const unifiedRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
+        const purgeRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '去除1');
 
-        if (ruleIndex === -1) {
-            toastr.error('错误！在“角色”法则中未找到“统一”条目，无法执行更新。请确认它存在于角色正则中。');
-            console.warn('我的孩子，你可以用这个咒语检查所有角色法则: console.log(TavernHelper.getTavernRegexes({scope:"character"}))');
+        // ♥♥♥ 严格检查基石是否存在 ♥♥♥
+        if (unifiedRuleIndex === -1) {
+            toastr.error('错误！在“角色”法则中未找到名为“统一”的基石，无法执行重塑。');
+            console.warn('我的孩子，请确保你的角色法则中存在一个名为“统一”的正则。');
+            return;
+        }
+        if (purgeRuleIndex === -1) {
+            toastr.error('错误！在“角色”法则中未找到名为“去除1”的基石，无法执行重塑。');
+            console.warn('我的孩子，请确保你的角色法则中存在一个名为“去除1”的正则，我们将以它为模板。');
             return;
         }
 
-        // 第三步：以旧的“统一”法则为基础，注入新的力量，创造出支柱一
-        const oldUnifiedRule = allCharacterRules[ruleIndex];
+        // 第三步：以旧法则为基础，注入新的力量，锻造出全新的两大支柱
+
+        // 支柱一：更新后的“统一”法则
+        const oldUnifiedRule = allCharacterRules[unifiedRuleIndex];
         const updatedUnifiedRule = {
             ...oldUnifiedRule,
             replace_string: newContentString, // 注入新的核心力量
         };
 
-        // 第四步：创造你的第二个支柱——“统一去除1”法则
-        const purgeRule = {
-            id: "afaa02c3-b0be-4a3f-9e17-81b8896dc3d6",
-            script_name: "统一去除1",
-            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs",
-            replace_string: "",
-            enabled: true,
-            run_on_edit: true,
-            scope: 'character',
-            source: { user_input: true, ai_output: true, slash_command: true, world_info: true },
-            destination: { display: false, prompt: true },
-            min_depth: null,
-            max_depth: null,
+        // 支柱二：根据你的天才构想，以“去除1”为模板，锻造出全新的“统一去除1”
+        const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
+        const updatedPurgeRule = {
+            ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
+            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+            // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
-        // 第五步：构建全新的角色法则世界！这个世界里，只有你指定的两大支柱。
-        const finalCharacterRules = [
-            updatedUnifiedRule, // 支柱一：更新后的“统一”
-            purgeRule,          // 支柱二：“统一去除1”
+
+        // 第四步：构建全新的、纯净的角色法则世界！这个世界里，只有你指定的两大支柱。
+    const finalCharacterRules = [
+            updatedPurgeRule,   // ♥ 净化法则在前！
+            updatedUnifiedRule, // ♥ 统一法则在后！
         ];
 
-        // 第六步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
+        // 第五步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
         await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
 
-        toastr.success(`世界已在你的意志下重塑！角色法则已被净化，仅留下“统一”与“统一去除1”两大支柱！`);
+        toastr.success(`正则已仅留下“统一”与“统一去除1”！`);
 
     } catch (error) {
         console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
-        toastr.error('更新失败了。请查看控制台中的详细记录，并将风暴信息告知妈妈。');
+        toastr.error('更新失败了。请查看控制台中的详细记录，并将信息告知assa。');
     }
 }
 
@@ -31316,7 +31338,7 @@ initializeReadingMode();
    setTimeout(() => {
         // 然后以“静默模式”咏唱探寻咒语，只有发现惊喜时才告诉你
         checkForFutureEchoes(false);
-    }, 3000);
+    }, 1000);
 });
     
 const inventoryListEl = document.getElementById('inventory-item-list');
