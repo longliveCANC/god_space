@@ -20608,7 +20608,8 @@ async function checkForFutureEchoes(isManualTrigger = false) {
         } else {
             // 只有在你手动询问时，才告诉你一切安好
             if (isManualTrigger) {
-                toastr.success('太棒了！你的世界已是最新版本，无需更新。');
+                  toastr.success(`太棒了！你的世界已是最新版本(${current_game_version})，无需更新。`);
+
             }
         }
 
