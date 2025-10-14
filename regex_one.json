@@ -13052,7 +13052,7 @@ input:checked + .slider:before {
 </div>
 </body>
  <script>
- let current_game_version = '3.0.2';
+ let current_game_version = '3.0.3';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
