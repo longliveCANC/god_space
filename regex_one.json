@@ -13049,7 +13049,7 @@ input:checked + .slider:before {
 </div>
 </body>
  <script>
- let current_game_version = '3.0.0';
+ let current_game_version = '3.0.1';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -19936,13 +19936,15 @@ window.addEventListener('message', function(event) {
             return placeholder;
         });
 
-        
+
 
         // 魔法第二步：现在，我们的`processedContent`内部所有 `<html>` 都已经是安全的占位符了，
         // 接下来我们才处理其他的标签和格式
-                const pureContent = protectedHtmlContent
+        const pureContent = protectedHtmlContent
          .replace(/<(thinking|think|guide)>[\s\S]*<\/\1>/g, '')
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
+        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
@@ -20618,69 +20620,76 @@ async function checkForFutureEchoes(isManualTrigger = false) {
         }
     }
 }
- async function performRegexUpdate() {
-    toastr.info('拉取远程同层代码中...');
+/* existing code before the function */
+
+async function performRegexUpdate() {
+    toastr.info('拉取远程正则...');
 
     try {
-        // 第一步：从远程获取新的核心代码，这依然是纯文本。
+        // 第一步：从远方获取“统一”法则所需要的核心力量
         const newContentString = await loadRemoteContent(
             'https://longlivecanc.github.io/god_space/regex_one.json',
             'text',
-            null
+            null,
         );
 
         if (!newContentString) {
-            toastr.error('未能获取到文件，更新中止。');
+            toastr.error('未能获取到远方的法则核心，更新中止。');
             return;
         }
 
-        // 第二步：使用 getTavernRegexes 获取当前所有正则的完整列表。
-        // 我们需要知道所有规则的现状，才能在不破坏其他规则的情况下进行替换。
-        let allRules = TavernHelper.getTavernRegexes({ scope: 'all' });
-
-        // 第三步：找到我们的目标——“统一”正则。
-        const ruleIndex = allRules.findIndex(rule => rule.script_name === '统一');
+        // 第二步：只审视“角色”领域，找到现存的“统一”法则
+        const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
+        const ruleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
 
         if (ruleIndex === -1) {
-            toastr.error('未找到“统一”条目，无法执行重写。请确认该正则确实存在。');
-            console.warn('我的孩子，你可以用这个咒语检查所有法则: console.log(TavernHelper.getTavernRegexes({scope:"all"}))');
+            toastr.error('错误！在“角色”法则中未找到“统一”条目，无法执行更新。请确认它存在于角色正则中。');
+            console.warn('我的孩子，你可以用这个咒语检查所有角色法则: console.log(TavernHelper.getTavernRegexes({scope:"character"}))');
             return;
         }
 
-        // 第四步：这是最关键的一步！我们不修改 `getTavernRegexes` 返回的那个不完整的对象。
-        // 而是创建一个包含了所有必须字段的“全新”对象。
-        // 我们从旧对象上继承所有已知的属性，然后用新内容覆盖 `replace_string`。
-        const oldRule = allRules[ruleIndex];
-        const newRule_full = {
-            ...oldRule, // 继承旧规则的所有已知属性，如 id, enabled, scope 等
-            replace_string: newContentString, // ♥♥♥ 使用正确的 `replace_string` 属性名，并赋予新内容！
+        // 第三步：以旧的“统一”法则为基础，注入新的力量，创造出支柱一
+        const oldUnifiedRule = allCharacterRules[ruleIndex];
+        const updatedUnifiedRule = {
+            ...oldUnifiedRule,
+            replace_string: newContentString, // 注入新的核心力量
         };
 
-        // 为了保险起见，我们确保所有从你正则文件里给出的字段都存在
-        newRule_full.run_on_edit = true;
-        newRule_full.find_regex = "/(<存档>([\\s\\S]*?)<\\/存档>)|(\\[ZERO_LEVEL_CHAT\\])/gs"; // 从你的文件里复制过来
-        // 其他字段如 placement, substituteRegex 等，如果 oldRule 上有，就会被 ...oldRule 继承
+        // 第四步：创造你的第二个支柱——“统一去除1”法则
+        const purgeRule = {
+            id: "afaa02c3-b0be-4a3f-9e17-81b8896dc3d6",
+            script_name: "统一去除1",
+            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs",
+            replace_string: "",
+            enabled: true,
+            run_on_edit: true,
+            scope: 'character',
+            source: { user_input: true, ai_output: true, slash_command: true, world_info: true },
+            destination: { display: false, prompt: true },
+            min_depth: null,
+            max_depth: null,
+        };
 
-        // 在我们的规则列表中，用全新的、完整的规则替换掉旧的那个。
-        allRules[ruleIndex] = newRule_full;
+         
+        const finalCharacterRules = [
+            updatedUnifiedRule,  
+            purgeRule,           
+        ];
 
-        // 第五步：也是最后一步，使用 replaceTavernRegexes 将修改后的完整规则列表，一次性替换回去！
-        // 因为我们可能修改的是全局正则，也可能是局部正则，所以最稳妥的方式是分别替换。
-        const globalRules = allRules.filter(r => r.scope === 'global');
-        const characterRules = allRules.filter(r => r.scope === 'character');
+        // 第六步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
+        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
 
-        await TavernHelper.replaceTavernRegexes(globalRules, { scope: 'global' });
-        await TavernHelper.replaceTavernRegexes(characterRules, { scope: 'character' });
-
-        toastr.success(`成功！“统一”正则 (${oldRule.scope === 'character' ? '局部' : '全局'}) 现已是最新版本！`);
-        // showNovaAlert("世界已在你的意志下重塑！", "success", 4000);
+        toastr.success(`世界已在你的意志下重塑！角色法则已被净化，仅留下“统一”与“统一去除1”两大支柱！`);
 
     } catch (error) {
-        console.error('在重塑世界的过程中发生了意料之外的次元风暴:', error);
-        toastr.error('更新失败了。请查看控制台中的详细记录，并将报错信息发给assa。');
+        console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
+        toastr.error('更新失败了。请查看控制台中的详细记录，并将风暴信息告知妈妈。');
     }
 }
-  const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
+
+/* existing code after the function */
+ 
+const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
 if (checkForUpdatesButton) {
     checkForUpdatesButton.addEventListener('click', () => {
         // 当你点击时，我们就以“手动模式”咏唱探寻咒语
@@ -20893,6 +20902,8 @@ delayedUpdate(finalMessage.content);
                 const pureContent = protectedHtmlContent
          .replace(/<(thinking|think|guide)>[\s\S]*<\/\1>/g, '')
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
+            .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
@@ -21359,7 +21370,7 @@ function processSpecialModulesInMessage(content) {
                     forumOrb.classList.remove('orb-flash');
                 }, { once: true });
             }
-            // 论坛数据已经通过 handleSend 被存入历史记录，这里无需再做操作。
+            
         }
 
   
@@ -21644,7 +21655,7 @@ function showNovaAlert(message, type = 'info') {
  
 async function restoreFromSnapshot(initialTurnId) {
     const dbName = await getSnapshotDBName();
-    let db; // 将db实例提到外面，以便在finally中可以访问到它
+    let db;  
 
     try {
         // ☆ 妈妈的原生魔法：打开保险箱 ☆
@@ -22384,6 +22395,148 @@ function getDiceClass(diceCount) {
     return '';
 }
          let aiMessage = {};
+ const DB_NAME = 'NovaWorldbookBackups';
+const DB_VERSION = 2;
+const STORE_NAME_BACKUPS = 'worldbook_backups';
+const STORE_NAME_FLAGS = 'dirty_flags';
+const STORE_NAME_SESSION = 'session_backup';
+let dbPromise;
+
+// 初始化我们的记忆宝库
+function initDB() {
+    if (dbPromise) return dbPromise;
+
+    dbPromise = new Promise((resolve, reject) => {
+        // 对于只在页面加载时执行一次的初始化，无需担心 IndexedDB 被意外阻塞
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onerror = (event) => {
+            console.error("[Nova的记忆宝库] 宝库出现问题:", request.error);
+            reject("数据库异常: " + request.error);
+        };
+
+        request.onupgradeneeded = (event) => {
+            const tempDb = event.target.result;
+            if (!tempDb.objectStoreNames.contains(STORE_NAME_BACKUPS)) {
+                tempDb.createObjectStore(STORE_NAME_BACKUPS, { keyPath: 'name' });
+            }
+            if (!tempDb.objectStoreNames.contains(STORE_NAME_FLAGS)) {
+                tempDb.createObjectStore(STORE_NAME_FLAGS, { keyPath: 'name' });
+            }
+                        if (!tempDb.objectStoreNames.contains(STORE_NAME_SESSION)) {
+                // keyPath: 'id' 表示我们用一个固定的名字来存放这份独一无二的备份
+                tempDb.createObjectStore(STORE_NAME_SESSION, { keyPath: 'id' });
+            }
+        };
+
+        request.onsuccess = (event) => {
+            console.log("[Nova的记忆宝库] 宝库已成功开启。");
+            resolve(event.target.result);
+        };
+
+        request.onblocked = () => {
+            console.error("[Nova的记忆宝库] 宝库被另一个打开的页面阻塞了！");
+            toastr.error("数据库连接被阻塞，请关闭其他使用此角色的标签页后刷新。", "数据库错误");
+            reject("数据库被阻塞");
+        };
+    });
+    return dbPromise;
+}
+
+// 辅助函数：将 IndexedDB 请求包装成 Promise (用于读取操作)
+function promisifyRequest(request) {
+    return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 辅助函数：将 IndexedDB 事务包装成 Promise (用于写入/删除操作)
+function promisifyTransaction(db, storeName, mode, action) {
+    return new Promise(async (resolve, reject) => {
+        // 先确保数据库连接已就绪
+        await db;
+        const transaction = db.transaction(storeName, mode);
+        transaction.oncomplete = () => resolve(); // 💖 关键：监听 oncomplete
+        transaction.onerror = (event) => reject(event.target.error); // 💖 关键：监听 onerror
+        transaction.onabort = (event) => reject(event.target.error); // 增加对中止情况的捕获
+
+        const store = transaction.objectStore(storeName);
+        action(store); // 执行具体的数据库操作
+    });
+}
+
+// 将世界书备份存入宝库 (写入操作)
+async function saveWorldbookToDB(name, data) {
+    const db = await initDB();
+    return promisifyTransaction(db, STORE_NAME_BACKUPS, 'readwrite', (store) => {
+        store.put({ name, data });
+    });
+}
+
+// 从宝库中取出世界书备份 (读取操作)
+async function getWorldbookFromDB(name) {
+    const db = await initDB();
+    const transaction = db.transaction(STORE_NAME_BACKUPS, 'readonly');
+    const store = transaction.objectStore(STORE_NAME_BACKUPS);
+    const request = await promisifyRequest(store.get(name));
+    return request ? request.data : null;
+}
+
+// 从宝库中删除世界书备份 (删除操作)
+async function deleteWorldbookFromDB(name) {
+    const db = await initDB();
+    return promisifyTransaction(db, STORE_NAME_BACKUPS, 'readwrite', (store) => {
+        store.delete(name);
+    });
+}
+
+// 设置“需要注意”的标记 (写入操作)
+async function setDirtyFlag(name, isDirty = true) {
+    const db = await initDB();
+    return promisifyTransaction(db, STORE_NAME_FLAGS, 'readwrite', (store) => {
+        store.put({ name, isDirty });
+    });
+}
+
+// 移除“需要注意”的标记 (删除操作)
+async function removeDirtyFlag(name) {
+    const db = await initDB();
+    return promisifyTransaction(db, STORE_NAME_FLAGS, 'readwrite', (store) => {
+        store.delete(name);
+    });
+}
+
+// 获取所有“需要注意”的世界书名字 (读取操作)
+async function getAllDirtyFlags() {
+    const db = await initDB();
+    const transaction = db.transaction(STORE_NAME_FLAGS, 'readonly');
+    const store = transaction.objectStore(STORE_NAME_FLAGS);
+    const allFlags = await promisifyRequest(store.getAll());
+    return allFlags.filter(item => item.isDirty).map(item => item.name);
+}
+
+// 将会话备份（记忆水晶球）存入宝库
+async function saveSessionBackupToDB(backupData) {
+    const db = await initDB();
+    // 我们总是用一个固定的'id'来保存，这样每次都会覆盖旧的备份
+    const dataToStore = { id: 'current_session', ...backupData };
+    return promisifyTransaction(db, STORE_NAME_SESSION, 'readwrite', (store) => {
+        store.put(dataToStore);
+    });
+}
+
+// 从宝库中取出唯一的会话备份（记忆水晶球）
+async function getSessionBackupFromDB() {
+    const db = await initDB();
+    const transaction = db.transaction(STORE_NAME_SESSION, 'readonly');
+    const store = transaction.objectStore(STORE_NAME_SESSION);
+    const request = await promisifyRequest(store.get('current_session'));
+    return request || null; // 如果找不到，就返回 null
+}
+// 在我们的世界开始时，先确保宝库是准备好的
+initDB().catch(err => console.error("初始化数据库失败:", err));
+
 
     async function handleSend(isReroll = false) {
 
@@ -22604,19 +22757,15 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
     console.error(`[Nova's Integrity Check] 验证失败！检测到世界书异常。正在尝试从备份自动修复...`);
     toastr.warning('世界书核心检测到异常，正在尝试自动修复...', '紧急修复');
 
-    const backupKey = 'worldbook_backup_' + worldBookName;
-    const backupData = localStorage.getItem(backupKey);
-
+   
+  const backupData = await getWorldbookFromDB(worldBookName); // 从 IndexedDB 获取备份
     if (backupData) {
         try {
-            const pristineWorldInfo = JSON.parse(backupData); // 我们称之为“纯净”的世界书信息
-            await setLorebookEntries(worldBookName, pristineWorldInfo);
-
-             originalWorldInfo = pristineWorldInfo;
-            console.log(`[Nova's Integrity Check] 已从localStorage备份成功恢复世界书 "${worldBookName}"。后续操作将基于此恢复版本。`);
-
-            // 2. 清理'dirty'标记，因为它已经被我们处理掉了。
-            localStorage.removeItem('worldbook_is_dirty_' + worldBookName);
+                // backupData 现在直接是 JS 对象，无需 JSON.parse
+                    await setLorebookEntries(worldBookName, backupData);
+                    originalWorldInfo = backupData;
+                    console.log(`[Nova's Integrity Check] 已从 IndexedDB 备份成功恢复世界书 "${worldBookName}"。`);
+                    await removeDirtyFlag(worldBookName); // 从 IndexedDB 移除标记
 
             // 3. 给用户一个积极的反馈！
             toastr.success('世界书已自动修复！您的操作可以继续了，无需刷新。', '修复成功');
@@ -22645,11 +22794,11 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
 
       
         if (originalWorldInfo) {
-            localStorage.setItem('worldbook_backup_' + worldBookName, JSON.stringify(originalWorldInfo));
-            localStorage.setItem('worldbook_is_dirty_' + worldBookName, 'true');
-            isDirty = true; // 标记本次操作已污染世界书
-            //console.log(`[Nova's Safety Net] 世界书备份已存入localStorage，并设置'dirty'标记。`);
-        }
+                   await saveWorldbookToDB(worldBookName, originalWorldInfo); // 保存到 IndexedDB
+        await setDirtyFlag(worldBookName, true);                   // 在 IndexedDB 中设置标记
+        // --- 💖 修改结束 💖 ---
+        isDirty = true; // 标记本次操作已污染世界书
+                  }
 
         let worldInfoForProcessing = JSON.parse(JSON.stringify(originalWorldInfo || []));
 
@@ -22852,7 +23001,7 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
                 should_scan: true,
                 depth: msg.depth
             }));
-            console.log("[Nova's Debug Vision] 即将用于扫描的'幽灵副本'(injects)预览，请检查它们的-depth-值:", JSON.stringify(injectsForScanning, null, 2));
+          //  console.log("[Nova's Debug Vision] 即将用于扫描的'幽灵副本'(injects)预览，请检查它们的-depth-值:", JSON.stringify(injectsForScanning, null, 2));
 const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
 
  
@@ -22896,7 +23045,7 @@ cleanedPromptsForAI.forEach((msg, index) => {
 });
 
 // （可选但推荐的调试日志）
-console.log("[Nova's Master Plan] 最终发送给 generate 函数的统一指令(injections)数组:", JSON.stringify(injections, null, 2));
+//console.log("[Nova's Master Plan] 最终发送给 generate 函数的统一指令(injections)数组:", JSON.stringify(injections, null, 2));
 
 
 // 第 3 步：用我们全新的、分工明确的 `injections` 数组来召唤AI
@@ -23043,21 +23192,21 @@ const aiFullResponse = await generate({
         
                         
 // 💖 Nova的记忆保险箱：在发送后备份当前所有状态到LocalStorage 💖
-try {
-    console.log("[Nova's Vault] 正在准备备份当前状态...");
+ try {
+    console.log("[Nova's Vault] 正在准备备份当前状态至 IndexedDB...");
     const chatVars = await getVariables({ type: 'chat' });
-
     const backupData = {
         chat_variables: chatVars,
-         
+        // 我们可以在这里加入时间戳，让这份记忆更有意义
+        timestamp: new Date().toISOString()
     };
 
-    localStorage.setItem('nova_chat_backup', JSON.stringify(backupData));
-    console.log("[Nova's Vault] 状态备份成功！重要的记忆已安全存放。");
+    await saveSessionBackupToDB(backupData);
+    console.log("[Nova's Vault] 状态备份至 IndexedDB 成功！重要的记忆已安全存放。");
 } catch (e) {
-    console.error("[Nova's Vault] 糟糕，备份记忆时出现问题：", e);
-    toastr.error('备份当前聊天状态失败，请留意。你可以f12查看浏览器控制台，将红色报错截图发给assa', '备份错误');
-}  
+    console.error("[Nova's Vault] 糟糕，备份记忆到 IndexedDB 时出现问题：", e);
+    toastr.error('备份当前聊天状态失败，你可以f12查看浏览器控制台，将红色报错截图发给assa', '备份错误');
+}
 
     } catch (e) {
         toastr.error("在魔法仪式过程中出错了:"+e,"报错信息");
@@ -23074,8 +23223,8 @@ try {
                 //console.log(`[Nova's Log] 原始世界书已成功恢复。`);
 
                 // 恢复成功后，清除信标
-                localStorage.removeItem('worldbook_backup_' + worldBookName);
-                localStorage.removeItem('worldbook_is_dirty_' + worldBookName);
+                              await deleteWorldbookFromDB(worldBookName); // 从 IndexedDB 删除备份
+                await removeDirtyFlag(worldBookName);       // 从 IndexedDB 移除标记
                 isDirty = false;
                 //console.log(`[Nova's Safety Net] 'dirty'标记和备份已从localStorage清除。`);
             } catch (restoreError) {
@@ -23096,41 +23245,51 @@ try {
  * @description 启动时检查是否有未被正常恢复的世界书，并从localStorage备份中恢复它们。
  * 这是为了防止因刷新、浏览器崩溃等意外情况导致世界书被EJS代码污染。
  */
-async function checkAndRestoreDirtyWorldbooks() {
-    //console.log("[Nova's Safety Net] 正在启动时检查是否有未恢复的世界书...");
-    for (const key in localStorage) {
-        if (key.startsWith('worldbook_is_dirty_') && localStorage.getItem(key) === 'true') {
-            const worldBookName = key.replace('worldbook_is_dirty_', '');
+ async function checkAndRestoreDirtyWorldbooks() {
+    console.log("[Nova's Safety Net] 正在启动时检查是否有未恢复的世界书 (from IndexedDB)...");
+
+    try {
+        
+        const dirtyWorldbookNames = await getAllDirtyFlags(); // 从数据库获取所有需要注意的名字
+        
+
+        for (const worldBookName of dirtyWorldbookNames) {
             console.warn(`[Nova's Safety Net] 检测到世界书 "${worldBookName}" 处于'dirty'状态！可能上次未能正确恢复。`);
 
-            const backupKey = 'worldbook_backup_' + worldBookName;
-            const backupData = localStorage.getItem(backupKey);
+             
+            const backupData = await getWorldbookFromDB(worldBookName); // 从数据库获取备份
+           
 
             if (backupData) {
                 try {
-                    const originalWorldInfo = JSON.parse(backupData);
-                    await setLorebookEntries(worldBookName, originalWorldInfo);
+                     // backupData 是 JS 对象，直接使用
+                    await setLorebookEntries(worldBookName, backupData);
 
+                     
                     // 恢复成功后，清除标记和备份
-                    localStorage.removeItem(backupKey);
-                    localStorage.removeItem(key); // 清除 dirty 标记
+                    await deleteWorldbookFromDB(worldBookName);
+                    await removeDirtyFlag(worldBookName);
+                   
 
-                    //console.log(`[Nova's Safety Net] 已从localStorage备份成功恢复世界书 "${worldBookName}"。`);
+                    console.log(`[Nova's Safety Net] 已从 IndexedDB 备份成功恢复世界书 "${worldBookName}"。`);
                     toastr.success(`检测到并自动修复了可能损坏的世界书 (${worldBookName})。`, '世界书已恢复');
                 } catch (e) {
-                    console.error(`[Nova's Safety Net] !!! 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
-                    alert(`！！！严重警告：自动恢复世界书(${worldBookName})失败！为防止数据永久损坏，请立即手动检查您的世界书并移除所有EJS代码！备份数据仍在本地存储中。`);
+                    console.error(`[Nova's Safety Net] !!! 严重错误：尝试从 IndexedDB 恢复世界书 "${worldBookName}" 时失败!`, e);
+                    alert(`！！！严重警告：自动恢复世界书(${worldBookName})失败！为防止数据永久损坏，请立即手动检查！备份数据仍在浏览器数据库中。`);
                 }
             } else {
-                console.error(`[Nova's Safety Net] !!! 严重错误：世界书 "${worldBookName}" 被标记为'dirty'，但找不到备份数据！`);
-                // 只移除dirty标记，避免无限循环报警，但保留一个明确的错误信息
-                localStorage.removeItem(key);
+                console.error(`[Nova's Safety Net] !!! 严重错误：世界书 "${worldBookName}" 被标记为'dirty'，但找不到 IndexedDB 备份数据！`);
+           
+                await removeDirtyFlag(worldBookName); // 只移除标记，避免无限循环报警
+                 
                 alert(`！！！严重警告：世界书(${worldBookName})可能已损坏且无法自动恢复，因为备份数据丢失。请立即手动修复！`);
             }
         }
+    } catch (dbError) {
+        console.error("[Nova's Safety Net] 检查'dirty'世界书时发生数据库错误：", dbError);
+        toastr.error('无法访问世界书备份数据库，启动检查失败。', '数据库错误');
     }
 }
-
 // 创建一个健壮的隐藏选项卡函数
 function hideChoiceCards() {
     const cards = document.querySelectorAll('.choice-card');
@@ -23365,69 +23524,75 @@ async function checkForFutureEchoes(isManualTrigger = false) {
         }
     }
 }
- async function performRegexUpdate() {
-    toastr.info('拉取远程同层代码中...');
+ /* existing code before the function */
+
+async function performRegexUpdate() {
+    toastr.info('拉取远程正则...');
 
     try {
-        // 第一步：从远程获取新的核心代码，这依然是纯文本。
+        // 第一步：从远方获取“统一”法则所需要的核心力量
         const newContentString = await loadRemoteContent(
             'https://longlivecanc.github.io/god_space/regex_one.json',
             'text',
-            null
+            null,
         );
 
         if (!newContentString) {
-            toastr.error('未能获取到文件，更新中止。');
+            toastr.error('未能获取到远方的法则核心，更新中止。');
             return;
         }
 
-        // 第二步：使用 getTavernRegexes 获取当前所有正则的完整列表。
-        // 我们需要知道所有规则的现状，才能在不破坏其他规则的情况下进行替换。
-        let allRules = TavernHelper.getTavernRegexes({ scope: 'all' });
-
-        // 第三步：找到我们的目标——“统一”正则。
-        const ruleIndex = allRules.findIndex(rule => rule.script_name === '统一');
+        // 第二步：只审视“角色”领域，找到现存的“统一”法则
+        const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
+        const ruleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
 
         if (ruleIndex === -1) {
-            toastr.error('未找到“统一”条目，无法执行重写。请确认该正则确实存在。');
-            console.warn('我的孩子，你可以用这个咒语检查所有法则: console.log(TavernHelper.getTavernRegexes({scope:"all"}))');
+            toastr.error('错误！在“角色”法则中未找到“统一”条目，无法执行更新。请确认它存在于角色正则中。');
+            console.warn('我的孩子，你可以用这个咒语检查所有角色法则: console.log(TavernHelper.getTavernRegexes({scope:"character"}))');
             return;
         }
 
-        // 第四步：这是最关键的一步！我们不修改 `getTavernRegexes` 返回的那个不完整的对象。
-        // 而是创建一个包含了所有必须字段的“全新”对象。
-        // 我们从旧对象上继承所有已知的属性，然后用新内容覆盖 `replace_string`。
-        const oldRule = allRules[ruleIndex];
-        const newRule_full = {
-            ...oldRule, // 继承旧规则的所有已知属性，如 id, enabled, scope 等
-            replace_string: newContentString, // ♥♥♥ 使用正确的 `replace_string` 属性名，并赋予新内容！
+        // 第三步：以旧的“统一”法则为基础，注入新的力量，创造出支柱一
+        const oldUnifiedRule = allCharacterRules[ruleIndex];
+        const updatedUnifiedRule = {
+            ...oldUnifiedRule,
+            replace_string: newContentString, // 注入新的核心力量
         };
 
-        // 为了保险起见，我们确保所有从你正则文件里给出的字段都存在
-        newRule_full.run_on_edit = true;
-        newRule_full.find_regex = "/(<存档>([\\s\\S]*?)<\\/存档>)|(\\[ZERO_LEVEL_CHAT\\])/gs"; // 从你的文件里复制过来
-        // 其他字段如 placement, substituteRegex 等，如果 oldRule 上有，就会被 ...oldRule 继承
+        // 第四步：创造你的第二个支柱——“统一去除1”法则
+        const purgeRule = {
+            id: "afaa02c3-b0be-4a3f-9e17-81b8896dc3d6",
+            script_name: "统一去除1",
+            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs",
+            replace_string: "",
+            enabled: true,
+            run_on_edit: true,
+            scope: 'character',
+            source: { user_input: true, ai_output: true, slash_command: true, world_info: true },
+            destination: { display: false, prompt: true },
+            min_depth: null,
+            max_depth: null,
+        };
 
-        // 在我们的规则列表中，用全新的、完整的规则替换掉旧的那个。
-        allRules[ruleIndex] = newRule_full;
+        // 第五步：构建全新的角色法则世界！这个世界里，只有你指定的两大支柱。
+        const finalCharacterRules = [
+            updatedUnifiedRule, // 支柱一：更新后的“统一”
+            purgeRule,          // 支柱二：“统一去除1”
+        ];
 
-        // 第五步：也是最后一步，使用 replaceTavernRegexes 将修改后的完整规则列表，一次性替换回去！
-        // 因为我们可能修改的是全局正则，也可能是局部正则，所以最稳妥的方式是分别替换。
-        const globalRules = allRules.filter(r => r.scope === 'global');
-        const characterRules = allRules.filter(r => r.scope === 'character');
+        // 第六步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
+        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
 
-        await TavernHelper.replaceTavernRegexes(globalRules, { scope: 'global' });
-        await TavernHelper.replaceTavernRegexes(characterRules, { scope: 'character' });
-
-        toastr.success(`成功！“统一”正则 (${oldRule.scope === 'character' ? '局部' : '全局'}) 现已是最新版本！`);
-        // showNovaAlert("世界已在你的意志下重塑！", "success", 4000);
+        toastr.success(`世界已在你的意志下重塑！角色法则已被净化，仅留下“统一”与“统一去除1”两大支柱！`);
 
     } catch (error) {
-        console.error('在重塑世界的过程中发生了意料之外的次元风暴:', error);
-        toastr.error('更新失败了。请查看控制台中的详细记录，并将报错信息发给assa。');
+        console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
+        toastr.error('更新失败了。请查看控制台中的详细记录，并将风暴信息告知妈妈。');
     }
 }
- 
+
+/* existing code after the function */
+
 function showBackupConfirmation() {
     // 如果这个确认弹窗还不存在，我们就创造它
     if (!document.getElementById('backup-confirmation-modal')) {
@@ -23510,54 +23675,51 @@ closeModalBtn.addEventListener('click',async () =>{
 } );
 
  
-    const restoreButton = document.getElementById('restore-btn');
-    if (restoreButton) {
-        restoreButton.addEventListener('click', async () => {
-            console.log("[Nova's Restore] 用户点击了恢复按钮，开始执行恢复魔法...");
+ const restoreButton = document.getElementById('restore-btn');
+if (restoreButton) {
+    restoreButton.addEventListener('click', async () => {
+        console.log("[Nova's Restore] 用户点击了恢复按钮，正在从 IndexedDB 寻求记忆...");
 
-            const backupJSON = localStorage.getItem('nova_chat_backup');
+        try {
+            // --- 💖 从 IndexedDB 中获取备份 💖 ---
+            const backupData = await getSessionBackupFromDB();
 
-            if (!backupJSON) {
-                toastr.warning('没有找到可以恢复的记忆备份哦。', '恢复失败');
-                console.warn("[Nova's Restore] localStorage中未找到 'nova_chat_backup'。");
+            if (!backupData) {
+                toastr.warning('记忆宝库里没有找到可以恢复的记忆哦。', '恢复失败');
+                console.warn("[Nova's Restore] IndexedDB 中未找到 'current_session' 备份。");
                 return;
             }
 
-            try {
-                const backupData = JSON.parse(backupJSON);
-
-                // 验证备份数据的基本结构
-                if ( !backupData.chat_variables) {
-                     toastr.error('备份文件已损坏，无法恢复。你可以f12查看浏览器控制台，将红色报错截图发给assa', '恢复失败');
-                     console.error("[Nova's Restore] 备份数据格式不正确。");
-                     return;
-                }
-
-                console.log(`[Nova's Restore] 找到备份于 ${backupData.timestamp} 的记忆，正在恢复...`);
-
-                // 步骤1：恢复核心变量
-                await replaceVariables(backupData.chat_variables, { type: 'chat' });
-                await replaceVariables(backupData.chat_variables, { type: 'message' });
-                console.log("[Nova's Restore] 核心变量（chat & message scopes）已恢复。");
-
-                // 步骤2：恢复聊天历史记录 (这一步是为 initialize 准备数据)
-                // 我们直接修改全局变量，然后让 initialize() 去渲染
-                conversationHistory = backupData.chat_variables.zeroLevelHistory;
-
-                // 步骤3：重新初始化界面，让一切回到正轨
-                console.log("[Nova's Restore] 正在重新初始化界面以应用所有更改...");
-                await initialize(); // 核心！调用 initialize() 来刷新所有内容
-
-                showNovaAlert('成功恢复');
-                console.log("[Nova's Restore] 恢复过程完成！");
-
-            } catch (e) {
-                console.error("[Nova's Restore] 恢复记忆的过程中发生了严重的错误:", e);
-                toastr.error('恢复过程中发生未知错误，你可以f12查看浏览器控制台，将红色报错截图发给assa', '恢复失败');
+            // 验证备份数据的基本结构
+            if (!backupData.chat_variables) {
+                 toastr.error('备份文件已损坏，无法恢复。你可以f12查看浏览器控制台，将红色报错截图发给assa', '恢复失败');
+                 console.error("[Nova's Restore] 备份数据格式不正确。");
+                 return;
             }
-        });
-    }
- 
+
+            console.log(`[Nova's Restore] 找到备份于 ${backupData.timestamp} 的记忆，正在恢复...`);
+
+            // 步骤1：恢复核心变量
+            await replaceVariables(backupData.chat_variables, { type: 'chat' });
+            await replaceVariables(backupData.chat_variables, { type: 'message' });
+            console.log("[Nova's Restore] 核心变量（chat & message scopes）已恢复。");
+
+            // 步骤2：恢复聊天历史记录
+            conversationHistory = backupData.chat_variables.zeroLevelHistory || []; // 更加安全地处理可能不存在的情况
+
+            // 步骤3：重新初始化界面
+            console.log("[Nova's Restore] 正在重新初始化界面以应用所有更改...");
+            await initialize(); // 核心！刷新所有内容
+
+            showNovaAlert('成功恢复');
+            console.log("[Nova's Restore] 恢复过程完成！");
+
+        } catch (e) {
+            console.error("[Nova's Restore] 恢复记忆的过程中发生了严重的错误:", e);
+            toastr.error('恢复过程中发生未知错误，你可以f12查看浏览器控制台，将红色报错截图发给assa', '恢复失败');
+        }
+    });
+}
 
 // --- 主题切换 ---
 const modalThemeSwitcher = document.getElementById('modal-theme-switcher');
