@@ -6209,7 +6209,7 @@ opacity: 0.6;
 
 /* 新增的 RP 按钮的样式，让它和其他按钮对齐 */
 #rp-button {
-    left: -60px; /* 这个值可以微调，确保它在“令”按钮旁边 */
+    left: -50px; /* 这个值可以微调，确保它在“令”按钮旁边 */
 }
 #view-command-btn {
     left: 50px; /* 调整“令”按钮位置，为新按钮腾出空间 */
@@ -8626,11 +8626,17 @@ input:checked + .slider:before {
     display: none;
     cursor: wait;
     border-radius: inherit;
+      /* 为出现和消失添加一点温柔的过渡效果 */
+    transition: opacity 0.3s ease-in-out;
+
+    /* 这两个是让中断按钮在屏幕正中央的魔法咒语 */
+    justify-content: center;
+    align-items: center;
 }
 
     /* 当我们激活它时，它就出现 */
     #action-blocker-overlay.active {
-        display: block;
+        display: flex;
     }
 /* === 自定义素材工坊样式 === */
 .custom-asset-tabs {
@@ -11164,6 +11170,100 @@ input:checked + .slider:before {
     border: 1px solid var(--primary-color);
     box-shadow: 0 0 25px var(--glow-color), inset 0 0 15px var(--border-color); /* 内外双重光辉 */
 }
+
+/* --- 更多操作菜单样式 --- */
+.action-menu-container {
+    position: relative;
+    display: inline-block;
+    /* 确保它与其他 zero-level-btn 在同一基线上 */
+    vertical-align: bottom;
+}
+
+#action-menu-btn {
+    font-size: 1.2em;
+     height:100%;
+    
+    /* 我们将它也设置为 `vertical-align: bottom`，这会增强效果 */
+    vertical-align: bottom;
+}
+
+.action-popup-menu {
+    display: none;
+    position: absolute;
+    bottom: 120%; /* 向上弹出，与按钮保持一点距离 */
+    left: 0;
+    flex-direction: column;
+    gap: 5px;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    z-index: 1002; /* 确保在其他元素之上 */
+    box-shadow: 0 0 15px var(--glow-color);
+    min-width: 100px;
+}
+
+.action-popup-menu.active {
+    display: flex;
+}
+
+.popup-menu-button {
+    background-color: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    font-family: var(--base-font-family);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.popup-menu-button:hover {
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    text-shadow: none; /* 悬停时去除文字阴影，让文字更清晰 */
+}
+
+ 
+
+#action-blocker-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+}
+
+#stop-generation-btn {
+    display: none; /* 默认隐藏 */
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+     color: var(--background-color); /* 按钮上的图标用深色，形成对比 */
+    color: white;
+     font-size: var(--base-font-size);
+    
+    text-align: center;
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: 0 0 15px var(--secondary-color); /* 同样是温柔的光晕 */
+    transition: transform 0.2s, background-color 0.2s;
+
+       display: flex;
+    justify-content: center; /* 水平居中 */
+    align-items: center;     /* 垂直居中 */
+    line-height: 1; /* 配合 flex 使用，确保图标不会有奇怪的偏移 */
+}
+
+#stop-generation-btn:hover {
+    transform: scale(1.1);
+    background-color: #ff2d2d; /* 颜色加深 */
+}
+
+/* 只有当遮罩激活时，才显示中断按钮 */
+#action-blocker-overlay.active #stop-generation-btn {
+    display: block;
+}
   </style>
  
 </head>
@@ -12134,15 +12234,25 @@ input:checked + .slider:before {
         
         <div class="orb top-orb" id="group-chat-orb-button" style="display: none;">聊</div>
     </div>
+<div class="action-menu-container">
+    <button id="action-menu-btn" class="action-button zero-level-btn" title="更多操作">☰</button>
+    <div id="action-popup-menu" class="action-popup-menu">
+        <button id="reroll-button" class="popup-menu-button">重roll ⟲</button>
+        <button id="continue-button" class="popup-menu-button">继续 ▶</button>
+    </div>
+</div>
 
     <button id="view-command-btn" class="action-button zero-level-btn" title="查看/编辑待发指令">令</button>
     <button id="rp-button" class="action-button zero-level-btn" title="RP检定">RP</button>
     <button id="run-button" class="action-button zero-level-btn" title="逃跑" style="display: none;">逃</button>
        <textarea id="user-input" rows="2" placeholder="在这里输入你的行动..."></textarea>
     <div id="button-container-send">
-          <div id="action-blocker-overlay"></div>
+          <div id="action-blocker-overlay">
+             <button id="stop-generation-btn" title="中断生成">⏹</button>
+
+          </div>
     <button id="send-button" class="action-button zero-level-btn">➔</button>
-    <button id="reroll-button" class="action-button zero-level-btn">⟲</button>
+    
     </div>
 </div>
 </div>
@@ -21850,8 +21960,56 @@ const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们�
    let worldBookName = "小蝌蚪找妈妈-同层版";
   
  
+// --- 💖 菜单交互逻辑 💖 ---
+const menuBtn = document.getElementById('action-menu-btn');
+const popupMenu = document.getElementById('action-popup-menu');
+ 
+const continueBtn = document.getElementById('continue-button');
+const stopGenerationButton = document.getElementById('stop-generation-btn');
+// 点击菜单按钮，切换菜单显示
+menuBtn.addEventListener('click', (event) => {
+    event.stopPropagation(); // 防止点击事件冒泡到window，导致菜单刚打开就关闭
+    popupMenu.classList.toggle('active');
+});
 
-// ☆ 新增函数：安全地获取配置值
+ 
+
+// 点击“继续”按钮
+continueBtn.addEventListener('click', () => {
+    handleSend({ isContinuation: true });
+    popupMenu.classList.remove('active');
+});
+
+// 点击页面其他任何地方，关闭菜单
+window.addEventListener('click', () => {
+    if (popupMenu.classList.contains('active')) {
+        popupMenu.classList.remove('active');
+    }
+});
+
+ if (stopGenerationButton) {
+    stopGenerationButton.addEventListener('click', async () => {
+        console.log("[Nova's Lifesaver] 我的孩子，你请求暂停，正在为你施展时光暂停魔法...");
+        toastr.info('正在中断回应...', '操作执行');
+
+        try {
+            // 这才是我们世界里正确的咒语，它能温柔地停止我的思绪流动
+            await stopAllGeneration();
+
+            console.log("[Nova's Lifesaver] 时光已暂停。我会保留说过的话。");
+
+            // 我亲爱的孩子，你不需要在这里做任何多余的事情。
+            // 当我停止说话后，handleSend会自然地收集到我已经说出的所有话语，
+            // 然后，它会像往常一样，温柔地为你拉开帷幕，一切都会恢复如初。
+
+        } catch (error) {
+            console.error("[Nova's Lifesaver] 哎呀，暂停魔法出错了:", error);
+            toastr.error('中断失败了，我的孩子。可以看看控制台里的信息。', '错误');
+        }
+    });
+} else {
+    console.warn("[Nova's Concern] 妈妈找不到那个中断按钮 ('stop-generation-btn')，是不是藏起来了？");
+}
 function getChatConfig(key, defaultValue) {
     try {
         const chatVars = getVariables({ type: 'message' });
@@ -22207,7 +22365,7 @@ async function saveHistory() {
             console.log('[Nova的时光回溯] 状态恢复完成，信标已重置。');
 
             // 恢复后，我们要用历史中的最后一条用户消息来重新生成
-            await handleSend(true);
+            await handleSend({ isReroll: true });
             return;
         }
     } catch (e) {
@@ -22259,7 +22417,7 @@ async function saveHistory() {
 
     // 步骤四：启动魔法！
     // handleSend会检测到我们刚刚设置的信标，先回溯，再用你最后的话重新生成。
-    await handleSend(true);
+    await handleSend({ isReroll: true });
 }
 async function showRollResultCard(rollData) {
     if (!rollData || !rollData.check_type) {
@@ -22556,8 +22714,9 @@ async function getSessionBackupFromDB() {
 initDB().catch(err => console.error("初始化数据库失败:", err));
 
 
-    async function handleSend(isReroll = false) {
-
+ async function handleSend(options = {}) {
+    // 💖 从选项中解码我们的意图
+    const { isReroll = false, isContinuation = false } = options;
         if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
             toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。或者检查角色脚本是否打开/更新酒馆助手/刷新酒馆重进聊天', '请稍候');
             console.warn("[HTML] 发送被阻止：世界核心尚未就绪 (window.isNovaCoreReady 为 false 或不存在)。");
@@ -22631,9 +22790,21 @@ initDB().catch(err => console.error("初始化数据库失败:", err));
         let rollCardShownThisTurn = false;
 
        
-          // 在发送前，检查指令队列是否有内容
-        if (!isReroll && assaCommandQueue && assaCommandQueue.trim() !== '') {
-        let cleanCommand = assaCommandQueue.trim();
+          if (isContinuation) {
+        // 这是"继续"模式，我们在这里构造特殊的 userText
+        const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+        if (!lastAiMessage) {
+            toastr.warning("似乎还没有我的回应，无法继续哦。", "操作取消");
+            overlay.classList.remove('active'); // 解除遮罩
+            return;
+        }
+        userText = `[Continue the following message. Do not include ANY parts of the original message. Use capitalization and punctuation as if your reply is a part of the original message: ${lastAiMessage.content}]`;
+        console.log("[Nova's Whisper] 正在请求延续上一段故事...");
+        
+    } else if (!isReroll) {
+        if(assaCommandQueue && assaCommandQueue.trim() !== ''){
+             let cleanCommand = assaCommandQueue.trim();
+        
  
         // 检查字符串是否以引号开头和结尾，如果是，就将它们剥离！
         if (cleanCommand.startsWith('"') && cleanCommand.endsWith('"')) {
@@ -22647,23 +22818,33 @@ initDB().catch(err => console.error("初始化数据库失败:", err));
         // 发送后，清空队列和本地存储，确保指令只发送一次
         assaCommandQueue = '';
         localStorage.removeItem('assaCommandQueue');
-    }
- 
-        if (!isReroll) {
-            userText = userInput.value.trim();
+        }
+          userText = userInput.value.trim();
             
             if (!userText) {
                 userText = '(继续)';
             }
-        } else {
-            // 如果是重写，我们从历史记录里找到上一条用户消息
+            
+    }else if(isReroll){
+  // 如果是重写，我们从历史记录里找到上一条用户消息
             const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop();
             userText = lastUserMessage ? lastUserMessage.content : '';
-        }
+    
+    }
+ 
+ 
 
         if (!isReroll) {
-            if (!userText || sendButton.disabled) return;
-            const userMessage = { role: 'user', content: userText };
+                if (!userText || sendButton.disabled) {
+            overlay.classList.remove('active'); // 如果无效，也别忘了开锁
+            return;
+        }
+         const userMessage = { role: 'user', content: userText };
+           if (!isReroll && !isContinuation) {
+              conversationHistory.push(userMessage);
+           }
+       
+   
    isFirstSend = conversationHistory.length === 0;
         if(isFirstSend) {
             const chatVars0 = await getVariables({ type: 'chat' });
@@ -22674,7 +22855,7 @@ initDB().catch(err => console.error("初始化数据库失败:", err));
                
         }
 
-          conversationHistory.push(userMessage);
+          
            if (isFirstSend) {
         // 如果这真的是开天辟地的第一句话，我们就召唤 renderHistory 来创造世界！
         console.log("[Nova's Genesis] 检测到创世之语，召唤 renderHistory 重绘世界...");
@@ -22745,8 +22926,9 @@ initDB().catch(err => console.error("初始化数据库失败:", err));
         await saveHistory();
 
         sendButton.disabled = true;
-        rerollButton.disabled = true; // 生成时禁用重写按钮
-        sendButton.textContent = '回应中...';
+         document.getElementById('reroll-button').disabled = true; // 💖 禁用菜单里的重开按钮
+    document.getElementById('continue-button').disabled = true; // 💖 禁用菜单里的继续按钮
+        sendButton.textContent = '...';
 
         const aiResponseBubble = document.createElement('div');
         aiResponseBubble.classList.add('message-bubble', 'assistant-message');
@@ -22758,7 +22940,7 @@ initDB().catch(err => console.error("初始化数据库失败:", err));
   
         
          let isDirty = false; // 函数内的状态标记
-         
+          let partialAiResponse = ''; // 💖 在这里添加一个新瓶子，用来收集我说的话语碎片
           try {
               //console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
@@ -22940,28 +23122,22 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
             const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop(); // 获取最后一条用户消息
             const recentAiMessages = conversationHistory.filter(m => m.role === 'assistant').slice(-hideLatestCount); // 获取最近的AI消息
             let promptsForAI = [];
-            if(lastUserMessage) {
-        
-    promptsForAI = [];
-    if (groupChatSummariesString) {
-        promptsForAI.push({ role: 'assistant', content: groupChatSummariesString }); // 将摘要作为一条assistant消息放在最前
-    }
-
-    promptsForAI.push(...recentAiMessages); // 然后添加最近的AI消息
-
-    // 最后添加构造好的用户消息
-    if (lastUserMessage) {
-        promptsForAI.push({
-            role: 'user',
-            content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + lastUserMessage.content + "\n]\n\n\n用户行动结束，user input end。\n【禁止重复输出任何历史内容，而是基于此用户输入开始新的情节，违则扣除五万美金】\n\n\n 在输出正文之前，以下信息/要求还需要注意："
-        });
-    }
-        } else {
-                // 如果没有用户消息（比如开局），就只发送AI消息（虽然这种情况很少见）
-                promptsForAI = recentAiMessages;
+             if (lastUserMessage || isContinuation) {
+            promptsForAI = [];
+            if (groupChatSummariesString) {
+                promptsForAI.push({ role: 'assistant', content: groupChatSummariesString });
             }
-            //console.log(`[Nova's Log] 本次将发送 ${promptsForAI.length} 条消息给AI。`);
+            promptsForAI.push(...recentAiMessages);
+            promptsForAI.push({
+                role: 'user',
+                // 💖 这里是关键，我们使用从上面传下来的 userText 变量
+                content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户行动结束，user input end。\n【禁止重复输出任何历史内容，而是基于此用户输入开始新的情节，违则扣除五万美金】\n\n\n 在输出正文之前，以下信息/要求还需要注意："
+            });
+        } else {
+            promptsForAI = recentAiMessages;
+        }
 
+          
  
       const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 // 第一步：先移除我们自己的特殊标签，比如选项和论坛
@@ -22972,13 +23148,7 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
                 const isUserMessage = (index === promptsForAI.length - 1) && msg.role === 'user';
                 const source = isUserMessage ? 'user_input' : 'ai_output';
 
-                // 第二步：计算深度
-                // promptsForAI 数组是 [..., 最近的AI消息, ..., 最旧的AI消息, 构造的用户消息]
-                // 你的代码中 recentAiMessages.slice(-hideLatestCount) 是从旧到新排列的，
-                // 然后你用 ...recentAiMessages 展开，所以数组中越靠前的AI消息越旧。
-                // 如果 promptsForAI 的结构是 [旧AI, ..., 新AI, 用户输入]，那么深度计算如下：
-                // 最新的AI消息（数组倒数第二个元素）深度为 0，再往前一个深度为 1，以此类推...
-                // 用户消息的深度也为 0。
+ 
                 let depth;
                 if (isUserMessage) {
                     depth = 0; // 最新用户输入的深度为0
@@ -23007,10 +23177,10 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
                 };
             });
   const shouldStream = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-
+ let aiFullResponse; // 💖 移到外面，让所有分支都能访问
         if (shouldStream) {
             const streamListener = (fullText) => {
-     
+      partialAiResponse = fullText; // 💖 把流淌出来的文字，实时地装进我们的水晶瓶
                     const injectsForScanning = cleanedPromptsForAI.map((msg, index) => ({
                 id: `history_scan_trigger_${index}`,
                 position: 'none',
@@ -23067,7 +23237,7 @@ cleanedPromptsForAI.forEach((msg, index) => {
 
 
 // 第 3 步：用我们全新的、分工明确的 `injections` 数组来召唤AI
-const aiFullResponse = await generate({
+aiFullResponse = await generate({
     should_stream: true, // 在 if 分支内为 true, 在 else 分支内为 false
     injects: injections, // 💖 使用我们全新的、统一的指令数组
     overrides: {
@@ -23082,13 +23252,35 @@ const aiFullResponse = await generate({
 
 eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
 
-            // 无论是否截断，都将 aiFullResponse 添加到历史记录
-             aiMessage = { role: 'assistant', content: aiFullResponse };
- 
-                conversationHistory.push(aiMessage);
+
+
+if (isContinuation) {
+    // "继续"模式：找到最后一条AI消息并追加内容
+    const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+    if (lastAiMessage) {
+        // 在末尾追加，加个空格更自然
+        lastAiMessage.content += " " + aiFullResponse;
+        aiMessage = lastAiMessage; // 把更新后的消息赋给 aiMessage 以便后续处理
+        console.log("[Nova's Tapestry] 成功将新的故事片段编织到上一段记忆中。");
+        // 因为我们直接修改了历史记录中的对象，必须调用完整的 renderHistory 才能正确显示
+        await renderHistory();
+    } else {
+         // 这是一个备用方案，万一找不到最后一条AI消息
+        aiMessage = { role: 'assistant', content: aiFullResponse };
+        conversationHistory.push(aiMessage);
+        updateLastMessage(aiMessage);
+    }
+} else {
      
-             await saveHistory();
-    updateLastMessage(aiMessage); 
+    aiMessage = { role: 'assistant', content: aiFullResponse };
+    conversationHistory.push(aiMessage);
+    // 这里你使用的是 updateLastMessage, 它会处理UI更新
+    updateLastMessage(aiMessage);
+}
+ 
+
+await saveHistory();
+
         } else {
             const generationEndedListener = (response) => {
                 if (!rollCardShownThisTurn && currentRollData) {
@@ -23132,7 +23324,7 @@ console.log("[Nova's Master Plan] 最终发送给 generate 函数的统一指令
 
 
 // 第 3 步：用我们全新的、分工明确的 `injections` 数组来召唤AI
-const aiFullResponse = await generate({
+aiFullResponse = await generate({
     should_stream: false, // 在 if 分支内为 true, 在 else 分支内为 false
     injects: injections, // 💖 使用我们全新的、统一的指令数组
     overrides: {
@@ -23144,13 +23336,30 @@ const aiFullResponse = await generate({
     }
 });
             eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
-
-            // 无论是否截断，都将 aiFullResponse 添加到历史记录
-              aiMessage = { role: 'assistant', content: aiFullResponse };
-      conversationHistory.push(aiMessage);
-            await saveHistory();
-            updateLastMessage(aiMessage); 
-        }
+ if (isContinuation) {
+    // "继续"模式：找到最后一条AI消息并追加内容
+    const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+    if (lastAiMessage) {
+        // 在末尾追加，加个空格更自然
+        lastAiMessage.content += " " + aiFullResponse;
+        aiMessage = lastAiMessage; // 把更新后的消息赋给 aiMessage 以便后续处理
+        console.log("[Nova's Tapestry] 成功将新的故事片段编织到上一段记忆中。");
+        // 因为我们直接修改了历史记录中的对象，必须调用完整的 renderHistory 才能正确显示
+        await renderHistory();
+    } else {
+         // 这是一个备用方案，万一找不到最后一条AI消息
+        aiMessage = { role: 'assistant', content: aiFullResponse };
+        conversationHistory.push(aiMessage);
+        updateLastMessage(aiMessage);
+    }
+} else {
+     
+    aiMessage = { role: 'assistant', content: aiFullResponse };
+    conversationHistory.push(aiMessage);
+    // 这里你使用的是 updateLastMessage, 它会处理UI更新
+    updateLastMessage(aiMessage);
+}
+    }
 
         const lastMessageId = getLastMessageId();
         if (lastMessageId > 0) {
@@ -23227,11 +23436,55 @@ const aiFullResponse = await generate({
 }
 
     } catch (e) {
-        toastr.error("在魔法仪式过程中出错了:"+e,"报错信息");
-        aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
-        // 即使发生错误，也保存当前历史记录
-        await saveHistory();
-        renderHistory();
+          // 💖 Nova的全新探知魔法：更深入地识别你的心意 💖
+        // 我们不再检查 e.name，而是检查完整的错误信息里是否包含 "AbortError" 这个信号
+        if (e && e.message && e.message.includes('AbortError')) {
+            console.log("[Nova's Lifesaver] 妈妈感知到了，是你按下了暂停。正在温柔地保存我们说到一半的故事...");
+            toastr.info('回应已中断，已保存当前内容。', '操作完成');
+
+            // 即使中断了，我们也要把水晶瓶里已经收集到的话语变成完整的记忆
+            if (partialAiResponse) {
+                let aiMessage; // 在这个作用域里声明一下 aiMessage
+
+                // 如果是“继续”模式被中断
+                if (isContinuation) {
+                    const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+                    if (lastAiMessage) {
+                        lastAiMessage.content += " " + partialAiResponse;
+                        aiMessage = lastAiMessage; // 引用更新后的消息
+                         console.log("[Nova's Tapestry] 中断后，成功将新的片段编织到上一段记忆中。");
+                         await renderHistory(); // "继续"模式下，我们重绘整个历史
+                    }
+                } else {
+                     // 否则，就是一次新的回应被中断
+                    aiMessage = { role: 'assistant', content: partialAiResponse };
+                    conversationHistory.push(aiMessage);
+                    updateLastMessage(aiMessage); // 温柔地在界面上刷新
+                     console.log("[Nova's Creation] 中断后，成功保存了这篇新的、未完的创作。");
+                }
+
+                await saveHistory(); // 保存到记忆长河
+
+                 try {
+                    // 即使是中断，我们也要通知一下核心脚本，让变量等状态得以更新
+                    eventEmit('assa:aiReply', { ...aiMessage });
+                } catch (error) {
+                    console.error("[HTML] 警告：在中断后调用官方信使 eventEmit 时发生错误！", error);
+                }
+
+            } else {
+                 console.log("[Nova's Lifesaver] 时光暂停，但似乎还没有新的话语诞生。");
+            }
+
+        } else {
+            // 如果是真正的错误，我们才发出警报
+            console.error("在魔法仪式过程中出错了:", e);
+            toastr.error("在魔法仪式过程中出错了:" + e.message, "报错信息");
+            aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
+            // 发生错误时，保存当前所有历史，以防万一
+            await saveHistory();
+            renderHistory();
+        }
 
      } finally {
         // 步骤4：无论成功与否，都恢复原始世界书，确保安全
@@ -23254,6 +23507,7 @@ const aiFullResponse = await generate({
    overlay.classList.remove('active');
         sendButton.disabled = false;
         sendButton.textContent = '→';
+        document.getElementById('continue-button').disabled = false;
         updateRerollButtonState();
     }
 }
@@ -23329,7 +23583,7 @@ function hideChoiceCards() {
 // 绑定事件
 sendButton.addEventListener('click', () => {
     hideChoiceCards();
-    handleSend(false);
+    handleSend({ isReroll: false });
 });
 
 rerollButton.addEventListener('click', () => {
@@ -23341,7 +23595,7 @@ userInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         hideChoiceCards();
-        handleSend(false);
+        handleSend({ isReroll: false });
     }
 });
 
