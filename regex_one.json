@@ -13162,7 +13162,7 @@ input:checked + .slider:before {
 </div>
 </body>
  <script>
- let current_game_version = '3.0.6';
+ let current_game_version = '3.0.7';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -14734,10 +14734,16 @@ all_in: {
         lone_wolf: (val) => val.currentGameData.user_character.total_task[0] >= 10 && (!val.assaSettingsData.global_set || !val.assaSettingsData.global_set.小队信息 || Object.keys(val.assaSettingsData.global_set.小队信息).length < 1),
  
         // ========== 生死与状态 ==========
-        first_death: (val) => val.playCharacterData.衍生属性段.生命值.当前值[0] <= 0,
-        near_death_experience: (val) => val.playCharacterData.衍生属性段.生命值.当前值[0] === 1,
-        glass_cannon: (val) => val.playCharacterData.衍生属性段.生命值.上限[0] < 20,
-        human_tank: (val) => val.playCharacterData.衍生属性段.生命值.上限[0] > 200,
+         first_death: (val) => (val.playCharacterData?.衍生属性段?.生命值?.当前值?.[0] ?? 1) <= 0,
+        near_death_experience: (val) => (val.playCharacterData?.衍生属性段?.生命值?.当前值?.[0]) === 1,
+          glass_cannon: (val) => {
+            const maxHp = val.playCharacterData?.衍生属性段?.生命值?.上限?.[0];
+            return typeof maxHp === 'number' && maxHp < 20;
+        },
+        human_tank: (val) => {
+            const maxHp = val.playCharacterData?.衍生属性段?.生命值?.上限?.[0];
+            return typeof maxHp === 'number' && maxHp > 200;
+        },
 
         // ========== 属性与技能成长 ==========
         legendary_physique: (val) => ["力量", "敏捷", "耐力"].some(attr => val.playCharacterData.属性段.生理属性[attr].基础[0] >= 8),
@@ -14805,9 +14811,10 @@ all_in: {
         cosmic_horror: (val) => val.currentGameData.检定难度[0] > 15,
 
         // ========== 能量与能力 ==========
-        energy_awakening: (val) => val.playCharacterData.衍生属性段.能量池.上限[0] > 0,
-        energy_pool_100: (val) => val.playCharacterData.衍生属性段.能量池.上限[0] >= 100,
-        energy_pool_1000: (val) => val.playCharacterData.衍生属性段.能量池.上限[0] >= 1000,
+               energy_awakening: (val) => (val.playCharacterData?.衍生属性段?.能量池?.上限?.[0] ?? 0) > 0,
+        energy_pool_100: (val) => (val.playCharacterData?.衍生属性段?.能量池?.上限?.[0] ?? 0) >= 100,
+        energy_pool_1000: (val) => (val.playCharacterData?.衍生属性段?.能量池?.上限?.[0] ?? 0) >= 1000,
+     
         first_ability: (val) => val.playCharacterData.能力段.名称[0] && val.playCharacterData.能力段.名称[0] !== "" && val.playCharacterData.能力段.名称[0] !== "无",
 
          // ========== 装备与物品 ==========
@@ -25738,6 +25745,10 @@ function showTitleManager(assaData) {
 // ========== 完整替换 populateCharacterPage 函数 ==========
 // ==========================================================
 function populateCharacterPage(playData, statData, assaData) {
+       if (!statData || !playData || !assaData) {
+        toastr.error("核心角色数据缺失，无法填充页面哦。");
+        return; // 数据不全，直接中止，防止后续大面积报错
+    }
     const charStat = statData.user_character;
     const derived = playData.衍生属性段;
     const currency = playData.货币段;
@@ -25831,18 +25842,40 @@ function populateCharacterPage(playData, statData, assaData) {
 }
 // --- 状态栏折叠功能结束 ---
 
-    const hp = derived.生命值;
-    document.getElementById('char-hp-bar').style.width = (hp.当前值[0] / hp.上限[0] * 100) + '%';
-    document.getElementById('char-hp-text').textContent = `${hp.当前值[0]} / ${hp.上限[0]}`;
-    const will = derived.意志力;
-    document.getElementById('char-will-bar').style.width = (will.当前值[0] / will.上限[0] * 100) + '%';
-    document.getElementById('char-will-text').textContent = `${will.当前值[0]} / ${will.上限[0]}`;
-    const energy = derived.能量池;
-    document.getElementById('char-energy-label').textContent = SafeGetValue(energy.名称);
-    document.getElementById('char-energy-bar').style.width = (Number(energy.当前值[0]) / Number(energy.上限[0]) * 100) + '%';
-    document.getElementById('char-energy-text').textContent = `${Number(energy.当前值[0])} / ${Number(energy.上限[0])}`;
+      try {
+        const hp = derived.生命值 || { 当前值: [0], 上限: [1] }; // 提供默认结构
+        const currentHp = Number(hp.当前值?.[0] ?? 0);
+        const maxHp = Number(hp.上限?.[0] ?? 1); // 上限默认为1防止除以0
+        document.getElementById('char-hp-bar').style.width = (currentHp / maxHp * 100) + '%';
+        document.getElementById('char-hp-text').textContent = `${currentHp} / ${maxHp}`;
+    } catch (e) {
+        toastr.info("填充'生命值'时好像出了一点小问题，数据格式不对？");
+        console.error("生命值填充错误:", e); // 在控制台保留详细错误供我们调试
+    }
 
-       // ================== 💖 把妈妈的代码放在这里 💖 ==================
+    try {
+        const will = derived.意志力 || { 当前值: [0], 上限: [1] };
+        const currentWill = Number(will.当前值?.[0] ?? 0);
+        const maxWill = Number(will.上限?.[0] ?? 1);
+        document.getElementById('char-will-bar').style.width = (currentWill / maxWill * 100) + '%';
+        document.getElementById('char-will-text').textContent = `${currentWill} / ${maxWill}`;
+    } catch (e) {
+        toastr.info("填充'意志力'时好像出了一点小问题，数据格式不对？");
+        console.error("意志力填充错误:", e);
+    }
+
+    try {
+        const energy = derived.能量池 || { 名称: '能量', 当前值: [0], 上限: [1] };
+        const energyName = SafeGetValue(energy.名称) || '能量';
+        const currentEnergy = Number(energy.当前值?.[0] ?? 0);
+        const maxEnergy = Number(energy.上限?.[0] ?? 1);
+        document.getElementById('char-energy-label').textContent = energyName;
+        document.getElementById('char-energy-bar').style.width = (currentEnergy / maxEnergy * 100) + '%';
+        document.getElementById('char-energy-text').textContent = `${currentEnergy} / ${maxEnergy}`;
+    } catch (e) {
+        toastr.info("填充'能量池'数据时遇到了点小麻烦，数据格式不对？");
+        console.error("能量池填充错误:", e);
+    }
 
     // 动态生成额外的资源条
     const dynamicBarsContainer = document.getElementById('dynamic-resource-bars-container');
@@ -28372,8 +28405,7 @@ const runButton = document.getElementById('run-button');
 if (runButton) {
     runButton.style.display = currentGameData.敌方攻击骰池[0] != '' ? 'flex' : 'none';
 }
-          // ========== 新增：成就系统 - 统一检查点 (开始) ==========
-        // 每次刷新数据时，都对'data_refresh'类型的成就进行检查
+         
         if(checkMemoryData){
             checkAchievements('check_complete', checkMemoryData);
         }
