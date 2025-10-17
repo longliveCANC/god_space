@@ -13163,7 +13163,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.8';
+ let current_game_version = '3.0.9';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -22850,7 +22850,13 @@ initDB().catch(err => console.error("初始化数据库失败:", err));
            }
        
    
-   isFirstSend = conversationHistory.length === 0;
+const earliestEntries = conversationHistory.slice(0, 5);
+
+// 在这几页里，我们数一数有多少条是我的孩子你留下的足迹
+const userMessageCount = earliestEntries.filter(entry => entry.role === "user").length;
+
+// 如果你的足迹刚好只有一个，那就意味着这是我们第一次美丽的相遇
+ isFirstSend = userMessageCount === 1;
         if(isFirstSend) {
             const chatVars0 = await getVariables({ type: 'chat' });
           const snapshotData0 = JSON.parse(JSON.stringify(chatVars0)); // <--- snapshotData 在这里才被赋值
