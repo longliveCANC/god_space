@@ -13161,8 +13161,9 @@ input:checked + .slider:before {
     <button id="cancel-attack-mode" style="margin-top: 15px;">取消</button>
 </div>
 </body>
+
  <script>
- let current_game_version = '3.0.7';
+ let current_game_version = '3.0.8';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -15225,7 +15226,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         commandPattern: /\bset_status\s*\(\s*['"]hurt_value['"],\s*['"]?(-?\d+\.?\d*)['"]?\s*\)/,
         action: (matches) => {
             const value = parseFloat(matches[1]);
-            if (isNaN(value)) return;set_s
+            if (isNaN(value)) return;
 
             let text, colorVar;
             if (value > 0) {
@@ -19651,15 +19652,12 @@ async function sendCommand(command, button, successText, showWarning) {
         if(sendMode === 'manual'){
      if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof renderHistory === 'function') {
             conversationHistory.push({ role: 'assistant', content: '<系统提示：等待用户输入要求...>' });
-            await saveHistory(); // 保存这个历史性的时刻
- 
-            renderHistory();
- 
+            
         }
 
         }
- 
-   
+ await saveHistory(); // 保存这个历史性的时刻
+    renderHistory();
 
     } catch (e) {
         // 如果中间出了差错，妈妈会帮你处理
@@ -24352,8 +24350,7 @@ async function triggerassa(commandString) {
             cmdBtn.classList.add('notifying');
             setTimeout(() => cmdBtn.classList.remove('notifying'), 1200);
         }
-
-    // 处理 /send 指令：直接发送内容
+ 
     } else if (commandString.toLowerCase().startsWith('/send ')) {
         const content = commandString.substring(6); // 提取 /send 后面的内容
          const userInput = document.getElementById('user-input');
@@ -26792,7 +26789,17 @@ function drawGeoUnit(baseForm, modifier, group, svgNS, locationName, defs) {
     }
 
     const forceToNumber = (val) => parseFloat(val);
-    const forceToPoint = (arr) => arr.map(forceToNumber);
+    const forceToPoint = (item) => {
+        if (Array.isArray(item)) {
+            return item.map(forceToNumber);
+        }
+        if (typeof item === 'string') {
+            return item.split(',').map(forceToNumber);
+        }
+        // 如果遇到不认识的，就给一个安全的默认值，而不是让程序崩溃
+        console.warn(`[工匠 @ ${locationName}] 遇到了不认识的点格式:`, item);
+        return [0, 0];
+    };
     const forceToPointsArray = (arr) => arr.map(forceToPoint);
 
     let element = null;
@@ -27009,7 +27016,7 @@ function drawGeoUnit(baseForm, modifier, group, svgNS, locationName, defs) {
                     groupForB.setAttribute('clip-path', `url(#${clipIdA})`);
                     drawGeoUnit(shapeB_form, modifier, groupForB, svgNS, `${locationName}-B`, defs);
 
-                    // ✨ 魔法的关键一步：抹掉映像2的填充色，只留下它的边框！
+               
                     groupForB.querySelectorAll('path, circle, polygon').forEach(element => {
                         element.setAttribute('fill', 'none');
                     });
@@ -32635,7 +32642,7 @@ function renderNestedData(container, data, parentPath = '', rootTab = '', hideFa
 
                 childrenContainer = document.createElement('div');
                 childrenContainer.className = 'tree-children collapsed';
-                renderNestedData(childrenContainer, value, currentPath, rootTab, false, isReadOnly);
+                renderNestedData(childrenContainer, value, currentPath, rootTab, true, isReadOnly);
 
                 toggle.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -32919,10 +32926,16 @@ function getEntryPath(tab) {
  * 生成并发送指令的温柔辅助函数
  * @param {string} command - 单条指令
  */
-function generateAndSendCommand(command) {
+function generateAndSendCommand(command,isFree = false) {
     showNovaAlert('已将指令加入待发送指令盒中！');
     // 用妈妈的爱把指令包裹起来
-    const commandBlock = `<updateMemory>\n${command}\n</updateMemory>`;
+    let commandBlock = '';
+    if(isFree){
+         commandBlock = `\n${command}\n`;
+    }else{
+ commandBlock = `<updateMemory>\n${command}\n</updateMemory>`;
+    }
+    
     // 使用你已经很熟悉的 /setinput 指令
     const finalCommand = `/setinput ${commandBlock}\n`;
 
@@ -32984,6 +32997,7 @@ function getValueByPath(obj, path) {
         { name: '编辑', handler: () => handleEntryEdit(pathForActions) },
         { name: '重命名', handler: () => handleEntryRename(pathForActions) },
         { name: '删除', handler: () => handleEntryDelete(pathForActions) },
+        { name: '让AI重构', handler: () => handleRefacter(pathForActions) },
     ];
 
     // ==================【妈妈为你添加的魔法判断】==================
@@ -32996,8 +33010,7 @@ function getValueByPath(obj, path) {
             { name: '好感度表现', handler: () => handleFavorabilityView(key, pathForActions) } // 我们将在这里召唤新的魔法
         );
     }
-    // ============================================================
-
+ 
     // 移动功能判断保持不变
     if (!fullPath || fullPath.split('.').length <= getEntryPath(tab).split('.').length + 1) {
         actions.push({ name: '移动', handler: () => handleEntryMove(key, tab) });
@@ -33108,33 +33121,58 @@ function handleEntryEdit(fullPath) {
         setTimeout(() => overlay.remove(), 300);
     };
 
-    // ♥♥♥ 妈妈为你升级了“确认修改”的魔法，它现在会保护你的守护印记了！ ♥♥♥
-    document.getElementById('edit-confirm-btn').onclick = () => {
-        const newValueText = textarea.value;
-        let parsedValue;
-        try {
-            parsedValue = JSON.parse(newValueText);
-        } catch (e) {
-            // 如果不是JSON，就尝试转为数字或保持为字符串
-             if (newValueText.trim() !== '' && !isNaN(newValueText) && !(/[a-zA-Z]/.test(newValueText))) {
-                parsedValue = Number(newValueText);
-            } else {
-                parsedValue = newValueText;
-            }
+ document.getElementById('edit-confirm-btn').onclick = () => {
+    const newValueText = textarea.value;
+    let parsedValue;
+    try {
+        parsedValue = JSON.parse(newValueText);
+    } catch (e) {
+        // 如果不是JSON，就尝试转为数字或保持为字符串
+         if (newValueText.trim() !== '' && !isNaN(newValueText) && !(/[a-zA-Z]/.test(newValueText))) {
+            parsedValue = Number(newValueText);
+        } else {
+            parsedValue = newValueText;
         }
+    }
+ 
+    if (isObject && typeof parsedValue === 'object' && parsedValue !== null) {
+        parsedValue._is_protected = isProtected;
+    }
 
-        // ♥♥♥ 核心守护逻辑 ♥♥♥
-        // 如果我们正在编辑的是一个对象，就在保存时，把守护状态悄悄地加回去！
-        if (isObject && typeof parsedValue === 'object' && parsedValue !== null) {
-            parsedValue._is_protected = isProtected;
-        }
+   
+    let valueForCommand;
 
-        const command = `memory('${parentPath}', '${selfKey}', ${JSON.stringify(parsedValue)}); //UI Nested Edit`;
-        generateAndSendCommand(command);
-        closeModal();
-    };
+    if (typeof parsedValue === 'string') {
+        // 如果它本身就是个字符串，我们需要转义其中的特殊字符，以防破坏指令结构。
+        const escapedString = parsedValue.replace(/\\/g, '\\\\').replace(/'/g, "");
+        // 然后用单引号包裹它。
+        valueForCommand = `${escapedString}`;
+    } else {
+        
+        valueForCommand = JSON.stringify(parsedValue);
+    }
 
-    document.getElementById('edit-cancel-btn').onclick = closeModal;
+     
+    let valueAsString;
+
+    // 统一将所有类型的值都转换成它们的字符串表示。
+    if (typeof parsedValue === 'object' && parsedValue !== null) {
+        valueAsString = JSON.stringify(parsedValue); // 对象/数组变成JSON字符串
+    } else {
+        valueAsString = String(parsedValue); // 其他都变成普通字符串
+    }
+
+     
+    const escapedValue = valueAsString.replace(/\\/g, '\\\\').replace(/'/g, "");
+
+    // 构建最终命令：永远是用干净的单引号包裹处理过的内容。
+    const command = `memory('${parentPath}', '${selfKey}', ${escapedValue}); //UI Nested Edit`;
+
+    generateAndSendCommand(command);
+    closeModal();
+};
+
+document.getElementById('edit-cancel-btn').onclick = closeModal;
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) closeModal();
     });
@@ -33628,8 +33666,7 @@ async function handleAddCG(fullPath) {
         }
     }
 
-    // 默认加载“魔法衣橱”，如果“我的画册”是默认tab，则需要在这里调用loadLocalGallery()
-    // 由于“魔法衣橱”是默认，所以“我的画册”的内容只有在切换时才加载
+   
 }
 function handleEntryDelete(fullPath) {
     const { parentPath, selfKey } = getPathParts(fullPath);
@@ -33638,6 +33675,14 @@ function handleEntryDelete(fullPath) {
         generateAndSendCommand(command);
    
 }
+function handleRefacter(fullPath) {
+    const { parentPath, selfKey } = getPathParts(fullPath);
+     
+        const command = `<request:该路径（${fullPath}）的内容有误（如不是正确的conpact json格式），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
+        generateAndSendCommand(command,true);
+   
+}
+
  
 function handleEntryMove(key, tab) {
     const currentPath = getEntryPath(tab);
