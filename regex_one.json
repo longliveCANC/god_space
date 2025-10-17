@@ -33678,7 +33678,7 @@ function handleEntryDelete(fullPath) {
 function handleRefacter(fullPath) {
     const { parentPath, selfKey } = getPathParts(fullPath);
      
-        const command = `<request:该路径（${fullPath}）的内容有误（如不是正确的conpact json格式），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
+        const command = `<request:该路径（${fullPath}）的内容有误（如不是正确的compact json格式），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
         generateAndSendCommand(command,true);
    
 }
