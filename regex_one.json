@@ -13167,7 +13167,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.10';
+ let current_game_version = '3.0.11';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -24247,32 +24247,40 @@ async function handleModalFileSelect(event) {
         try {
             const importedData = JSON.parse(e.target.result);
             addModalLog("✓ JSON文件解析成功", 'success');
-            try {
+               // --- ▼ 新增逻辑 v3：从文件名恢复第0层消息 ▼ ---
+       // --- ▼ 新增逻辑 v4 (最终修正版)：从文件名恢复第0层消息 ▼ ---
+addModalLog("正在尝试从文件名恢复第0层信息...");
+try {
     const fileName = file.name;
-    // 正则表达式：(1)捕获从开头到第一个'__'的所有字符 (2)捕获'__'与'.json'之间的所有字符
-    const archiveNameMatch = fileName.match(/^(.*?)__/);
-    const worldbookMatch = fileName.match(/__(.*?)(?=\.json$)/);
+    // 使用一个更宽容的正则表达式，它能处理结尾处可能存在的空格
+    const matches = fileName.match(/^(.*?)__世界书条目_(.*?)_世界书条目_\s*\.json$/);
 
-    // 同样，确保两部分都成功匹配到了
-    if (archiveNameMatch && archiveNameMatch[1] && worldbookMatch && worldbookMatch[1]) {
-        // [1] 是因为 match() 返回的数组中，第一个元素是完整匹配，第二个才是我们捕获组()里的内容
-        const archiveName = archiveNameMatch[1];
-        const worldbookContent = worldbookMatch[1].trim();
+    // matches[1] 是存档名, matches[2] 是世界书ID
+    if (matches && matches[1] !== undefined && matches[2] !== undefined) {
+        // 使用 trim() 清理一下可能捕获到的前后空格，确保纯净
+        const archiveName = matches[1].trim();
+        const worldbookContent = matches[2].trim();
 
-        const messageContent = `<存档>${archiveName}</存档>`;
-        const worldbookTag = `<世界书条目>${worldbookContent}</世界书条目>`;
+        // 仅在存档名不为空时才设置，避免文件名开头就是'__'导致存档名为空
+        if (archiveName) {
+            const messageContent = `<存档>${archiveName}</存档>`;
+            const worldbookTag = `<世界书条目>${worldbookContent}</世界书条目>`;
+            const finalZeroLevelMessage = `${messageContent}\n${worldbookTag}`;
 
-        const finalZeroLevelMessage = `${messageContent}\n${worldbookTag}`;
+            await setChatMessages([{ message_id: 0, message: finalZeroLevelMessage }], { refresh: 'none' });
+            addModalLog("✓ 已成功从文件名恢复存档名与世界书条目。", 'success');
 
-        await setChatMessages([{ message_id: 0, message: finalZeroLevelMessage }], { refresh: 'none' });
+        } else {
+            addModalLog("文件名中未找到有效的存档名部分，跳过恢复。", 'warning');
+        }
 
-        addModalLog("✓ 已成功从文件名恢复第0层信息。", 'success');
     } else {
-        addModalLog("文件名格式不符合 '存档名__世界书条目.json' 规则，无法恢复第0层信息。", 'warning');
+        addModalLog("文件名格式不符合 '存档名__世界书条目_IDs_世界书条目_.json' 规则，无法恢复。", 'warning');
     }
 } catch (err) {
     addModalLog(`✗ 从文件名恢复第0层信息时出错: ${err.message}`, 'error');
 }
+
             await processDataDirectly(importedData);
         } catch (err) {
             addModalLog(`✗ JSON解析失败: ${err.message}`, 'error');
