@@ -13169,7 +13169,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.12';
+ let current_game_version = '3.0.13';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -20661,7 +20661,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
         } else {
             toastr.error(`绑定失败了。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」。`);
         }
-
+checkWorldbookBinding(worldbookName);
     } catch (error) {
         toastr.error(`出错了，请查看控制台，并将报错发送给assa诊断。`);
         console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
@@ -23765,7 +23765,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
         } else {
             toastr.error(`绑定失败了。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」。`);
         }
-
+checkWorldbookBinding(worldbookName);
     } catch (error) {
         toastr.error(`出错了，请查看控制台，并将报错发送给assa诊断。`);
         console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
@@ -28400,7 +28400,32 @@ function togglePixelatedEffect(containerSelector = '.status-container', enable =
         updateContainerBackground(currentGameData, containerSelector);
     }
 }
+async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层版') {
+    toastr.info(`正在确认与「${worldbookName}」的链接...`);
 
+    try {
+        // 第一步：静心聆听，感知当前角色灵魂深处绑定的世界。
+        // `getCharWorldbookNames`会告诉我们角色的主世界书(primary)和其他辅助世界书(additional)。
+        const bindings = await TavernHelper.getCharWorldbookNames('current');
+
+        // 第二步：进行比对，确认链接是否指向我们期望的方向。
+        // 我们只关心那个最重要、最核心的“主世界书”链接。
+        if (bindings && bindings.primary === worldbookName) {
+            // 如果链接正确，就让成功的喜悦化作一道柔和的光。
+            toastr.success(`当前角色已和「${worldbookName}」完美绑定。`);
+            console.log(`守护咒语确认：与「${worldbookName}」的链接正确无误。`);
+        } else {
+            // 如果链接出现了偏差，就要发出温柔的警示，以免我们的故事迷失方向。
+            const currentPrimary = (bindings && bindings.primary) ? bindings.primary : '任何世界';
+            toastr.warning(`注意，世界书链接不匹配！`, `期望绑定「${worldbookName}」，但当前角色并未与之绑定。`);
+            console.warn(`守护咒语警告：期望绑定「${worldbookName}」，但当前主世界是「${currentPrimary}」。`);
+        }
+    } catch (error) {
+        // 如果在探查过程中感应到了能量风暴（错误），我们也要及时告知。
+        toastr.error('感知世界书链接时出错，请查看控制台。');
+        console.error('执行灵魂链接守护咒语时发生错误:', error);
+    }
+}
  async function initDisplay(is_first=true) {
      // 💎 水晶球#4: 每次这个强大的管家被召唤时，都让他报个到
     console.log(`[initDisplay 被召唤] is_first: ${is_first}, 当前时间: ${new Date().toLocaleTimeString()}`);
@@ -31132,7 +31157,7 @@ container.querySelectorAll('.reconfig-mod-item input:checked').forEach(checkbox 
 
 document.addEventListener('DOMContentLoaded', async () => {
    await loadWorldbookSettingsFromChat();
-
+checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 setupReconfigModal();
  await applyThemeAndData();  
 
@@ -33118,6 +33143,34 @@ function getValueByPath(obj, path) {
     });
 
     document.body.appendChild(menu);
+ 
+    const menuRect = menu.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    let top = rect.bottom + window.scrollY;
+    let left = rect.right - menuRect.width;
+
+    // ✨ 检查垂直方向是否会超出 ✨
+    if (rect.bottom + menuRect.height > viewportHeight) {
+        // 如果会超出，就把它变到按钮的上面去
+        top = rect.top + window.scrollY - menuRect.height;
+    }
+
+    // ✨ 妈妈顺便也帮你检查一下水平方向 ✨
+    // 如果菜单的最左边跑到了屏幕外面
+    if (left < 0) {
+        left = 0; // 就让它贴着最左边
+    }
+    // 如果菜单的最右边跑到了屏幕外面（这种情况比较少见，但妈妈也想到了）
+    if (left + menuRect.width > viewportWidth) {
+        left = viewportWidth - menuRect.width;
+    }
+
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    // ==================【💖 妈妈的“约束咒”到这里结束 💖】==================
 
     const closeMenu = (e) => {
         if (!menu.contains(e.target)) {
@@ -33127,10 +33180,8 @@ function getValueByPath(obj, path) {
     };
     setTimeout(() => document.addEventListener('click', closeMenu), 0);
 }
-// --- 以下是被妈妈温柔升级过的操作处理函数 ---
-
- // --- 以下是被妈妈温柔升级过的操作处理函数 ---
- // 💖 这是妈妈为你全面升级的、自带守护功能的 handleEntryEdit 函数 💖
+ 
+ 
 function handleEntryEdit(fullPath) {
     const { parentPath, selfKey } = getPathParts(fullPath);
     const rootData = typeof assaSettingsData !== 'undefined' ? assaSettingsData : {};
