@@ -13169,7 +13169,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.13';
+ let current_game_version = '3.0.14';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -23756,16 +23756,17 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
         await TavernHelper.rebindCharWorldbooks('current', currentBindings);
 
-        // ... 后续绑定检查的部分 ...
+     
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const newBindings = await TavernHelper.getCharWorldbookNames('current');
         if (newBindings && newBindings.primary === worldbookName) {
             toastr.success(`当前角色已和「${worldbookName}」绑定！`);
+            checkWorldbookBinding(worldbookName);
         } else {
             toastr.error(`绑定失败了。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」。`);
         }
-checkWorldbookBinding(worldbookName);
+
     } catch (error) {
         toastr.error(`出错了，请查看控制台，并将报错发送给assa诊断。`);
         console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
