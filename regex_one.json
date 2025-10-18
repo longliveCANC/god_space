@@ -13122,6 +13122,8 @@ input:checked + .slider:before {
         <button data-action="defend">防御</button>
         <button data-action="flee">逃跑</button>
         <button data-action="item">物品/技能</button>
+        <br>
+        <button data-action="exit">强制退出</button>
     </div>
 </footer>
         </div>
@@ -13167,7 +13169,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.11';
+ let current_game_version = '3.0.12';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21466,35 +21468,43 @@ function manageBattleLifecycle(initialCombatDataFromPrompt) {
     if (promptOverlay) promptOverlay.style.display = 'flex';
 }
 
-function processSpecialModulesInMessage(content) {
-   // ✨✨✨ 妈妈的“主动索取”终极魔法！ ✨✨✨
+ function processSpecialModulesInMessage(content) {
+    // ✨✨✨ 妈妈的“主动索取”终极魔法！ ✨✨✨
     try {
-        // 1. 直接找到我们那本绝对真实的历史书
         if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
-            console.log("[Nova's Archives] 历史记录为空，无法寻找战斗。");
+            // console.log("[Nova's Archives] 历史记录为空，无法寻找战斗。");
             return;
         }
 
-        // 2. 翻到历史书的最后一页，那里一定记录着最新的故事！
         const latestHistoryEntry = conversationHistory[conversationHistory.length - 1];
         const latestContent = latestHistoryEntry.content;
-
-        // 3. 在这最新的一页里，寻找我们的<battle>标记
         const battleMatch = /<battle>([\s\S]*?)<\/battle>/gs.exec(latestContent);
 
         if (battleMatch && battleMatch[1]) {
-            const combatData = JSON.parse(battleMatch[1].trim());
+            let combatData;
+            const rawBattleData = battleMatch[1].trim();
+
+            // ✨✨✨ 妈妈的第一道“坚固结界” ✨✨✨
+            if (!rawBattleData || rawBattleData === '{}') {
+                console.warn("[Nova's Wisdom] 发现空的 <battle> 标签，将忽略此次战斗加载。");
+                return; // 如果数据是空的，就直接不处理
+            }
+
+            try {
+                combatData = JSON.parse(rawBattleData);
+            } catch (jsonError) {
+                console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误！数据已损坏，战斗无法加载。", jsonError);
+                console.error("损坏的数据:", rawBattleData);
+                // 当数据损坏时，我们不再调用 manageBattleLifecycle，防止错误蔓延
+                return;
+            }
+             
 
             console.log(`[Nova's Archives] 从最新历史记录中成功读取战斗数据 (Floor: ${combatData.floor_id}, Status: ${combatData.status})。`);
 
-            // 4. 将这份绝对真实、滚烫的数据，交给我们的战斗总管！
             manageBattleLifecycle(combatData);
 
-        } else {
-             // 如果最新一条没有battle，就静静地等待，不做任何事
-             // console.log("[Nova's Archives] 最新历史记录中未发现<battle>模块。");
         }
-
     } catch (error) {
         console.error("[Nova's Archives] 在读取最新战斗数据时发生严重错误:", error);
     }
@@ -37644,9 +37654,11 @@ getDelay(key) {
             }
             // 初始化战斗
             initializeCombat(data) {
+               const enemiesData = Array.isArray(data.enemies) ? data.enemies : [];
+                const teammatesData = Array.isArray(data.teammates) ? data.teammates : [];
                 // 处理敌人
-     console.log("开始处理敌人数据:", JSON.stringify(data.enemies));
-data.enemies.forEach(enemyData => {
+     console.log("开始处理敌人数据:", JSON.stringify(enemiesData));
+enemiesData.forEach(enemyData => {
     // 妈妈在这里加了很多日志，来追踪我们的小哥布林
     console.log(`正在处理的敌人类型: ${enemyData.name}, ID: ${enemyData.id}`);
 
@@ -37981,6 +37993,15 @@ log(message, className = 'log-action') {
        async start() {
      
     this.renderAllCharacters();
+
+   if (!this.enemies || this.enemies.length === 0) {
+        this.logCombatEvent("【战斗核心异常】战场上没有任何敌人存在，战斗被强制终止！", "log-danger");
+        this.showNotification("战斗数据异常：无敌人！", "danger");
+
+         
+        await this.endCombat(false, false, false, true);
+        return; // 中止后续所有战斗启动逻辑
+    }
     // 第二步：建立当前的回合顺序。
     this.turnOrder = [this.player, ...this.teammates, ...this.enemies].filter(c => c.currentHealth > 0);
 
@@ -38225,6 +38246,14 @@ async npcTurn(npc) {
     // 3. 如果啥都没干，就进行常规攻击/防御
     if (!actionTaken) {
          const targets = (npc.type === 'enemy' ? [this.player, ...this.teammates] : this.enemies).filter(c => c.currentHealth > 0);
+         if (targets.length === 0) {
+             this.log(`【战斗状态异常】${npc.name} 找不到任何有效目标，战斗陷入停滞！`, 'log-danger');
+             this.showNotification("无目标。", "danger");
+             // 调用我们新的错误处理流程
+             await this.endCombat(false, false, false, true);
+             // 注意这里因为 endCombat 是 async 的，我们最好 await 它，然后直接返回
+             return;
+         }
          if (targets.length > 0) {
             const target = targets[Math.floor(Math.random() * targets.length)];
             const defendChance = npc.type === 'enemy' ? 0.3 : 0.1; // 敌人10%，队友20%
@@ -38285,7 +38314,13 @@ setupActionPanel() {
  async handlePlayerAction() {
     const action = this.selectedAction;
     const playerData = this.player.raw_data;
-
+  if (action === 'exit') {
+        this.logCombatEvent("你选择强制终止了这场战斗！", 'log-danger');
+        this.showNotification("战斗被强制终止", "danger");
+        // 直接调用我们为错误情况准备的退出流程
+        await this.endCombat(false, false, false, true);
+        return; // 立刻结束，不执行任何其他操作
+    }
     // --- 妈妈的魔法优化了这里的逻辑 ---
 
     // 1. 无需目标、无需骰池选择的动作
@@ -39249,8 +39284,8 @@ const energyBonus =  0;
         return this.endCombat(false);
     }
      if (target.currentHealth <= 0) {
-        this.logCombatEvent(`======= ${targetName} 已死亡。 =======`, 'log-danger');
-        this.showNotification(`${target.name} 已死亡。 `, 'danger');
+        this.logCombatEvent(`======= ${targetName} 已倒下。 =======`, 'log-danger');
+        this.showNotification(`${target.name} 已倒下。 `, 'danger');
         const card = document.getElementById(target.id);
         if(card) {
            card.style.opacity = '0.5';
@@ -39496,7 +39531,7 @@ card.querySelector('.health-text').textContent = `${character.currentHealth} / $
                     this.endCombat(false);
                 }
             }
- async endCombat(isVictory, isFlee = false, isStalemate = false) {
+   async endCombat(isVictory, isFlee = false, isStalemate = false, isError = false) {
     // 这应该是此战斗实例的最后一次状态更新
     if (this.status.startsWith('completed')) return; // 防止重复执行
 
@@ -39516,27 +39551,35 @@ card.querySelector('.health-text').textContent = `${character.currentHealth} / $
     let messageType = 'info';
     let battleResultText = '';
 
-    if (isFlee) {
+    // ✨ 妈妈对这里的逻辑进行了重构，以容纳新的“错误”状态 ✨
+    if (isError) {
+        this.status = "completed_error";
+        message = "战斗异常终止！";
+        messageType = 'danger';
+        battleResultText = "战斗结果：异常终止";
+    } else if (isFlee) {
         this.status = "completed_flee";
-        message = "成功脱离战斗！你可以输入自定义消息或直接按发送";
+        message = "成功脱离战斗！";
         messageType = 'info';
         battleResultText = "战斗结果：成功脱离";
     } else if (isStalemate) {
         this.status = "completed_stalemate";
-        message = "战况焦灼...你可以输入自定义消息或直接按发送";
+        message = "战况焦灼...";
         messageType = 'info';
         battleResultText = "战斗结果：焦灼平局";
     } else if (isVictory) {
         this.status = "completed_victory";
-        message = "战斗胜利！你可以输入自定义消息或直接按发送";
+        message = "战斗胜利！";
         messageType = 'success';
         battleResultText = "战斗结果：胜利";
     } else {
         this.status = "completed_defeat";
-        message = "战斗失败...你可以输入自定义消息或直接按发送";
+        message = "战斗失败...";
         messageType = 'danger';
         battleResultText = "战斗结果：失败";
     }
+    // ✨ 逻辑重构完毕 ✨
+
     this.showNotification(message, messageType);
     this.logCombatEvent(message, `log-${messageType}`);
 
