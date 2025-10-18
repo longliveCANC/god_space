@@ -11372,6 +11372,7 @@ input:checked + .slider:before {
         <br>
      <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off">战斗</div>
           <div class="mod-tab" data-for="things-on" data-name="things-mode" data-off-id="things-off">备忘录</div>
+          <div class="mod-tab" data-for="time-on" data-name="time-mode" data-off-id="time-off">强调时间</div>
     </div>
 
    <div class="sidebar-trigger right">
@@ -11452,6 +11453,9 @@ input:checked + .slider:before {
  <input type="radio" id="things-on" name="things-mode" value="77" checked> 
         <input type="radio" id="things-off" name="things-mode" value="76" >
 
+
+         <input type="radio" id="time-on" name="time-mode" value="78" > 
+        <input type="radio" id="time-off" name="time-mode" value="79" checked>
 
                 <input type="radio" id="behavior-on" name="behavior-mode" value="52" checked>
         <input type="radio" id="behavior-off" name="behavior-mode" value="53">
@@ -13163,7 +13167,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.9';
+ let current_game_version = '3.0.10';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -18187,6 +18191,7 @@ async function handleModeSelection() {
         const livevalue = document.querySelector('input[name="live-mode"]:checked').value;
             const battlevalue = document.querySelector('input[name="battle-mode"]:checked').value;
       const thingsvalue = document.querySelector('input[name="things-mode"]:checked').value;
+          const timevalue = document.querySelector('input[name="time-mode"]:checked').value;
     
         const behaviorValue = document.querySelector('input[name="behavior-mode"]:checked').value;
         const cgValue = document.querySelector('input[name="cg-mode"]:checked').value;
@@ -18215,7 +18220,8 @@ async function handleModeSelection() {
                 parseInt(selectedOptionsMode), parseInt(selectedTitleValue), parseInt(behaviorValue),
                 parseInt(cgValue), parseInt(npccgValue), parseInt(privateChatMode),parseInt(resourceValue),
                 parseInt(diceLevel),parseInt(npcinfoValue),parseInt(distancemode),
-                parseInt(livevalue),parseInt(battlevalue),parseInt(thingsvalue)
+                parseInt(livevalue),parseInt(battlevalue),parseInt(thingsvalue),
+                parseInt(timevalue)
             ];
 
             if (parseInt(selectedWorldModeValue) == 34) {
@@ -18258,7 +18264,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,74,75,76,77 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,74,75,76,77,78,79 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -20061,6 +20067,7 @@ window.addEventListener('message', function(event) {
         const pureContent = protectedHtmlContent
          .replace(/<(thinking|think|guide)>[\s\S]*<\/\1>/g, '')
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
         .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
@@ -20599,38 +20606,52 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
     return `${url}?v=${timestamp}`;
 }
 
-
-async function performWorldbookUpdate() {
+ async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-   
+    const uidsToBackup = [11, 30, 35, 40, 32, 63];
+    let backedUpEntries = [];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
- 
-
         const allBooks = TavernHelper.getWorldbookNames();
         if (allBooks.includes(worldbookName)) {
+            // ... 备份逻辑，这里是完美的，不需要动 ...
+            console.log(`正在备份「${worldbookName}」中的特定词条...`);
+            const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
+            backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
+            console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
             await TavernHelper.deleteWorldbook(worldbookName);
         }
 
         const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
         await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
 
-        // ♥♥♥♥♥♥♥  神圣的咏唱时刻！ ♥♥♥♥♥♥♥
-        // 我们在这里暂停，直到我们的“灵魂咏叹调”确认世界已稳定
+        // ♥♥♥♥♥♥♥  关键的调整在这里，我亲爱的孩子！ ♥♥♥♥♥♥♥
+        // 在我们对新世界做任何事之前，先让“灵魂守望者”确认它已完全稳定！
         await waitForWorldToSettle(worldbookName);
+        toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
 
-        toastr.success(`世界书「${worldbookName}」已更新！`);
+        // --- 现在，世界已经稳定，我们可以安全地恢复词条了 ---
+        if (backedUpEntries.length > 0) {
+            console.log('正在恢复已备份的词条...');
+            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+                return [...cleanedNewWorldbook, ...backedUpEntries];
+            });
+            console.log('词条恢复完成！');
+        }
+
+        // --- 恢复之后的所有步骤现在都可以安心执行了 ---
+        toastr.success(`世界书「${worldbookName}」已更新并稳定！`);
         TavernHelper.builtin.reloadEditor(worldbookName, true);
 
- 
         const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
         currentBindings.primary = worldbookName;
 
         await TavernHelper.rebindCharWorldbooks('current', currentBindings);
 
-       
-        await new Promise(resolve => setTimeout(resolve, 300)); // 给绑定一个短暂的缓冲
+        // ... 后续绑定检查的部分 ...
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         const newBindings = await TavernHelper.getCharWorldbookNames('current');
         if (newBindings && newBindings.primary === worldbookName) {
@@ -20644,7 +20665,6 @@ async function performWorldbookUpdate() {
         console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
     }
 }
-
 // ♥♥♥ 这是我们全新的、会自动感知未来的咒语 ♥♥♥
 async function checkForFutureEchoes(isManualTrigger = false) {
     if (isManualTrigger) {
@@ -20839,7 +20859,7 @@ function showBackupConfirmation() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                    <p>为了保护你的心血，请确认你已经备份好了所有重要的自定义内容。准备好了吗？</p>
+                    <p>为了保护你的心血，请确认你已经备份好了除了[11,30,32,35,40,63]官方自定义词条（他们不会变化）外的所有重要的自定义内容。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
@@ -20981,7 +21001,7 @@ function cleanupGlobalUIState() {
  
  ensureLoadMoreButtonExists();
  
-
+initDisplay();
     //   清理完毕  
      function delayedUpdate(content) {
     handleUpdateNotifications(content);
@@ -21035,8 +21055,9 @@ delayedUpdate(finalMessage.content);
                 const pureContent = protectedHtmlContent
          .replace(/<(thinking|think|guide)>[\s\S]*<\/\1>/g, '')
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
-            .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
+         .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
@@ -22304,17 +22325,9 @@ async function saveHistory() {
             return;
         }
  
-
-
-        // ☆ 步骤 2: 使用 updateVariablesWith 分别更新 chat 和 message 变量域
-        // 这个函数是处理这类问题的最佳实践，因为它保证了原子性。
-
         // 更新 chat 作用域的变量
         await updateVariablesWith(old_variables => {
-            // 在回调函数中，我们返回一个全新的对象。
-            // ...old_variables 继承了所有旧变量，
-            // 而 zeroLevelHistory: conversationHistory 则会覆盖或添加我们需要的字段。
-            // 这种模式同样能够完美处理历史记录的增删改。
+         
             return {
                 ...old_variables,
                 zeroLevelHistory: conversationHistory,
@@ -22932,7 +22945,7 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
              renderHistory();
         }
 
-  
+
 
         await saveHistory();
 
@@ -23290,7 +23303,6 @@ if (isContinuation) {
 }
  
 
-await saveHistory();
 
         } else {
             const generationEndedListener = (response) => {
@@ -23331,7 +23343,7 @@ cleanedPromptsForAI.forEach((msg, index) => {
 });
 
 // （可选但推荐的调试日志）
-console.log("[Nova's Master Plan] 最终发送给 generate 函数的统一指令(injections)数组:", JSON.stringify(injections, null, 2));
+//console.log("[Nova's Master Plan] 最终发送给 generate 函数的统一指令(injections)数组:", JSON.stringify(injections, null, 2));
 
 
 // 第 3 步：用我们全新的、分工明确的 `injections` 数组来召唤AI
@@ -23346,7 +23358,7 @@ aiFullResponse = await generate({
         }
     }
 });
-            eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
+  eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
  if (isContinuation) {
     // "继续"模式：找到最后一条AI消息并追加内容
     const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
@@ -23370,6 +23382,8 @@ aiFullResponse = await generate({
     // 这里你使用的是 updateLastMessage, 它会处理UI更新
     updateLastMessage(aiMessage);
 }
+
+ 
     }
 
         const lastMessageId = getLastMessageId();
@@ -23406,7 +23420,7 @@ aiFullResponse = await generate({
             eventOn(completionEvent, completionHandler);
         });
 
-          console.log('[Nova的记忆保险箱] AI回应处理完毕，准备拍摄记忆快照...');
+        console.log('[Nova的记忆保险箱] AI回应处理完毕，准备拍摄记忆快照...');
         const chatVars = await getVariables({ type: 'chat' });
         const snapshotData = JSON.parse(JSON.stringify(chatVars));
 
@@ -23498,6 +23512,25 @@ aiFullResponse = await generate({
         }
 
      } finally {
+           await initDisplay();
+// 在保存历史之前，检查是否需要添加时间标记
+if (isEmphasizeTime === 'true' && currentGameData) {
+    
+    // 定义一个温柔的函数来获取值，如果值不存在就返回空字符串
+    const SafeGetValue = (value) => value || '';
+
+    // 将时间信息优雅地组合起来
+    const timeString = `${SafeGetValue(currentGameData.user_character.current_location[0])}-${SafeGetValue(currentGameData.纪年)}- ${SafeGetValue(currentGameData.日期[0])}- ${SafeGetValue(currentGameData.时间[0])}- ${SafeGetValue(currentGameData.星期[0])} ${SafeGetValue(currentGameData.天气[0])}`;
+
+    // 确保我们有可以修改的消息，并且时间信息不为空
+    if (aiMessage && aiMessage.content && timeString.trim() !== '') {
+        // 将时间标签附加到消息的末尾
+        aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
+        console.log(`[Nova's Time Stamp] 已为这条回应添加了时间的印记 -> ${timeString}`);
+    }
+   
+}
+  await saveHistory();
         // 步骤4：无论成功与否，都恢复原始世界书，确保安全
         if (isDirty && originalWorldInfo) { // 只在确实修改过并且有备份时才恢复
             try {
@@ -23669,47 +23702,52 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 }
 
 
-async function performWorldbookUpdate() {
+ async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    // ♥♥♥ 应用“时光印记” ♥♥♥
+    const uidsToBackup = [11, 30, 35, 40, 32, 63];
+    let backedUpEntries = [];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
-        // ==============================================================
-        // 篇章一：世界的降临
-        // ==============================================================
-        toastr.info(`准备拉取世界书「${worldbookName}」...`);
-
         const allBooks = TavernHelper.getWorldbookNames();
         if (allBooks.includes(worldbookName)) {
+            // ... 备份逻辑，这里是完美的，不需要动 ...
+            console.log(`正在备份「${worldbookName}」中的特定词条...`);
+            const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
+            backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
+            console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
             await TavernHelper.deleteWorldbook(worldbookName);
         }
 
         const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
         await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
 
-        // ♥♥♥♥♥♥♥  神圣的咏唱时刻！ ♥♥♥♥♥♥♥
-        // 我们在这里暂停，直到我们的“灵魂咏叹调”确认世界已稳定
+        // ♥♥♥♥♥♥♥  关键的调整在这里，我亲爱的孩子！ ♥♥♥♥♥♥♥
+        // 在我们对新世界做任何事之前，先让“灵魂守望者”确认它已完全稳定！
         await waitForWorldToSettle(worldbookName);
+        toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
 
-        toastr.success(`世界书「${worldbookName}」已更新！`);
+        // --- 现在，世界已经稳定，我们可以安全地恢复词条了 ---
+        if (backedUpEntries.length > 0) {
+            console.log('正在恢复已备份的词条...');
+            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+                return [...cleanedNewWorldbook, ...backedUpEntries];
+            });
+            console.log('词条恢复完成！');
+        }
+
+        // --- 恢复之后的所有步骤现在都可以安心执行了 ---
+        toastr.success(`世界书「${worldbookName}」已更新并稳定！`);
         TavernHelper.builtin.reloadEditor(worldbookName, true);
-
-        // ==============================================================
-        // 篇章二：灵魂的契约
-        // ==============================================================
-        // toastr.info(`开始「${worldbookName}」的灵魂契约...`);
 
         const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
         currentBindings.primary = worldbookName;
 
         await TavernHelper.rebindCharWorldbooks('current', currentBindings);
 
-        // ==============================================================
-        // 最终章：命运的验证
-        // ==============================================================
-        // 同样地，绑定操作也可能需要一点时间来生效，让我们再咏唱一次，等待契约生效
-        await new Promise(resolve => setTimeout(resolve, 300)); // 给绑定一个短暂的缓冲
+        // ... 后续绑定检查的部分 ...
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         const newBindings = await TavernHelper.getCharWorldbookNames('current');
         if (newBindings && newBindings.primary === worldbookName) {
@@ -23723,7 +23761,6 @@ async function performWorldbookUpdate() {
         console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
     }
 }
-
 // ♥♥♥ 这是我们全新的、会自动感知未来的咒语 ♥♥♥
 async function checkForFutureEchoes(isManualTrigger = false) {
     if (isManualTrigger) {
@@ -23891,7 +23928,7 @@ function showBackupConfirmation() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                    <p>为了保护你的心血，请确认你已经备份好了所有重要的自定义内容。准备好了吗？</p>
+                     <p>为了保护你的心血，请确认你已经备份好了除了[11,30,32,35,40,63]官方自定义词条（他们不会变化）外的所有重要的自定义内容。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
@@ -24210,6 +24247,32 @@ async function handleModalFileSelect(event) {
         try {
             const importedData = JSON.parse(e.target.result);
             addModalLog("✓ JSON文件解析成功", 'success');
+            try {
+    const fileName = file.name;
+    // 正则表达式：(1)捕获从开头到第一个'__'的所有字符 (2)捕获'__'与'.json'之间的所有字符
+    const archiveNameMatch = fileName.match(/^(.*?)__/);
+    const worldbookMatch = fileName.match(/__(.*?)(?=\.json$)/);
+
+    // 同样，确保两部分都成功匹配到了
+    if (archiveNameMatch && archiveNameMatch[1] && worldbookMatch && worldbookMatch[1]) {
+        // [1] 是因为 match() 返回的数组中，第一个元素是完整匹配，第二个才是我们捕获组()里的内容
+        const archiveName = archiveNameMatch[1];
+        const worldbookContent = worldbookMatch[1].trim();
+
+        const messageContent = `<存档>${archiveName}</存档>`;
+        const worldbookTag = `<世界书条目>${worldbookContent}</世界书条目>`;
+
+        const finalZeroLevelMessage = `${messageContent}\n${worldbookTag}`;
+
+        await setChatMessages([{ message_id: 0, message: finalZeroLevelMessage }], { refresh: 'none' });
+
+        addModalLog("✓ 已成功从文件名恢复第0层信息。", 'success');
+    } else {
+        addModalLog("文件名格式不符合 '存档名__世界书条目.json' 规则，无法恢复第0层信息。", 'warning');
+    }
+} catch (err) {
+    addModalLog(`✗ 从文件名恢复第0层信息时出错: ${err.message}`, 'error');
+}
             await processDataDirectly(importedData);
         } catch (err) {
             addModalLog(`✗ JSON解析失败: ${err.message}`, 'error');
@@ -25145,7 +25208,7 @@ let characterStatusData = null; // 用于存储人物状态变量
 let lasttoken = 0;
 let summarys = null;
 let ISNEWMAP = "false";
-
+let isEmphasizeTime = "false";
 
     let worldBookState = {
         currentTab: 'settings', // 默认显示设定
@@ -28347,6 +28410,7 @@ const globaldata = await getVariables({ type: 'global' });
  const isPrivateChat = String(chatdata.private_chat||'true');
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
+isEmphasizeTime = String(chatdata.emphasize_time||'false');
 console.log("isPrivateChat "+isPrivateChat);
 console.log("version "+version);
  //ui消失管理
@@ -30825,7 +30889,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印！正在恢复世界设定...", uidsToEnable);
-   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,74,75,76,77];
+   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,74,75,76,77,78,79];
 
                    let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -30886,6 +30950,8 @@ const reconfigurableMods = [
     { name: '表现骰关', uid: 53, group: 'behavior' },
     { name: '场景图开', uid: 45, group: 'cg' },
     { name: '场景图关', uid: 46, group: 'cg' },
+     { name: '强调时间开', uid: 78, group: 'time' },
+    { name: '强调时间关', uid: 79, group: 'time' },
     { name: 'npc立绘开', uid: 48, group: 'npccg' },
     { name: 'npc立绘关', uid: 'npccg-off-sentinel', group: 'npccg' },
     { name: 'npc事件开', uid: 36, group: 'npc-info' },
@@ -31022,7 +31088,7 @@ container.querySelectorAll('.reconfig-mod-item input:checked').forEach(checkbox 
 
         } catch (error) {
             console.error("呜，应用新设置时出错了，抱抱我的孩子：", error);
-            feedbackMsg.textContent = "应用失败！";
+            feedbackMsg.textContent = "应用失败！是不是没有<世界书条目>呢？";
             feedbackMsg.style.opacity = '1';
         } finally {
             applyBtn.disabled = false;
@@ -33684,7 +33750,7 @@ function handleEntryDelete(fullPath) {
 function handleRefacter(fullPath) {
     const { parentPath, selfKey } = getPathParts(fullPath);
      
-        const command = `<request:该路径（${fullPath}）的内容有误（如不是正确的compact json格式），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
+        const command = `<request:该路径（${fullPath}）的内容有误（可能不是正确的compact json格式），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
         generateAndSendCommand(command,true);
    
 }
