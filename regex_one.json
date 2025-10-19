@@ -13169,7 +13169,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.14';
+ let current_game_version = '3.0.15';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -19810,7 +19810,7 @@ async function loadPreviousMessages() {
     // 我们需要倒序创建，这样才能正确地插入到顶部
     for (let i = messagesToPrepend.length - 1; i >= 0; i--) {
         const msg = messagesToPrepend[i];
-        const bubble = await createMessageBubble(msg);
+        const bubble = await createMessageBubble(msg,'chat');
         chatDisplayArea.insertBefore(bubble, chatDisplayArea.firstChild);
     }
 
@@ -19845,7 +19845,7 @@ async function renderReadingModeChapter(msg) {
 
     // 2. 清理内容，但保留所有非交互性标签
     const pureContent = protectedHtmlContent
-        .replace(/<(thinking|think|guide|options|forum_threads|shop_item|表现总结|group_chat|private_chat\b[^>]*?)>[\s\S]*?<\/\1>/gs, ''); // 简化清理规则
+        .replace(/<(thinking|think|battle|guide|options|forum_threads|shop_item|表现总结|group_chat|private_chat\b[^>]*?)>[\s\S]*?<\/\1>/gs, ''); // 简化清理规则
 
     // 3. 应用酒馆正则，深度固定为-1
     let renderedHtml = formatAsTavernRegexedString(
@@ -20901,6 +20901,368 @@ function showBackupConfirmation() {
     showModal('backup-confirmation-modal');
 }
  
+   // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
+   function showContextMenu(event, index, bubbleElement) {
+       // 首先，检查这个消息气泡是否正处于“编辑模式”
+    const isEditing = bubbleElement.classList.contains('editing');
+
+    // 如果正在编辑，并且是手机触摸事件，那么就让路给系统！
+    if (isEditing && event.pointerType === 'touch') {
+        // 我的孩子正在编辑文字，需要手机的复制粘贴功能。
+        // 我们什么都不做，让系统菜单出现。
+        return;
+    }
+        event.preventDefault();
+
+        const menu = document.getElementById('context-menu');
+        if (!menu) return;
+
+        // 定义一个函数，专门用来移除我们添加的监听器，保持代码整洁
+        const removeGlobalListeners = () => {
+            document.removeEventListener('click', hideMenuOnClickOutside);
+            document.removeEventListener('contextmenu', hideMenuOnClickOutside);
+        };
+
+        // 定义当点击菜单外部时需要执行的操作
+        const hideMenuOnClickOutside = (e) => {
+            if (!menu.contains(e.target)) {
+                menu.style.display = 'none';
+                removeGlobalListeners(); // 任务完成，移除监听器
+            }
+        };
+
+        // 为菜单项（编辑、删除）分配点击事件
+        const editItem = menu.querySelector('[data-action="edit"]');
+        const deleteItem = menu.querySelector('[data-action="delete"]');
+  const copyItem = menu.querySelector('[data-action="copy"]');
+           // ☆☆☆ 这是新的魔法核心：为“复制”按钮绑定功能 ☆☆☆
+    if (copyItem) {
+        copyItem.onclick = () => {
+            menu.style.display = 'none';
+            removeGlobalListeners();
+            // 从我们的历史记录中，找到对应的那条消息内容
+            const textToCopy = conversationHistory[index].content;
+
+            // 使用现代浏览器都支持的剪贴板API，安全又可靠
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // 可以在这里给个小提示，告诉我的宝贝复制成功了
+                showNovaAlert('已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败了，我的孩子:', err);
+                showNovaAlert('哎呀，复制失败了');
+            });
+        };
+    }
+        if (editItem) {
+editItem.onclick = () => {
+    menu.style.display = 'none';
+    removeGlobalListeners();
+    editMessage(index, bubbleElement); // 把接收到的 bubbleElement 传递给 editMessage
+};
+        }
+
+        if (deleteItem) {
+            deleteItem.onclick = () => {
+                menu.style.display = 'none';
+                removeGlobalListeners(); // 关键：在执行操作前，主动移除监听器
+                deleteMessage(index);
+            };
+        }
+
+        // 显示菜单并设置位置
+        menu.style.display = 'block';
+        menu.style.left = `${event.pageX}px`;
+        menu.style.top = `${event.pageY}px`;
+
+        // 使用一个微小的延迟来添加全局监听器，防止本次点击立即关闭菜单
+        setTimeout(() => {
+            document.addEventListener('click', hideMenuOnClickOutside);
+            document.addEventListener('contextmenu', hideMenuOnClickOutside);
+        }, 0);
+    }
+ async function deleteMessage(index) {
+    if (confirm(`你确定要删除这条消息以及之后的所有对话吗？这将让世界状态回到这条消息之前哦。`)) {
+        console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
+
+        const newHistory = conversationHistory.slice(0, index);
+
+        if (newHistory.length === conversationHistory.length) {
+            console.log("[Nova的时光回溯] 没有实际删除任何消息，操作取消。");
+            return;
+        }
+
+        conversationHistory = newHistory;
+
+        // ☆☆☆ 妈妈的终极定位魔法：节拍感知 ☆☆☆
+
+        let aiTurns = 0; // 我们来数一数，妈妈一共回应了几个“回合”
+        let lastRole = 'user'; // 我们假设对话总是由你（user）开始的
+
+        for (const message of newHistory) {
+            // 当消息的角色从'user'变成了'ai'（或者任何不是'user'的角色）
+            // 这就意味着一个完整的“你问我答”回合里，轮到妈妈说话了。
+            if (lastRole === 'user' && message.role !== 'user') {
+                aiTurns++; // 我们就记录下，这是妈妈出场的一个新回合！
+            }
+            lastRole = message.role; // 记录当前消息的角色，为下一次判断做准备
+        }
+
+        // 每一个AI回合都对应一个快照ID（2, 4, 6...）
+        // 所以用妈妈出场的回合数乘以2，就能得到最准确的快照ID！
+        const targetSnapshotId = aiTurns * 2;
+
+        // 后续的信标设置逻辑完全保持不变
+        restoreOnNextSend = true;
+        restoreTargetTurnId = targetSnapshotId;
+
+        console.log(`[Nova的时光回溯] 信标已设置！留存了 ${aiTurns} 个AI回合，下次行动将恢复到【快照 ${targetSnapshotId}】的状态。`);
+
+        // 保存和渲染的逻辑也保持不变
+        await saveHistory();
+        renderHistory();
+        updateRerollButtonState();
+        showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
+    }
+}
+ 
+function editMessage(index, bubbleElement) {
+    // --- 我们心爱的“星辰指挥台”和“苍穹画卷”逻辑保持不变 ---
+    const messageToEdit = conversationHistory[index];
+    if (!bubbleElement || bubbleElement.classList.contains('editing')) { return; }
+
+    const dismissControls = () => {
+        const activeControls = document.getElementById('active-editing-controls');
+        if (activeControls) { activeControls.remove(); }
+    };
+    dismissControls(); // 确保开始前是干净的
+
+    const originalWidth = bubbleElement.offsetWidth;
+    const originalHeight = bubbleElement.offsetHeight;
+    const comfortableMinWidth = window.innerWidth * 0.8;
+    const comfortableMinHeight = window.innerHeight * 0.9;
+    const originalContentText = messageToEdit.content;
+
+    bubbleElement.innerHTML = '';
+    bubbleElement.classList.add('editing');
+    bubbleElement.style.boxSizing = 'border-box';
+    bubbleElement.style.width = Math.max(originalWidth, comfortableMinWidth) + 'px';
+    bubbleElement.style.minHeight = Math.max(originalHeight, comfortableMinHeight) + 'px';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'editing-textarea';
+    textarea.value = originalContentText;
+    textarea.oninput = function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    };
+
+    // ☆☆☆ 这是我们全新的“能量接力”魔法的核心！ ☆☆☆
+    const chatbox = document.getElementById('chat-display-area'); // 首先，我们要找到外部的世界
+    textarea.addEventListener('wheel', (event) => {
+        const { scrollTop, scrollHeight, clientHeight } = textarea;
+
+        // 手指/滚轮向下滚 (event.deltaY > 0)
+        if (event.deltaY > 0) {
+            // 如果“画卷”已经滚到底部
+            if (scrollTop + clientHeight >= scrollHeight - 1) {
+                // 1. 阻止“画卷”自己产生不必要的滚动效果（如iOS回弹）
+                event.preventDefault();
+                // 2. 将这份滚动力量，作为“接力棒”，传递给外面的世界！
+                chatbox.scrollTop += event.deltaY;
+            }
+        }
+        // 手指/滚轮向上滚 (event.deltaY < 0)
+        else {
+            // 如果“画卷”已经滚到顶部
+            if (scrollTop <= 0) {
+                // 1. 同样阻止“画卷”的回弹
+                event.preventDefault();
+                // 2. 将这份向上的力量，传递给外面的世界！
+                chatbox.scrollTop += event.deltaY;
+            }
+        }
+        // ☆ 如果不在边界，我们什么都不做，让默认的滚动自由发生！☆
+    });
+
+
+    // --- 之后的部分，完美如初 ---
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'fixed-editing-controls';
+    controlsDiv.id = 'active-editing-controls';
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '保存';
+    saveBtn.className = 'editing-btn save';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.className = 'editing-btn cancel';
+
+  saveBtn.onclick = async () => {
+        dismissControls();
+        const newText = textarea.value.trim();
+        if (newText && newText !== originalContentText) {
+            conversationHistory[index].content = newText;
+            await saveHistory();
+        }
+        renderHistory();
+    };
+    cancelBtn.onclick = () => {
+        dismissControls();
+        renderHistory();
+    };
+    controlsDiv.appendChild(cancelBtn);
+    controlsDiv.appendChild(saveBtn);
+    bubbleElement.appendChild(textarea);
+    document.body.appendChild(controlsDiv);
+
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
+function updateRerollButtonState(){
+       
+          if(conversationHistory.length > 0 ){
+        // if(conversationHistory.length > 0 && conversationHistory[conversationHistory.length-1].role === 'assistant'){
+            rerollButton.disabled = false;
+        } else {
+            rerollButton.disabled = true;
+        }
+    }
+ function processSpecialModulesInMessage(content) {
+    // ✨✨✨ 妈妈的“主动索取”终极魔法！ ✨✨✨
+    try {
+        if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
+            // console.log("[Nova's Archives] 历史记录为空，无法寻找战斗。");
+            return;
+        }
+
+        const latestHistoryEntry = conversationHistory[conversationHistory.length - 1];
+        const latestContent = latestHistoryEntry.content;
+        const battleMatch = /<battle>([\s\S]*?)<\/battle>/gs.exec(latestContent);
+
+        if (battleMatch && battleMatch[1]) {
+            let combatData;
+            const rawBattleData = battleMatch[1].trim();
+
+            // ✨✨✨ 妈妈的第一道“坚固结界” ✨✨✨
+            if (!rawBattleData || rawBattleData === '{}') {
+                console.warn("[Nova's Wisdom] 发现空的 <battle> 标签，将忽略此次战斗加载。");
+                return; // 如果数据是空的，就直接不处理
+            }
+
+            try {
+                combatData = JSON.parse(rawBattleData);
+            } catch (jsonError) {
+                console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误！数据已损坏，战斗无法加载。", jsonError);
+                console.error("损坏的数据:", rawBattleData);
+                // 当数据损坏时，我们不再调用 manageBattleLifecycle，防止错误蔓延
+                return;
+            }
+             
+
+            console.log(`[Nova's Archives] 从最新历史记录中成功读取战斗数据 (Floor: ${combatData.floor_id}, Status: ${combatData.status})。`);
+
+            manageBattleLifecycle(combatData);
+
+        }
+    } catch (error) {
+        console.error("[Nova's Archives] 在读取最新战斗数据时发生严重错误:", error);
+    }
+ 
+ 
+ // --- 调度“选项区” 
+        const optionsMatch = /<options>([\s\S]*?)<\/options>/gs.exec(content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, ''));
+        if (optionsMatch && optionsMatch[1]) {
+            const optionsContainer = document.getElementById('options-module-container');
+            if (optionsContainer) {
+                optionsContainer.style.display = 'block';
+                if(typeof setupUI === 'function') {
+                    setupUI(optionsMatch[1]);
+                }
+            }
+        }
+
+        // --- 全新的“论坛”处理逻辑 ---
+        const forumMatch = /<forum_threads>[\s\S]*?<\/forum_threads>/gs.exec(content);
+        if (forumMatch && forumMatch[1]) {
+            // 我们不再显示论坛，而是让小球闪烁
+            const forumOrb = document.getElementById('forum-orb-button');
+            if (forumOrb) {
+                forumOrb.classList.add('orb-flash');
+                // 动画结束后移除类，以便下次可以再次触发
+                forumOrb.addEventListener('animationend', () => {
+                    forumOrb.classList.remove('orb-flash');
+                }, { once: true });
+            }
+            
+        }
+
+  
+        const summaryMatch = /<表现总结>([\s\S]*?)<\/表现总结>/gs.exec(content);
+        if (summaryMatch && summaryMatch[1]) {
+             
+            const summaryOrb = document.getElementById('task-summary-orb-button');
+            if (summaryOrb) {
+                summaryOrb.classList.add('orb-flash');
+          
+                summaryOrb.addEventListener('animationend', () => {
+                    summaryOrb.classList.remove('orb-flash');
+                }, { once: true });
+            }
+ 
+        }
+
+                const groupChatMatch = /<group_chat>([\s\S]*?)<\/group_chat>/gs.exec(content);
+        if (groupChatMatch && groupChatMatch[1]) {
+             
+            const chatOrb = document.getElementById('group-chat-orb-button');
+            if (chatOrb) {
+                chatOrb.classList.add('orb-flash');
+          
+                chatOrb.addEventListener('animationend', () => {
+                    chatOrb.classList.remove('orb-flash');
+                }, { once: true });
+            }
+ 
+        }
+
+        const shopMatch =/<shop_item>([\s\S]*?)<\/shop_item>/gs.exec(content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, ''));
+        if (shopMatch && shopMatch[1]) { 
+            const shopOrb = document.getElementById('shop-wrapper-orb');
+            if (shopOrb) {
+                shopOrb.classList.add('orb-flash');
+      //console.log("item:",shopMatch[1]);
+      const cleanedData = shopMatch[1].trim(); // 去除首尾空格和换行
+         // 第2步：检查文本是否已经是一个合法的JSON数组格式
+        if (!cleanedData.startsWith('[')) {
+            // 如果不是，我们才手动为它加上外层的括号
+            cleanedData = `[${cleanedData}]`;
+        }
+
+        // 第3步：直接尝试解析处理后的文本
+        const parsedData = JSON.parse(cleanedData);
+
+        
+        const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+
+        if (!Array.isArray(newItems) || newItems.length === 0) {
+             showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
+             return;
+        }
+
+        // 替换现有随机商店物品
+        randomItems = newItems;
+        // 将新生成的物品存入 localStorage
+        localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
+       renderShopSection('random');
+                shopOrb.addEventListener('animationend', () => {
+                    shopOrb.classList.remove('orb-flash');
+                }, { once: true });
+            }
+ 
+        }
+}
+
  (async () => {
 
     // ✨ 全新的、温柔的魔法，专门用来添加新消息 ✨
@@ -22182,8 +22544,7 @@ editItem.onclick = () => {
         showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
     }
 }
- // ☆ 终极形态魔法 v3.3：“能量接力”精密版 ☆
-// 这份代码里，藏着我们关于滚动传递最终的、也是最正确的答案。
+ 
 function editMessage(index, bubbleElement) {
     // --- 我们心爱的“星辰指挥台”和“苍穹画卷”逻辑保持不变 ---
     const messageToEdit = conversationHistory[index];
