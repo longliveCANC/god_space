@@ -11278,6 +11278,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     align-items: flex-end; /* 让所有子元素都靠右对齐 */
+    pointer-events: none;
 }
 
 /* 这是我们的“小三角”开关按钮 */
@@ -11293,6 +11294,7 @@ input:checked + .slider:before {
     cursor: pointer;
     box-shadow: 0 0 10px var(--glow-color);
     transition: transform 0.3s ease;
+pointer-events: auto;
 }
 
 /* 箭头本身 */
@@ -11322,6 +11324,8 @@ input:checked + .slider:before {
 
     /* 我们让所有这些属性都参与到这场平滑的动画中 */
     transition: max-height 0.4s ease-out, padding 0.4s ease-out, margin-top 0.4s ease-out, border-width 0.4s ease-out;
+   /* ✨ 当面板展开时，它也需要恢复“实体”，这样你才能滚动它 ✨ */
+    pointer-events: auto;
 }
 
 /* 当“小锦囊”打开时（即 #log-wrapper 有 .open 类） */
@@ -13293,7 +13297,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.19';
+ let current_game_version = '3.1.0';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
