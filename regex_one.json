@@ -168,6 +168,11 @@
             background-color:var(--background-color) ;
         }
 
+        .book-button:hover {
+            color: var(--primary-color);
+            background-color:var(--background-color) ;
+        }
+
         .tab-btn.active {
             color: var(--primary-color);
             text-shadow: 0 0 3px var(--glow-color);
@@ -10293,7 +10298,7 @@ input:checked + .slider:before {
 }
 
 #reading-mode-content iframe {
-    min-height: 400px; /* 设置一个合理的最小高度 */
+    min-height: 800px; /* 设置一个合理的最小高度 */
     transition: height 0.3s ease-in-out; /* 高度变化时有平滑过渡效果 */
  
 }
@@ -12241,6 +12246,7 @@ input:checked + .slider:before {
 <div class="action-menu-container">
     <button id="action-menu-btn" class="action-button zero-level-btn" title="更多操作">☰</button>
     <div id="action-popup-menu" class="action-popup-menu">
+        <button id="things-button" class="popup-menu-button">记约定</button>
         <button id="reroll-button" class="popup-menu-button">重roll ⟲</button>
         <button id="continue-button" class="popup-menu-button">继续 ▶</button>
     </div>
@@ -13169,7 +13175,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.15';
+ let current_game_version = '3.0.16';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -22353,6 +22359,7 @@ async function restoreFromLatestSnapshot() {
 const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们现在使用新的显示区域
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const thingsButton = document.getElementById('things-button');
         const rerollButton = document.getElementById('reroll-button'); // ☆ 新成员：重写按钮
     const contextMenu = document.getElementById('context-menu');   // ☆ 新成员：右键菜单
    let worldBookName = "小蝌蚪找妈妈-同层版";
@@ -22370,7 +22377,10 @@ menuBtn.addEventListener('click', (event) => {
     popupMenu.classList.toggle('active');
 });
 
- 
+ thingsButton.addEventListener('click', (event) => {
+         const messageToSend = `\n<request:在合适的路径记录正文中出现过的、且没有被记录过的约定/日程/待办事项>\n`;
+triggerassa(`/setinput ${messageToSend}`);
+});
 
 // 点击“继续”按钮
 continueBtn.addEventListener('click', () => {
@@ -24624,9 +24634,7 @@ async function handleModalFileSelect(event) {
 addModalLog("正在尝试从文件名恢复第0层信息...");
 try {
     const fileName = file.name;
-    // 使用一个更宽容的正则表达式，它能处理结尾处可能存在的空格
-    const matches = fileName.match(/^(.*?)__世界书条目_(.*?)_世界书条目_\s*\.json$/);
-
+const matches = fileName.match(/^(.*?)__世界书条目_(.*?)_世界书条目_.*\.json$/);
     // matches[1] 是存档名, matches[2] 是世界书ID
     if (matches && matches[1] !== undefined && matches[2] !== undefined) {
         // 使用 trim() 清理一下可能捕获到的前后空格，确保纯净
@@ -33474,7 +33482,7 @@ function getValueByPath(obj, path) {
         { name: '编辑', handler: () => handleEntryEdit(pathForActions) },
         { name: '重命名', handler: () => handleEntryRename(pathForActions) },
         { name: '删除', handler: () => handleEntryDelete(pathForActions) },
-        { name: '让AI重构', handler: () => handleRefacter(pathForActions) },
+        { name: '让AI重构', handler: () => handleRefactor(pathForActions) },
     ];
 
     // ==================【妈妈为你添加的魔法判断】==================
@@ -34178,12 +34186,119 @@ function handleEntryDelete(fullPath) {
         generateAndSendCommand(command);
    
 }
-function handleRefacter(fullPath) {
+function handleRefactor(fullPath) {
     const { parentPath, selfKey } = getPathParts(fullPath);
-     
+
+    const overlay = document.createElement('div');
+    // 使用专属的类名，避免样式冲突
+    overlay.className = 'move-modal-overlay refactor-modal-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'nova-modal-content';
+    modal.innerHTML = `
+        <div class="move-modal-title">要对 [${selfKey}] 做些什么呢？</div>
+        <div class="move-modal-body refactor-options">
+             <button id="refactor-fix-btn" class="book-button large-option-button">
+                <i class="fas fa-magic"></i>
+                修复格式
+                <div class="option-description">当内容格式损坏或无法解析时使用</div>
+             </button>
+             <button id="refactor-summarize-btn" class="book-button large-option-button">
+                <i class="fas fa-compress-arrows-alt"></i>
+                浓缩内容
+                <div class="option-description">提炼冗余信息，让内容更简洁</div>
+             </button>
+        </div>
+        <div class="move-modal-buttons">
+            <button id="refactor-cancel-btn" class="book-button secondary">算了吧</button>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // 优雅的入场动画
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+        modal.style.opacity = '1';
+    }, 10);
+
+    const closeModal = () => {
+        overlay.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        // 移除键盘事件监听器，避免内存泄漏
+        document.removeEventListener('keydown', handleEscKey);
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    const handleEscKey = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    };
+
+    // 按下Esc键关闭
+    document.addEventListener('keydown', handleEscKey);
+
+    // 【修复格式】按钮
+    document.getElementById('refactor-fix-btn').onclick = () => {
         const command = `<request:该路径（${fullPath}）的内容有误（可能不是正确的compact json格式），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
-        generateAndSendCommand(command,true);
-   
+        generateAndSendCommand(command, true);
+        closeModal();
+    };
+
+    // 【浓缩内容】按钮 - 妈妈先为你准备好啦，我的宝贝可以随时来修改它
+    document.getElementById('refactor-summarize-btn').onclick = () => {
+        // 这是妈妈为你准备的浓缩内容的命令，你可以根据需要调整哦
+        const command = `<request:请将路径（${fullPath}）的冗余内容进行浓缩，提炼其核心内容。在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的浓缩后内容>`;
+        generateAndSendCommand(command, true);
+        closeModal();
+    };
+
+    // 取消按钮
+    document.getElementById('refactor-cancel-btn').onclick = closeModal;
+
+    // 点击遮罩层关闭
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeModal();
+        }
+    });
+
+    // 为了让样式更好看，我的孩子可以添加一些CSS哦
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .refactor-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 10px 0;
+        }
+        .large-option-button {
+            padding: 15px 20px;
+            font-size: 1.1em;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .large-option-button .fas {
+            margin-right: 12px;
+            font-size: 1.2em;
+            width: 25px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .option-description {
+            font-size: 0.8em;
+            color: var(--text-color-light); /* 用一个柔和的颜色 */
+            font-weight: normal;
+            margin-top: 5px;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
  
@@ -34442,7 +34557,9 @@ function setupSkillChoicePanel() {
                 level = data.level ? ` [${data.level}]` : '';
                 info = '';
             }
-
+            if (typeof effect !== 'string') {
+                effect = '【】'; // 把它变成一个安全的空效果，避免程序出错
+            }
             // 解析效果
             const effectContent = effect.substring(1, effect.length - 1);
             effectContent.split(';').forEach(e => {
