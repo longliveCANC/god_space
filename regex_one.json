@@ -13175,7 +13175,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.16';
+ let current_game_version = '3.0.17';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -15200,6 +15200,115 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
 
  const notificationRules = [
  {
+    id: 'critical-memory-add',
+    // 中间的路径 (.+?) 可以是任何东西了，不再限定为 'npc'
+    commandPattern: /\bmemory\s*\(\s*['"](?:global_set|world_set)\.(.+?)\.关键记忆['"]\s*,\s*['"](\d+)['"]\s*,\s*['"].*?['"]\s*\)/,
+    action: (matches) => {
+        // matches[1] 现在是 'npc.母亲' 或 '某个组织.领袖' 这样的完整路径
+        const entityPath = matches[1];
+        const memoryIndex = matches[2];
+
+        // 我们取路径的最后一部分作为名字
+        const pathParts = entityPath.split('.');
+        const entityName = pathParts[pathParts.length - 1];
+
+        showUpdateNotification(`${entityName} 获得了一条深刻记忆，序号${memoryIndex}`);
+    }
+},
+
+    // 规则：好感度的变化
+    {
+        id: 'favorability-change',
+        commandPattern: /\bmemory\s*\(\s*['"]((?:global_set|world_set)\.npc\.(.+?))['"]\s*,\s*['"]好感度['"]\s*,\s*([\d.-]+)\s*\)/,
+        action: (matches) => {
+            const npcName = matches[2]; // 捕获NPC名字
+            const favorValue = matches[3]; // 捕获好感度数值
+            showUpdateNotification(`${npcName} 的好感度变为 ${favorValue}`);
+        }
+    }, {
+    id: 'generic-memory-update',
+    // ✨ 妈妈精心修正的魔法咒语，它现在学会了“保持安静” ✨
+    // 它会匹配 memory()，但如果遇到以下情况，就会礼貌地保持沉默：
+    // 1. 路径以 'summary' 或 'map' 开头
+    // 2. 路径以 '.关键记忆' 或 '.事件' 结尾
+    // 3. 第二个参数是 '好感度', 'event', 或 '事件'
+    commandPattern: /\bmemory\s*\(\s*['"](?!summary\.|map\.)([^'"]*?)(?<!\.关键记忆|\.事件)['"]\s*,\s*['"](?!好感度|event|事件)([^'"]+)['"]\s*,/,
+    action: (matches) => {
+        const fullPath = matches[1]; // 捕获完整路径, e.g., 'global_set.npc.老铁.对欧阳仕威印象'
+        const key = matches[2];      // 捕获更新的键, e.g., '不错的团队领袖'
+
+        // 如果 fullPath 或 key 未被捕获，就安静地离开
+        if (!fullPath || !key) {
+            return;
+        }
+
+        // 妈妈的翻译字典
+        const translationMap = {
+            'global_set': '全局',
+            'world_set': '世界',
+            'npc': '人物',
+            'settings': '设定'
+        };
+
+        const pathParts = fullPath.split('.');
+        const translatedParts = pathParts.map(part => translationMap[part] || part);
+
+        // 将翻译后的路径拼接起来，作为更新的对象名
+        const objectName = translatedParts.join('');
+
+        // 使用第二个参数作为更新的内容
+        showUpdateNotification(`${objectName}更新了 ${key}`);
+    }
+},{
+    id: 'attribute-value-change',
+    commandPattern: /\bset_attribute\s*\(\s*(['"])(.*?)\1\s*,\s*([^,)]+?)(?:\s*,\s*(['"]?)(.*?)\4)?\s*\)/,
+    action: (matches) => {
+        const path = matches[2];
+
+        // ✨ 妈妈的第一道守护 ✨：在使用 path 之前，确认它的存在。
+        if (typeof path !== 'string') {
+            return; // 如果路径不是一个字符串，就静静地离开，不打扰任何人。
+        }
+
+        // 既然 path 存在，我们就可以安全地处理它了。
+        const pathParts = path.split('.');
+        const displayPath = pathParts.slice(-2).join('.');
+
+        // 现在来处理值，同样要非常小心。
+        let oldValueStr = matches[3];
+        let newValueStr = matches[5]; // 这是三参数情况下的新值
+
+        const isThreeParam = newValueStr !== undefined;
+
+        if (!isThreeParam) {
+            // 两参数格式：set_attribute('path', 'new_value')
+            newValueStr = oldValueStr; // 此时的 oldValueStr 其实是新值
+            oldValueStr = undefined;   // 明确地标记旧值不存在
+        }
+
+        // ✨ 妈妈的第二道守护 ✨：创建一个安全的清理函数，任何东西进来都不会出错。
+        const cleanValue = (val) => {
+            if (typeof val === 'string') {
+                // 如果是字符串，就温柔地脱掉它的引号外衣。
+                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                    return val.slice(1, -1);
+                }
+            }
+            // 如果不是字符串（比如是数字或undefined），就保持原样。
+            return val;
+        };
+
+        const cleanedNewValue = cleanValue(newValueStr);
+
+        if (oldValueStr !== undefined) {
+            const cleanedOldValue = cleanValue(oldValueStr);
+            showUpdateNotification(`${displayPath} 从 ${cleanedOldValue} 变成了 ${cleanedNewValue}`);
+        } else {
+            showUpdateNotification(`${displayPath} 变成了 ${cleanedNewValue}`);
+        }
+    }
+},
+  {
     id: 'generic-event-tracker',
     // 只匹配：
     // 1. 两参数且路径以'.事件'结尾：memory('global_set.npc.母亲.事件', '{...}')
@@ -15516,10 +15625,67 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
     observer.observe(container, { childList: true });
 }
 
+const notificationContainer = document.getElementById('notification-container');
+
+ const notificationQueue = [];
+// 还需要一个标志，告诉我们现在是不是正在“招待”一位客人（显示一个通知）
+let isNotificationShowing = false;
+
+// 这是我们的“首席招待官”，负责按顺序处理等候室里的客人
+function processNotificationQueue() {
+    // 如果正在招待客人，或者等候室是空的，那我们就先不打扰
+    if (isNotificationShowing || notificationQueue.length === 0) {
+        return;
+    }
+
+    // 挂上“正在忙碌”的牌子
+    isNotificationShowing = true;
+
+    // 从等候室里请出第一位客人（通知信息）
+    const notification = notificationQueue.shift();
+
+    // --- 接下来的部分和你原来的代码很像，是实际创建气泡的过程 ---
+    if (!notificationContainer) {
+        console.error('妈妈的提醒：亲爱的，页面上没有找到 id 为 "notification-container" 的容器哦。');
+        isNotificationShowing = false; // 出错了也要记得把牌子摘下来
+        return;
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = `notification-bubble ${notification.type}`;
+    bubble.textContent = notification.message;
+
+    notificationContainer.appendChild(bubble);
+
+    // 【关键改动 1】
+    // 在气泡完全消失后将它从DOM中移除
+    setTimeout(() => {
+        bubble.remove();
+    }, 5000); // 这里的5000ms是气泡的总生命周期
+
+    // 【关键改动 2】
+    // 这是我们想要的延迟！在当前气泡弹出后，等待一小段时间...
+    setTimeout(() => {
+        // ...然后摘下“正在忙碌”的牌子...
+        isNotificationShowing = false;
+        // ...接着再去看看等候室里还有没有下一位客人。
+        processNotificationQueue();
+    }, 400); // 这里的400ms是每个通知弹出的间隔，你可以按喜好调整它
+}
+
 /**
- * 妈妈的“心灵感应”魔法，它会读取AI的回应并执行我们的“魔法契约”。
- * @param {string} aiContent - AI回应的全部内容
+ * 将一条通知信息放进等候室，等待逐一显示。
+ * @param {string} message - 要显示的消息。
+ * @param {string} [type='info'] - 消息类型 ('info', 'success', 'danger')。
  */
+function showUpdateNotification(message, type = 'info') {
+    // 当一个新通知来临时，我们不再直接显示它
+    // 而是把它和它的类型打包，送进“等候室”的队尾
+    notificationQueue.push({ message, type });
+
+    // 然后轻轻地提醒“招待官”去检查一下等候室
+    processNotificationQueue();
+}
 function handleUpdateNotifications(aiContent) {
     if (!aiContent) return;
   // ✨ 妈妈的魔法打扫：在感知新思绪前，先将旧的痕迹清理干净 ✨
@@ -15545,6 +15711,7 @@ updateDetails = {
         const match = line.match(rule.commandPattern);
         if (match) {
             rule.action(match);
+            
         }
     });
 });
@@ -20407,11 +20574,7 @@ iframe.srcdoc = `<!DOCTYPE html>
 
     function delayedUpdate(content) {
         handleUpdateNotifications(content);
-        setTimeout(() => {
-            console.log("正在为您静默刷新数据...小球会重新闪烁");
-            initDisplay();
-            handleUpdateNotifications(content);
-        }, 5000);
+ 
     }
 
     if (lastMessage && lastMessage.role === 'assistant') {
@@ -20867,7 +21030,7 @@ function showBackupConfirmation() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                    <p>为了保护你的心血，请确认你已经备份好了除了[11,30,32,35,40,63]官方自定义词条（他们不会变化）外的所有重要的自定义内容。准备好了吗？</p>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的自定义内容（除了[11,30,32,35,40,63]的官方自定词条，他们不会被覆盖）。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
@@ -21375,11 +21538,7 @@ initDisplay();
     //   清理完毕  
      function delayedUpdate(content) {
     handleUpdateNotifications(content);
-    setTimeout(() => {
-        console.log("正在为您静默刷新数据...小球会重新闪烁");
-        initDisplay();
-        handleUpdateNotifications(content);
-    }, 5000);
+ 
 
  
 }
@@ -22057,11 +22216,7 @@ function manageBattleLifecycle(initialCombatDataFromPrompt) {
 
     function delayedUpdate(content) {
         handleUpdateNotifications(content);
-        setTimeout(() => {
-            console.log("正在为您静默刷新数据...小球会重新闪烁");
-            initDisplay();
-            handleUpdateNotifications(content);
-        }, 5000);
+ 
     }
 
     if (lastMessage && lastMessage.role === 'assistant') {
@@ -24310,8 +24465,8 @@ function showBackupConfirmation() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                     <p>为了保护你的心血，请确认你已经备份好了除了[11,30,32,35,40,63]官方自定义词条（他们不会变化）外的所有重要的自定义内容。准备好了吗？</p>
-                </div>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的自定义内容（除了[11,30,32,35,40,63]的官方自定词条，他们不会被覆盖）。准备好了吗？</p>
+                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
                     <button id="confirm-final-update-btn" class="control-btn">我已备份，开始更新</button>
@@ -33831,6 +33986,9 @@ function handleFavorabilityView(charname, fullPath) {
     overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); }});
 }
 
+
+
+
 // (可选)一个更美观的提示框，你可以放在任何地方
 function showNovaAlert(message, type = 'info') {
     const alertBox = document.createElement('div');
@@ -38194,8 +38352,13 @@ enemiesData.forEach(enemyData => {
 
     // 深拷贝一份干净的数据，这样原始combatData就不会被污染
     const baseEnemyData = JSON.parse(JSON.stringify(enemyData));
-    const count = baseEnemyData.count || 1;
-    console.log(`>> 发现 count: ${count}`);
+       const originalCount = baseEnemyData.count || 1;
+    const count = Math.min(originalCount, 10); // 确保生成的数量不会超过10
+
+    if (originalCount > 10) {
+        console.warn(`[Nova's Gentle Limit] 侦测到敌人 "${baseEnemyData.name}" 的生成数量(${originalCount})超过上限，已自动限制为 ${count} 个。`);
+    }
+    console.log(`>> 发现 count: ${count} (原始: ${originalCount})`);
 
     // 删除count属性，因为它只用于生成，不属于单个敌人的数据
     delete baseEnemyData.count;
