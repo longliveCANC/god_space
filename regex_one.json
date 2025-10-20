@@ -13175,7 +13175,7 @@ input:checked + .slider:before {
 </body>
 
  <script>
- let current_game_version = '3.0.17';
+ let current_game_version = '3.0.18';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -15197,8 +15197,76 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         }
     }, duration);
 }
-
+    const translatePathForNotification = (pathString) => {
+        if (typeof pathString !== 'string' || !pathString) return '';
+        const translationMap = {
+            'global_set': '全局',
+            'world_set': '世界',
+            'npc': '人物',
+            'settings': '设定'
+        };
+        return pathString.split('.').map(part => translationMap[part] || part).join('');
+    };
  const notificationRules = [
+        {
+        id: 'move-or-rename',
+        // 这个咒语专门捕捉 memory('路径1', '路径2') 这种双路径格式
+        commandPattern: /\bmemory\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*;?/,
+        action: (matches) => {
+            const path1Str = matches[1];
+            const path2Str = matches[2];
+
+            const a_path1_parts = path1Str.split('.');
+            const a_path2_parts = path2Str.split('.');
+
+            const a_parentPath1 = a_path1_parts.slice(0, -1).join('.');
+            const a_parentPath2 = a_path2_parts.slice(0, -1).join('.');
+
+            const a_key1 = a_path1_parts[a_path1_parts.length - 1];
+            const a_key2 = a_path2_parts[a_path2_parts.length - 1];
+
+            // 使用我们的小助手来翻译路径和键名
+            const translatedParent1 = translatePathForNotification(a_parentPath1);
+            const translatedParent2 = translatePathForNotification(a_parentPath2);
+            const translatedKey1 = translatePathForNotification(a_key1);
+            const translatedKey2 = translatePathForNotification(a_key2);
+
+            // 情况一：重命名 (在同一个地方，名字变了)
+            if (a_parentPath1 === a_parentPath2 && a_key1 !== a_key2) {
+                showUpdateNotification(`在「${translatedParent1}」中，'${translatedKey1}' 被重命名为 '${translatedKey2}'`);
+                return;
+            }
+
+            // 情况二：移动 (名字没变，但换了个地方)
+            if (a_parentPath1 !== a_parentPath2 && a_key1 === a_key2) {
+                showUpdateNotification(`'${translatedKey1}' 从「${translatedParent1}」移动到了「${translatedParent2}」`);
+                return;
+            }
+
+            // 妈妈的温柔提醒：这里可以处理更复杂的移动+重命名情况，但我们先专注于这两种哦。
+        }
+    },
+
+    // 规则：删除
+    {
+        id: 'delete-item',
+        commandPattern: /\bdelete\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*;?/,
+        action: (matches) => {
+            const pathStr = matches[1];
+            const keyStr = matches[2];
+
+            const translatedPath = translatePathForNotification(pathStr);
+
+            // 如果 key 是 'all'，那就是清空操作
+            if (keyStr === 'all') {
+                showUpdateNotification(`「${translatedPath}」被清空了`);
+            } else {
+                // 否则就是移除某一个具体的东西
+                const translatedKey = translatePathForNotification(keyStr);
+                showUpdateNotification(`'${translatedKey}' 从「${translatedPath}」中被移除了`);
+            }
+        }
+    },
  {
     id: 'critical-memory-add',
     // 中间的路径 (.+?) 可以是任何东西了，不再限定为 'npc'
