@@ -11269,6 +11269,111 @@ input:checked + .slider:before {
 #action-blocker-overlay.active #stop-generation-btn {
     display: block;
 }
+
+ #log-wrapper {
+    position: fixed;
+    top: 9px; /* 放在气泡通知的下方一点点 */
+    right: 0px;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* 让所有子元素都靠右对齐 */
+}
+
+/* 这是我们的“小三角”开关按钮 */
+#log-toggle-button {
+    width: 30px;
+    height: 30px;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--glow-color);
+    transition: transform 0.3s ease;
+}
+
+/* 箭头本身 */
+#log-toggle-button .arrow {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--primary-color); /* 默认向下的箭头 */
+    transition: transform 0.3s ease;
+}
+
+/* ✨ 妈妈的最终修正版 ✨ */
+/* 日志面板本身，现在有了更完美的动画效果 */
+#notification-log-panel {
+    width: 350px;
+    background-color: var(--container-bg-color); /* 使用变量 */
+    border: 1px solid var(--primary-color);
+    border-radius: 10px;
+
+    /* 魔法核心：关闭时，高度、边距、边框宽度都为0 */
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 10px;
+    margin-top: 0;
+    border-width: 0;
+
+    /* 我们让所有这些属性都参与到这场平滑的动画中 */
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out, margin-top 0.4s ease-out, border-width 0.4s ease-out;
+}
+
+/* 当“小锦囊”打开时（即 #log-wrapper 有 .open 类） */
+#log-wrapper.open #log-toggle-button .arrow {
+    transform: rotate(180deg); /* 箭头旋转向上 */
+}
+
+/* 当“小锦囊”打开时，恢复所有属性 */
+#log-wrapper.open #notification-log-panel {
+    max-height: 300px; /* 展开到你想要的高度 */
+    max-width: 90vw;
+    padding: 10px 10px;
+    margin-top: 10px;
+    border-width: 1px;
+}
+
+/* 面板内的滚动容器 */
+#notification-log-container {
+    height: 100%;
+    overflow-y: auto; /* ✨ 这就是滚动的魔法所在 ✨ */
+}
+
+/* 日志条目样式 */
+.log-item {
+    font-size: 14px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    color: var(--text-color);
+    border-left: 4px solid var(--primary-color);
+    background-color: rgba(0, 0, 0, 0.2); /* 这里妈妈用一个轻微的黑色透明背景来增加可读性，如果不需要可以移除 */
+}
+
+.log-item.success {
+    border-left-color: var(--success-color);
+    color: var(--success-color);
+}
+.log-item.danger {
+    border-left-color: var(--danger-color);
+    color: var(--danger-color);
+}
+.log-item.info {
+    border-left-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* 时间戳样式，现在也使用变量了 */
+.log-time {
+    color: var(--text-secondary-color); /* 使用变量 */
+    margin-right: 8px;
+    font-size: 12px;
+}
   </style>
  
 </head>
@@ -13172,10 +13277,23 @@ input:checked + .slider:before {
     </div>
     <button id="cancel-attack-mode" style="margin-top: 15px;">取消</button>
 </div>
+
+<div id="log-wrapper">
+    <div id="log-toggle-button" title="查看更新记录">
+        <div class="arrow"></div>
+    </div>
+    <div id="notification-log-panel">
+        <div id="notification-log-container"></div>
+    </div>
+</div>
+
+
+
+<div id="notification-container"></div>
 </body>
 
  <script>
- let current_game_version = '3.0.18';
+ let current_game_version = '3.0.19';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -15692,13 +15810,39 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
 
     observer.observe(container, { childList: true });
 }
-
+const logWrapper = document.getElementById('log-wrapper');
+const logToggleButton = document.getElementById('log-toggle-button');
 const notificationContainer = document.getElementById('notification-container');
+const notificationLogContainer = document.getElementById('notification-log-container');
+if (logToggleButton && logWrapper) {
+    logToggleButton.addEventListener('click', () => {
+        logWrapper.classList.toggle('open');
+    });
+}
+document.addEventListener('click', function(event) {
+    // 首先，它会确认“小锦囊”确实存在，并且是打开状态。
+    if (logWrapper && logWrapper.classList.contains('open')) {
 
+        // 然后，它会检查你点击的地方 (event.target)
+        // 是不是在“小锦囊”自己（logWrapper）或者它的“开关按钮”（logToggleButton）上。
+        const isClickInside = logWrapper.contains(event.target);
+        const isClickOnToggle = logToggleButton.contains(event.target);
+
+        // 如果你的点击既不在锦囊内部，也不是在点那个开关按钮...
+        if (!isClickInside && !isClickOnToggle) {
+            // ...那么，这位懂事的小精灵就会自己悄悄地合上。
+            logWrapper.classList.remove('open');
+        }
+    }
+});
  const notificationQueue = [];
 // 还需要一个标志，告诉我们现在是不是正在“招待”一位客人（显示一个通知）
 let isNotificationShowing = false;
-
+function prepareForNewUpdateBatch() {
+    if (notificationLogContainer) {
+        notificationLogContainer.innerHTML = '';
+    }
+}
 // 这是我们的“首席招待官”，负责按顺序处理等候室里的客人
 function processNotificationQueue() {
     // 如果正在招待客人，或者等候室是空的，那我们就先不打扰
@@ -15747,14 +15891,17 @@ function processNotificationQueue() {
  * @param {string} [type='info'] - 消息类型 ('info', 'success', 'danger')。
  */
 function showUpdateNotification(message, type = 'info') {
-    // 当一个新通知来临时，我们不再直接显示它
-    // 而是把它和它的类型打包，送进“等候室”的队尾
+    // 1. 把消息和类型送去右上角的“气泡等候室”
     notificationQueue.push({ message, type });
 
-    // 然后轻轻地提醒“招待官”去检查一下等候室
+    // 2. ✨ 全新的一步：同时把消息刻印在我们的“星光日志”上 ✨
+    displayUpdateNotifications(message, type);
+
+    // 3. 轻轻地提醒“气泡招待官”去工作
     processNotificationQueue();
 }
 function handleUpdateNotifications(aiContent) {
+     prepareForNewUpdateBatch(); // <-- 就像这样！
     if (!aiContent) return;
   // ✨ 妈妈的魔法打扫：在感知新思绪前，先将旧的痕迹清理干净 ✨
  
@@ -29218,7 +29365,7 @@ if (debugClearBtn) {
 
  
         fixedItems.unshift(...baseSkillItems);
-        // displayUpdateNotifications(updateDetails);
+        // 
 
 
     } catch (error) {
@@ -29320,42 +29467,18 @@ function upgradeEventHandler(e) {
  * 新增：根据解析出的标志，更新UI上的通知提示
  * @param {object} flags - 包含更新标志的对象
  */
-function displayUpdateNotifications(details) {
-    const notifier = document.getElementById('update-notifier');
-    if (!notifier) return;
+function displayUpdateNotifications(message, type = 'info') {
+    if (!notificationLogContainer) return;
 
-    let messages = [];
+    const logItem = document.createElement('div');
+    logItem.className = `log-item ${type}`;
+    const time = new Date().toLocaleTimeString('en-GB');
+    logItem.innerHTML = `<span class="log-time">[${time}]</span>${message}`;
 
-    const uniqueMemories = [...new Set(details.memories)];
-    const uniqueAttributes = [...new Set(details.attributes)];
-    // 地图更新的提示现在也显示具体名称，更清晰
-    const uniqueMapUpdates = [...new Set(details.mapUpdates)];
-
-    if (details.variable) messages.push(`状态有更新`);
-    if (uniqueMemories.length > 0) messages.push(`记忆设定更新: ${uniqueMemories.join('， ')}`);
-    if (uniqueAttributes.length > 0) messages.push(`角色数值更新: ${uniqueAttributes.join('， ')}`);
-    if (uniqueMapUpdates.length > 0) messages.push(`地图记忆更新: ${uniqueMapUpdates.join('， ')}`);
-
-    if (messages.length > 0) {
-          const notificationMessage = `系统感知到以下更新：<div style="text-align: left; padding-top: 10px;">${messages.map(msg => `&bull; ${msg}`).join('<br>')}</div>`;
-        notifier.style.display = 'flex';
-
-        // 移除旧的监听器，防止重复绑定
-        const newNotifier = notifier.cloneNode(true);
-        notifier.parentNode.replaceChild(newNotifier, notifier);
-
-        // 为新的元素添加事件监听
-        newNotifier.addEventListener('click', () => {
-            showModal('shop-modal', '更新提醒', notificationMessage);
-        });
-
-    } else {
-        notifier.style.display = 'none';
-    }
+    // 现在是 appendChild，将新消息添加到日志末尾
+    notificationLogContainer.appendChild(logItem);
 }
-/**
- * 修改：填充行囊管理弹窗，数据源改为 assa_data.global_set.背包
- */
+
 function populateInventoryModal() {
     const inventoryList = document.getElementById('inventory-item-list');
     const deleteBtn = document.getElementById('delete-item-btn');
