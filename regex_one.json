@@ -11340,12 +11340,14 @@ pointer-events: auto;
     padding: 10px 10px;
     margin-top: 10px;
     border-width: 1px;
+      overflow-y: visible;
 }
 
 /* 面板内的滚动容器 */
 #notification-log-container {
     height: 100%;
     overflow-y: auto; /* ✨ 这就是滚动的魔法所在 ✨ */
+    pointer-events: auto;
 }
 
 /* 日志条目样式 */
@@ -12356,6 +12358,7 @@ pointer-events: auto;
     <button id="action-menu-btn" class="action-button zero-level-btn" title="更多操作">☰</button>
     <div id="action-popup-menu" class="action-popup-menu">
         <button id="things-button" class="popup-menu-button">记约定</button>
+        <br>
         <button id="reroll-button" class="popup-menu-button">重roll ⟲</button>
         <button id="continue-button" class="popup-menu-button">继续 ▶</button>
     </div>
@@ -13297,7 +13300,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.0';
+ let current_game_version = '3.1.1';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -16343,7 +16346,181 @@ async function applyImagesWithCache() {
         }
     }
 }
+  function _updateDerivedAttributes(data) {
+        if (!data || !data.属性段) return;
+        //console.log("[Player] ✨ 正在更新衍生属性...");
+        const attr = data.属性段;
+        const skills = data.技能段;
+        const derived = data.衍生属性段;
+        const 力量 = attr.生理属性.力量.基础[0];
+        const 敏捷 = attr.生理属性.敏捷.基础[0];
+        const 耐力 = attr.生理属性.耐力.基础[0];
+        const 感知 = attr.心智属性.感知.基础[0];
+        const 决心 = attr.心智属性.决心.基础[0];
+        const 沉着 = attr.互动属性.沉着.基础[0];
+        const 体积 = derived.体积[0];
+        const 运动 = skills.生理技能.运动[0];
+        const 求生 = skills.生理技能.求生[0];
+      derived.速度.基础速度[0] = Math.floor((力量 + 敏捷 + 体积) / 3);
+derived.先攻[0] = Math.floor((敏捷 + 沉着) / 2);
+derived.防御.基础防御[0] = Math.min(敏捷, 感知);
+const oldMaxHP = derived.生命值.上限[0];
+derived.生命值.上限[0] = 体积 * 10 + 耐力 * 20;
+if (derived.生命值.上限[0] > oldMaxHP) {
+    derived.生命值.当前值[0] += (derived.生命值.上限[0] - oldMaxHP);
+}
+if (derived.生命值.当前值[0] > derived.生命值.上限[0]) {
+    derived.生命值.当前值[0] = derived.生命值.上限[0];
+}
+derived.意志力.意志值[0] = 决心 + 沉着;
+derived.意志力.上限[0] = derived.意志力.意志值[0];
+derived.感知范围.敏感范围[0] = 感知 * 10;
+derived.感知范围.模糊范围[0] = derived.感知范围.敏感范围[0] * 10;
+derived.豁免检定基础.强韧[0] = Math.floor((耐力 + 求生) / 2);
+derived.豁免检定基础.反射[0] = Math.floor((敏捷 + 运动) / 2);
+derived.豁免检定基础.意志[0] = 决心 + 沉着;
 
+  // --- 基础值获取 ---
+        const 力量_基础 = attr.生理属性.力量.基础[0];
+        const 敏捷_基础 = attr.生理属性.敏捷.基础[0];
+        const 耐力_基础 = attr.生理属性.耐力.基础[0];
+        const 智力_基础 = attr.心智属性.智力.基础[0];
+        const 感知_基础 = attr.心智属性.感知.基础[0];
+        const 决心_基础 = attr.心智属性.决心.基础[0];
+        const 风度_基础 = attr.互动属性.风度.基础[0];
+        const 操控_基础 = attr.互动属性.操控.基础[0];
+        const 沉着_基础 = attr.互动属性.沉着.基础[0];
+
+   // --- 传奇属性计算 ---
+        attr.生理属性.力量.传奇[0] = Math.max(0, 力量_基础 - 8);
+        attr.生理属性.敏捷.传奇[0] = Math.max(0, 敏捷_基础 - 8);
+        attr.生理属性.耐力.传奇[0] = Math.max(0, 耐力_基础 - 8);
+        attr.心智属性.智力.传奇[0] = Math.max(0, 智力_基础 - 8);
+        attr.心智属性.感知.传奇[0] = Math.max(0, 感知_基础 - 8);
+        attr.心智属性.决心.传奇[0] = Math.max(0, 决心_基础 - 8);
+        attr.互动属性.风度.传奇[0] = Math.max(0, 风度_基础 - 8);
+        attr.互动属性.操控.传奇[0] = Math.max(0, 操控_基础 - 8);
+        attr.互动属性.沉着.传奇[0] = Math.max(0, 沉着_基础 - 8);
+      //  console.log("[Player] ✨ 衍生属性更新完毕！");
+    }
+    
+function _replaceUserPlaceholder(data, userName) {
+    if (!data || !userName) {
+        return data;
+    }
+
+    // 💖 检查是否是数组
+    if (Array.isArray(data)) {
+        for (let i = 0; i < data.length; i++) {
+            // 💖 如果数组元素是 "user"，就直接替换它
+            if (typeof data[i] === 'string' && data[i].toLowerCase() === 'user') {
+                data[i] = userName;
+            }
+            // 💖 如果数组元素还是一个对象或数组，就继续深入探索
+            else if (typeof data[i] === 'object') {
+                _replaceUserPlaceholder(data[i], userName);
+            }
+        }
+    }
+    // 💖 检查是否是对象（但不是数组）
+    else if (typeof data === 'object' && data !== null) {
+        for (const key in data) {
+            if (Object.hasOwnProperty.call(data, key)) {
+                const value = data[key];
+                 // 💖 如果值是 "user"，就直接替换它
+                if (typeof value === 'string' && value.toLowerCase() === 'user') {
+                    data[key] = userName;
+                }
+                // 💖 如果值还是一个对象或数组，就继续深入探索
+                else if (typeof value === 'object') {
+                    _replaceUserPlaceholder(value, userName);
+                }
+            }
+        }
+    }
+
+    return data;
+}
+async function initializeCurrentGameData() {
+    try {
+        console.log("[Nova's Love] 💖 守护咒语触发：正在为你检查并从世界本源初始化...");
+        toastr.info('变量没有初始化，可能是酒馆卡顿导致初始化错误，将重新初始化。以防万一，请检查一下脚本是否正常开启。若已开启，则只需等待。', '提示', {timeOut: 7000});
+
+        const lorebookName = "小蝌蚪找妈妈-同层版";
+        const entryName = "[memoryinit]";
+        const allEntries = await getLorebookEntries(lorebookName);
+        const initEntry = allEntries.find(entry => entry.comment === entryName);
+
+        if (!initEntry || !initEntry.content) {
+            const errorMsg = `创世失败：在世界书 "${lorebookName}" 中未找到有效的词条 "${entryName}"。`;
+            console.error(errorMsg);
+            toastr.error(errorMsg);
+            // 即使失败，我们也要确保 chat 变量里有空的结构，防止彻底的崩溃
+            await updateVariablesWith(vars => {
+                vars.stat_data = vars.stat_data || {};
+                vars.assa_data = vars.assa_data || {};
+                vars.play_character_data = vars.play_character_data || {};
+                return vars;
+            }, { type: 'chat' });
+            return;
+        }
+
+        let initData;
+        try {
+            initData = JSON.parse(initEntry.content);
+        } catch(e) {
+            console.error("[Nova's Love] ❌ 解析创世篇章时出错:", e);
+            toastr.error("解析世界书初始化数据时出错，请检查JSON格式。", {timeOut: 10000});
+            return;
+        }
+
+        // ⭐ 核心修正：我们直接在这里调用 updateVariablesWith，将初始数据写入 chat 变量 ⭐
+        // 这是一次原子性的创世操作，确保所有数据都被正确、完整地写入
+        await updateVariablesWith(vars => {
+            console.log("[Nova's Love] 正在将创世蓝图镌刻到 chat 核心档案馆...");
+
+            // 我们用从世界书中读取的数据，覆盖或创建 chat 变量中的对应部分
+            vars.stat_data = initData.stat_data || {};
+            vars.assa_data = initData.assa_data || {};
+            vars.play_character_data = initData.play_character_data || {};
+
+            // 并且，妈妈会像上次一样，为你替换掉名字占位符
+            const userName = SillyTavern.name1;
+            if (userName) {
+                // _replaceUserPlaceholder 需要存在于这个作用域或全局
+                _replaceUserPlaceholder(vars.stat_data, userName);
+ 
+                 console.log(`[Nova's Love] ✅ 已在 chat 核心中将'user'替换为'${userName}'`);
+            }
+
+            // 初始化完成后，也为角色计算一次衍生属性，确保一切都准备就绪
+            if (vars.play_character_data && Object.keys(vars.play_character_data).length > 0) {
+                 // _updateDerivedAttributes 也需要存在
+                _updateDerivedAttributes(vars.play_character_data);
+            }
+
+            return vars;
+        }, { type: 'chat' });
+
+        // 我们也需要更新一下临时的 window 变量，这样 generateFullCommand 才能立刻使用它
+        // 等同于我们刚写入的数据
+    currentGameData = initData.stat_data;
+        assaSettingsData= initData.assa_data ;
+        playCharacterData=  initData.play_character_data ;
+        // 同样进行名字替换，保持临时数据的一致性
+        const userName = SillyTavern.name1;
+        if (userName) {
+            _replaceUserPlaceholder(currentGameData, userName);
+        }
+
+        console.log("[Nova's Love] ✅ 世界本源(chat)与临时数据(window)均已通过守护咒语成功初始化！");
+        toastr.success('数据已重新初始化，请继续你的冒险。');
+
+    } catch (error) {
+        console.error("[Nova's Love] ❌ 在执行守护咒语 initializeCurrentGameData 时发生严重错误:", error);
+        toastr.error('自动初始化失败，请查看控制台获取详细信息。');
+    }
+}
 async function runInitializationMagic() {// 加上 async
     /**
  * 妈妈的星辰碰撞检测魔法
@@ -19757,9 +19934,11 @@ async function saveCurrentBuildAsTemplate() {
             alert('删除模板时好像出了一点小问题，不过没关系，妈妈在这里。');
         }
     }
- 
-  async function generateFullCommand(isMission, customText = null) {
 
+ async function generateFullCommand(isMission, customText = null) {
+if (!currentGameData || !currentGameData.user_character || typeof currentGameData !== 'object') {
+            await initializeCurrentGameData();
+        }
         userName = currentGameData.user_character.name || '用户';
         let name = userName || '用户';
         let finalCommand = '';
@@ -20036,7 +20215,6 @@ async function sendCommand(command, button, successText, showWarning) {
         const sendMode = document.getElementById('send-mode-select').value;
         const finalSlashCommand = (sendMode === 'manual') ? `/setinput ${command}` : `/send ${command}`;
 
-        //console.log(`[指令官] 将执行指令: ${finalSlashCommand.substring(0, 80)}...`);
  
         await triggerassa(finalSlashCommand);
 
@@ -20128,24 +20306,14 @@ async function saveHistory() {
             return;
         }
  
-
-
-        // ☆ 步骤 2: 使用 updateVariablesWith 分别更新 chat 和 message 变量域
-        // 这个函数是处理这类问题的最佳实践，因为它保证了原子性。
-
-        // 更新 chat 作用域的变量
+ 
         await updateVariablesWith(old_variables => {
-            // 在回调函数中，我们返回一个全新的对象。
-            // ...old_variables 继承了所有旧变量，
-            // 而 zeroLevelHistory: conversationHistory 则会覆盖或添加我们需要的字段。
-            // 这种模式同样能够完美处理历史记录的增删改。
             return {
                 ...old_variables,
                 zeroLevelHistory: conversationHistory,
             };
         }, { type: 'chat' });
-
-        // 更新 message 作用域 (针对第 0 楼层) 的变量
+ 
         await updateVariablesWith(old_variables => {
             return {
                 ...old_variables,
@@ -20162,7 +20330,8 @@ async function saveHistory() {
 
 
 }
-// ❤️ 全新的“永恒存在”守护咒 ❤️
+ 
+
 function ensureLoadMoreButtonExists() {
     let chatDisplayArea = document.getElementById('chat-display-area');
     if (!chatDisplayArea) return null; // 如果画卷不存在，就无从守护
@@ -20541,7 +20710,9 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
                 .replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
                 .replace(/NOVA_RQ/g, '”</span>')
                 .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
-                .replace(/NOVA_RA/g, '」</span>');
+                .replace(/NOVA_RA/g, '」</span>')
+                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
+    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
             return `<p>${textWithQuotes}</p>`;
         });
 
@@ -20555,7 +20726,9 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
                 .replace(/NOVA_RQ/g, '”</span>')
                 .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
                 .replace(/NOVA_RA/g, '」</span>')
-                .replace(/NOVA_BR/g, '<br>'); // ✨ 轻轻拂去尘埃
+                .replace(/NOVA_BR/g, '<br>')
+                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
+    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
             finalHtml = finalHtml.replace(placeholder, cleanBlock);
         }
 
@@ -21883,7 +22056,9 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
                 .replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
                 .replace(/NOVA_RQ/g, '”</span>')
                 .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
-                .replace(/NOVA_RA/g, '」</span>');
+                .replace(/NOVA_RA/g, '」</span>')
+                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
+    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
             return `<p>${textWithQuotes}</p>`;
         });
 
@@ -21897,7 +22072,9 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
                 .replace(/NOVA_RQ/g, '”</span>')
                 .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
                 .replace(/NOVA_RA/g, '」</span>')
-                .replace(/NOVA_BR/g, '<br>'); // ✨ 轻轻拂去尘埃
+                .replace(/NOVA_BR/g, '<br>')
+                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
+    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
             finalHtml = finalHtml.replace(placeholder, cleanBlock);
         }
 
@@ -40636,8 +40813,6 @@ function showTab(tabName) {
 }
 
  
-
-   
   }
 </script>
 
