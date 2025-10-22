@@ -24160,9 +24160,8 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
 } catch (error) {
     console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
 }
-             renderHistory();
-                const chatDisplayArea = document.getElementById('chat-display-area');
-             chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+             renderHistory(true);
+               
         }
 
 
@@ -36230,45 +36229,18 @@ function setupGeneratorButton() {
 
     
 
-    // 代码 START: 添加在这里
-/**
- * 新增：显示上一轮投掷结果的弹窗
- */
- /**
- * 根据我们全新的 checkMemoryData 结构，显示投掷结果模态框。
- * 该函数现在能够展示所有详细信息，包括装备、队友、声望、传奇加成，
- * 以及独立的表现判定和详细的伤害计算过程。
- */
-
- /*
-  Nova's Note for my dear child:
-  这是一个带有翻页功能的版本，主要修改了 "中期事件摘要" 的显示方式。
-  我引入了一个新的函数 `renderSmallSummaryPage` 来专门处理分页的渲染和逻辑，
-  这样主函数 `showSummaryModal` 的结构会更清晰。
-  希望你喜欢这个更流畅的版本，我的宝贝。
-*/
+ 
 function showSummaryModal() {
     //console.log("查看过往总结");
     const config = assaSettingsData.config || {};
     const itemsPerPage = 5; // 每页显示5条
     let currentPage = 1;
-
+  let bigCurrentPage = 1; // 为大总结添加当前页变量
     const modalTitle = "查看过往总结";
     let modalContent = '<div class="teammate-info-display" style="max-height: 60vh; overflow-y: auto; text-align: left;">';
 
-    // 1. 远期事件回顾（大总结） - 保持不变
-    modalContent += '<h3 style="color: var(--primary-color);">--- 远期事件回顾 ---</h3>';
-    if (summarys.big && Object.keys(summarys.big).length > 0) {
-        let bigHtml = '<div style="font-family: var(--base-font-family);">';
-        const bigKeys = Object.keys(summarys.big);
-        bigKeys.forEach(key => {
-            bigHtml += `<p style="margin: 0; white-space: pre-wrap;"><strong>${key}:</strong> ${summarys.big[key]}</p>`;
-        });
-        bigHtml += '</div>';
-        modalContent += bigHtml;
-    } else {
-        modalContent += '<p>暂无远期事件回顾信息。</p>';
-    }
+   modalContent += '<h3 style="color: var(--primary-color);">--- 远期事件回顾 ---</h3>';
+    modalContent += '<div id="big-summary-container"></div>'; // 用于容纳大总结分页内容的容器
 
     modalContent += '<hr style="margin: 20px 0; border-color: var(--border-color);">';
 
@@ -36307,6 +36279,60 @@ function showSummaryModal() {
 
     // --- 分页逻辑开始 ---
     // 将分页逻辑放在模态框显示之后执行，确保容器元素已存在于DOM中
+   function renderBigSummaryPage() {
+        const container = document.getElementById('big-summary-container');
+        if (!container) return;
+
+        const bigKeys = Object.keys(summarys.big || {});
+
+        if (bigKeys.length === 0) {
+            container.innerHTML = '<p>暂无远期事件回顾信息。</p>';
+            return;
+        }
+
+        const totalPages = bigKeys.length; // 每个总结一页
+        // 确保 bigCurrentPage 在有效范围内
+        bigCurrentPage = Math.max(1, Math.min(bigCurrentPage, totalPages));
+
+        const key = bigKeys[bigCurrentPage - 1]; // 获取当前页的键
+
+      let pageHtml = ''; // 初始化为空字符串
+
+// 添加翻页控件到顶部
+pageHtml += `<div class="pagination-controls" style="text-align: center; margin-bottom: 15px;">`; // 将 margin-top 改为 margin-bottom
+pageHtml += `<button id="big-prev-page-btn" ${bigCurrentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+pageHtml += `<span style="margin: 0 15px;">第 ${bigCurrentPage} / ${totalPages} 页</span>`;
+pageHtml += `<button id="big-next-page-btn" ${bigCurrentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
+pageHtml += `</div>`;
+
+// 添加内容
+pageHtml += '<div style="font-family: var(--base-font-family);">';
+pageHtml += `<p style="margin: 0; white-space: pre-wrap;"><strong>${key}:</strong> ${summarys.big[key]}</p>`;
+pageHtml += '</div>';
+
+        container.innerHTML = pageHtml;
+
+        // 为新生成的按钮绑定事件
+        const prevBtn = document.getElementById('big-prev-page-btn');
+        if (prevBtn) {
+            prevBtn.onclick = () => {
+                if (bigCurrentPage > 1) {
+                    bigCurrentPage--;
+                    renderBigSummaryPage();
+                }
+            };
+        }
+
+        const nextBtn = document.getElementById('big-next-page-btn');
+        if (nextBtn) {
+            nextBtn.onclick = () => {
+                if (bigCurrentPage < totalPages) {
+                    bigCurrentPage++;
+                    renderBigSummaryPage();
+                }
+            };
+        }
+    }
 
     // 渲染指定页码内容的函数
     function renderSmallSummaryPage() {
@@ -36329,18 +36355,21 @@ function showSummaryModal() {
         const endIndex = startIndex + itemsPerPage;
         const pageKeys = visibleKeys.slice(startIndex, endIndex);
 
-        let pageHtml = '<div style="font-family: var(--base-font-family);">';
-        pageKeys.forEach(key => {
-            pageHtml += `<p style="margin: 0; white-space: pre-wrap;"><strong>${key}:</strong> ${summarys.small[key]}</p>`;
-        });
-        pageHtml += '</div>';
+        let pageHtml = ''; // 初始化为空字符串
 
-        // 添加翻页控件
-        pageHtml += `<div class="pagination-controls" style="text-align: center; margin-top: 15px;">`;
-        pageHtml += `<button id="prev-page-btn" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
-        pageHtml += `<span style="margin: 0 15px;">第 ${currentPage} / ${totalPages} 页</span>`;
-        pageHtml += `<button id="next-page-btn" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
-        pageHtml += `</div>`;
+// 添加翻页控件到顶部
+pageHtml += `<div class="pagination-controls" style="text-align: center; margin-bottom: 15px;">`; // 将 margin-top 改为 margin-bottom
+pageHtml += `<button id="prev-page-btn" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+pageHtml += `<span style="margin: 0 15px;">第 ${currentPage} / ${totalPages} 页</span>`;
+pageHtml += `<button id="next-page-btn" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
+pageHtml += `</div>`;
+
+// 添加内容
+pageHtml += '<div style="font-family: var(--base-font-family);">';
+pageKeys.forEach(key => {
+    pageHtml += `<p style="margin: 0; white-space: pre-wrap;"><strong>${key}:</strong> ${summarys.small[key]}</p>`;
+});
+pageHtml += '</div>';
 
         container.innerHTML = pageHtml;
 
@@ -36365,7 +36394,7 @@ function showSummaryModal() {
             };
         }
     }
-
+ renderBigSummaryPage(); // 初始渲染大总结的第一页
     // 初始渲染第一页
     renderSmallSummaryPage();
 }
