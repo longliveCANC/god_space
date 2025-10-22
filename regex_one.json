@@ -11517,8 +11517,9 @@ pointer-events: auto;
          <div class="mod-tab" data-for="cg-on" data-name="cg-mode" data-off-id="cg-off">场景图</div>
          <br>
   <div class="mod-tab" data-for="npccg-on" data-name="npccg-mode" data-off-id="npccg-off">npc立绘</div>
-  
- <div class="mod-tab" data-for="npc-info-on" data-name="npc-info-mode" data-off-id="npc-info-off">npc事件</div>
+         <div class="mod-tab" data-for="npc-info-1" data-name="npc-info">极简npc</div>
+        <div class="mod-tab" data-for="npc-info-2" data-name="npc-info">简单npc</div>
+        <div class="mod-tab" data-for="npc-info-3" data-name="npc-info">复杂npc</div>
 <div class="mod-tab" data-for="npc-love-on" data-name="npc-love-mode" data-off-id="npc-love-off">分阶段好感</div>
 
 
@@ -11532,6 +11533,10 @@ pointer-events: auto;
         <input type="radio" id="creator-reverent" name="creator-attitude" value="3">
         <input type="radio" id="creator-none" name="creator-attitude" value="38">
 
+        <input type="radio" id="npc-info-1" name="npc-info" value="44" >
+        <input type="radio" id="npc-info-2" name="npc-info" value="72" checked>
+        <input type="radio" id="npc-info-3" name="npc-info" value="36">
+ 
 
  <input type="radio" id="map-simple" name="map-mode" value="simple" >
         <input type="radio" id="map-complex" name="map-mode" value="complex" checked>
@@ -11580,9 +11585,7 @@ pointer-events: auto;
          <input type="radio" id="npccg-on" name="npccg-mode" value="48" checked>
         <input type="radio" id="npccg-off" name="npccg-mode" value="off">
 
-        <input type="radio" id="npc-info-on" name="npc-info-mode" value="36" checked>
-        <input type="radio" id="npc-info-off" name="npc-info-mode" value="44">
-
+ 
 
         <input type="radio" id="npc-love-on" name="npc-love-mode" value="on">
         <input type="radio" id="npc-love-off" name="npc-love-mode" value="off" checked>
@@ -13300,13 +13303,13 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.1';
+ let current_game_version = '3.1.2';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
 
- const processedImageCache = new Map();
+const processedImageCache = new Map();
 let userName = '用户';
   // 妈妈为你设定的世界书ID
     const LOREBOOK_NAME = "小蝌蚪找妈妈-同层版";
@@ -16975,6 +16978,10 @@ document.addEventListener('click', (e) => {
                 document.querySelectorAll(`.mod-tab[data-name="${groupName}"]`).forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 if(input) input.checked = true;
+            }else if (groupName === 'npc-info') { // 这是互斥组 
+                document.querySelectorAll(`.mod-tab[data-name="${groupName}"]`).forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                if(input) input.checked = true;
             }else if (groupName === 'map-mode') { // 这是互斥组 
                 document.querySelectorAll(`.mod-tab[data-name="${groupName}"]`).forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
@@ -18751,6 +18758,8 @@ async function handleModeSelection() {
         startSetupButton.textContent = '...';
         const selectedWorldModeValue = document.querySelector('input[name="world-mode"]:checked').value;
         const selectedAttitude = document.querySelector('input[name="creator-attitude"]:checked').value;
+        const selectednpcinfo = document.querySelector('input[name="npc-info"]:checked').value;
+      
         const selectedMap = document.querySelector('input[name="map-mode"]:checked').value;
         const diceLevel = document.querySelector('input[name="dice-level"]:checked').value;
         const selectedOptionsMode = document.querySelector('input[name="options-mode"]:checked').value;
@@ -18767,8 +18776,7 @@ async function handleModeSelection() {
         const behaviorValue = document.querySelector('input[name="behavior-mode"]:checked').value;
         const cgValue = document.querySelector('input[name="cg-mode"]:checked').value;
         const npccgValue = document.querySelector('input[name="npccg-mode"]:checked').value;
-         const npcinfoValue = document.querySelector('input[name="npc-info-mode"]:checked').value;
-       const npcLOVEmode = document.querySelector('input[name="npc-love-mode"]:checked').value;
+               const npcLOVEmode = document.querySelector('input[name="npc-love-mode"]:checked').value;
               const distancemode = document.querySelector('input[name="distance-mode"]:checked').value;
        
         const selectedRealWorldMode = document.querySelector('input[name="real-world-mode"]:checked').value;
@@ -18790,9 +18798,9 @@ async function handleModeSelection() {
                 parseInt(nhumanValue), parseInt(selectedWorldModeValue), parseInt(selectedAttitude),
                 parseInt(selectedOptionsMode), parseInt(selectedTitleValue), parseInt(behaviorValue),
                 parseInt(cgValue), parseInt(npccgValue), parseInt(privateChatMode),parseInt(resourceValue),
-                parseInt(diceLevel),parseInt(npcinfoValue),parseInt(distancemode),
+                parseInt(diceLevel),parseInt(distancemode),
                 parseInt(livevalue),parseInt(battlevalue),parseInt(thingsvalue),
-                parseInt(timevalue)
+                parseInt(timevalue),parseInt(selectednpcinfo)
             ];
 
             if (parseInt(selectedWorldModeValue) == 34) {
@@ -18835,7 +18843,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,74,75,76,77,78,79 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -23663,9 +23671,166 @@ async function getSessionBackupFromDB() {
 // 在我们的世界开始时，先确保宝库是准备好的
 initDB().catch(err => console.error("初始化数据库失败:", err));
 
+// 辅助函数：拆分路径为两层基础路径和剩余路径
+function splitPathForFilter(fullPath) {
+    const parts = fullPath.split('.');
+    
+    if (parts.length <= 2) {
+        // 如果只有两层或更少,直接返回
+        return {
+            basePath: fullPath,
+            hidePath: null
+        };
+    }
+    
+    // 取前两层作为 basePath
+    const basePath = parts.slice(0, 2).join('.');
+    // 剩余的作为 hidePath
+    const hidePath = parts.slice(2).join('.');
+    
+    return {
+        basePath,
+        hidePath
+    };
+}
+ 
+async function checkAndUpdateMemoryVisibility(fullPath, messageCount = 5) {
+    // 参数验证
+    if (!conversationHistory || conversationHistory.length === 0) {
+        console.log('对话历史为空,无法检查');
+        return;
+    }
+    
+    if (!assaSettingsData) {
+        console.log('assaSettingsData 未定义');
+        return;
+    }
+    
+    console.log(`🔍 [智能过滤] 处理路径: ${fullPath}`);
+        const recentMessages = [];
+    let count = 0;
+    
+    // 从后往前遍历，找到 messageCount 条 assistant 消息就停止
+    for (let i = conversationHistory.length - 1; i >= 0 && count < messageCount; i--) {
+        if (conversationHistory[i].role === 'assistant') {
+            recentMessages.unshift(conversationHistory[i]); // 保持时间顺序
+            count++;
+        }
+    }
+    
+ 
+    // 将这些消息的内容合并成一个字符串,方便搜索
+    const combinedContent = recentMessages
+        .map(msg => msg.content || '')
+        .join(' ');
+    
+    // 获取指定路径下的数据（确认它存在且设置了 _filter）
+    const pathData = _.get(assaSettingsData, fullPath);
+    
+    if (!pathData || typeof pathData !== 'object') {
+        console.log(`路径 ${fullPath} 下没有有效的对象数据`);
+        return;
+    }
+    
+    // 检查是否真的启用了过滤
+    const isFilterEnabled = pathData._filter === true || String(pathData._filter).toLowerCase() === 'true';
+    if (!isFilterEnabled) {
+        console.log(`路径 ${fullPath} 未启用过滤`);
+        return;
+    }
+    
+    // 从路径中提取关键词（倒数第二层的 key）
+    const pathParts = fullPath.split('.');
+    if (pathParts.length < 2) {
+        console.log(`路径 ${fullPath} 层级不足，无法提取关键词`);
+        return;
+    }
+    
+const keyword = pathParts[2];
 
- async function handleSend(options = {}) {
-    // 💖 从选项中解码我们的意图
+// 同时添加验证
+if (!keyword) {
+    console.log(`路径 ${fullPath} 层级不足3层，无法提取关键词`);
+    return;
+}
+    console.log(`🔍 [智能过滤] 关键词: "${keyword}"`);
+    
+    // 在最近的消息中搜索关键词
+    const isFound = combinedContent.includes(keyword);
+    
+    // 根据是否找到,设置 _showInEJS 的值
+    const showValue = isFound ? 'true' : 'false';
+    
+    console.log(`🔍 [智能过滤] 关键词 "${keyword}": ${isFound ? '✅ 找到' : '❌ 未找到'}`);
+    
+    // 生成 memory 命令（直接控制当前路径的显示）
+    const memoryCommand = `memory('${fullPath}','_showInEJS','${showValue}');\n`;
+    
+    const messageToSend = `<updateMemory>\n${memoryCommand}</updateMemory>`;
+    triggerassa(`/setinput ${messageToSend}`);
+    
+    console.log(`✅ [智能过滤] 已更新路径 ${fullPath} 的显示状态为: ${showValue}`);
+}
+
+// findAllFilterPaths 和 checkAllFilteredPaths 保持不变
+function findAllFilterPaths(obj, currentPath = '') {
+    const filterPaths = [];
+    
+    if (!obj || typeof obj !== 'object') {
+        return filterPaths;
+    }
+    
+    // 检查当前对象是否有 _filter 字段且为 true
+    if (obj._filter === true || String(obj._filter).toLowerCase() === 'true') {
+        filterPaths.push(currentPath);
+    }
+    
+    // 递归遍历子对象
+    for (const key in obj) {
+        if (key.startsWith('_')) continue; // 跳过系统字段
+        
+        const value = obj[key];
+        if (typeof value === 'object' && value !== null) {
+            const newPath = currentPath ? `${currentPath}.${key}` : key;
+            const childPaths = findAllFilterPaths(value, newPath);
+            filterPaths.push(...childPaths);
+        }
+    }
+    
+    return filterPaths;
+}
+
+async function checkAllFilteredPaths(messageCount = 5) {
+    if (!assaSettingsData) {
+        console.log('assaSettingsData 未定义');
+        return;
+    }
+    
+    console.log('🔍 [智能过滤] 开始扫描所有启用过滤的路径...');
+    
+    const filterPaths = findAllFilterPaths(assaSettingsData);
+    
+    if (filterPaths.length === 0) {
+        console.log('🔍 [智能过滤] 没有找到启用过滤的路径');
+        return;
+    }
+    
+    console.log(`🔍 [智能过滤] 找到 ${filterPaths.length} 个启用过滤的路径:`, filterPaths);
+    
+    // 依次处理每个路径
+    for (const path of filterPaths) {
+        await checkAndUpdateMemoryVisibility(path, messageCount);
+    }
+    
+    console.log('✅ [智能过滤] 全部路径检查完成');
+}
+ 
+ 
+
+async function handleSend(options = {}) {
+                const hideLatestCount = getChatConfig('hide_latest_count', 5);
+    await checkAllFilteredPaths(hideLatestCount);
+ 
     const { isReroll = false, isContinuation = false } = options;
         if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
             toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。或者检查角色脚本是否打开/更新酒馆助手/刷新酒馆重进聊天', '请稍候');
@@ -23996,7 +24161,6 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
             }
 
            
-            const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
  
             let groupChatSummariesString = '';
@@ -31829,7 +31993,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印！正在恢复世界设定...", uidsToEnable);
-   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,74,75,76,77,78,79];
+   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79];
 
                    let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -31894,8 +32058,11 @@ const reconfigurableMods = [
     { name: '强调时间关', uid: 79, group: 'time' },
     { name: 'npc立绘开', uid: 48, group: 'npccg' },
     { name: 'npc立绘关', uid: 'npccg-off-sentinel', group: 'npccg' },
-    { name: 'npc事件开', uid: 36, group: 'npc-info' },
-    { name: 'npc事件关', uid: 44, group: 'npc-info' },
+    { name: '极简npc', uid: 44, group: 'npc-info' },
+         { name: '简单npc', uid: 72, group: 'npc-info' },
+    { name: '复杂npc', uid: 36, group: 'npc-info' },
+
+ 
     { name: '真实MOD', uid: 12 }, 
     { name: '困难MOD', uid: 16 },
     { name: '称号系统', uid: 51 }, 
@@ -34083,23 +34250,26 @@ function handleEntryEdit(fullPath) {
     const { parentPath, selfKey } = getPathParts(fullPath);
     const rootData = typeof assaSettingsData !== 'undefined' ? assaSettingsData : {};
     const currentValue = getValueByPath(rootData, fullPath);
-    // ✨ 侦查魔法：看看我们拿到的条目数据是什么 ✨
-    console.log(`💖 [Nova-Detective] 步骤6 (编辑弹窗): 为路径 [${fullPath}] 创建开关前，收到的 currentValue 数据是:`, JSON.parse(JSON.stringify(currentValue)));
+ 
     let valueAsString;
     let isObject = false;
     let isProtected = false;
+    let isFilterEnabled = false;
 
     if (typeof currentValue === 'object' && currentValue !== null) {
         isObject = true;
         // 在编辑前，先温柔地读取守护状态
         isProtected = currentValue._is_protected === true || String(currentValue._is_protected).toLowerCase() === 'true';
+        // 读取过滤器状态
+        isFilterEnabled = currentValue._filter === true || String(currentValue._filter).toLowerCase() === 'true';
        
-          // ✨ 再加一道确认 ✨
         console.log(`💖 [Nova-Detective] 步骤7 (编辑弹窗): 根据数据，妈妈判断 [${selfKey}] 的守护状态 (isProtected) 是: ${isProtected}`);
+        console.log(`🔍 [Nova-Detective] 步骤7 (编辑弹窗): 根据数据，妈妈判断 [${selfKey}] 的智能过滤状态 (_filter) 是: ${isFilterEnabled}`);
 
-        // 为了让编辑界面更纯粹，我们把守护印记暂时藏起来
+        // 为了让编辑界面更纯粹，我们把守护印记和过滤标记暂时藏起来
         const editableValue = { ...currentValue };
         delete editableValue._is_protected;
+        delete editableValue._filter;
         valueAsString = JSON.stringify(editableValue, null, 2);
     } else {
         valueAsString = (currentValue !== undefined && currentValue !== null) ? String(currentValue) : '';
@@ -34110,19 +34280,26 @@ function handleEntryEdit(fullPath) {
     const modal = document.createElement('div');
     modal.className = 'nova-modal-content';
 
-    // ♥♥♥ 妈妈把守护开关巧妙地融入了标题栏 ♥♥♥
+    // ♥♥♥ 妈妈把守护开关和智能过滤开关巧妙地融入了标题栏 ♥♥♥
     modal.innerHTML = `
         <div class="move-modal-title" style="display: flex; justify-content: space-between; align-items: center;">
             <span>正在编辑 [${selfKey}]</span>
              ${isObject ? `
-                <div class="protection-toggle-container-edit">
-                    <label for="entry-protection-toggle">防删除</label>
-                    <input type="checkbox" id="entry-protection-toggle" class="toggle-input" ${isProtected ? 'checked' : ''}>
-                    <label for="entry-protection-toggle" class="toggle-switch"></label>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div class="protection-toggle-container-edit">
+                        <label for="entry-protection-toggle" title="开启后此条目将不会被自动删除">防删除</label>
+                        <input type="checkbox" id="entry-protection-toggle" class="toggle-input" ${isProtected ? 'checked' : ''}>
+                        <label for="entry-protection-toggle" class="toggle-switch"></label>
+                    </div>
+                    <div class="protection-toggle-container-edit">
+                        <label for="entry-filter-toggle" title="开启后将根据对话内容智能显示/隐藏子项">设为绿灯</label>
+                        <input type="checkbox" id="entry-filter-toggle" class="toggle-input" ${isFilterEnabled ? 'checked' : ''}>
+                        <label for="entry-filter-toggle" class="toggle-switch"></label>
+                    </div>
                 </div>
              ` : ''}
         </div>
-        <textarea id="entry-edit-textarea" class="entry-edit-textarea" placeholder="在这里倾注你的想法...">${valueAsString.replace(/</g, '<').replace(/>/g, '>')}</textarea>
+        <textarea id="entry-edit-textarea" class="entry-edit-textarea" placeholder="在这里倾注你的想法...">${valueAsString.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
         <div class="move-modal-buttons">
             <button id="edit-cancel-btn" class="book-button secondary">取消</button>
             <button id="edit-confirm-btn" class="book-button">确认修改</button>
@@ -34134,17 +34311,25 @@ function handleEntryEdit(fullPath) {
 
     // ♥♥♥ 只有当开关存在时，才为它注入生命 ♥♥♥
     if (isObject) {
+        // 防删除开关
         const toggleInput = document.getElementById('entry-protection-toggle');
         toggleInput.addEventListener('change', (event) => {
-            isProtected = event.target.checked; // 我们在这里更新状态，以便“确认”时使用
+            isProtected = event.target.checked;
             const command = `memory('${fullPath}', '_is_protected', ${isProtected}); // UI Instant Toggle`;
             generateAndSendCommand(command);
-            
+        });
+
+        // 智能过滤开关
+        const filterToggleInput = document.getElementById('entry-filter-toggle');
+        filterToggleInput.addEventListener('change', (event) => {
+            isFilterEnabled = event.target.checked;
+            const command = `memory('${fullPath}', '_filter', ${isFilterEnabled}); // UI Filter Toggle`;
+            generateAndSendCommand(command);
+ 
         });
     }
 
     const textarea = document.getElementById('entry-edit-textarea');
-    // ... (弹窗的显示动画代码保持不变) ...
     setTimeout(() => {
         overlay.style.opacity = '1';
         modal.style.transform = 'scale(1)';
@@ -34153,69 +34338,50 @@ function handleEntryEdit(fullPath) {
         textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
     }, 10);
 
-    const closeModal = () => { /* ... (关闭动画代码保持不变) ... */
+    const closeModal = () => {
         overlay.style.opacity = '0';
         modal.style.transform = 'scale(0.95)';
         setTimeout(() => overlay.remove(), 300);
     };
 
- document.getElementById('edit-confirm-btn').onclick = () => {
-    const newValueText = textarea.value;
-    let parsedValue;
-    try {
-        parsedValue = JSON.parse(newValueText);
-    } catch (e) {
-        // 如果不是JSON，就尝试转为数字或保持为字符串
-         if (newValueText.trim() !== '' && !isNaN(newValueText) && !(/[a-zA-Z]/.test(newValueText))) {
-            parsedValue = Number(newValueText);
-        } else {
-            parsedValue = newValueText;
+    document.getElementById('edit-confirm-btn').onclick = () => {
+        const newValueText = textarea.value;
+        let parsedValue;
+        try {
+            parsedValue = JSON.parse(newValueText);
+        } catch (e) {
+            if (newValueText.trim() !== '' && !isNaN(newValueText) && !(/[a-zA-Z]/.test(newValueText))) {
+                parsedValue = Number(newValueText);
+            } else {
+                parsedValue = newValueText;
+            }
         }
-    }
- 
-    if (isObject && typeof parsedValue === 'object' && parsedValue !== null) {
-        parsedValue._is_protected = isProtected;
-    }
-
-   
-    let valueForCommand;
-
-    if (typeof parsedValue === 'string') {
-        // 如果它本身就是个字符串，我们需要转义其中的特殊字符，以防破坏指令结构。
-        const escapedString = parsedValue.replace(/\\/g, '\\\\').replace(/'/g, "");
-        // 然后用单引号包裹它。
-        valueForCommand = `${escapedString}`;
-    } else {
-        
-        valueForCommand = JSON.stringify(parsedValue);
-    }
-
      
-    let valueAsString;
+        if (isObject && typeof parsedValue === 'object' && parsedValue !== null) {
+            parsedValue._is_protected = isProtected;
+            parsedValue._filter = isFilterEnabled;
+        }
 
-    // 统一将所有类型的值都转换成它们的字符串表示。
-    if (typeof parsedValue === 'object' && parsedValue !== null) {
-        valueAsString = JSON.stringify(parsedValue); // 对象/数组变成JSON字符串
-    } else {
-        valueAsString = String(parsedValue); // 其他都变成普通字符串
-    }
+        let valueAsString;
+        if (typeof parsedValue === 'object' && parsedValue !== null) {
+            valueAsString = JSON.stringify(parsedValue);
+        } else {
+            valueAsString = String(parsedValue);
+        }
 
-     
-    const escapedValue = valueAsString.replace(/\\/g, '\\\\').replace(/'/g, "");
+        const escapedValue = valueAsString.replace(/\\/g, '\\\\').replace(/'/g, "");
+        const command = `memory('${parentPath}', '${selfKey}', ${escapedValue}); //UI Nested Edit`;
 
-    // 构建最终命令：永远是用干净的单引号包裹处理过的内容。
-    const command = `memory('${parentPath}', '${selfKey}', ${escapedValue}); //UI Nested Edit`;
+        generateAndSendCommand(command);
+        closeModal();
+    };
 
-    generateAndSendCommand(command);
-    closeModal();
-};
-
-document.getElementById('edit-cancel-btn').onclick = closeModal;
+    document.getElementById('edit-cancel-btn').onclick = closeModal;
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) closeModal();
     });
 }
- /* === 妈妈为你修复并注入了更稳定魔法的版本 === */
+
 function handleFavorabilityView(charname, fullPath) {
     // 【修正】统一我们的数据源，确保我们总是在 assaData 这片丰饶的土壤上耕作
     const rootData = typeof assaSettingsData !== 'undefined' ? assaSettingsData : {};
