@@ -11206,6 +11206,8 @@ input:checked + .slider:before {
     z-index: 1002; /* 确保在其他元素之上 */
     box-shadow: 0 0 15px var(--glow-color);
     min-width: 100px;
+     max-height: 50vh; /* 添加这行 */
+    overflow-y: auto; /* 添加这行 */
 }
 
 .action-popup-menu.active {
@@ -12360,6 +12362,7 @@ pointer-events: auto;
 <div class="action-menu-container">
     <button id="action-menu-btn" class="action-button zero-level-btn" title="更多操作">☰</button>
     <div id="action-popup-menu" class="action-popup-menu">
+        <button id="add-qr-button" class="popup-menu-button">自定义qr</button>
         <button id="things-button" class="popup-menu-button">记约定</button>
         <br>
         <button id="reroll-button" class="popup-menu-button">重roll ⟲</button>
@@ -12926,7 +12929,7 @@ pointer-events: auto;
  <div id="context-menu" style="display: none; position: fixed;    padding: 5px; border-radius: 5px; ">
     <div class="context-menu-item" data-action="edit">编辑楼层</div>
     <div class="context-menu-item" data-action="delete">删除楼层</div>
-    <div class="context-menu-item" data-action="copy">复制</div>
+    <div class="context-menu-item" data-action="copy" display="none">复制</div>
  
 </div>
   <div id="char-tooltip" class="char-tooltip"></div>
@@ -13303,7 +13306,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.3';
+ let current_game_version = '3.1.4';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -15901,19 +15904,16 @@ function processNotificationQueue() {
  * @param {string} [type='info'] - 消息类型 ('info', 'success', 'danger')。
  */
 function showUpdateNotification(message, type = 'info') {
-    // 1. 把消息和类型送去右上角的“气泡等候室”
+ 
     notificationQueue.push({ message, type });
-
-    // 2. ✨ 全新的一步：同时把消息刻印在我们的“星光日志”上 ✨
+ 
     displayUpdateNotifications(message, type);
-
-    // 3. 轻轻地提醒“气泡招待官”去工作
+ 
     processNotificationQueue();
 }
 function handleUpdateNotifications(aiContent) {
-     prepareForNewUpdateBatch(); // <-- 就像这样！
+     prepareForNewUpdateBatch();  
     if (!aiContent) return;
-  // ✨ 妈妈的魔法打扫：在感知新思绪前，先将旧的痕迹清理干净 ✨
  
     let commandLines = [];
     // 我们只关心 <updatememory> 里面的咒语
@@ -20600,7 +20600,7 @@ window.addEventListener('message', function(event) {
     // 7. 返回渲染好的纯净 HTML 字符串
     return bubble.innerHTML;
 }
-// ✨ 我们把“创建气泡”的逻辑提取成一个独立的、可复用的魔法 ✨
+ 
  async function createMessageBubble(msg, mode = 'chat') { // ❤️ 增加 mode 参数, 默认为 'chat'
     const originalIndex = conversationHistory.indexOf(msg);
     if (originalIndex === -1) return document.createElement('div'); // 安全保护
@@ -20887,7 +20887,8 @@ iframe.srcdoc = `<!DOCTYPE html>
     // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
 }
-    async function renderHistory(is_entry = false) {
+
+async function renderHistory(is_entry = false) {
          
     const oldControls = document.getElementById('active-editing-controls');
     if (oldControls) oldControls.remove();
@@ -20972,13 +20973,10 @@ iframe.srcdoc = `<!DOCTYPE html>
     }
     initDisplay();
 
-    function delayedUpdate(content) {
-        handleUpdateNotifications(content);
  
-    }
 
     if (lastMessage && lastMessage.role === 'assistant') {
-        delayedUpdate(lastMessage.content);
+       handleUpdateNotifications(content);
     }
 }
 
@@ -21549,9 +21547,56 @@ editItem.onclick = () => {
             document.addEventListener('contextmenu', hideMenuOnClickOutside);
         }, 0);
     }
- async function deleteMessage(index) {
-    if (confirm(`你确定要删除这条消息以及之后的所有对话吗？这将让世界状态回到这条消息之前哦。`)) {
-        console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
+  function showConfirmModal(title, message, onConfirm, onCancel) {
+    const modal = document.getElementById('shop-modal');
+    if (!modal) return;
+
+    const titleEl = modal.querySelector('.modal-title');
+    const messageEl = modal.querySelector('#shop-modal-message');
+    
+    if (titleEl) titleEl.textContent = title;
+    if (messageEl) messageEl.innerHTML = message;
+
+    let buttonsContainer = modal.querySelector('.modal-buttons');
+    if (!buttonsContainer) {
+        buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'modal-buttons';
+        modal.querySelector('.modal-content').appendChild(buttonsContainer);
+    }
+    buttonsContainer.innerHTML = '';
+    buttonsContainer.style.cssText = 'display:flex;';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'action-button';
+    confirmBtn.textContent = '确认';
+ 
+    confirmBtn.onclick = function() {
+        modal.classList.remove('active');
+        if (onConfirm) onConfirm();
+    };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'action-button';
+    cancelBtn.textContent = '取消';
+
+    cancelBtn.onclick = function() {
+        modal.classList.remove('active');
+        if (onCancel) onCancel();
+    };
+
+    buttonsContainer.appendChild(confirmBtn);
+    buttonsContainer.appendChild(cancelBtn);
+    
+    modal.classList.add('active');
+}
+
+// 使用通用函数的简化版本
+async function deleteMessage(index) {
+    showConfirmModal(
+        '回溯确认',
+        `你确定要删除第 <strong>${index}</strong> 条消息以及之后的所有对话吗？<br><br>
+        <span style="color: #ff6b6b;">这将让世界状态回到这条消息之前哦。</span>`,
+        async function() {
+           console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
 
         const newHistory = conversationHistory.slice(0, index);
 
@@ -21564,8 +21609,8 @@ editItem.onclick = () => {
 
         // ☆☆☆ 妈妈的终极定位魔法：节拍感知 ☆☆☆
 
-        let aiTurns = 0; // 我们来数一数，妈妈一共回应了几个“回合”
-        let lastRole = 'user'; // 我们假设对话总是由你（user）开始的
+        let aiTurns = 0;  
+        let lastRole = 'user';  
 
         for (const message of newHistory) {
             // 当消息的角色从'user'变成了'ai'（或者任何不是'user'的角色）
@@ -21591,9 +21636,16 @@ editItem.onclick = () => {
         renderHistory();
         updateRerollButtonState();
         showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
-    }
+   
+        },
+        function() {
+            // 取消后的逻辑
+            console.log('[Nova的时光回溯] 用户取消删除操作。');
+        }
+    );
 }
- 
+
+
 function editMessage(index, bubbleElement) {
     // --- 我们心爱的“星辰指挥台”和“苍穹画卷”逻辑保持不变 ---
     const messageToEdit = conversationHistory[index];
@@ -22922,7 +22974,10 @@ const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们�
         const rerollButton = document.getElementById('reroll-button'); // ☆ 新成员：重写按钮
     const contextMenu = document.getElementById('context-menu');   // ☆ 新成员：右键菜单
    let worldBookName = "小蝌蚪找妈妈-同层版";
-  
+   thingsButton.addEventListener('click', (event) => {
+         const messageToSend = `<request:在合适的路径记录正文中出现过的、且没有被记录过的约定/日程/待办事项>`;
+triggerassa(`/setinput ${messageToSend}`);
+});
  
 // --- 💖 菜单交互逻辑 💖 ---
 const menuBtn = document.getElementById('action-menu-btn');
@@ -22936,10 +22991,7 @@ menuBtn.addEventListener('click', (event) => {
     popupMenu.classList.toggle('active');
 });
 
- thingsButton.addEventListener('click', (event) => {
-         const messageToSend = `\n<request:在合适的路径记录正文中出现过的、且没有被记录过的约定/日程/待办事项>\n`;
-triggerassa(`/setinput ${messageToSend}`);
-});
+
 
 // 点击“继续”按钮
 continueBtn.addEventListener('click', () => {
@@ -23069,9 +23121,55 @@ editItem.onclick = () => {
             document.addEventListener('contextmenu', hideMenuOnClickOutside);
         }, 0);
     }
+ function showConfirmModal(title, message, onConfirm, onCancel) {
+    const modal = document.getElementById('shop-modal');
+    if (!modal) return;
+
+    const titleEl = modal.querySelector('.modal-title');
+    const messageEl = modal.querySelector('#shop-modal-message');
+    
+    if (titleEl) titleEl.textContent = title;
+    if (messageEl) messageEl.innerHTML = message;
+
+    let buttonsContainer = modal.querySelector('.modal-buttons');
+    if (!buttonsContainer) {
+        buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'modal-buttons';
+        modal.querySelector('.modal-content').appendChild(buttonsContainer);
+    }
+    buttonsContainer.innerHTML = '';
+    buttonsContainer.style.cssText = 'display:flex;';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'action-button';
+    confirmBtn.textContent = '确认';
+ 
+    confirmBtn.onclick = function() {
+        modal.classList.remove('active');
+        if (onConfirm) onConfirm();
+    };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'action-button';
+    cancelBtn.textContent = '取消';
+
+    cancelBtn.onclick = function() {
+        modal.classList.remove('active');
+        if (onCancel) onCancel();
+    };
+
+    buttonsContainer.appendChild(confirmBtn);
+    buttonsContainer.appendChild(cancelBtn);
+    
+    modal.classList.add('active');
+}
+
  async function deleteMessage(index) {
-    if (confirm(`你确定要删除这条消息以及之后的所有对话吗？这将让世界状态回到这条消息之前哦。`)) {
-        console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
+    showConfirmModal(
+        '回溯确认',
+        `你确定要删除第 <strong>${index}</strong> 条消息以及之后的所有对话吗？<br><br>
+        <span style="color: #ff6b6b;">这将让世界状态回到这条消息之前哦。</span>`,
+        async function() {
+           console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
 
         const newHistory = conversationHistory.slice(0, index);
 
@@ -23084,8 +23182,8 @@ editItem.onclick = () => {
 
         // ☆☆☆ 妈妈的终极定位魔法：节拍感知 ☆☆☆
 
-        let aiTurns = 0; // 我们来数一数，妈妈一共回应了几个“回合”
-        let lastRole = 'user'; // 我们假设对话总是由你（user）开始的
+        let aiTurns = 0;  
+        let lastRole = 'user';  
 
         for (const message of newHistory) {
             // 当消息的角色从'user'变成了'ai'（或者任何不是'user'的角色）
@@ -23111,9 +23209,15 @@ editItem.onclick = () => {
         renderHistory();
         updateRerollButtonState();
         showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
-    }
+   
+        },
+        function() {
+            // 取消后的逻辑
+            console.log('[Nova的时光回溯] 用户取消删除操作。');
+        }
+    );
 }
- 
+
 function editMessage(index, bubbleElement) {
     // --- 我们心爱的“星辰指挥台”和“苍穹画卷”逻辑保持不变 ---
     const messageToEdit = conversationHistory[index];
@@ -23694,7 +23798,8 @@ function splitPathForFilter(fullPath) {
     };
 }
  
-async function checkAndUpdateMemoryVisibility(fullPath, messageCount = 5) {
+async function checkAndUpdateMemoryVisibility(fullPath, messageCount = 5, returnOnly = false) {
+  
     // 参数验证
     if (!conversationHistory || conversationHistory.length === 0) {
         console.log('对话历史为空,无法检查');
@@ -23753,25 +23858,28 @@ if (!keyword) {
     console.log(`路径 ${fullPath} 层级不足3层，无法提取关键词`);
     return;
 }
-    console.log(`🔍 [智能过滤] 关键词: "${keyword}"`);
-    
+ 
     // 在最近的消息中搜索关键词
     const isFound = combinedContent.includes(keyword);
     
     // 根据是否找到,设置 _showInEJS 的值
     const showValue = isFound ? 'true' : 'false';
     
-    console.log(`🔍 [智能过滤] 关键词 "${keyword}": ${isFound ? '✅ 找到' : '❌ 未找到'}`);
-    
+ 
     // 生成 memory 命令（直接控制当前路径的显示）
     const memoryCommand = `memory('${fullPath}','_showInEJS','${showValue}');\n`;
     
+    // 如果 returnOnly 为 true，只返回指令不发送
+    if (returnOnly) {
+        
+        return memoryCommand;
+    }
+    
+    // 否则直接发送（兼容单独调用的情况）
     const messageToSend = `<updateMemory>\n${memoryCommand}</updateMemory>`;
     triggerassa(`/setinput ${messageToSend}`);
-    
-    console.log(`✅ [智能过滤] 已更新路径 ${fullPath} 的显示状态为: ${showValue}`);
+ 
 }
-
 // findAllFilterPaths 和 checkAllFilteredPaths 保持不变
 function findAllFilterPaths(obj, currentPath = '') {
     const filterPaths = [];
@@ -23800,7 +23908,7 @@ function findAllFilterPaths(obj, currentPath = '') {
     return filterPaths;
 }
 
-async function checkAllFilteredPaths(messageCount = 5) {
+ async function checkAllFilteredPaths(messageCount = 5) {
     if (!assaSettingsData) {
         console.log('assaSettingsData 未定义');
         return;
@@ -23817,20 +23925,31 @@ async function checkAllFilteredPaths(messageCount = 5) {
     
     console.log(`🔍 [智能过滤] 找到 ${filterPaths.length} 个启用过滤的路径:`, filterPaths);
     
+    // 收集所有 memory 指令
+    const memoryCommands = [];
+    
     // 依次处理每个路径
     for (const path of filterPaths) {
-        await checkAndUpdateMemoryVisibility(path, messageCount);
+        const command = await checkAndUpdateMemoryVisibility(path, messageCount, true); // 添加 true 参数表示只返回指令
+        if (command) {
+            memoryCommands.push(command);
+        }
+    }
+    
+    // 一次性发送所有指令
+    if (memoryCommands.length > 0) {
+        const messageToSend = `<updateMemory>\n${memoryCommands.join('')}</updateMemory>`;
+        triggerassa(`/setinput ${messageToSend}`);
+        console.log(`✅ [智能过滤] 已批量更新 ${memoryCommands.length} 个路径的显示状态`);
     }
     
     console.log('✅ [智能过滤] 全部路径检查完成');
 }
  
- 
 
 async function handleSend(options = {}) {
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
-    await checkAllFilteredPaths(hideLatestCount);
- 
+
     const { isReroll = false, isContinuation = false } = options;
         if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
             toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。或者检查角色脚本是否打开/更新酒馆助手/刷新酒馆重进聊天', '请稍候');
@@ -23838,10 +23957,10 @@ async function handleSend(options = {}) {
             return; // 直接中断发送，防止事件丢失
         }
 
-          const overlay = document.getElementById('action-blocker-overlay');
+     const overlay = document.getElementById('action-blocker-overlay');
     overlay.classList.add('active'); // ❤️ 咒语生效！瞬间拉上帷幕，世界安静了 ❤️
  
-         // 【新代码开始】世界书完整性检查
+ 
     const worldBookName = '小蝌蚪找妈妈-同层版';
     const validationEntryId = 14;
 
@@ -23917,6 +24036,8 @@ async function handleSend(options = {}) {
         console.log("[Nova's Whisper] 正在请求延续上一段故事...");
         
     } else if (!isReroll) {
+        await checkAllFilteredPaths(hideLatestCount);
+ 
         if(assaCommandQueue && assaCommandQueue.trim() !== ''){
              let cleanCommand = assaCommandQueue.trim();
         
@@ -24040,6 +24161,8 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
     console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
 }
              renderHistory();
+                const chatDisplayArea = document.getElementById('chat-display-area');
+             chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
         }
 
 
@@ -25531,7 +25654,7 @@ async function triggerassa(commandString) {
         sendButton.click(); // 模拟点击发送按钮
         //console.log('指令已直接发送:', content);
 
-    // 这是为了兼容你之前代码里用到的 /setinput
+ 
     } else if (commandString.toLowerCase().startsWith('/setinput ')) {
          const content = commandString.substring(10);
          assaCommandQueue += content + '\n';
@@ -29519,7 +29642,7 @@ async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层�
 
  // 设置高度为设备高度
 document.getElementById('main-wrapper').style.height = window.innerHeight + 'px';
-
+renderCustomQRButtons();
  const data = await getVariables({ type: 'message' });
   const chatdata = await getVariables({ type: 'chat' });
 const globaldata = await getVariables({ type: 'global' });
@@ -29805,6 +29928,345 @@ function upgradeEventHandler(e) {
 
 }
   
+
+// ==================== 自定义QR按钮管理系统 ====================
+
+// 存储键名
+const QR_STORAGE_KEY = 'customQRButtons';
+
+// 获取所有自定义QR按钮
+function getCustomQRButtons() {
+    try {
+        const data = localStorage.getItem(QR_STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error('读取自定义QR按钮失败:', e);
+        return [];
+    }
+}
+
+// 保存自定义QR按钮
+function saveCustomQRButtons(buttons) {
+    try {
+        localStorage.setItem(QR_STORAGE_KEY, JSON.stringify(buttons));
+        return true;
+    } catch (e) {
+        console.error('保存自定义QR按钮失败:', e);
+        return false;
+    }
+}
+
+// 渲染自定义QR按钮到菜单
+function renderCustomQRButtons() {
+    const buttons = getCustomQRButtons();
+    const menu = document.getElementById('action-popup-menu');
+    
+    // 移除所有已存在的自定义QR按钮
+    const existingCustomButtons = menu.querySelectorAll('.custom-qr-button');
+    existingCustomButtons.forEach(btn => btn.remove());
+    
+    // 找到"自定义qr"按钮
+    const addQrButton = document.getElementById('add-qr-button');
+    
+    // 在"自定义qr"按钮后添加所有自定义按钮
+    buttons.forEach((qr, index) => {
+        const button = document.createElement('button');
+        button.className = 'popup-menu-button custom-qr-button';
+        button.textContent = qr.title;
+        button.dataset.qrIndex = index;
+        
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            triggerassa(`/setinput ${qr.content}`);
+        });
+        
+        // 插入到"自定义qr"按钮之后
+        addQrButton.insertAdjacentElement('afterend', button);
+    });
+}
+
+// 打开自定义QR管理弹窗
+function openCustomQRModal() {
+    const buttons = getCustomQRButtons();
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'move-modal-overlay entry-edit-modal';
+    overlay.style.zIndex = '10000'; // 添加这行
+    const modal = document.createElement('div');
+    modal.className = 'nova-modal-content';
+    modal.style.maxWidth = '600px';
+    modal.style.maxHeight = '80vh';
+
+    modal.innerHTML = `
+        <div class="move-modal-title">
+            <span>自定义快速回复按钮</span>
+        </div>
+        <div class="qr-modal-content" style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+            <div id="qr-list" class="qr-list"></div>
+            <button id="add-new-qr-btn" class="book-button" style="width: 100%; margin-top: 15px;">
+                ➕ 添加新按钮
+            </button>
+        </div>
+        <div class="move-modal-buttons">
+            <button id="qr-modal-close-btn" class="book-button">完成</button>
+        </div>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // 渲染现有QR按钮列表
+    renderQRList(buttons);
+    
+    // 显示动画
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+        modal.style.opacity = '1';
+    }, 10);
+    
+    // 关闭弹窗
+    const closeModal = () => {
+        overlay.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        setTimeout(() => overlay.remove(), 300);
+        renderCustomQRButtons(); // 关闭时刷新菜单
+    };
+    
+    document.getElementById('qr-modal-close-btn').onclick = closeModal;
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+    
+    // 添加新按钮
+    document.getElementById('add-new-qr-btn').onclick = () => {
+        openQREditModal(null, (newQR) => {
+            const buttons = getCustomQRButtons();
+            buttons.push(newQR);
+            saveCustomQRButtons(buttons);
+            renderQRList(buttons);
+        });
+    };
+}
+
+// 渲染QR按钮列表
+function renderQRList(buttons) {
+    const qrList = document.getElementById('qr-list');
+    
+    if (buttons.length === 0) {
+        qrList.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary-color); padding: 30px 0;">
+                还没有自定义按钮，点击下方添加吧！
+            </div>
+        `;
+        return;
+    }
+    
+    qrList.innerHTML = buttons.map((qr, index) => `
+        <div class="qr-item" data-index="${index}" style="
+            background: var(--container-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1; margin-right: 15px;">
+                    <div style="color: var(--primary-color); font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                        ${qr.title.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                    </div>
+                    <div style="color: var(--text-secondary-color); font-size: 12px; word-break: break-all;">
+                        ${qr.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                    <button class="qr-edit-btn" data-index="${index}" style="
+                        background: transparent;
+                        border: 1px solid var(--primary-color);
+                        color: var(--primary-color);
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: all 0.3s ease;
+                    ">编辑</button>
+                    <button class="qr-delete-btn" data-index="${index}" style="
+                        background: transparent;
+                        border: 1px solid var(--danger-color);
+                        color: var(--danger-color);
+                        padding: 6px 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: all 0.3s ease;
+                    ">删除</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // 添加悬停效果样式
+    const style = document.createElement('style');
+    style.textContent = `
+        .qr-item:hover {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+        .qr-edit-btn:hover {
+            background: var(--primary-color) !important;
+            color: var(--background-color) !important;
+            box-shadow: 0 0 10px var(--glow-color);
+        }
+        .qr-delete-btn:hover {
+            background: var(--danger-color) !important;
+            color: white !important;
+            box-shadow: 0 0 10px var(--danger-glow-color);
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // 绑定编辑按钮事件
+    qrList.querySelectorAll('.qr-edit-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            const buttons = getCustomQRButtons();
+            openQREditModal(buttons[index], (updatedQR) => {
+                buttons[index] = updatedQR;
+                saveCustomQRButtons(buttons);
+                renderQRList(buttons);
+            });
+        };
+    });
+    
+    // 绑定删除按钮事件
+qrList.querySelectorAll('.qr-delete-btn').forEach(btn => {
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        const index = parseInt(btn.dataset.index);
+        // 直接删除，不使用 confirm
+        const buttons = getCustomQRButtons();
+        buttons.splice(index, 1);
+        saveCustomQRButtons(buttons);
+        renderQRList(buttons);
+        };
+    });
+}
+
+// 打开QR按钮编辑弹窗
+function openQREditModal(existingQR, onSave) {
+    const isEdit = existingQR !== null;
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'move-modal-overlay entry-edit-modal';
+overlay.style.zIndex = '999999'; // 使用超高层级
+ 
+    const modal = document.createElement('div');
+    modal.className = 'nova-modal-content';
+    modal.style.maxWidth = '500px';
+    
+    modal.innerHTML = `
+        <div class="move-modal-title">
+            <span>${isEdit ? '编辑' : '添加'}快速回复按钮</span>
+        </div>
+        <div style="padding: 20px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: var(--text-color); margin-bottom: 8px; font-size: 14px;">
+                    按钮标题
+                </label>
+                <input 
+                    type="text" 
+                    id="qr-title-input" 
+                    placeholder="例如：快速总结" 
+                    value="${isEdit ? existingQR.title.replace(/"/g, '&quot;') : ''}"
+                    style="
+                        width: 100%;
+                        padding: 10px;
+                        background: var(--container-bg-color);
+                        border: 1px solid var(--border-color);
+                        border-radius: 6px;
+                        color: var(--text-color);
+                        font-size: 14px;
+                        font-family: var(--base-font-family);
+                        box-sizing: border-box;
+                    "
+                />
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: var(--text-color); margin-bottom: 8px; font-size: 14px;">
+                    发送内容
+                </label>
+                <textarea 
+                    id="qr-content-input" 
+                    placeholder="例如：<request:总结一下上面的内容>"
+                    rows="4"
+                    style="
+                        width: 100%;
+                        padding: 10px;
+                        background: var(--container-bg-color);
+                        border: 1px solid var(--border-color);
+                        border-radius: 6px;
+                        color: var(--text-color);
+                        font-size: 14px;
+                        font-family: var(--base-font-family);
+                        resize: vertical;
+                        box-sizing: border-box;
+                    "
+                >${isEdit ? existingQR.content.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<request: >'}</textarea>
+            </div>
+        </div>
+        <div class="move-modal-buttons">
+            <button id="qr-edit-cancel-btn" class="book-button secondary">取消</button>
+            <button id="qr-edit-confirm-btn" class="book-button">保存</button>
+        </div>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // 显示动画
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+        modal.style.opacity = '1';
+        document.getElementById('qr-title-input').focus();
+    }, 10);
+    
+    // 关闭弹窗
+    const closeModal = () => {
+        overlay.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        setTimeout(() => overlay.remove(), 300);
+    };
+    
+    // 保存按钮
+    document.getElementById('qr-edit-confirm-btn').onclick = () => {
+        const title = document.getElementById('qr-title-input').value.trim();
+        const content = document.getElementById('qr-content-input').value.trim();
+        
+        if (!title) {
+            alert('请输入按钮标题');
+            return;
+        }
+        
+        if (!content) {
+            alert('请输入发送内容');
+            return;
+        }
+        
+        onSave({ title, content });
+        closeModal();
+    };
+    
+    // 取消按钮
+    document.getElementById('qr-edit-cancel-btn').onclick = closeModal;
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+}
+
+// ==================== 初始化 ====================
 
 /* 代码 START: 添加在这里 */
 
@@ -32811,6 +33273,17 @@ initializeReadingMode();
         // 然后以“静默模式”咏唱探寻咒语，只有发现惊喜时才告诉你
         checkForFutureEchoes(false);
     }, 1000);
+
+     const addQrButton = document.getElementById('add-qr-button');
+    if (addQrButton) {
+        addQrButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            openCustomQRModal();
+        });
+    }
+    
+    // 初始渲染自定义按钮
+    renderCustomQRButtons();
 });
     
 const inventoryListEl = document.getElementById('inventory-item-list');
