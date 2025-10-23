@@ -13307,7 +13307,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.6';
+ let current_game_version = '3.1.7';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21959,7 +21959,7 @@ function cleanupGlobalUIState() {
  
     if (!chatDisplayArea || chatDisplayArea.children.length === 0) {
         console.log("[Nova's Little Helper] 检测到画卷为空，召唤 renderHistory 进行创世重绘...");
-        await renderHistory(); // true 确保视线会到达新世界的底部
+        await renderHistory();  
         return; // 完成使命，优雅退场
     }
 
@@ -24727,7 +24727,7 @@ aiFullResponse = await generate({
             aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
             // 发生错误时，保存当前所有历史，以防万一
             await saveHistory();
-            renderHistory();
+            renderHistory(true);
         }
 
      } finally {
