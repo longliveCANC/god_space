@@ -13307,7 +13307,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.5';
+ let current_game_version = '3.1.6';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -18805,7 +18805,7 @@ async function handleModeSelection() {
             ];
 
             if (parseInt(selectedWorldModeValue) == 34) {
-                uidsToEnable.push(36);
+               
                 uidsToEnable.push(65,64);
             }
             if (parseInt(selectedWorldModeValue) != 54) {
