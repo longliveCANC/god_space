@@ -2849,6 +2849,7 @@ input[type="range"]::-moz-range-thumb {
 
 .message-bubble {
     max-width: 93%;
+    min-width:93%;
     padding: 15px 20px;
     border-radius: 20px;
     margin-bottom: 15px;
@@ -13306,7 +13307,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.4';
+ let current_game_version = '3.1.5';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21177,7 +21178,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
  async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    const uidsToBackup = [11, 30, 35, 40, 32, 63];
+   const uidsToBackup = [11, 30,7,63,43,35,80,32,40];
     let backedUpEntries = [];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
@@ -21428,7 +21429,7 @@ function showBackupConfirmation() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                    <p>为了保护你的心血，请确认你已经备份好了所有重要的自定义内容（除了[11,30,32,35,40,63]的官方自定词条，他们不会被覆盖）。准备好了吗？</p>
+ <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
@@ -24922,7 +24923,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
  async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    const uidsToBackup = [11, 30, 35, 40, 32, 63];
+    const uidsToBackup = [11, 30,7,63,43,35,80,32,40];
     let backedUpEntries = [];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
@@ -25147,7 +25148,7 @@ function showBackupConfirmation() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                    <p>为了保护你的心血，请确认你已经备份好了所有重要的自定义内容（除了[11,30,32,35,40,63]的官方自定词条，他们不会被覆盖）。准备好了吗？</p>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
                  </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
