@@ -13318,7 +13318,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.9';
+ let current_game_version = '3.1.10';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -15924,36 +15924,40 @@ function showUpdateNotification(message, type = 'info') {
     processNotificationQueue();
 }
 function handleUpdateNotifications(aiContent) {
-     prepareForNewUpdateBatch();  
+    prepareForNewUpdateBatch();  
     if (!aiContent) return;
  
     let commandLines = [];
-    // 我们只关心 <updatememory> 里面的咒语
-    const memoryMatches = aiContent.matchAll(/<updatememory>([\s\S]*?)<\/updatememory>/gi);
-    for (const match of memoryMatches) {
-        commandLines.push(...match[1].trim().split('\n'));
-    }
+ 
+        commandLines.push(...aiContent.trim().split('\n'));
+  
 
-    // 过滤掉所有空行或非咒语的普通文字
     const validCommands = commandLines;
-updateDetails = {
-            variable: false, // 恢复变量更新的flag
-            memories: [],
-            attributes: [],
-            mapUpdates: []
-        };
-   validCommands.forEach(line => {
-    parseAndUpdateDetails(line);
-    notificationRules.forEach(rule => {
-        const match = line.match(rule.commandPattern);
-        if (match) {
-            rule.action(match);
-            
-        }
+    updateDetails = {
+        variable: false,
+        memories: [],
+        attributes: [],
+        mapUpdates: []
+    };
+    
+    const triggeredRules = new Set(); // 记录触发的规则
+    
+    validCommands.forEach(line => {
+        parseAndUpdateDetails(line);
+        notificationRules.forEach(rule => {
+            const match = line.match(rule.commandPattern);
+            if (match) {
+                rule.action(match);
+                triggeredRules.add(rule.id);
+            }
+        });
     });
-});
+    
+    // 检查必需的规则是否触发
+    if (!triggeredRules.has('summary-update')) {
+        showNovaAlert('没有正常输出小总结小总结，可能掉变量更新了哦，右键编辑看看，掉了请重按重roll或按继续', 'danger');
+    }
 }
-
 const themeConfig = {
     // 默认词语
     default: {
@@ -16321,12 +16325,12 @@ async clear(storeName) {
  imageDB.init();
 
 const worldCardData = {
-    '1':  'https://files.catbox.moe/ehan0u.png',
-    '22': 'https://files.catbox.moe/otf9x9.png',
-    '5':  'https://files.catbox.moe/jxeqws.png',
-    '34': 'https://files.catbox.moe/7ys6wf.png',
-    '41': 'https://files.catbox.moe/pciljv.png',
-    "54":'https://files.catbox.moe/14tzmg.png',
+    '1':  'https://longlivecanc.github.io/god_space/backImages/主神.png',
+    '22': 'https://longlivecanc.github.io/god_space/backImages/轮回乐园.png',
+    '5':  'https://longlivecanc.github.io/god_space/backImages/无限恐怖.png',
+    '34': 'https://longlivecanc.github.io/god_space/backImages/快穿攻略.png',
+    '41': 'https://longlivecanc.github.io/god_space/backImages/诸天群聊.png',
+    '54':'https://longlivecanc.github.io/god_space/backImages/末日.png',
 };
 
 // 新的、更强大的图片应用函数
@@ -24010,7 +24014,7 @@ async function handleSend(options = {}) {
                     }
                 } else {
                     console.error(`[Nova's Integrity Check] 严重错误：世界书异常，但找不到可用的备份数据！`);
-                      toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。删除世界书重导吧', '严重错误');
+                      toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请备份好自定义内容，在设置点击强制更新世界书', '严重错误');
                     // return; // 中断发送
                 }
             }else{
@@ -24227,14 +24231,14 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
  
         } catch (e) {
             console.error(`[Nova's Integrity Check] 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
-            toastr.error('自动修复失败！为防止数据损坏，请刷新页面或删除世界书重新导入。', '严重错误');
+            toastr.error('自动修复失败！', '严重错误');
             // 修复失败，这是一个严重问题，必须中断操作。
             return;
         }
     } else {
         // 发现异常，但没有备份可以用来修复，这也是最糟糕的情况。
         console.error(`[Nova's Integrity Check] 致命错误：世界书异常，但找不到可用的备份数据！`);
-        toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。试试删除世界书，重新导入正常的世界书', '严重错误');
+        toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请备份好自定义内容，在设置点击强制更新世界书', '严重错误');
         // 必须中断
         return;
     }
@@ -36240,6 +36244,191 @@ function setupGeneratorButton() {
 
     
 
+// 在点击位置显示总结菜单
+function showSummaryMenuAtClick(event, summaryKey, summaryType) {
+    event.stopPropagation();
+    
+    const existingMenu = document.querySelector('.entry-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'entry-menu';
+
+    // 使用点击位置
+    menu.style.top = `${event.pageY}px`;
+    menu.style.left = `${event.pageX}px`;
+
+    const actions = [
+        { name: '编辑', handler: () => handleSummaryEdit(summaryKey, summaryType) },
+        { name: '重命名', handler: () => handleSummaryRename(summaryKey, summaryType) },
+        { name: '删除', handler: () => handleSummaryDelete(summaryKey, summaryType) }
+    ];
+
+    actions.forEach(action => {
+        const item = document.createElement('button');
+        item.className = 'entry-menu-item';
+        item.textContent = action.name;
+        item.onclick = () => {
+            action.handler();
+            menu.remove();
+        };
+        menu.appendChild(item);
+    });
+
+    document.body.appendChild(menu);
+
+    // 调整菜单位置防止超出屏幕
+    const menuRect = menu.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    let top = event.pageY;
+    let left = event.pageX;
+
+    if (menuRect.bottom > viewportHeight) {
+        top = event.pageY - menuRect.height;
+    }
+
+    if (menuRect.right > viewportWidth) {
+        left = event.pageX - menuRect.width;
+    }
+
+    if (left < 0) left = 0;
+    if (top < 0) top = 0;
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+
+    const closeMenu = (e) => {
+        if (!menu.contains(e.target)) {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+}
+
+// 编辑总结内容
+function handleSummaryEdit(summaryKey, summaryType) {
+    const currentValue = summarys[summaryType][summaryKey] || '';
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'move-modal-overlay entry-edit-modal';
+    const modal = document.createElement('div');
+    modal.className = 'nova-modal-content';
+
+    modal.innerHTML = `
+        <div class="move-modal-title">编辑${summaryType === 'big' ? '远期事件' : '中期事件'} [${summaryKey}]</div>
+        <textarea id="summary-edit-textarea" class="entry-edit-textarea" placeholder="在这里编辑总结内容...">${currentValue.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+        <div class="move-modal-buttons">
+            <button id="edit-cancel-btn" class="book-button secondary">取消</button>
+            <button id="edit-confirm-btn" class="book-button">确认修改</button>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const textarea = document.getElementById('summary-edit-textarea');
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+        modal.style.opacity = '1';
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+    }, 10);
+
+    const closeModal = () => {
+        overlay.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    document.getElementById('edit-confirm-btn').onclick = () => {
+        const newContent = textarea.value.trim();
+        if (newContent) {
+            const escapedContent = JSON.stringify(newContent);
+            const command = `<updateMemory>\ndelete('summary.${summaryType}','${summaryKey}');\nmemory('summary.${summaryType}','${summaryKey}',${escapedContent})\n</updateMemory>`;
+            triggerassa(`/setinput ${command}`);
+        }
+        closeModal();
+    };
+
+    document.getElementById('edit-cancel-btn').onclick = closeModal;
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+}
+
+// 重命名总结
+function handleSummaryRename(summaryKey, summaryType) {
+    const overlay = document.createElement('div');
+    overlay.className = 'move-modal-overlay entry-rename-modal';
+    
+    const modal = document.createElement('div');
+    modal.className = 'nova-modal-content';
+    modal.innerHTML = `
+        <div class="move-modal-title">要把 [${summaryKey}] 重命名成什么呢？</div>
+        <div class="move-modal-body">
+            <input type="text" id="summary-rename-input" class="entry-rename-input" placeholder="输入新的名字..." value="${summaryKey}">
+        </div>
+        <div class="move-modal-buttons">
+            <button id="rename-cancel-btn" class="book-button secondary">算了吧</button>
+            <button id="rename-confirm-btn" class="book-button">就是它了</button>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const input = document.getElementById('summary-rename-input');
+
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+        modal.style.opacity = '1';
+        input.focus();
+        input.select();
+    }, 10);
+
+    const closeModal = () => {
+        overlay.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('rename-confirm-btn').click();
+        }
+    });
+
+    document.getElementById('rename-confirm-btn').onclick = () => {
+        const newKey = input.value.trim();
+        if (!newKey) {
+            input.placeholder = "新名字不能为空哦！";
+            input.classList.add('input-error');
+            return;
+        }
+        
+        const content = summarys[summaryType][summaryKey];
+        const escapedContent = JSON.stringify(content);
+        const command = `<updateMemory>\ndelete('summary.${summaryType}','${summaryKey}');\nmemory('summary.${summaryType}','${newKey}',${escapedContent})\n</updateMemory>`;
+        triggerassa(`/setinput ${command}`);
+        closeModal();
+    };
+
+    document.getElementById('rename-cancel-btn').onclick = closeModal;
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+}
+
+// 删除总结
+function handleSummaryDelete(summaryKey, summaryType) {
+    const command = `<updateMemory>\ndelete('summary.${summaryType}','${summaryKey}')\n</updateMemory>`;
+    triggerassa(`/setinput ${command}`);
+}
  
 function showSummaryModal() {
     //console.log("查看过往总结");
@@ -36269,9 +36458,9 @@ function showSummaryModal() {
         const smallKeys = Object.keys(summarys.small);
         const hiddenKeys = smallKeys.slice(-hideCount);
         if (hiddenKeys.length > 0) {
-            hiddenKeys.forEach(key => {
-                hiddenHtml += `<p style="margin: 0; white-space: pre-wrap;"><strong>${key}:</strong> ${summarys.small[key]}</p>`;
-            });
+hiddenKeys.forEach(key => {
+    hiddenHtml += `<p style="margin: 0; white-space: pre-wrap; cursor: pointer;" onclick="showSummaryMenuAtClick(event, '${key}', 'small')"><strong>${key}:</strong> ${summarys.small[key]}</p>`;
+});
         } else {
             hiddenHtml += '<p>暂无被隐藏的小总结信息。</p>';
         }
@@ -36318,7 +36507,8 @@ pageHtml += `</div>`;
 
 // 添加内容
 pageHtml += '<div style="font-family: var(--base-font-family);">';
-pageHtml += `<p style="margin: 0; white-space: pre-wrap;"><strong>${key}:</strong> ${summarys.big[key]}</p>`;
+pageHtml += `<p style="margin: 0; white-space: pre-wrap; cursor: pointer;" onclick="showSummaryMenuAtClick(event, '${key}', 'big')"><strong>${key}:</strong> ${summarys.big[key]}</p>`;
+
 pageHtml += '</div>';
 
         container.innerHTML = pageHtml;
@@ -36378,8 +36568,9 @@ pageHtml += `</div>`;
 // 添加内容
 pageHtml += '<div style="font-family: var(--base-font-family);">';
 pageKeys.forEach(key => {
-    pageHtml += `<p style="margin: 0; white-space: pre-wrap;"><strong>${key}:</strong> ${summarys.small[key]}</p>`;
+    pageHtml += `<p style="margin: 0; white-space: pre-wrap; cursor: pointer;" onclick="showSummaryMenuAtClick(event, '${key}', 'small')"><strong>${key}:</strong> ${summarys.small[key]}</p>`;
 });
+
 pageHtml += '</div>';
 
         container.innerHTML = pageHtml;
