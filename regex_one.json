@@ -13318,7 +13318,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.10';
+ let current_game_version = '3.1.11';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -16332,8 +16332,6 @@ const worldCardData = {
     '41': 'https://longlivecanc.github.io/god_space/backImages/诸天群聊.png',
     '54':'https://longlivecanc.github.io/god_space/backImages/末日.png',
 };
-
-// 新的、更强大的图片应用函数
 async function applyImagesWithCache() {
     const cards = document.querySelectorAll('.choice-world-card');
     for (const card of cards) {
@@ -16343,29 +16341,39 @@ async function applyImagesWithCache() {
         if (!imageUrl) continue;
 
         try {
-                let cachedImage = await imageDB.get('RemoteCache', imageUrl);
+            let cachedImage = await imageDB.get('RemoteCache', imageUrl);
             let objectURL;
 
             if (cachedImage) {
                 objectURL = URL.createObjectURL(cachedImage);
+                card.style.backgroundImage = `url(${objectURL})`;
             } else {
-                const response = await fetch(imageUrl, { mode: 'no-cors' });
+                // 方案1: 移除 no-cors,如果服务器支持CORS
+                const response = await fetch(imageUrl);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const imageBlob = await response.blob();
                 await imageDB.set('RemoteCache', imageUrl, imageBlob);
                 objectURL = URL.createObjectURL(imageBlob);
+                card.style.backgroundImage = `url(${objectURL})`;
             }
-            // 应用本地化的URL
-            card.style.backgroundImage = `url(${objectURL})`;
 
         } catch (error) {
             console.error(`处理卡片[${cardValue}]的图片失败:`, imageUrl, error);
-            // 如果出错，依然尝试使用原始网络URL作为后备
-            card.style.backgroundImage = `url(${imageUrl})`;
+            
+            // 方案2: 如果fetch失败,直接使用原始URL(让浏览器自己加载)
+            card.style.backgroundImage = `url("${imageUrl}")`;
+            
+            // 或者使用Image对象预加载
+            const img = new Image();
+            img.crossOrigin = "anonymous"; // 如果服务器支持CORS
+            img.onload = () => {
+                card.style.backgroundImage = `url("${imageUrl}")`;
+            };
+            img.src = imageUrl;
         }
     }
 }
-  function _updateDerivedAttributes(data) {
+function _updateDerivedAttributes(data) {
         if (!data || !data.属性段) return;
         //console.log("[Player] ✨ 正在更新衍生属性...");
         const attr = data.属性段;
