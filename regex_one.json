@@ -3137,6 +3137,11 @@ input[type="range"]::-moz-range-thumb {
     background: transparent;
     backdrop-filter: none;
 }
+
+.delete-modal {
+    background: transparent;
+    backdrop-filter: none;
+}
 /* 代码 END */
 
 /* 【请添加这个新样式】 */
@@ -12734,7 +12739,13 @@ pointer-events: auto;
             <div id="shop-modal-message" class="modal-description"></div>
         </div>
     </div>
-
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div id="delete-modal-title" class="modal-title">提示</div>
+            <div id="delete-modal-message" class="modal-description"></div>
+        </div>
+    </div>
 
     <!-- 抽奖模态框 -->
 <div id="gacha-modal" class="modal">
@@ -13307,7 +13318,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.7';
+ let current_game_version = '3.1.8';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21549,11 +21560,11 @@ editItem.onclick = () => {
         }, 0);
     }
   function showConfirmModal(title, message, onConfirm, onCancel) {
-    const modal = document.getElementById('shop-modal');
+    const modal = document.getElementById('delete-modal');
     if (!modal) return;
 
     const titleEl = modal.querySelector('.modal-title');
-    const messageEl = modal.querySelector('#shop-modal-message');
+    const messageEl = modal.querySelector('#delete-modal-message');
     
     if (titleEl) titleEl.textContent = title;
     if (messageEl) messageEl.innerHTML = message;
@@ -23122,12 +23133,12 @@ editItem.onclick = () => {
             document.addEventListener('contextmenu', hideMenuOnClickOutside);
         }, 0);
     }
- function showConfirmModal(title, message, onConfirm, onCancel) {
-    const modal = document.getElementById('shop-modal');
+   function showConfirmModal(title, message, onConfirm, onCancel) {
+    const modal = document.getElementById('delete-modal');
     if (!modal) return;
 
     const titleEl = modal.querySelector('.modal-title');
-    const messageEl = modal.querySelector('#shop-modal-message');
+    const messageEl = modal.querySelector('#delete-modal-message');
     
     if (titleEl) titleEl.textContent = title;
     if (messageEl) messageEl.innerHTML = message;
@@ -23955,7 +23966,7 @@ async function handleSend(options = {}) {
         if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
             toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。或者检查角色脚本是否打开/更新酒馆助手/刷新酒馆重进聊天', '请稍候');
             console.warn("[HTML] 发送被阻止：世界核心尚未就绪 (window.isNovaCoreReady 为 false 或不存在)。");
-            return; // 直接中断发送，防止事件丢失
+            return;  
         }
 
      const overlay = document.getElementById('action-blocker-overlay');
@@ -33955,7 +33966,7 @@ function equipItems(slotType, itemNames) {
                 break;
         }
         triggerassa(`/setinput ${description}`);
-        //console.log('装备更新后的变量:', variables);
+         
         return variables;
     }, { type: 'chat' }).then(() => {
        
@@ -33972,8 +33983,7 @@ if (!variables.stat_data.user_character) variables.stat_data.user_character = {}
 return updateVariablesWith((chatVars) => {
     if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
         variables.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
-        
-        // 同时更新全局currentGameData以便立即生效
+ 
         if (currentGameData) {
             if (!currentGameData.stat_data) currentGameData.stat_data = {};
             if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
@@ -33985,7 +33995,7 @@ return updateVariablesWith((chatVars) => {
             currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
         }
     }
-    //console.log('message变量同步更新:', variables);
+  
     return variables;
 }, { type: 'chat' });
             
