@@ -1823,7 +1823,7 @@ display: flex; /* 新增：让它成为一个flex容器，为了更好地控制�
     color: var(--text-color);
     width: 90%;
     
-    height: 70vh;
+    height: 80vh;
     max-height: 800px;
     display: flex;
     border-radius: 10px;
@@ -1976,7 +1976,7 @@ display: flex; /* 新增：让它成为一个flex容器，为了更好地控制�
         border-right: none; /* 移除右边框 */
         border-bottom: 2px solid var(--border-color); /* 添加下边框作为分割线 */
         padding: 5px 10px; /* 调整内边距 */
-        justify-content: center; /* 居中书签 */
+        justify-content: flex-start; /* ✅ 改为左对齐 */
         height: auto;
     }
 
@@ -1984,9 +1984,9 @@ display: flex; /* 新增：让它成为一个flex容器，为了更好地控制�
     .book-bookmarks {
         position: static; /* 移除绝对定位 */
         flex-direction: row; /* 水平排列 */
-        justify-content: center; /* 居中 */
+        justify-content: flex-start; /* ✅ 改为左对齐 */
         width: 100%;
-            padding-left: 100px;
+            padding-left: 0; /* ✅ 移除人为偏移 */
     }
 
     /* 调整单个书签的样式，让它看起来像顶部的标签 */
@@ -5092,6 +5092,8 @@ opacity: 0.6;
     padding: 0 10px;
     transition: all 0.3s ease;
     text-shadow: 0 0 5px transparent;
+    position:absolute;
+    top:4%;
 }
 
 #achievements-btn:hover {
@@ -11388,6 +11390,211 @@ pointer-events: auto;
     margin-right: 8px;
     font-size: 12px;
 }
+
+.mod-label{
+    font-size: 12px;
+    text-align:center;
+}
+
+.settings-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-color, #333);
+    padding-bottom: 5px;
+}
+
+.settings-tab {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--text-color, #ccc);
+    font-size: 1em;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.settings-tab:hover {
+    color: var(--primary-color, #4a9eff);
+}
+
+.settings-tab.active {
+    color: var(--primary-color, #4a9eff);
+    border-bottom-color: var(--primary-color, #4a9eff);
+}
+
+.settings-page {
+    display: none;
+}
+
+.settings-page.active {
+    display: block;
+}
+
+ /* ♥♥♥ 地图编辑模式样式 ♥♥♥ */
+.editable-shape {
+    transition: opacity 0.2s;
+}
+
+.editable-shape:hover {
+    opacity: 0.8;
+}
+
+.selected-shape {
+    filter: drop-shadow(0 0 8px var(--primary-color));
+}
+
+/* ✨ 全局编辑控制面板 - 固定在左上角编辑按钮旁边 */
+#map-global-edit-controls {
+    position: fixed;
+    top: 20px;
+    right: 80px; /* 在编辑按钮左边 */
+    display: none;
+    gap: 10px;
+    z-index: 10001;
+}
+
+.global-edit-btn {
+    padding: 10px 16px;
+    background: var(--container-bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-family: var(--base-font-family);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 0 10px var(--glow-color);
+}
+
+.global-edit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px var(--glow-color);
+}
+
+.global-edit-btn.save-btn {
+    border-color: var(--success-color);
+}
+
+.global-edit-btn.save-btn:hover {
+    background: var(--success-color);
+    color: var(--background-color);
+    box-shadow: 0 0 20px var(--success-glow-color);
+}
+
+.global-edit-btn.cancel-btn {
+    border-color: var(--danger-color);
+}
+
+.global-edit-btn.cancel-btn:hover {
+    background: var(--danger-color);
+    color: var(--background-color);
+    box-shadow: 0 0 20px var(--danger-glow-color);
+}
+
+/* ✨ 单个图形编辑面板 - 只显示删除按钮 */
+#map-edit-panel {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: var(--container-bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    min-width: 200px;
+    box-shadow: 0 0 20px var(--glow-color);
+    z-index: 10000;
+    display: none;
+}
+
+#map-edit-panel h4 {
+    margin: 0 0 10px 0;
+    color: var(--primary-color);
+    font-family: var(--base-font-family);
+}
+
+.edit-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.edit-btn {
+    padding: 8px 12px;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-color);
+    font-family: var(--base-font-family);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.edit-btn:hover {
+    background: var(--primary-color);
+    color: var(--background-color);
+    box-shadow: 0 0 10px var(--glow-color);
+}
+
+.edit-btn.danger {
+    border-color: var(--danger-color);
+}
+
+.edit-btn.danger:hover {
+    background: var(--danger-color);
+    box-shadow: 0 0 10px var(--danger-glow-color);
+}
+
+.edit-section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.edit-section label {
+    display: block;
+    color: var(--text-secondary-color);
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    font-family: var(--base-font-family);
+}
+
+.scale-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scale-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--primary-color);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: var(--base-font-family);
+}
+
+.scale-btn:hover {
+    background: var(--primary-color);
+    color: var(--background-color);
+    box-shadow: 0 0 10px var(--glow-color);
+}
+
+#scale-value {
+    min-width: 50px;
+    text-align: center;
+    color: var(--primary-color);
+    font-weight: bold;
+    font-family: var(--base-font-family);
+}
   </style>
  
 </head>
@@ -11482,21 +11689,18 @@ pointer-events: auto;
         <span class="arrow-guide"></span>
     </div>
     <div class="creator-attitude-group">
-          <div class="mod-tab" data-for="dice-1" data-name="dice-level">简单骰</div>
-        <div class="mod-tab" data-for="dice-2" data-name="dice-level">困难骰</div>
-        <div class="mod-tab" data-for="dice-3" data-name="dice-level">炼狱骰</div>
-        <div class="mod-tab" data-for="behavior-on" data-name="behavior-mode" data-off-id="behavior-off">表现骰</div>
-        <br>
+
         <div class="mod-tab" data-for="real-world-on" data-name="real-world-mode" data-off-id="real-world-off">真实MOD</div>
         <div class="mod-tab" data-for="hard-on" data-name="hard-mode" data-off-id="hard-off">困难MOD</div>
         <div class="mod-tab" data-for="title-on" data-name="title-mode" data-off-id="title-off">称号系统</div>
-        <div class="mod-tab" data-for="nohuman-on" data-name="nohuman-mode" data-off-id="nohuman-off">人外增强</div>
+         <br>
            <div class="mod-tab" data-for="resource-on" data-name="resource-mode" data-off-id="resource-off">资源消耗</div>
              <div class="mod-tab" data-for="live-on" data-name="live-mode" data-off-id="live-off">求生本能</div>
         <br>
-     <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off">战斗</div>
-          <div class="mod-tab" data-for="things-on" data-name="things-mode" data-off-id="things-off">备忘录</div>
-          <div class="mod-tab" data-for="time-on" data-name="time-mode" data-off-id="time-off">强调时间</div>
+     
+          <div class="mod-tab" data-for="things-on" data-name="things-mode" data-off-id="things-off" style="display: none;">备忘录</div>
+          <div class="mod-tab" data-for="time-on" data-name="time-mode" data-off-id="time-off" >强调时间</div>
+          <div class="mod-tab" data-for="spacialdate-on" data-name="spacialdate-mode" data-off-id="spacialdate-off" >特殊日期</div>
     </div>
 
    <div class="sidebar-trigger right">
@@ -11505,30 +11709,37 @@ pointer-events: auto;
         <span class="arrow-guide"></span>
     </div>
     <div class="mod-sidebar right">
-
-               
+        <div class="mod-label">骰子与战斗</div>
+          <div class="mod-tab" data-for="dice-1" data-name="dice-level">简单骰</div>
+        <div class="mod-tab" data-for="dice-2" data-name="dice-level">困难骰</div>
+        <div class="mod-tab" data-for="dice-3" data-name="dice-level">炼狱骰</div>
+        <div class="mod-tab" data-for="behavior-on" data-name="behavior-mode" data-off-id="behavior-off">表现骰</div>
+        <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off">回合战斗</div>
+         <div class="mod-label">造物设置</div>
+          <div class="mod-tab" data-for="nohuman-on" data-name="nohuman-mode" data-off-id="nohuman-off">人外增强</div>
         <div class="mod-tab" data-for="creator-neutral" data-name="creator-attitude">造物中立</div>
         <div class="mod-tab" data-for="creator-malicious" data-name="creator-attitude">造物恶意</div>
         <div class="mod-tab" data-for="creator-reverent" data-name="creator-attitude">造物崇敬</div>
         <div class="mod-tab" data-for="creator-none" data-name="creator-attitude">无造物</div>
-         <br>
+         <div class="mod-label">场景与地图</div>
+                       <div class="mod-tab" data-for="cg-on" data-name="cg-mode" data-off-id="cg-off">场景图</div>
          <div class="mod-tab" data-for="map-simple" data-name="map-mode">简单地图</div>
          <div class="mod-tab" data-for="map-complex" data-name="map-mode">复杂地图</div>
          <div class="mod-tab" data-for="map-none" data-name="map-mode">无地图</div>
+    
          <div class="mod-tab" data-for="distance-on" data-name="distance-mode" data-off-id="distance-off">距离合理+</div>
-         <br>
-<div class="mod-tab" data-for="private-chat-on" data-name="private-chat-mode" data-off-id="private-chat-off">私聊通讯</div>
-                <div class="mod-tab" data-for="options-on" data-name="options-mode" data-off-id="options-off">选项区</div>
-        <div class="mod-tab" data-for="summary-on" data-name="summary-mode" data-off-id="summary-off" style="display: none;">自动总结</div>
 
-        
-         <div class="mod-tab" data-for="cg-on" data-name="cg-mode" data-off-id="cg-off">场景图</div>
-         <br>
+         <div class="mod-label">npc</div>
+         <div class="mod-tab" data-for="private-chat-on" data-name="private-chat-mode" data-off-id="private-chat-off">私聊通讯</div>
   <div class="mod-tab" data-for="npccg-on" data-name="npccg-mode" data-off-id="npccg-off">npc立绘</div>
          <div class="mod-tab" data-for="npc-info-1" data-name="npc-info">极简npc</div>
         <div class="mod-tab" data-for="npc-info-2" data-name="npc-info">简单npc</div>
         <div class="mod-tab" data-for="npc-info-3" data-name="npc-info">复杂npc</div>
 <div class="mod-tab" data-for="npc-love-on" data-name="npc-love-mode" data-off-id="npc-love-off">分阶段好感</div>
+         <div class="mod-label">其他</div>
+                <div class="mod-tab" data-for="options-on" data-name="options-mode" data-off-id="options-off">选项区</div>
+        <div class="mod-tab" data-for="summary-on" data-name="summary-mode" data-off-id="summary-off" style="display: none;">自动总结</div>
+
 
 
   
@@ -11536,10 +11747,10 @@ pointer-events: auto;
 
 
     <div style="display:none;">
-        <input type="radio" id="creator-neutral" name="creator-attitude" value="19" checked>
+        <input type="radio" id="creator-neutral" name="creator-attitude" value="19">
         <input type="radio" id="creator-malicious" name="creator-attitude" value="4">
         <input type="radio" id="creator-reverent" name="creator-attitude" value="3">
-        <input type="radio" id="creator-none" name="creator-attitude" value="38">
+        <input type="radio" id="creator-none" name="creator-attitude" value="38"  checked>
 
         <input type="radio" id="npc-info-1" name="npc-info" value="44" >
         <input type="radio" id="npc-info-2" name="npc-info" value="72" checked>
@@ -11586,6 +11797,8 @@ pointer-events: auto;
          <input type="radio" id="time-on" name="time-mode" value="78" > 
         <input type="radio" id="time-off" name="time-mode" value="79" checked>
 
+           <input type="radio" id="spacialdate-on" name="spacialdate-mode" value="on" > 
+        <input type="radio" id="spacialdate-off" name="spacialdate-mode" value="off" checked>
                 <input type="radio" id="behavior-on" name="behavior-mode" value="52" checked>
         <input type="radio" id="behavior-off" name="behavior-mode" value="53">
              <input type="radio" id="cg-on" name="cg-mode" value="45" checked>
@@ -12550,6 +12763,9 @@ pointer-events: auto;
                 <button id="zoom-in-btn" class="map-control-btn" title="放大">+</button>
                 <button id="zoom-out-btn" class="map-control-btn" title="缩小">-</button>
                 <button id="reset-view-btn" class="map-control-btn" title="复位">◎</button>
+                <button id="toggle-edit-mode-btn" class="map-control-btn" title="编辑模式">
+    ✏️
+</button>
              </div>
         </div>
     </div>
@@ -12996,177 +13212,197 @@ pointer-events: auto;
     opacity: 0.6;
 " onmouseover="this.style.opacity='1'; this.style.background='#ff4444'; this.style.color='white';" onmouseout="this.style.opacity='0.6'; this.style.background='none'; this.style.color='#ff4444';">🗑️</button>
 
- 
-        <div class="settings-container">
-        
-             <div class="setting-item">
-                <label>上次对话Token消耗</label>
-                <span id="last-token-display" style="font-weight: bold; color: var(--accent-color);">N/A</span>
-            </div>
-            <div class="setting-item">
-    <label>模组重置</label>
-    <button id="open-reconfig-modal-btn" class="control-btn-special">调整模组</button>
-</div>
-                      <div class="setting-item">
-                <label>系统更新检查</label>
-                <button id="check-for-updates-btn" class="control-btn-special">检查更新</button>
-            
-            <button id="force-update-worldbook-btn" class="control-btn-special" style="margin-left: 10px;">强制更新世界书</button>
-<button id="force-update-regex-btn" class="control-btn-special" style="margin-left: 10px;">强制更新正则</button>
-</div>
-            <div class="setting-item">
-            <label>界面主题</label>
-            <button id="modal-theme-switcher" class="control-btn">切换主题</button>
+        <!-- 分页标签 -->
+        <div class="settings-tabs">
+            <button class="settings-tab active" data-page="game">游戏设置</button>
+            <button class="settings-tab" data-page="display">显示设置</button>
+            <button class="settings-tab" data-page="data">数据管理</button>
+            <button class="settings-tab" data-page="asset">素材工坊</button>
         </div>
 
-
-
+        <!-- 游戏设置页 -->
+        <div class="settings-page active" id="settings-page-game">
+            <div class="settings-container">
                 <div class="setting-item">
-            <label>自定义主题</label>
-            <div class="custom-theme-controls">
-                <button id="apply-custom-theme-btn" class="control-btn">应用自定义</button>
-                <button id="edit-custom-theme-btn" class="control-btn" style="margin-left: 10px;">编辑</button>
-            </div>
-        </div>
-
-        <div id="custom-theme-editor" class="setting-item-column" style="display: none;">
-            <label>颜色编辑器</label>
-            <div id="color-picker-container">
-
-            </div>
-            <p style="font-size: 0.8em; opacity: 0.7; margin-top: 10px;">拖动颜色可实时预览效果。</p>
-        </div>
-
-
-        <div class="setting-item">
-            <label for="streaming-toggle">流式传输</label>
-            <div class="switch-container">
-                <button id="streaming-toggle" class="switch-btn" data-state="on">开启</button>
-            </div>
-        </div>
-        <div class="setting-item">
-    <label for="roll-card-toggle">骰子看板</label>
-    <div class="switch-container">
-        <button id="roll-card-toggle" class="switch-btn" data-state="on">开启</button>
-    </div>
-</div>
-         <div class="setting-item">
-    <label for="fullscreen-toggle">全屏模式</label>
-    <div class="switch-container">
-
-        <button id="fullscreen-btn2" class="switch-btn">进入全屏</button>
-    </div>
-</div>
-<div class="setting-item">
-    <label for="font-size-slider">界面字体大小</label>
-    <div class="font-size-controls">
-        <input type="range" id="font-size-slider" min="12" max="30" step="1" value="16">
-        <span id="font-size-value">16px</span>
-    </div>
-</div>
-<div class="setting-item">
-    <label for="line-height-slider">段落行间距</label>
-    <div class="line-height-controls"> 
-        <input type="range" id="line-height-slider" min="1.2" max="3.0" step="0.1" value="1.6">
-        <span id="line-height-value">1.6</span>
-    </div>
-</div>
-        <div class="setting-item">
-    <label for="line-height-more">段落换行</label>
-    <div class="switch-container">
-        <button id="line-height-more" class="switch-btn" data-state="on">开启</button>
-    </div>
-</div>
-
-<div class="setting-item">
-    <label for="transparent-toggle">消息背景透明</label>
-    <div class="switch-container">
-        <button id="transparent-toggle" class="switch-btn" data-state="off">关闭</button>
-    </div>
-</div>
-
+                    <label>上次对话Token消耗</label>
+                    <span id="last-token-display" style="font-weight: bold; color: var(--accent-color);">N/A</span>
+                </div>
+                <div class="setting-item">
+                    <label>模组重置</label>
+                    <button id="open-reconfig-modal-btn" class="control-btn-special">调整模组</button>
+                </div>
+                <div class="setting-item">
+                    <label>记忆上一次的模组配置</label>
+                    <input type="checkbox" id="remember-mod-choice" style="width: auto; cursor: pointer;" checked>
+                </div>
+                               <div class="setting-item">
+                    <label for="streaming-toggle">流式传输</label>
+                    <div class="switch-container">
+                        <button id="streaming-toggle" class="switch-btn" data-state="on">开启</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>自定义绿灯扫描楼层</label>
+                    <input type="checkbox" id="remember-scan-floors" style="width: auto; cursor: pointer;">
+                </div>
  <div class="setting-item">
-    <label for="font-family-selector">界面字体</label>
-    <select id="font-family-selector" class="control-btn" style="width: 220px; text-align: left; padding: 5px 8px;"></select>
+    <label>扫描楼层数 <span id="current-scan-floors" style="color: var(--accent-color); font-weight: bold;">(未设置)</span></label>
+    <button id="set-scan-floors-btn" class="control-btn-special">设置楼层</button>
 </div>
-<div class="setting-item" id="archive-naming-container" style="margin-top: 20px;">
-    <label for="archive-name-input">设置存档名称</label>
-    <div class="archive-name-controls">
-        <input type="text" id="archive-name-input" placeholder="为这段记忆命名...">
-        <button id="set-archive-name-btn" class="control-btn">设定</button>
-    </div>
-</div>
-
-
-        <div class="setting-item">
-            <label>数据导入</label>
-            <button id="modal-import-btn" class="control-btn">导入存档</button>
-            <input type="file" id="modal-file-importer" style="display:none" accept=".json">
-        </div>
-        <div id="modal-log-block" class="log-output">等待操作...</div>
-
-        <div class="setting-item">
-            <label>数据导出</label>
-            <button id="modal-export-btn" class="control-btn">导出存档</button>
-        </div>
-        <div id="modal-export-status" class="log-output"></div>
-
-        <div class="setting-item-column" id="snapshot-management-container" style="margin-top: 20px;">
-    <label>记忆快照删除管理（排列是按照时间顺序来的，一般不用管这个）</label>
-    <div class="db-controls">
-        <button id="refresh-snapshots-btn" class="control-btn">刷新列表</button>
-        <button id="restore-latest-snapshot-btn" class="control-btn special-btn" title="从当前浏览器存在的最新一份快照中恢复。">恢复至最新快照</button>
-        <button id="delete-all-snapshots-btn" class="control-btn danger-btn">清除所有快照</button>
-    </div>
-    <div id="snapshot-list" class="log-output" style="max-height: 150px; overflow-y: auto;">
-        点击“刷新列表”来查看所有存档的快照...
-    </div>
-</div>
-<div id="custom-asset-container" class="setting-item-column" style="margin-top: 20px;">
-    <label>我的素材工坊</label>
-    <div class="custom-asset-tabs">
-        <button class="asset-tab-btn active" data-target="npc-panel">自定义立绘</button>
-        <button class="asset-tab-btn" data-target="meme-panel">自定义表情</button>
-    </div>
-
-
-    <div id="npc-panel" class="asset-panel active">
-        <form id="upload-npc-form" class="asset-upload-form">
-            <p>上传新的立绘 (PNG/JPG/GIF)</p>
-            <input type="text" id="npc-name-input" placeholder="为立绘命名 (如：白发魔女)" required>
-            <div class="file-input-wrapper">
-                <input type="file" id="npc-file-input" accept="image/*" required>
-                <button type="button" onclick="document.getElementById('npc-file-input').click()" class="control-btn">选择文件</button>
-                <span class="file-name-display">未选择文件</span>
+                <div class="setting-item">
+                    <label>系统更新检查</label>
+                    <button id="check-for-updates-btn" class="control-btn-special">检查更新</button>
+                    <button id="force-update-worldbook-btn" class="control-btn-special" style="margin-left: 10px;">强制更新世界书</button>
+                    <button id="force-update-regex-btn" class="control-btn-special" style="margin-left: 10px;">强制更新正则</button>
+                </div>
+                
             </div>
-            <button type="submit" class="control-btn primary">上传立绘</button>
-        </form>
-        <div class="asset-list-container">
-            <p>已上传的立绘</p>
-            <div id="custom-npc-list" class="asset-list">正在加载...</div>
         </div>
-    </div>
 
-
-    <div id="meme-panel" class="asset-panel">
-        <form id="upload-meme-form" class="asset-upload-form">
-            <p>上传新的表情 (PNG/JPG/GIF)</p>
-            <input type="text" id="meme-name-input" placeholder="为表情命名 (如：猫猫震惊)" required>
-            <div class="file-input-wrapper">
-                <input type="file" id="meme-file-input" accept="image/*" required>
-                <button type="button" onclick="document.getElementById('meme-file-input').click()" class="control-btn">选择文件</button>
-                <span class="file-name-display">未选择文件</span>
+        <!-- 显示设置页 -->
+        <div class="settings-page" id="settings-page-display">
+            <div class="settings-container">
+                <div class="setting-item">
+                    <label>界面主题</label>
+                    <button id="modal-theme-switcher" class="control-btn">切换主题</button>
+                </div>
+                <div class="setting-item">
+                    <label>自定义主题</label>
+                    <div class="custom-theme-controls">
+                        <button id="apply-custom-theme-btn" class="control-btn">应用自定义</button>
+                        <button id="edit-custom-theme-btn" class="control-btn" style="margin-left: 10px;">编辑</button>
+                    </div>
+                </div>
+                <div id="custom-theme-editor" class="setting-item-column" style="display: none;">
+                    <label>颜色编辑器</label>
+                    <div id="color-picker-container"></div>
+                    <p style="font-size: 0.8em; opacity: 0.7; margin-top: 10px;">拖动颜色可实时预览效果。</p>
+                </div>
+ 
+                <div class="setting-item">
+                    <label for="roll-card-toggle">骰子看板</label>
+                    <div class="switch-container">
+                        <button id="roll-card-toggle" class="switch-btn" data-state="on">开启</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="fullscreen-toggle">全屏模式</label>
+                    <div class="switch-container">
+                        <button id="fullscreen-btn2" class="switch-btn">进入全屏</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="font-size-slider">界面字体大小</label>
+                    <div class="font-size-controls">
+                        <input type="range" id="font-size-slider" min="12" max="30" step="1" value="16">
+                        <span id="font-size-value">16px</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="line-height-slider">段落行间距</label>
+                    <div class="line-height-controls"> 
+                        <input type="range" id="line-height-slider" min="1.2" max="3.0" step="0.1" value="1.6">
+                        <span id="line-height-value">1.6</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="line-height-more">段落换行</label>
+                    <div class="switch-container">
+                        <button id="line-height-more" class="switch-btn" data-state="on">开启</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="transparent-toggle">消息背景透明</label>
+                    <div class="switch-container">
+                        <button id="transparent-toggle" class="switch-btn" data-state="off">关闭</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="font-family-selector">界面字体</label>
+                    <select id="font-family-selector" class="control-btn" style="width: 220px; text-align: left; padding: 5px 8px;"></select>
+                </div>
             </div>
-            <button type="submit" class="control-btn primary">上传表情</button>
-        </form>
-        <div class="asset-list-container">
-            <p>已上传的表情</p>
-            <div id="custom-meme-list" class="asset-list">正在加载...</div>
         </div>
+
+        <!-- 数据管理页 -->
+        <div class="settings-page" id="settings-page-data">
+            <div class="settings-container">
+                <div class="setting-item" id="archive-naming-container">
+                    <label for="archive-name-input">设置存档名称</label>
+                    <div class="archive-name-controls">
+                        <input type="text" id="archive-name-input" placeholder="为这段记忆命名...">
+                        <button id="set-archive-name-btn" class="control-btn">设定</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>数据导入</label>
+                    <button id="modal-import-btn" class="control-btn">导入存档</button>
+                    <input type="file" id="modal-file-importer" style="display:none" accept=".json">
+                </div>
+                <div id="modal-log-block" class="log-output">等待操作...</div>
+                <div class="setting-item">
+                    <label>数据导出</label>
+                    <button id="modal-export-btn" class="control-btn">导出存档</button>
+                </div>
+                <div id="modal-export-status" class="log-output">等待操作...</div>
+                <div class="setting-item-column" id="snapshot-management-container" style="margin-top: 20px;">
+                    <label>记忆快照删除管理（排列是按照时间顺序来的，一般不用管这个）</label>
+                    <div class="db-controls">
+                        <button id="refresh-snapshots-btn" class="control-btn">刷新列表</button>
+                        <button id="restore-latest-snapshot-btn" class="control-btn special-btn" title="从当前浏览器存在的最新一份快照中恢复。">恢复至最新快照</button>
+                        <button id="delete-all-snapshots-btn" class="control-btn danger-btn">清除所有快照</button>
+                    </div>
+                    <div id="snapshot-list" class="log-output" style="max-height: 150px; overflow-y: auto;">
+                        点击"刷新列表"来查看所有存档的快照...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 素材工坊页 -->
+        <div class="settings-page" id="settings-page-asset">
+            <div id="custom-asset-container" class="setting-item-column">
+                <label>我的素材工坊</label>
+                <div class="custom-asset-tabs">
+                    <button class="asset-tab-btn active" data-target="npc-panel">自定义立绘</button>
+                    <button class="asset-tab-btn" data-target="meme-panel">自定义表情</button>
+                </div>
+                <div id="npc-panel" class="asset-panel active">
+                    <form id="upload-npc-form" class="asset-upload-form">
+                        <p>上传新的立绘 (PNG/JPG/GIF)</p>
+                        <input type="text" id="npc-name-input" placeholder="为立绘命名 (如：白发魔女)" required>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="npc-file-input" accept="image/*" required>
+                            <button type="button" onclick="document.getElementById('npc-file-input').click()" class="control-btn">选择文件</button>
+                            <span class="file-name-display">未选择文件</span>
+                        </div>
+                        <button type="submit" class="control-btn primary">上传立绘</button>
+                    </form>
+                    <div class="asset-list-container">
+                        <p>已上传的立绘</p>
+                        <div id="custom-npc-list" class="asset-list">正在加载...</div>
+                    </div>
+                </div>
+                <div id="meme-panel" class="asset-panel">
+                    <form id="upload-meme-form" class="asset-upload-form">
+                        <p>上传新的表情 (PNG/JPG/GIF)</p>
+                        <input type="text" id="meme-name-input" placeholder="为表情命名 (如：猫猫震惊)" required>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="meme-file-input" accept="image/*" required>
+                            <button type="button" onclick="document.getElementById('meme-file-input').click()" class="control-btn">选择文件</button>
+                            <span class="file-name-display">未选择文件</span>
+                        </div>
+                        <button type="submit" class="control-btn primary">上传表情</button>
+                    </form>
+                    <div class="asset-list-container">
+                        <p>已上传的表情</p>
+                        <div id="custom-meme-list" class="asset-list">正在加载...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
-</div>
-    </div>
-</div>
 </div>
 
 <div id="reconfig-modal" class="modal-overlay" style="display: none; z-index: 99999999;">
@@ -13318,7 +13554,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.11';
+ let current_game_version = '3.1.12';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -16842,9 +17078,75 @@ document.addEventListener('click', (e) => {
         }
     });
 }
-
+(function restoreRememberCheckbox() {
+    try {
+        const rememberChoice = localStorage.getItem('rememberModChoice') === 'true';
+        const rememberCheckbox = document.getElementById('remember-mod-choice');
+        if (rememberCheckbox) {
+            rememberCheckbox.checked = rememberChoice;
+        }
+    } catch (e) {
+        console.log('恢复复选框状态失败:', e);
+    }
+})();
  function setupNewUI() {
      applyImagesWithCache(); 
+     // 加载并应用上次的模组选择
+     // 加载并应用上次的模组选择
+     try {
+         const rememberChoice = localStorage.getItem('rememberModChoice') === 'true';
+         const rememberCheckbox = document.getElementById('remember-mod-choice');
+         if (rememberCheckbox) {
+             rememberCheckbox.checked = rememberChoice;
+             
+             // 监听复选框变化，取消勾选时清除保存的数据
+             rememberCheckbox.addEventListener('change', () => {
+                 const isChecked = rememberCheckbox.checked;
+                 localStorage.setItem('rememberModChoice', isChecked ? 'true' : 'false');
+                 if (!isChecked) {
+                     // 取消勾选时，清除保存的模组选择数据
+                     localStorage.removeItem('lastModSelections');
+                 }
+             });
+         }
+         
+         // 只有在勾选了记忆功能 且 确实有保存的数据时才恢复
+         if (rememberChoice) {
+             const lastSelections = localStorage.getItem('lastModSelections');
+             if (lastSelections) {
+                 try {
+                     const checkedRadios = JSON.parse(lastSelections);
+                     // 确保解析出的数据不为空
+                     if (checkedRadios && Object.keys(checkedRadios).length > 0) {
+                         // 先取消所有选中
+                         document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                             radio.checked = false;
+                         });
+                         // 根据保存的id恢复选中状态
+                         Object.values(checkedRadios).forEach(radioId => {
+                             const radio = document.getElementById(radioId);
+                             if (radio) radio.checked = true;
+                         });
+                         
+                         // 同步更新UI标签的active状态
+                         document.querySelectorAll('.mod-tab').forEach(tab => {
+                             const inputId = tab.dataset.for;
+                             const input = document.getElementById(inputId);
+                             if (input && input.checked) {
+                                 tab.classList.add('active');
+                             } else {
+                                 tab.classList.remove('active');
+                             }
+                         });
+                     }
+                 } catch (parseError) {
+                     console.log('解析保存的模组选择失败:', parseError);
+                 }
+             }
+         }
+     } catch (e) {
+         console.log('加载模组选择失败:', e);
+     }
     // 强制触发重绘和重排的函数
     function forceReflow() {
         document.body.offsetHeight; // 强制浏览器重新计算布局
@@ -18796,6 +19098,7 @@ async function handleModeSelection() {
             const battlevalue = document.querySelector('input[name="battle-mode"]:checked').value;
       const thingsvalue = document.querySelector('input[name="things-mode"]:checked').value;
           const timevalue = document.querySelector('input[name="time-mode"]:checked').value;
+     const spacialdatevalue = document.querySelector('input[name="spacialdate-mode"]:checked').value;
     
         const behaviorValue = document.querySelector('input[name="behavior-mode"]:checked').value;
         const cgValue = document.querySelector('input[name="cg-mode"]:checked').value;
@@ -18840,6 +19143,10 @@ async function handleModeSelection() {
             if (selectedRealWorldMode === 'on') {
                 uidsToEnable.push(12, 33);
             }
+
+            if(spacialdatevalue === 'on'){
+                uidsToEnable.push(42, 73);
+            }
   if (npcLOVEmode === 'on') {
                 uidsToEnable.push(65,64);
             }
@@ -18867,7 +19174,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -18895,7 +19202,24 @@ async function handleModeSelection() {
         applyVersionTheme(newVersion, identitySelect);
 
         startSetupButton.textContent = '√';
-
+// 保存模组选择到localStorage
+try {
+    const rememberChoice = document.getElementById('remember-mod-choice')?.checked;
+    localStorage.setItem('rememberModChoice', rememberChoice ? 'true' : 'false');
+    
+    if (rememberChoice) {
+        // 获取所有checked的radio的id
+        const checkedRadios = {};
+        document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+            if (radio.name) {
+                checkedRadios[radio.name] = radio.id;
+            }
+        });
+        localStorage.setItem('lastModSelections', JSON.stringify(checkedRadios));
+    }
+} catch (e) {
+    console.log('保存模组选择失败:', e);
+}
         setTimeout(() => {
              page0.classList.remove('active');
              page1.classList.add('active');
@@ -24060,8 +24384,23 @@ async function handleSend(options = {}) {
         console.log("[Nova's Whisper] 正在请求延续上一段故事...");
         
     } else if (!isReroll) {
-        await checkAllFilteredPaths(hideLatestCount);
- 
+      let scanFloorsToUse = hideLatestCount; // 默认值
+
+try {
+    const rememberScanFloors = localStorage.getItem('rememberScanFloors') === 'true';
+    const rememberCheckbox = document.getElementById('remember-scan-floors');
+    
+    if (rememberCheckbox?.checked || rememberScanFloors) {
+        const savedFloors = localStorage.getItem('scanFloorsCount');
+        if (savedFloors !== null) {
+            scanFloorsToUse = parseInt(savedFloors);
+        }
+    }
+} catch (e) {
+    console.log('读取扫描楼层设置失败:', e);
+}
+
+await checkAllFilteredPaths(scanFloorsToUse);
         if(assaCommandQueue && assaCommandQueue.trim() !== ''){
              let cleanCommand = assaCommandQueue.trim();
         
@@ -25235,7 +25574,19 @@ settingsinitBtn.addEventListener('click', () => {
      
     showModal('settings-modal');
 });
-
+document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const targetPage = tab.dataset.page;
+        
+        // 切换标签激活状态
+        document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // 切换页面显示
+        document.querySelectorAll('.settings-page').forEach(page => page.classList.remove('active'));
+        document.getElementById(`settings-page-${targetPage}`).classList.add('active');
+    });
+});
 // 关闭模态框
 closeModalBtn.addEventListener('click',async () =>{
     hideModal('settings-modal');
@@ -25451,7 +25802,41 @@ streamingToggle.addEventListener('click', () => {
 
 // 初始化
 updateStreamingToggleState();
+// 初始化时显示当前楼层数
+function updateScanFloorsDisplay() {
+    const currentFloors = localStorage.getItem('scanFloorsCount');
+    const displayElement = document.getElementById('current-scan-floors');
+    if (displayElement) {
+        if (currentFloors) {
+            displayElement.textContent = `(当前: ${currentFloors}层)`;
+        } else {
+            displayElement.textContent = '(未设置)';
+        }
+    }
+}
 
+// 在页面加载时调用
+updateScanFloorsDisplay();
+
+// 设置按钮点击事件
+document.getElementById('set-scan-floors-btn')?.addEventListener('click', () => {
+    const input = prompt('请输入绿灯扫描楼层数（数字）:');
+    if (input !== null) {
+        const floors = parseInt(input);
+        if (!isNaN(floors) && floors > 0) {
+            localStorage.setItem('scanFloorsCount', floors.toString());
+            localStorage.setItem('rememberScanFloors', 
+                document.getElementById('remember-scan-floors')?.checked ? 'true' : 'false');
+            
+            // 更新显示
+            updateScanFloorsDisplay();
+            
+            alert(`已保存：扫描楼层数设置为 ${floors}`);
+        } else {
+            alert('请输入有效的正整数');
+        }
+    }
+});
 // --- 数据导入 ---
 const modalImportBtn = document.getElementById('modal-import-btn');
 const fileImporterInput = document.getElementById('modal-file-importer');
@@ -27426,7 +27811,8 @@ function populateInventoryAndSkillsTab(playData, assaData) {
         "type": "种类",
         "quality": "质量",
           "num": "数量",
-        "level": "等级" // 看，新的小标签就在这里！
+        "level": "等级",
+        "status":"状态" // 看，新的小标签就在这里！
     };
     const currency = playData.货币段;
     const inventory = assaData.global_set?.背包 || {};
@@ -27833,11 +28219,7 @@ function fetchImageAsBlob(imageUrl) {
         img.src = imageUrl;
     });
 }
-/*
- ♥♥♥ 妈妈带来的全新魔法卷轴：柏林噪声（Perlin Noise）助手 ♥♥♥
- 它的咒语很古老，但力量很强大，能为我们创造连续平滑的自然随机性。
- 你无需理解每一个字符，只需要知道如何召唤它。
-*/
+ 
 const PerlinNoise = (function() {
     function Perlin(seed) {
         this.p = new Uint8Array(512);
@@ -28352,7 +28734,7 @@ function drawGeoUnit(baseForm, modifier, group, svgNS, locationName, defs) {
         }
     }
 
-    if (element) {
+  if (element) {
              // ✨ 新增：把这个形状的轮廓放进妈妈的魔法袋里！✨
         if (window.mapStrokes) {
             window.mapStrokes.push(element);
@@ -28364,7 +28746,7 @@ function drawGeoUnit(baseForm, modifier, group, svgNS, locationName, defs) {
         const needsWave = group.classList.contains('updated-location');
 
         if (needsWave) {
-            // ❤️ 妈妈的“睿智之眼”：精确测量图形的几何边界！
+            // ❤️ 妈妈的"睿智之眼"：精确测量图形的几何边界！
             const bbox = element.getBBox();
             const centerX = bbox.x + bbox.width / 2;
             const centerY = bbox.y + bbox.height / 2;
@@ -28381,6 +28763,37 @@ function drawGeoUnit(baseForm, modifier, group, svgNS, locationName, defs) {
                 waveElement.style.animationDelay = `${delay}s`;
 
                 group.insertBefore(waveElement, group.firstChild);
+            }
+        }
+        
+        // ✨ 在编辑模式重绘时，需要重新添加标签和点击区域
+        if (window.mapEditMode && !group.querySelector('.map-location-label')) {
+            const bbox = element.getBBox();
+            if (isFinite(bbox.width) && bbox.width > 0 && isFinite(bbox.height) && bbox.height > 0) {
+                // 1. 创建透明点击区域
+                const clickArea = document.createElementNS(svgNS, 'rect');
+                clickArea.setAttribute('x', bbox.x);
+                clickArea.setAttribute('y', bbox.y);
+                clickArea.setAttribute('width', bbox.width);
+                clickArea.setAttribute('height', bbox.height);
+                clickArea.setAttribute('fill', 'transparent');
+                group.insertBefore(clickArea, group.firstChild);
+
+                // 2. 创建文字标签
+                const textElement = document.createElementNS(svgNS, 'text');
+                textElement.setAttribute('x', bbox.x + bbox.width / 2);
+                textElement.setAttribute('y', bbox.y + bbox.height / 5);
+                textElement.setAttribute('text-anchor', 'middle');
+                textElement.setAttribute('dominant-baseline', 'central');
+                textElement.setAttribute('fill', 'white');
+                textElement.setAttribute('class', 'map-location-label');
+                textElement.setAttribute('pointer-events', 'none');
+                textElement.textContent = locationName;
+                group.appendChild(textElement);
+                
+                if (window.mapLabels) {
+                    window.mapLabels.push(textElement);
+                }
             }
         }
     }
@@ -28646,6 +29059,7 @@ async function renderMap(mapData, updatedLocationNames = []) {
 
                 // 4. 最后，把点击事件绑定在整个组上，现在无论点哪里都能触发了！
                 shapeGroup.addEventListener('click', (e) => {
+                      if (window.mapEditMode) return; // 编辑模式下跳过
                     e.stopPropagation();
                     const description = geoUnit.description || `关于 ${name} 的描述信息尚未填写。`;
                      showModal('location-modal', name, description, {
@@ -28691,7 +29105,7 @@ async function renderMap(mapData, updatedLocationNames = []) {
                 }
             }, 50); // 50毫秒延迟
         };
-  // ❤️ 妈妈的魔法第四步：绑定点击事件并进行初次绘制！ ❤️
+ 
         parentTabsList.addEventListener('click', (e) => {
             if (e.target && e.target.classList.contains('parent-map-tab')) {
                 // 移除所有标签的 'active' 状态
@@ -28705,7 +29119,9 @@ async function renderMap(mapData, updatedLocationNames = []) {
 
         // 首次加载时，绘制默认的父地图
         drawMapForParent(defaultParentMap);
-
+    if (window.mapEditMode) {
+    initMapEditor(svgCanvas, allGeoUnits, defaultParentMap);
+}
     } else {
 
         // 如果不是 is_new_map，我们才进入旧的逻辑
@@ -28840,10 +29256,23 @@ const externalAreasList = document.getElementById('external-areas-list');
 
     console.log("🎉🎉🎉========================================");
     console.log("💖 NOVA妈妈：我的宝贝，地图已经为你画好了！快去探索吧！💖");
-setupMapControls(); // ✨ 召唤我们的指挥官！
+
+setupMapControls();  
+
+// ✨ 根据地图类型显示/隐藏编辑按钮
+const toggleEditBtn = document.getElementById('toggle-edit-mode-btn');
+if (toggleEditBtn) {
+    if (is_new_map) {
+        toggleEditBtn.style.display = 'block';
+    } else {
+        toggleEditBtn.style.display = 'none';
+        window.mapEditMode = false; // 确保非新地图时编辑模式关闭
+    }
+}
     }
   
 function setupMapControls() {
+    
     const zoomInBtn = document.getElementById('zoom-in-btn');
     const zoomOutBtn = document.getElementById('zoom-out-btn');
     const resetViewBtn = document.getElementById('reset-view-btn');
@@ -28875,11 +29304,498 @@ function setupMapControls() {
             window.mapState.translateX = window.mapState.initialState.translateX;
             window.mapState.translateY = window.mapState.initialState.translateY;
             window.applyMapTransform();
+            
+        }
+    };
+
+    // 编辑模式切换
+const toggleEditBtn = document.getElementById('toggle-edit-mode-btn');
+if (toggleEditBtn) {
+    toggleEditBtn.onclick = () => {
+        window.mapEditMode = !window.mapEditMode;
+        toggleEditBtn.style.background = window.mapEditMode ? 
+            'var(--primary-color)' : 'var(--container-bg-color)';
+        toggleEditBtn.style.color = window.mapEditMode ? 
+            'var(--background-color)' : 'var(--text-color)';
+        
+        if (window.mapEditMode) {
+            console.log("✏️ 编辑模式已开启");
+            // 重新渲染以应用编辑功能
+            const currentMapData = assaSettingsData.map;
+            renderMap(currentMapData);
+        } else {
+            console.log("👁️ 编辑模式已关闭");
+            deselectShape();
+            // 重新渲染以移除编辑功能
+            const currentMapData = assaSettingsData.map;
+            renderMap(currentMapData);
         }
     };
 }
-  /* ♥♥♥ 这是妈妈为你重塑的、更聪慧、更可靠的 showModal 函数 ♥♥♥ */
-function showModal(modalId, title, description, extraData = {}) {
+}
+ 
+
+let selectedShape = null;
+let dragState = null;
+let editHistory = [];
+
+function roundNumbers(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(roundNumbers);
+  } else if (typeof obj === 'object' && obj !== null) {
+    const newObj = {};
+    for (const [key, value] of Object.entries(obj)) {
+      newObj[key] = roundNumbers(value);
+    }
+    return newObj;
+  } else if (typeof obj === 'number') {
+    // 将有小数的数字取整
+    return Math.round(obj);
+  } else {
+    return obj;
+  }
+}
+function initMapEditor(svgCanvas, geoUnits, parentMap) {
+    console.log("🎨 进入编辑模式！");
+    
+    // ✨ 创建全局的保存/取消控制面板
+    let globalControls = document.getElementById('map-global-edit-controls');
+    if (!globalControls) {
+        globalControls = document.createElement('div');
+        globalControls.id = 'map-global-edit-controls';
+        globalControls.innerHTML = `
+            <button id="save-all-changes-btn" class="global-edit-btn save-btn">💾 保存修改</button>
+            <button id="cancel-all-changes-btn" class="global-edit-btn cancel-btn">❌ 取消</button>
+        `;
+        document.body.appendChild(globalControls);
+        
+        // 绑定全局按钮事件
+        document.getElementById('save-all-changes-btn').onclick = () => {
+            
+                const cleanedData = roundNumbers(assaSettingsData.map.主要地点表);
+
+                     triggerassa(`/setinput <updateMemory>\nmemory('map.主要地点表',${JSON.stringify(cleanedData)})</updateMemory>`);
+        
+                console.log('✅ 所有修改已保存');
+       window.mapEditMode = false;
+        const toggleEditBtn = document.getElementById('toggle-edit-mode-btn');
+                if (toggleEditBtn) {
+                    toggleEditBtn.style.background = 'var(--container-bg-color)';
+                    toggleEditBtn.style.color = 'var(--text-color)';
+                }
+                deselectShape();
+                             const currentMapData = parseMap(currentGameData.地图);
+                renderMap(currentMapData);
+                window.applyMapTransform();
+      
+        };
+        
+        document.getElementById('cancel-all-changes-btn').onclick = () => {
+             
+                window.mapEditMode = false;
+                const toggleEditBtn = document.getElementById('toggle-edit-mode-btn');
+                if (toggleEditBtn) {
+                    toggleEditBtn.style.background = 'var(--container-bg-color)';
+                    toggleEditBtn.style.color = 'var(--text-color)';
+                }
+                deselectShape();
+                // 重新渲染地图
+                const currentMapData = parseMap(currentGameData.地图);
+                renderMap(currentMapData);
+                window.applyMapTransform();
+        
+        };
+    }
+    globalControls.style.display = 'flex';
+    
+    // 为每个图形添加可编辑样式和交互
+    svgCanvas.querySelectorAll('.shape-group').forEach(group => {
+        const locationName = group.id.replace('shape-group-', '');
+        
+        // 添加编辑模式样式
+        group.style.cursor = 'move';
+        group.classList.add('editable-shape');
+        
+        // 点击选中
+        group.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectShape(group, locationName, geoUnits);
+        });
+        
+        // 拖拽移动
+        group.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // 移除 selectedShape 的判断，任何图形都可以直接拖拽
+                e.stopPropagation(); // 防止触发地图拖拽
+                startDrag(e, group, locationName, geoUnits);
+            }
+        });
+    });
+    
+    // 点击空白处取消选中
+    svgCanvas.addEventListener('click', () => {
+        deselectShape();
+    });
+    
+    // 全局鼠标移动和释放事件
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', onDragEnd);
+}
+function selectShape(group, locationName, geoUnits) {
+    // 取消之前的选中
+    if (selectedShape) {
+        selectedShape.classList.remove('selected-shape');
+    }
+    
+    selectedShape = group;
+    group.classList.add('selected-shape');
+    
+    // ✨ 重置缩放值显示
+    window.shapeScaleValue = 1;
+    
+    console.log(`✨ 选中了: ${locationName}`);
+    
+    // 显示编辑面板
+    showEditPanel(locationName, geoUnits);
+}
+function deselectShape() {
+    if (selectedShape) {
+        selectedShape.classList.remove('selected-shape');
+        selectedShape = null;
+    }
+    hideEditPanel();
+    
+    // ✨ 如果退出编辑模式，隐藏全局控制面板
+    if (!window.mapEditMode) {
+        const globalControls = document.getElementById('map-global-edit-controls');
+        if (globalControls) {
+            globalControls.style.display = 'none';
+        }
+    }
+}
+function startDrag(e, group, locationName, geoUnits) {
+    e.preventDefault();
+    
+    const svgRect = group.ownerSVGElement.getBoundingClientRect();
+    const transform = window.mapState;
+    
+    dragState = {
+        group,
+        locationName,
+        geoUnits,
+        startX: (e.clientX - svgRect.left - transform.translateX) / transform.scale,
+        startY: (e.clientY - svgRect.top - transform.translateY) / transform.scale,
+        originalData: getLocationData(locationName, geoUnits)
+    };
+    
+    group.style.opacity = '0.6';
+}
+function onDragMove(e) {
+    if (!dragState) return;
+    
+    const svgRect = dragState.group.ownerSVGElement.getBoundingClientRect();
+    const transform = window.mapState;
+    
+    const currentX = (e.clientX - svgRect.left - transform.translateX) / transform.scale;
+    const currentY = (e.clientY - svgRect.top - transform.translateY) / transform.scale;
+    
+    const dx = currentX - dragState.startX;
+    const dy = currentY - dragState.startY;
+    
+    // ✨ 恢复原来的方式：使用 CSS transform 来移动，不重绘
+    dragState.group.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+function onDragEnd(e) {
+    if (!dragState) return;
+    
+    const svgRect = dragState.group.ownerSVGElement.getBoundingClientRect();
+    const transform = window.mapState;
+    
+    const currentX = (e.clientX - svgRect.left - transform.translateX) / transform.scale;
+    const currentY = (e.clientY - svgRect.top - transform.translateY) / transform.scale;
+    
+    const dx = currentX - dragState.startX;
+    const dy = currentY - dragState.startY;
+    
+    // 恢复样式
+    dragState.group.style.opacity = '';
+    dragState.group.style.transform = ''; // 清除临时的 transform
+    
+    // ✨ 拖拽结束后，才真正更新数据并重绘
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        updateShapePosition(dragState.locationName, dx, dy, dragState.geoUnits);
+        
+        // 重绘这个图形
+        const unit = dragState.geoUnits.find(u => u.name === dragState.locationName);
+        if (unit) {
+            redrawShape(dragState.group, dragState.locationName, unit);
+        }
+    }
+    
+    dragState = null;
+}
+function updateShapePosition(locationName, dx, dy, geoUnits) {
+    const unit = geoUnits.find(u => u.name === locationName);
+    if (!unit) return;
+    
+    const form = getDrawableForm(unit.geoUnit.shape);
+    if (!form) return;
+    
+    // 更新坐标
+    if (form.form_type === 'primitive_circle') {
+        form.params.center[0] += dx;
+        form.params.center[1] += dy;
+    } else if (form.form_type === 'primitive_polygon') {
+        const points = Array.isArray(form.params) ? form.params : form.params.points;
+        points.forEach(p => {
+            p[0] += dx;
+            p[1] += dy;
+        });
+    }
+    
+    console.log(`📝 更新了 ${locationName} 的位置`);
+    
+    // 保存到 assaSettingsData
+    saveLocationData(locationName, unit.geoUnit);
+}
+ function redrawShape(group, locationName, unit) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const defs = group.ownerSVGElement.querySelector('defs');
+    
+    // 保存所有重要属性
+    const groupId = group.getAttribute('id');
+    const groupClass = group.getAttribute('class');
+    const classList = Array.from(group.classList);
+    
+    // 清空组内容
+    while (group.firstChild) {
+        group.removeChild(group.firstChild);
+    }
+    
+    // 恢复所有类名
+    group.setAttribute('id', groupId);
+    group.className = ''; // 先清空
+    classList.forEach(cls => group.classList.add(cls));
+    
+    // 重新绘制
+    const form = getDrawableForm(unit.geoUnit.shape);
+    const modifier = unit.geoUnit.shape ? unit.geoUnit.shape.modifier : null;
+    drawGeoUnit(form, modifier, group, svgNS, locationName, defs);
+    
+    // 确保编辑模式样式
+    group.style.cursor = 'move';
+    group.classList.add('editable-shape');
+    if (selectedShape === group) {
+        group.classList.add('selected-shape');
+    }
+     window.applyMapTransform();
+    console.log(`✅ ${locationName} 重绘完成`);
+}
+
+function saveLocationData(locationName, geoUnit) {
+    // 构建完整的数据字符串
+    const dataStr = JSON.stringify({
+        parent: geoUnit.parent,
+        type: geoUnit.type || "区域",
+        effect: geoUnit.effect || "",
+        description: geoUnit.description || "",
+        shape: geoUnit.shape,
+        resources: geoUnit.resources || {},
+        other: geoUnit.other || {}
+    });
+    
+    // 更新 assaSettingsData
+    if (!window.assaSettingsData) window.assaSettingsData = [];
+    
+    // 查找是否已存在
+    const existingIndex = window.assaSettingsData.findIndex(item => 
+        item[0] === 'memory' && 
+        item[1] === 'map.主要地点表' && 
+        item[2] === locationName
+    );
+    
+    if (existingIndex !== -1) {
+        // 更新现有数据
+        window.assaSettingsData[existingIndex][3] = dataStr;
+    } else {
+        // 添加新数据
+        window.assaSettingsData.push(['memory', 'map.主要地点表', locationName, dataStr]);
+    }
+    
+    console.log(`💾 已保存 ${locationName} 的数据`);
+}
+
+function getLocationData(locationName, geoUnits) {
+    const unit = geoUnits.find(u => u.name === locationName);
+    return unit ? JSON.parse(JSON.stringify(unit.geoUnit)) : null;
+}
+ function showEditPanel(locationName, geoUnits) {
+    let panel = document.getElementById('map-edit-panel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'map-edit-panel';
+        panel.innerHTML = `
+            <h4>编辑: <span id="edit-location-name"></span></h4>
+            <div class="edit-section">
+                <label>缩放:</label>
+                <div class="scale-controls">
+                    <button id="scale-down-btn" class="scale-btn">-</button>
+                    <span id="scale-value">100%</span>
+                    <button id="scale-up-btn" class="scale-btn">+</button>
+                </div>
+            </div>
+            <div class="edit-controls">
+                
+                <button id="delete-shape-btn" class="edit-btn danger">🗑️ 删除</button>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        
+        // 绑定按钮事件
+  
+  
+        
+        document.getElementById('delete-shape-btn').onclick = () => {
+            if (confirm(`确定要删除 ${window.editingLocationName} 吗？`)) {
+                deleteLocation(window.editingLocationName);
+            }
+        };
+        
+        // ✨ 缩放按钮事件
+        document.getElementById('scale-up-btn').onclick = () => {
+            scaleSelectedShape(1.1);
+        };
+        
+        document.getElementById('scale-down-btn').onclick = () => {
+            scaleSelectedShape(0.9);
+        };
+    }
+    
+    // 保存当前编辑的位置名称和原始数据
+    window.editingLocationName = locationName;
+    window.originalLocationData = getLocationData(locationName, geoUnits);
+    window.currentEditGeoUnits = geoUnits;
+    
+    document.getElementById('edit-location-name').textContent = locationName;
+    document.getElementById('scale-value').textContent = '100%';
+    panel.style.display = 'block';
+}
+function scaleSelectedShape(scaleFactor) {
+    if (!selectedShape || !window.editingLocationName || !window.currentEditGeoUnits) return;
+    
+    const unit = window.currentEditGeoUnits.find(u => u.name === window.editingLocationName);
+    if (!unit) return;
+    
+    const form = getDrawableForm(unit.geoUnit.shape);
+    if (!form) return;
+    
+    // 计算图形的中心点
+    let centerX, centerY;
+    
+    if (form.form_type === 'primitive_circle') {
+        centerX = form.params.center[0];
+        centerY = form.params.center[1];
+        // 缩放半径
+        form.params.radius *= scaleFactor;
+    } else if (form.form_type === 'primitive_polygon') {
+        const points = Array.isArray(form.params) ? form.params : form.params.points;
+        
+        // 计算中心点
+        centerX = points.reduce((sum, p) => sum + p[0], 0) / points.length;
+        centerY = points.reduce((sum, p) => sum + p[1], 0) / points.length;
+        
+        // 相对中心点缩放每个顶点
+        points.forEach(p => {
+            p[0] = centerX + (p[0] - centerX) * scaleFactor;
+            p[1] = centerY + (p[1] - centerY) * scaleFactor;
+        });
+    }
+    
+    // 重绘图形
+    const svgNS = "http://www.w3.org/2000/svg";
+    const defs = selectedShape.ownerSVGElement.querySelector('defs');
+    
+    // 保存属性
+    const groupId = selectedShape.getAttribute('id');
+    const groupClass = selectedShape.getAttribute('class');
+    const isUpdated = selectedShape.classList.contains('updated-location');
+    
+    // 清空并重绘
+    while (selectedShape.firstChild) {
+        selectedShape.removeChild(selectedShape.firstChild);
+    }
+    
+    selectedShape.setAttribute('id', groupId);
+    selectedShape.setAttribute('class', groupClass);
+    if (isUpdated) {
+        selectedShape.classList.add('updated-location');
+    }
+    
+    const modifier = unit.geoUnit.shape ? unit.geoUnit.shape.modifier : null;
+    drawGeoUnit(form, modifier, selectedShape, svgNS, window.editingLocationName, defs);
+    
+    // 恢复编辑模式样式
+    selectedShape.style.cursor = 'move';
+    selectedShape.classList.add('editable-shape', 'selected-shape');
+    
+    // 更新显示的缩放值
+    if (!window.shapeScaleValue) window.shapeScaleValue = 1;
+    window.shapeScaleValue *= scaleFactor;
+    document.getElementById('scale-value').textContent = Math.round(window.shapeScaleValue * 100) + '%';
+    window.applyMapTransform();
+    console.log(`🔍 缩放 ${window.editingLocationName} 到 ${Math.round(window.shapeScaleValue * 100)}%`);
+}
+
+function restoreLocationData(locationName, originalData) {
+    if (!window.currentEditGeoUnits || !originalData) return;
+    
+    const unit = window.currentEditGeoUnits.find(u => u.name === locationName);
+    if (!unit) return;
+    
+    // ❤️ 深拷贝恢复原始数据
+    unit.geoUnit.shape = JSON.parse(JSON.stringify(originalData.shape));
+    
+    // 重绘图形
+    const group = document.getElementById(`shape-group-${locationName}`);
+    if (!group) return;
+    
+    const svgNS = "http://www.w3.org/2000/svg";
+    const defs = group.ownerSVGElement.querySelector('defs');
+    const form = getDrawableForm(unit.geoUnit.shape);
+    
+    // 保存属性
+    const groupId = group.getAttribute('id');
+    const groupClass = group.getAttribute('class');
+    const isUpdated = group.classList.contains('updated-location');
+    
+    while (group.firstChild) {
+        group.removeChild(group.firstChild);
+    }
+    
+    group.setAttribute('id', groupId);
+    group.setAttribute('class', groupClass);
+    if (isUpdated) {
+        group.classList.add('updated-location');
+    }
+    
+    const modifier = unit.geoUnit.shape ? unit.geoUnit.shape.modifier : null;
+    drawGeoUnit(form, modifier, group, svgNS, locationName, defs);
+    
+    console.log(`↩️ 已恢复 ${locationName} 的原始状态`);
+}
+function hideEditPanel() {
+    const panel = document.getElementById('map-edit-panel');
+    if (panel) panel.style.display = 'none';
+}
+
+function deleteLocation(locationName) {
+    // 从 assaSettingsData 中删除
+   
+        triggerassa(`/setinput <updateMemory>\ndelete('map.主要地点表',${locationName});\n<updateMemory>`);
+     
+    deselectShape();
+}
+
+  function showModal(modalId, title, description, extraData = {}) {
     const modal = document.getElementById(modalId);
     if (!modal) {
         console.error(`😭 妈妈找不到名为 '${modalId}' 的模态框，我的宝贝。`);
@@ -32478,7 +33394,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印！正在恢复世界设定...", uidsToEnable);
-   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79];
+   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73];
 
                    let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -32553,7 +33469,8 @@ const reconfigurableMods = [
     { name: '称号系统', uid: 51 }, 
     { name: '人外增强', uid: 37 }, 
     { name: '资源消耗', uid: 58 },
-    { name: '分阶段好感', uid: 65 }
+    { name: '分阶段好感', uid: 65 },
+    { name: '特殊日期', uid: 42 }
 ];
     function createModItems() {
         container.innerHTML = '';
@@ -32573,7 +33490,7 @@ const reconfigurableMods = [
             if (mod.name === '简单地图') checkbox.dataset.extraUid = '25,26';
             if (mod.name === '复杂地图') checkbox.dataset.extraUid = '25,26';
             if (mod.name === '分阶段好感') checkbox.dataset.extraUid = '64';
-
+if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             container.appendChild(item);
 
             item.addEventListener('click', (event) => {
@@ -32680,7 +33597,7 @@ container.querySelectorAll('.reconfig-mod-item input:checked').forEach(checkbox 
 
         } catch (error) {
             console.error("呜，应用新设置时出错了，抱抱我的孩子：", error);
-            feedbackMsg.textContent = "应用失败！是不是没有<世界书条目>呢？";
+            feedbackMsg.textContent = "应用失败！小铅笔里是不是没有<世界书条目>呢？";
             feedbackMsg.style.opacity = '1';
         } finally {
             applyBtn.disabled = false;
@@ -32720,6 +33637,7 @@ setupReconfigModal();
     if (savedTransparency === 'on') {
         document.body.classList.add('transparent-messages');
     }
+ 
 
     // 为开关添加点击事件
     transparentToggle.addEventListener('click', () => {
@@ -33262,33 +34180,7 @@ const closeTaskSummaryModal = () => {
     document.addEventListener('touchcancel', handleInteractionEnd);
 
     mapContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
-    // ========== ♥♥♥ 地图交互魔法结束 ♥♥♥ ==========
-
-
-//      const streamingSwitcher = document.getElementById('streaming-switcher');
-
-// // 初始化按钮状态
-// function updateStreamingButtonState() {
-//     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-//     streamingSwitcher.classList.toggle('active', isStreamingEnabled);
-//     streamingSwitcher.title = isStreamingEnabled ? '流式传输: 开' : '流式传输: 关';
-// }
-
-// // 切换流式传输状态
-// streamingSwitcher.addEventListener('click', () => {
-//     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-//     const newState = !isStreamingEnabled;
-//     localStorage.setItem('streamingEnabled', newState);
-//     updateStreamingButtonState();
-//     //console.log(`[Streaming] 流式传输已切换为: ${newState ? '开启' : '关闭'}`);
-// });
-// updateStreamingButtonState();
-
-        setTimeout(() => {
-        console.log("正在为您静默刷新数据...");
-        initDisplay();
-        
-    }, 5000);
+ 
 initGroupChatInterface();
 initializeReadingMode();
 
@@ -34262,7 +35154,8 @@ function renderNestedData(container, data, parentPath = '', rootTab = '', hideFa
         "effect": "属性",
         "type": "种类",
         "quality": "质量",
-        "num": "数量"
+        "num": "数量",
+        "status":"状态"
     };
 
     container.innerHTML = '';
