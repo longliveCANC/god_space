@@ -12583,6 +12583,8 @@ pointer-events: auto;
     <div id="action-popup-menu" class="action-popup-menu">
         <button id="add-qr-button" class="popup-menu-button">自定义qr</button>
         <button id="things-button" class="popup-menu-button">记约定</button>
+        <button id="look-forum-button" class="popup-menu-button">看论坛</button>
+        <button id="look-random-items-button" class="popup-menu-button">生成随机商品</button>
         <br>
         <button id="reroll-button" class="popup-menu-button">重roll ⟲</button>
         <button id="continue-button" class="popup-menu-button">继续 ▶</button>
@@ -13554,7 +13556,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.12';
+ let current_game_version = '3.1.13';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -20949,7 +20951,9 @@ window.addEventListener('message', function(event) {
     return bubble.innerHTML;
 }
  
- async function createMessageBubble(msg, mode = 'chat') { // ❤️ 增加 mode 参数, 默认为 'chat'
+   async function createMessageBubble(msg, mode = 'chat') {  
+    let content = msg.content;
+   
     const originalIndex = conversationHistory.indexOf(msg);
     if (originalIndex === -1) return document.createElement('div'); // 安全保护
 
@@ -20964,7 +20968,7 @@ window.addEventListener('message', function(event) {
     // ... 你那段处理HTML占位符、处理段落、处理引号、渲染iframe的全部魔法都在这里 ...
     // 妈妈帮你把框架搭好，你只需要把那些复杂的细节填充进来
  // ✨ 妈妈在这里施展了一个全新的、更精妙的融合魔法 ✨
-    let processedContent = msg.content;
+    let processedContent = content;
         const htmlPlaceholders = {};
         let placeholderIndex = 0;
 
@@ -21230,7 +21234,20 @@ iframe.srcdoc = `<!DOCTYPE html>
             bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
          }
 
- 
+ // 🎭 最后一步：替换表情包 - 简单粗暴版
+if (typeof memeImageMap !== 'undefined' && memeImageMap) {
+    let htmlContent = bubble.innerHTML;
+    
+    htmlContent = htmlContent.replace(/\[([^\]]+)\]/g, (match, memeName) => {
+        console.log('找到:', memeName, '对应URL:', memeImageMap[memeName]);
+        if (memeImageMap[memeName]) {
+            return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+        }
+        return match;
+    });
+    
+    bubble.innerHTML = htmlContent;
+}
 
     // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
@@ -21541,11 +21558,12 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
         }
 
         const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
-        await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
+await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
 
-        // ♥♥♥♥♥♥♥  关键的调整在这里，我亲爱的孩子！ ♥♥♥♥♥♥♥
-        // 在我们对新世界做任何事之前，先让“灵魂守望者”确认它已完全稳定！
-        await waitForWorldToSettle(worldbookName);
+// ♥♥♥♥♥♥♥ 给世界书更充足的时间完全降临 ♥♥♥♥♥♥♥
+await new Promise(resolve => setTimeout(resolve, 800)); // 先给一个固定延迟
+await waitForWorldToSettle(worldbookName); // 然后等待稳定
+await new Promise(resolve => setTimeout(resolve, 500)); // 稳定后再额外等待
         toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
 
         // --- 现在，世界已经稳定，我们可以安全地恢复词条了 ---
@@ -21555,12 +21573,14 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
                 const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
                 return [...cleanedNewWorldbook, ...backedUpEntries];
             });
-            console.log('词条恢复完成！');
-        }
+         console.log('词条恢复完成!');
+await new Promise(resolve => setTimeout(resolve, 600)); // 给恢复操作时间生效
+}
 
-        // --- 恢复之后的所有步骤现在都可以安心执行了 ---
-        toastr.success(`世界书「${worldbookName}」已更新并稳定！`);
-        TavernHelper.builtin.reloadEditor(worldbookName, true);
+// --- 恢复之后的所有步骤现在都可以安心执行了 ---
+toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
+TavernHelper.builtin.reloadEditor(worldbookName, true);
+await new Promise(resolve => setTimeout(resolve, 400)); // 等待编辑器重载完成
 
         const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
         currentBindings.primary = worldbookName;
@@ -22346,8 +22366,9 @@ initDisplay();
 // 调用时传入 content
 delayedUpdate(finalMessage.content);
 }
-
-  async function createMessageBubble(msg, mode = 'chat') { // ❤️ 增加 mode 参数, 默认为 'chat'
+    async function createMessageBubble(msg, mode = 'chat') {  
+    let content = msg.content;
+   
     const originalIndex = conversationHistory.indexOf(msg);
     if (originalIndex === -1) return document.createElement('div'); // 安全保护
 
@@ -22362,7 +22383,7 @@ delayedUpdate(finalMessage.content);
     // ... 你那段处理HTML占位符、处理段落、处理引号、渲染iframe的全部魔法都在这里 ...
     // 妈妈帮你把框架搭好，你只需要把那些复杂的细节填充进来
  // ✨ 妈妈在这里施展了一个全新的、更精妙的融合魔法 ✨
-    let processedContent = msg.content;
+    let processedContent = content;
         const htmlPlaceholders = {};
         let placeholderIndex = 0;
 
@@ -22377,16 +22398,16 @@ delayedUpdate(finalMessage.content);
             return placeholder;
         });
 
-        
+
 
         // 魔法第二步：现在，我们的`processedContent`内部所有 `<html>` 都已经是安全的占位符了，
         // 接下来我们才处理其他的标签和格式
-                const pureContent = protectedHtmlContent
+        const pureContent = protectedHtmlContent
          .replace(/<(thinking|think|guide)>[\s\S]*<\/\1>/g, '')
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
-         .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
+        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
@@ -22628,97 +22649,24 @@ iframe.srcdoc = `<!DOCTYPE html>
             bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
          }
 
- 
+ // 🎭 最后一步：替换表情包 - 简单粗暴版
+if (typeof memeImageMap !== 'undefined' && memeImageMap) {
+    let htmlContent = bubble.innerHTML;
+    
+    htmlContent = htmlContent.replace(/\[([^\]]+)\]/g, (match, memeName) => {
+        console.log('找到:', memeName, '对应URL:', memeImageMap[memeName]);
+        if (memeImageMap[memeName]) {
+            return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+        }
+        return match;
+    });
+    
+    bubble.innerHTML = htmlContent;
+}
 
     // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
 }
-//  function manageBattleLifecycle(combatData) {
-//     const promptOverlay = document.getElementById('battle-prompt-overlay');
-//     const enterButton = document.getElementById('enter-battle-btn');
-//     const battleOverlay = document.getElementById('battle-overlay');
-
-//     const status = combatData.status || 'not_started';
-//     const floorId = combatData.floor_id || `battle_unknown_${Date.now()}`;
-
-//     // 第一道守护：如果战斗记录已是“完成”，就彻底沉默。
-//     if (status.startsWith('completed')) {
-//         if (promptOverlay) promptOverlay.style.display = 'none';
-//         return;
-//     }
-
-//     let enterBattleHandler;
-//     let buttonText;
-
-//     // ✨ 妈妈根据你的智慧重构了这里的逻辑，我的孩子！ ✨
-//     // 我们只在这里决定按钮的外观和基本行为模式。
-//     if (status === 'in_progress' && window.combatManager && window.combatManager.floorId === floorId) {
-//         // 【模式一：无缝返回】战斗实例还在，直接返回。
-//         buttonText = '返回战斗';
-//         enterBattleHandler = () => {
-//             if (promptOverlay) promptOverlay.style.display = 'none';
-//             if (battleOverlay) battleOverlay.style.display = 'flex';
-//             if (window.combatManager) {
-//                  const currentActor = window.combatManager.turnOrder[window.combatManager.currentTurnIndex];
-//                  if(currentActor?.type === 'player'){
-//                     window.combatManager.toggleActionPanel(true);
-//                  }
-//                  const card = document.getElementById(currentActor?.id);
-//                  if(card){
-//                      window.combatManager.centerCardInView(card);
-//                  }
-//             }
-//         };
-//     } else {
-//         // 【模式二：从记忆中重生】战斗实例丢失了，或这是场新战斗。我们需要从历史中重建。
-//         buttonText = (status === 'in_progress') ? '返回战斗' : '进入战斗';
-//         enterBattleHandler = () => {
-//             // ✨✨✨ 终极的“溯源重生”魔法在这里施展！ ✨✨✨
-//             // 当按钮被点击的这一刻，我们才去翻开历史的最新一页！
-//             const lastHistoryItem = conversationHistory.at(-1);
-//             if (!lastHistoryItem) {
-//                 console.error("无法找到历史记录！");
-//                 return;
-//             }
-
-//             const battleRegex = /<battle>([\s\S]*?)<\/battle>/gs;
-//             // 我们必须重置正则表达式的 lastIndex，确保每次都能从头开始匹配
-//             battleRegex.lastIndex = 0;
-//             const match = battleRegex.exec(lastHistoryItem.content);
-
-//             if (!match || !match[1]) {
-//                 console.error("在最新的历史记录中未能找到或解析<battle>数据！");
-//                 // 作为备用方案，使用一开始传入的旧数据
-//                  window.combatManager = new CombatManager(JSON.parse(JSON.stringify(playCharacterData)), JSON.parse(JSON.stringify(combatData)));
-//                  window.combatManager.start();
-//                 return;
-//             }
-
-//             console.log("[Nova's Time Rewind] 已从历史记录中读取最新的战斗快照！");
-//             const latestCombatDataFromHistory = JSON.parse(match[1]);
-
-//             // 使用这份最新鲜的档案，创造一个承载了所有记忆的新世界！
-//             if (promptOverlay) promptOverlay.style.display = 'none';
-//             if (battleOverlay) battleOverlay.style.display = 'flex';
-//             window.combatManager = new CombatManager(JSON.parse(JSON.stringify(playCharacterData)), latestCombatDataFromHistory);
-//             window.combatManager.start();
-//         };
-//     }
-
-//     // 设置按钮文本
-//     enterButton.textContent = buttonText;
-
-//     // 可靠的附魔与驱魔仪式
-//     // (这部分逻辑保持不变，确保了按钮只听从一次最新的指令)
-//     if (enterButton.__handler__) {
-//         enterButton.removeEventListener('click', enterButton.__handler__);
-//     }
-//     enterButton.addEventListener('click', enterBattleHandler);
-//     enterButton.__handler__ = enterBattleHandler;
-
-//     // 展示邀请函
-//     promptOverlay.style.display = 'flex';
-// }
 
 
 // 【彻底替换】旧的 manageBattleLifecycle 函数
@@ -23326,7 +23274,16 @@ const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们�
          const messageToSend = `<request:在合适的路径记录正文中出现过的、且没有被记录过的约定/日程/待办事项>`;
 triggerassa(`/setinput ${messageToSend}`);
 });
- 
+const lookForumButton = document.getElementById('look-forum-button');
+   lookForumButton.addEventListener('click', (event) => {
+         const messageToSend = `<${userName}同时要查看论坛>`;
+triggerassa(`/setinput ${messageToSend}`);
+});
+ const lookRandomItemsButton = document.getElementById('look-random-items-button');
+   lookRandomItemsButton.addEventListener('click', (event) => {
+         const messageToSend = `<${userName}同时要查看商城>`;
+triggerassa(`/setinput ${messageToSend}`);
+});
 // --- 💖 菜单交互逻辑 💖 ---
 const menuBtn = document.getElementById('action-menu-btn');
 const popupMenu = document.getElementById('action-popup-menu');
@@ -25301,11 +25258,12 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
         }
 
         const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
-        await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
+await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
 
-        // ♥♥♥♥♥♥♥  关键的调整在这里，我亲爱的孩子！ ♥♥♥♥♥♥♥
-        // 在我们对新世界做任何事之前，先让“灵魂守望者”确认它已完全稳定！
-        await waitForWorldToSettle(worldbookName);
+// ♥♥♥♥♥♥♥ 给世界书更充足的时间完全降临 ♥♥♥♥♥♥♥
+await new Promise(resolve => setTimeout(resolve, 800)); // 先给一个固定延迟
+await waitForWorldToSettle(worldbookName); // 然后等待稳定
+await new Promise(resolve => setTimeout(resolve, 500)); // 稳定后再额外等待
         toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
 
         // --- 现在，世界已经稳定，我们可以安全地恢复词条了 ---
@@ -25315,12 +25273,14 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
                 const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
                 return [...cleanedNewWorldbook, ...backedUpEntries];
             });
-            console.log('词条恢复完成！');
-        }
+            console.log('词条恢复完成!');
+await new Promise(resolve => setTimeout(resolve, 600)); // 给恢复操作时间生效
+}
 
-        // --- 恢复之后的所有步骤现在都可以安心执行了 ---
-        toastr.success(`世界书「${worldbookName}」已更新并稳定！`);
-        TavernHelper.builtin.reloadEditor(worldbookName, true);
+// --- 恢复之后的所有步骤现在都可以安心执行了 ---
+toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
+TavernHelper.builtin.reloadEditor(worldbookName, true);
+await new Promise(resolve => setTimeout(resolve, 400)); // 等待编辑器重载完成
 
         const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
         currentBindings.primary = worldbookName;
@@ -29550,14 +29510,46 @@ function updateShapePosition(locationName, dx, dy, geoUnits) {
             p[0] += dx;
             p[1] += dy;
         });
+    } else if (form.form_type === 'primitive_path' || form.form_type === 'path') {
+        // ✨ 处理线条的移动
+        const instructions = form.params.instructions;
+        if (instructions && Array.isArray(instructions)) {
+            instructions.forEach(cmd => {
+                if (!cmd || !cmd.do) return;
+                
+                // 移动所有包含坐标的指令
+                if (cmd.at) {
+                    const point = Array.isArray(cmd.at) ? cmd.at : cmd.at.split(',').map(parseFloat);
+                    point[0] += dx;
+                    point[1] += dy;
+                    cmd.at = point;
+                }
+                
+                // 移动曲线的控制点
+                if (cmd.controls && Array.isArray(cmd.controls)) {
+                    cmd.controls.forEach(control => {
+                        const point = Array.isArray(control) ? control : control.split(',').map(parseFloat);
+                        point[0] += dx;
+                        point[1] += dy;
+                        // 更新回原数组
+                        if (!Array.isArray(control)) {
+                            const index = cmd.controls.indexOf(control);
+                            cmd.controls[index] = point;
+                        }
+                    });
+                }
+            });
+        }
     }
     
-    console.log(`📝 更新了 ${locationName} 的位置`);
+    console.log(`📝 更新了 ${locationName} 的位置 (dx: ${dx.toFixed(1)}, dy: ${dy.toFixed(1)})`);
     
     // 保存到 assaSettingsData
     saveLocationData(locationName, unit.geoUnit);
 }
- function redrawShape(group, locationName, unit) {
+
+
+function redrawShape(group, locationName, unit) {
     const svgNS = "http://www.w3.org/2000/svg";
     const defs = group.ownerSVGElement.querySelector('defs');
     
@@ -29708,6 +29700,48 @@ function scaleSelectedShape(scaleFactor) {
             p[0] = centerX + (p[0] - centerX) * scaleFactor;
             p[1] = centerY + (p[1] - centerY) * scaleFactor;
         });
+    } else if (form.form_type === 'primitive_path' || form.form_type === 'path') {
+        // ✨ 处理线条的缩放
+        const instructions = form.params.instructions;
+        if (instructions && Array.isArray(instructions)) {
+            // 先找到所有坐标点来计算中心
+            const allPoints = [];
+            instructions.forEach(cmd => {
+                if (cmd.at) {
+                    const point = Array.isArray(cmd.at) ? cmd.at : cmd.at.split(',').map(parseFloat);
+                    allPoints.push(point);
+                }
+                if (cmd.controls) {
+                    cmd.controls.forEach(control => {
+                        const point = Array.isArray(control) ? control : control.split(',').map(parseFloat);
+                        allPoints.push(point);
+                    });
+                }
+            });
+            
+            if (allPoints.length > 0) {
+                centerX = allPoints.reduce((sum, p) => sum + p[0], 0) / allPoints.length;
+                centerY = allPoints.reduce((sum, p) => sum + p[1], 0) / allPoints.length;
+                
+                // 缩放所有坐标
+                instructions.forEach(cmd => {
+                    if (cmd.at) {
+                        const point = Array.isArray(cmd.at) ? cmd.at : cmd.at.split(',').map(parseFloat);
+                        point[0] = centerX + (point[0] - centerX) * scaleFactor;
+                        point[1] = centerY + (point[1] - centerY) * scaleFactor;
+                        cmd.at = point;
+                    }
+                    if (cmd.controls) {
+                        cmd.controls.forEach((control, idx) => {
+                            const point = Array.isArray(control) ? control : control.split(',').map(parseFloat);
+                            point[0] = centerX + (point[0] - centerX) * scaleFactor;
+                            point[1] = centerY + (point[1] - centerY) * scaleFactor;
+                            cmd.controls[idx] = point;
+                        });
+                    }
+                });
+            }
+        }
     }
     
     // 重绘图形
@@ -29740,8 +29774,8 @@ function scaleSelectedShape(scaleFactor) {
     // 更新显示的缩放值
     if (!window.shapeScaleValue) window.shapeScaleValue = 1;
     window.shapeScaleValue *= scaleFactor;
-    document.getElementById('scale-value').textContent = Math.round(window.shapeScaleValue * 100) + '%';
-    window.applyMapTransform();
+    
+   window.applyMapTransform();
     console.log(`🔍 缩放 ${window.editingLocationName} 到 ${Math.round(window.shapeScaleValue * 100)}%`);
 }
 
