@@ -21824,8 +21824,9 @@ function showBackupConfirmation() {
 
             try {
                 await Promise.all([
-                    performRegexUpdate(),
-                    performWorldbookUpdate()
+                    performWorldbookUpdate(),
+                    performRegexUpdate()
+                    
                 ]);
                 showNovaAlert("世界已彻底重塑！法则与记忆均已更新！", "success", 4000);
             } catch (error) {
@@ -25457,7 +25458,7 @@ async function performRegexUpdate() {
 
 /* existing code after the function */
 
-function showBackupConfirmation() {
+ function showBackupConfirmation() {
     // 如果这个确认弹窗还不存在，我们就创造它
     if (!document.getElementById('backup-confirmation-modal')) {
         const confirmationModalHTML = `
@@ -25467,8 +25468,8 @@ function showBackupConfirmation() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                    <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
-                 </div>
+ <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
+                </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
                     <button id="confirm-final-update-btn" class="control-btn">我已备份，开始更新</button>
@@ -25492,8 +25493,9 @@ function showBackupConfirmation() {
 
             try {
                 await Promise.all([
-                    performRegexUpdate(),
-                    performWorldbookUpdate()
+                    performWorldbookUpdate(),
+                    performRegexUpdate()
+                    
                 ]);
                 showNovaAlert("世界已彻底重塑！法则与记忆均已更新！", "success", 4000);
             } catch (error) {
@@ -25506,7 +25508,7 @@ function showBackupConfirmation() {
     // 显示这个确认弹窗
     showModal('backup-confirmation-modal');
 }
- 
+
 const settingsBtn = document.getElementById('settings-btn');
 const settingsinitBtn = document.getElementById('settings-btn-init');
 const settingsModal = document.getElementById('settings-modal');
