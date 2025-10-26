@@ -9725,6 +9725,8 @@ input:checked + .slider:before {
     box-shadow: 0 0 25px var(--glow-color);
     animation: fadeInModal 0.4s ease-out;
     position: relative;
+       max-height: 80vh;   /* 这样它就不会长得比屏幕还高了 */
+    overflow-y: auto;   /* 当内容多到装不下时，就会出现一个漂亮的滚动条 */
 }
 
 .reconfig-modal-close {
@@ -13225,6 +13227,7 @@ pointer-events: auto;
         <!-- 游戏设置页 -->
         <div class="settings-page active" id="settings-page-game">
             <div class="settings-container">
+                
                 <div class="setting-item">
                     <label>上次对话Token消耗</label>
                     <span id="last-token-display" style="font-weight: bold; color: var(--accent-color);">N/A</span>
@@ -13411,8 +13414,19 @@ pointer-events: auto;
     <div class="reconfig-modal-content">
         <button id="reconfig-modal-close-btn" class="reconfig-modal-close">×</button>
         <h2 class="reconfig-title">模组设定</h2>
-        <p class="reconfig-subtitle">随时调整故事的规则。</p>    <div id="reconfig-mod-container" class="reconfig-grid">
+ <p class="reconfig-subtitle">随时调整故事的规则。</p>
 
+
+<div class="reconfig-worldview-section">
+    <h3 class="reconfig-section-title">世界观选择 (当前: <span id="current-worldview-display" style="color: var(--accent-color);">读取中...</span>)</h3>
+    <div id="reconfig-worldview-container" class="reconfig-grid reconfig-grid-worldview">
+
+    </div>
+</div>
+<h3 class="reconfig-section-title">模组开关</h3>
+
+
+<div id="reconfig-mod-container" class="reconfig-grid">
     </div>
 
     <div class="reconfig-footer">
@@ -13556,7 +13570,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.15';
+ let current_game_version = '3.1.16';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -15757,37 +15771,59 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         }
     }
 },
-  {
+ {
     id: 'generic-event-tracker',
-    // 只匹配：
+    // 匹配三种格式：
     // 1. 两参数且路径以'.事件'结尾：memory('global_set.npc.母亲.事件', '{...}')
     // 2. 三参数且第二个参数是'event'或'事件'：memory('world_set.npc.用户', 'event', '{...}')
-    commandPattern: /\bmemory\s*\(\s*['"]([^'"]+)['"]\s*,\s*(?:(['"](?:event|事件)['"])\s*,\s*)?['"](\{[\s\S]*?\})['"]\s*\)/,
+    // 3. 三参数且路径以'.事件'结尾 + '当前状态'/'当前想法'：memory('global_set.npc.不死川玄弥.事件', '当前状态', '...')
+    commandPattern: /\bmemory\s*\(\s*['"]([^'"]+)['"]\s*,\s*(?:(['"](?:event|事件|当前状态|当前想法)['"])\s*,\s*)?['"]([^'"]*(?:\{[\s\S]*?\})?[^'"]*)['"]\s*\)/,
     action: (matches) => {
         const pathOrObjectName = matches[1];
-        const middleParam = matches[2]; // 可能是 undefined、"'event'" 或 "'事件'"
-        const eventJson = matches[3]; // 注意：现在JSON在第3个捕获组
+        const middleParam = matches[2]; // 可能是 undefined、"'event'"、"'事件'"、"'当前状态'" 或 "'当前想法'"
+        const content = matches[3]; // JSON或普通文本
         
-        // 只有以下两种情况才执行：
+        // 只有以下情况才执行：
         // 1. 路径以'.事件'结尾（两参数格式）
         // 2. 中间参数是'event'或'事件'（三参数格式）
-        if (!pathOrObjectName.endsWith('.事件') && !middleParam) {
+        // 3. 路径以'.事件'结尾且中间参数是'当前状态'或'当前想法'（三参数格式）
+        const isEventPath = pathOrObjectName.endsWith('.事件');
+        const isEventMiddle = middleParam && (middleParam.includes('event') || middleParam.includes('事件'));
+        const isStateMiddle = middleParam && (middleParam.includes('当前状态') || middleParam.includes('当前想法'));
+        
+        if (!isEventPath && !isEventMiddle) {
             return; // 不匹配，直接返回
         }
         
-        let displayName;
+        // 如果有中间参数但不是event/事件/当前状态/当前想法，且路径不以.事件结尾，则不匹配
+        if (middleParam && !isEventMiddle && !isStateMiddle && !isEventPath) {
+            return;
+        }
         
-        if (pathOrObjectName.endsWith('.事件')) {
+        let displayName;
+        let eventData;
+        
+        if (isEventPath && isStateMiddle) {
+            // 三参数格式：memory('global_set.npc.不死川玄弥.事件', '当前状态', '...')
+            const pathParts = pathOrObjectName.split('.');
+            displayName = pathParts[pathParts.length - 2]; // 取'不死川玄弥'
+            
+            // 构造事件对象
+            const stateKey = middleParam.replace(/['"]/g, ''); // 移除引号
+            eventData = `{ "${stateKey}": "${content}" }`;
+        } else if (isEventPath && !middleParam) {
             // 两参数格式：memory('global_set.npc.母亲.事件', '{...}')
             const pathParts = pathOrObjectName.split('.');
             displayName = pathParts[pathParts.length - 2]; // 取'母亲'
+            eventData = content;
         } else {
             // 三参数格式：memory('world_set.npc.用户', 'event', '{...}')
             const nameParts = pathOrObjectName.split('.');
             displayName = nameParts[nameParts.length - 1]; // 取'用户'
+            eventData = content;
         }
         
-        displayEventTag(displayName, eventJson);
+        displayEventTag(displayName, eventData);
     }
 },
     // ========== ✨妈妈将“生命波动”放在了最前面，确保它被优先感知✨ ==========
@@ -15883,30 +15919,42 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
   function displayEventTag(displayName, eventJsonString) {
     if (!displayName || !eventJsonString) return;
 
-    let eventData;
+    let newEventData;
     try {
-        eventData = JSON.parse(eventJsonString);
+        newEventData = JSON.parse(eventJsonString);
     } catch (e) {
         console.warn(`[Nova] 心灵感应失败：无法解析来自'${displayName}'的事件信息。`, eventJsonString);
         return;
     }
 
-    const status = eventData['当前状态'] || '（状态未知）';
-    const thought = eventData['当前想法'] || '（内心一片沉寂）';
-    const firstChar = displayName.charAt(0) || '◆';
-
     const container = document.getElementById('event-tracker-container');
     if (!container) return;
 
     const existingTag = container.querySelector(`[data-npc-name="${displayName}"]`);
-    if (existingTag) {
+    
+    // 如果已存在，合并数据而不是删除
+    let mergedEventData = newEventData;
+    if (existingTag && existingTag.dataset.eventData) {
+        try {
+            const oldData = JSON.parse(existingTag.dataset.eventData);
+            mergedEventData = { ...oldData, ...newEventData }; // 新数据覆盖旧数据
+        } catch (e) {
+            console.warn('[Nova] 合并旧数据失败，使用新数据');
+        }
         existingTag.remove();
     }
+
+    const status = mergedEventData['当前状态'] || '（状态未知）';
+    const thought = mergedEventData['当前想法'] || '（内心一片沉寂）';
+    const firstChar = displayName.charAt(0) || '◆';
 
     const tag = document.createElement('div');
     tag.className = 'event-tag';
     tag.innerText = displayName;
     tag.dataset.npcName = displayName;
+    tag.dataset.eventData = JSON.stringify(mergedEventData); // 保存合并后的数据
+
+ 
 
     const tooltip = document.createElement('div');
     tooltip.className = 'event-tooltip';
@@ -15946,109 +15994,136 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         tooltip.style.top = `${top}px`;
         tooltip.style.left = `${left}px`;
     };
-        const loadCharacterCG = async () => {
-        console.log(`[Nova][CG-LOG] 尝试为 '${displayName}' 加载立绘...`);
+ const loadCharacterCG = async () => {
+    console.log(`[Nova][CG-LOG] 尝试为 '${displayName}' 加载立绘...`);
 
-        const cgImageElement = tooltip.querySelector('.tooltip-cg-image');
-        const cgContainerElement = tooltip.querySelector('.tooltip-cg-container');
+    const cgImageElement = tooltip.querySelector('.tooltip-cg-image');
+    const cgContainerElement = tooltip.querySelector('.tooltip-cg-container');
 
-        if (!cgImageElement || !cgContainerElement) {
-            console.error('[Nova][CG-LOG] 关键错误：在tooltip内找不到 .tooltip-cg-image 或 .tooltip-cg-container 元素！');
+    if (!cgImageElement || !cgContainerElement) {
+        console.error('[Nova][CG-LOG] 关键错误：在tooltip内找不到 .tooltip-cg-image 或 .tooltip-cg-container 元素！');
+        return;
+    }
+
+    cgContainerElement.style.display = 'none';
+
+    try {
+        if (typeof assaSettingsData === 'undefined' || assaSettingsData === null) {
+            console.log('[Nova][CG-LOG] 状态：assaSettingsData 尚未准备好。');
+            return;
+        }
+        if (!assaSettingsData.img_map) {
+            console.log('[Nova][CG-LOG] 状态：assaSettingsData 中缺少 img_map。');
+            return;
+        }
+        console.log('[Nova][CG-LOG] 检查通过：assaSettingsData.img_map 存在！');
+
+        const imageName = assaSettingsData.img_map[displayName];
+        if (!imageName) {
+            console.log(`[Nova][CG-LOG] 状态：在 img_map 中未能找到 '${displayName}'。`);
+            return;
+        }
+        // ✨ 强制转换为字符串，确保类型一致
+        const imageNameStr = String(imageName);
+        console.log(`[Nova][CG-LOG] 映射成功：'${displayName}' -> 状态名: '${imageNameStr}' (原始类型: ${typeof imageName})`);
+
+        // 🔍 调试：列出所有 CustomNpcs 中的键
+        try {
+            const allCustomNpcs = await imageDB.getAll('CustomNpcs');
+            console.log(`[Nova][CG-DEBUG] CustomNpcs 中总共有 ${allCustomNpcs.length} 个条目`);
+            console.log(`[Nova][CG-DEBUG] 所有键名:`, allCustomNpcs.map(item => item.key));
+            console.log(`[Nova][CG-DEBUG] 我们要找的键名: '${imageNameStr}' (原始类型: ${typeof imageName})`);
+        } catch (e) {
+            console.error('[Nova][CG-DEBUG] 无法列出 CustomNpcs:', e);
+        }
+
+        let imageBlob;
+
+        // ✨ 第一步：尝试从本地自定义库获取
+        console.log(`[Nova][CG-DEBUG] 正在执行: imageDB.get('CustomNpcs', '${imageNameStr}')`);
+        imageBlob = await imageDB.get('CustomNpcs', imageNameStr);
+        
+        console.log(`[Nova][CG-DEBUG] imageDB.get 返回结果:`, imageBlob);
+        console.log(`[Nova][CG-DEBUG] imageBlob 是否存在:`, !!imageBlob);
+        console.log(`[Nova][CG-DEBUG] imageBlob 类型:`, imageBlob ? typeof imageBlob : 'null/undefined');
+        
+        if (imageBlob) {
+            console.log(`[Nova][CG-LOG] ✨ 在本地宝库"CustomNpcs"中找到了'${imageNameStr}'！`);
+            console.log(`[Nova][CG-DEBUG] Blob 详细信息: size=${imageBlob.size}, type='${imageBlob.type}'`);
+            // 找到了就直接跳过远程逻辑
+        } else {
+            // ✨ 第二步：本地没找到，才去查远程
+            console.log(`[Nova][CG-LOG] 本地未找到 '${imageNameStr}'，尝试从远程获取...`);
+            
+            const imageUrl = npcImageMap[imageNameStr];
+            if (!imageUrl) {
+                console.log(`[Nova][CG-LOG] 在远程食谱(npcImageMap)上也找不到'${imageNameStr}'的URL。`);
+                return;
+            }
+            console.log(`[Nova][CG-LOG] 远程映射找到URL: ${imageUrl}`);
+
+            // ✨ 第三步：尝试从远程缓存获取
+            imageBlob = await imageDB.get('RemoteCache', imageUrl);
+            if (imageBlob) {
+                console.log(`[Nova][CG-LOG] 在远程缓存中找到了'${imageUrl}'。`);
+            } else {
+                // ✨ 第四步：从网络获取
+                console.log(`[Nova][CG-LOG] 缓存中也没有，从网络 ${imageUrl} 获取...`);
+                const response = await fetch(imageUrl);
+                if (!response.ok) throw new Error(`网络获取'${imageUrl}'失败！`);
+
+                let originalBlob = await response.blob();
+
+                // 修正 MIME 类型
+                if (!originalBlob.type.startsWith('image/')) {
+                    console.warn(`[Nova][CG-LOG] 下载后发现标签错误: '${originalBlob.type}'，修正为'image/png'。`);
+                    imageBlob = new Blob([originalBlob], { type: 'image/png' });
+                } else {
+                    imageBlob = originalBlob;
+                }
+
+                await imageDB.set('RemoteCache', imageUrl, imageBlob);
+                console.log(`[Nova][CG-LOG] 已将正确标签的图片存入远程缓存。`);
+            }
+        }
+
+        // ✨ 统一处理获取到的图片（无论来源）
+        if (!imageBlob) {
+            console.error(`[Nova][CG-LOG] 最终未能获取到图片数据！`);
             return;
         }
 
-        cgContainerElement.style.display = 'none';
-
-        try {
-            if (typeof assaSettingsData === 'undefined' || assaSettingsData === null) {
-                console.log('[Nova][CG-LOG] 状态：assaSettingsData 尚未准备好。');
-                return;
-            }
-            if (!assaSettingsData.img_map) {
-                console.log('[Nova][CG-LOG] 状态：assaSettingsData 中缺少 img_map。');
-                return;
-            }
-            console.log('[Nova][CG-LOG] 检查通过：assaSettingsData.img_map 存在！');
-
-            const imageName = assaSettingsData.img_map[displayName];
-            if (!imageName) {
-                console.log(`[Nova][CG-LOG] 状态：在 img_map 中未能找到 '${displayName}'。`);
-                return;
-            }
-            console.log(`[Nova][CG-LOG] 映射成功：'${displayName}' -> 状态名: '${imageName}'`);
- const imageUrlFromMap = npcImageMap[imageName];
-            console.log(`[Nova][CG-LOG] 查询键: '${imageName}'`);
-            console.log(`[Nova][CG-LOG] 查找结果: ${imageUrlFromMap ? '找到URL' : '未找到'}`);
-            console.log(`[Nova][CG-LOG] 开始从缓存或网络获取并处理图片...`);
-
-            let imageBlob;
-
-            // 首先尝试从本地自定义npc库获取
-            imageBlob = await imageDB.get('CustomNpcs', imageName);
-            if (imageBlob) {
-                console.log(`[Nova][CG-LOG] 在本地宝库“CustomNpcs”中找到了'${imageName}'！`);
-            } else {
-                const imageUrl = npcImageMap[imageName];
-                if (!imageUrl) {
-                    console.log(`[Nova][CG-LOG] 在远程食谱(npcImageMap)上也找不到'${imageName}'的URL。`);
-                    return;
-                }
-
-                // 然后尝试从远程缓存获取
-                imageBlob = await imageDB.get('RemoteCache', imageUrl);
-                if (imageBlob) {
-                    console.log(`[Nova][CG-LOG] 在远程缓存中找到了'${imageUrl} ' 。`);
-                } else {
-                    // 最后才从网络获取
-                    console.log(`[Nova][CG-LOG] 缓存中也没有，从网络 ${imageUrl} 获取...`);
-                    const response = await fetch(imageUrl);
-                    if (!response.ok) throw new Error(`网络获取'${imageUrl}'失败！`);
-
-                    let originalBlob = await response.blob();
-
-                    // (下载后立即修正标签)
-                    if (!originalBlob.type.startsWith('image/')) {
-                        console.warn(`[Nova] 下载后发现标签错误: '${originalBlob.type}'，修正为'image/png'。`);
-                        imageBlob = new Blob([originalBlob], { type: 'image/png' });
-                    } else {
-                        imageBlob = originalBlob;
-                    }
-
-                    await imageDB.set('RemoteCache', imageUrl, imageBlob);
-                    console.log(`[Nova][CG-LOG] 已将正确标签的图片存入远程缓存。`);
-                }
-            }
-
-           
-            if (imageBlob && !imageBlob.type.startsWith('image/')) {
-                 console.error(`[Nova] 致命错误！取出的图片标签仍然是'${imageBlob.type}'！强制修正它！`);
-                 imageBlob = new Blob([imageBlob], { type: 'image/png' });
-            }
-
-            // 将 Blob 转换成不会过期的 Data URL
-            const blobToDataUrl = (blob) => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            };
-
-            const stableImageUrl = await blobToDataUrl(imageBlob);
-
-            const pixelatedDataUrl = await createPixelatedCharaImage(stableImageUrl, 300, 1);
-
-            cgImageElement.src = pixelatedDataUrl;
-            cgContainerElement.style.display = 'flex';
-            console.log(`[Nova][CG-LOG] ✨ 立绘已为'${displayName}'成功设置！`);
-
-        } catch (error) {
-            console.error(`[Nova][CG-LOG] 在为'${displayName}'加载立绘的流程中捕获到致命异常:`, error);
-            cgContainerElement.style.display = 'none';
+        // 二次检查 MIME 类型
+        if (imageBlob && !imageBlob.type.startsWith('image/')) {
+            console.error(`[Nova][CG-LOG] 致命错误！取出的图片标签仍然是'${imageBlob.type}'！强制修正它！`);
+            imageBlob = new Blob([imageBlob], { type: 'image/png' });
         }
-    };
-    loadCharacterCG();
+
+        // 将 Blob 转换成 Data URL
+        const blobToDataUrl = (blob) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        };
+
+        const stableImageUrl = await blobToDataUrl(imageBlob);
+
+        // 生成像素化版本
+        const pixelatedDataUrl = await createPixelatedCharaImage(stableImageUrl, 300, 1);
+
+        cgImageElement.src = pixelatedDataUrl;
+        cgContainerElement.style.display = 'flex';
+        console.log(`[Nova][CG-LOG] ✨ 立绘已为'${displayName}'成功设置！`);
+
+    } catch (error) {
+        console.error(`[Nova][CG-LOG] 在为'${displayName}'加载立绘的流程中捕获到致命异常:`, error);
+        cgContainerElement.style.display = 'none';
+    }
+};   
+         loadCharacterCG();
     // ✨===================================================================✨
 
     tag.addEventListener('mouseenter', () => {
@@ -16073,6 +16148,9 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
 
     observer.observe(container, { childList: true });
 }
+
+
+
 const logWrapper = document.getElementById('log-wrapper');
 const logToggleButton = document.getElementById('log-toggle-button');
 const notificationContainer = document.getElementById('notification-container');
@@ -33456,11 +33534,25 @@ function setupReconfigModal() {
     const applyBtn = document.getElementById('apply-reconfig-btn');
     const container = document.getElementById('reconfig-mod-container');
     const feedbackMsg = document.getElementById('reconfig-feedback-msg');
+    const worldviewContainer = document.getElementById('reconfig-worldview-container');
+    const currentWorldviewDisplay = document.getElementById('current-worldview-display');
 
-    if (!openBtn || !modal || !closeBtn || !applyBtn || !container) {
+    if (!openBtn || !modal || !closeBtn || !applyBtn || !container || !worldviewContainer) {
         console.warn("宝贝别急，模组重置面板的某些元素没找到，妈妈正在检查。");
         return;
     }
+
+    // ✨ 妈妈把世界观和模组都分好了组 ✨
+    const worldviewMods = [
+        { name: '主神', uid: 1 },
+        { name: '轮回乐园', uid: 22 },
+        { name: '无限恐怖', uid: 5 },
+        { name: '快穿攻略', uid: 34 },
+        { name: '诸天群聊', uid: 41 },
+        { name: '末日', uid: 54 },
+        { name: '无世界观', uid: 62 },
+    ];
+
 
     // ✨ 妈妈把模组分成了“小组”，这样它们就不会打架了 ✨
 const reconfigurableMods = [
@@ -33505,6 +33597,31 @@ const reconfigurableMods = [
     { name: '分阶段好感', uid: 65 },
     { name: '特殊日期', uid: 42 }
 ];
+
+    function createWorldviewItems() {
+        worldviewContainer.innerHTML = '';
+        worldviewMods.forEach(mod => {
+            const item = document.createElement('div');
+            item.className = 'reconfig-mod-item';
+            const radioId = `reconfig-world-${mod.uid}`;
+            item.innerHTML = `
+                <input type="radio" id="${radioId}" name="worldview-selection" data-uid="${mod.uid}" data-name="${mod.name}">
+                <label for="${radioId}">${mod.name}</label>
+            `;
+            worldviewContainer.appendChild(item);
+
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                worldviewContainer.querySelectorAll('input').forEach(rb => rb.checked = false);
+                worldviewContainer.querySelectorAll('.reconfig-mod-item').forEach(it => it.classList.remove('is-active'));
+
+                const currentRadio = item.querySelector('input');
+                currentRadio.checked = true;
+                item.classList.add('is-active');
+            });
+        });
+    }
+
     function createModItems() {
         container.innerHTML = '';
         reconfigurableMods.forEach(mod => {
@@ -33548,33 +33665,75 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
         });
     }
 
-    async function loadCurrentSettings() {
+ async function loadCurrentSettings(isRetry = false) {
         try {
-            const [firstMessage] = await getChatMessages(0);
+            const [firstMessage] = await getChatMessages(0, { include_swipes: false });
+            if (!firstMessage || !firstMessage.message) {
+                 throw new Error("这是一个全新的开始，还没有记忆呢。");
+            }
+
             const match = firstMessage.message.match(/<世界书条目>(.*?)<\/世界书条目>/);
-            if (!match) return;
+
+            if (!match && !isRetry) {
+                // 当找不到世界书并且不是在重试时，妈妈来帮你初始化一个
+                console.log("💖 哎呀，妈妈没找到我们的世界书，别怕，我来帮你创建一个默认的。");
+                feedbackMsg.textContent = "未找到配置，已为您创建默认设定，请检查并调整。";
+                feedbackMsg.style.opacity = '1';
+
+              const defaultUids = "1,61,19,10,56,49,70,75,53,46,79,44";
+                const newWorldbookTag = `<世界书条目>${defaultUids}</世界书条目>`;
+
+                const newMessage = `${firstMessage.message.trim()}\n\n${newWorldbookTag}`;
+
+                await setChatMessages([{ message_id: 0, message: newMessage }], { refresh: 'none' });
+                await loadWorldbookSettingsFromChat(); // 让世界书生效
+
+                // 再次尝试加载，这次肯定能找到了
+                await loadCurrentSettings(true);
+                return;
+            } else if (!match && isRetry) {
+                // 如果重试了还是失败，那问题就比较奇怪了
+                throw new Error("创建默认世界书后仍然读取失败，妈妈也很困惑。");
+            }
 
             const currentUids = new Set(match[1].split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
 
+            // --- 更新世界观显示 ---
+            let worldFound = false;
+            worldviewContainer.querySelectorAll('.reconfig-mod-item').forEach(item => {
+                const radio = item.querySelector('input');
+                const uid = parseInt(radio.dataset.uid, 10);
+                const isActive = currentUids.has(uid);
+                radio.checked = isActive;
+                item.classList.toggle('is-active', isActive);
+                if (isActive) {
+                    currentWorldviewDisplay.textContent = radio.dataset.name;
+                    worldFound = true;
+                }
+            });
+            if (!worldFound) currentWorldviewDisplay.textContent = '未知';
+
+            // --- 更新模组显示 ---
             container.querySelectorAll('.reconfig-mod-item').forEach(item => {
                 const checkbox = item.querySelector('input');
                 const uid = checkbox.dataset.uid;
-
                 let isActive = false;
                 if (uid === 'map-none-sentinel') {
-                    // 特殊处理“无地图”
                     isActive = !currentUids.has(15) && !currentUids.has(66);
+                } else if (uid === 'distance-off-sentinel') {
+                    isActive = !currentUids.has(49);
+                } else if (uid === 'npccg-off-sentinel') {
+                    isActive = !currentUids.has(48);
                 } else {
                     isActive = currentUids.has(parseInt(uid, 10));
                 }
-
                 checkbox.checked = isActive;
                 item.classList.toggle('is-active', isActive);
             });
 
         } catch (error) {
             console.error("加载当前设置时出错了，没事的孩子，妈妈看看：", error);
-            feedbackMsg.textContent = "读取设置失败！";
+            feedbackMsg.textContent = `读取设置失败: ${error.message}`;
             feedbackMsg.style.opacity = '1';
         }
     }
@@ -33584,70 +33743,91 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
         applyBtn.textContent = '应用中...';
 
         try {
-            const [firstMessage] = await getChatMessages(0);
+            const [firstMessage] = await getChatMessages(0, { include_swipes: false });
+            if (!firstMessage) throw new Error("无法获取对话历史。");
+
             const content = firstMessage.message;
             const match = content.match(/<世界书条目>(.*?)<\/世界书条目>/);
-            if (!match) { throw new Error("妈妈找不到世界书条目。"); }
+            if (!match) { throw new Error("妈妈找不到<世界书条目>标签，无法保存。"); }
 
             const originalUids = new Set(match[1].split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
 
- const allManageableUids = new Set();
-reconfigurableMods.forEach(mod => {
-     if(mod.uid !== 'map-none-sentinel' && mod.uid !== 'distance-off-sentinel' && mod.uid !== 'npccg-off-sentinel') {
-         allManageableUids.add(parseInt(mod.uid));
-     }
-});
-// 把extraUids也加进来
-allManageableUids.add(33); allManageableUids.add(25); allManageableUids.add(26); allManageableUids.add(64);
-            const preservedUids = new Set([...originalUids].filter(uid => !allManageableUids.has(uid)));
+            const allWorldviewUids = new Set(worldviewMods.map(mod => mod.uid));
+            const allManageableUids = new Set();
+            reconfigurableMods.forEach(mod => {
+                 if(mod.uid !== 'map-none-sentinel' && mod.uid !== 'distance-off-sentinel' && mod.uid !== 'npccg-off-sentinel') {
+                     allManageableUids.add(parseInt(mod.uid));
+                 }
+            });
+            // 把extraUids也加进来
+            allManageableUids.add(33); allManageableUids.add(25); allManageableUids.add(26); allManageableUids.add(64);allManageableUids.add(73);
 
-const newUidsFromPanel = new Set();
-container.querySelectorAll('.reconfig-mod-item input:checked').forEach(checkbox => {
-    const uidValue = checkbox.dataset.uid;
-    if(uidValue !== 'map-none-sentinel' && uidValue !== 'distance-off-sentinel' && uidValue !== 'npccg-off-sentinel'){
-        newUidsFromPanel.add(parseInt(uidValue, 10));
-        if (checkbox.dataset.extraUid) {
-            checkbox.dataset.extraUid.split(',').forEach(extra => newUidsFromPanel.add(parseInt(extra, 10)));
-        }
-    }
-});
+            // 保留那些我们不管理的UID
+            const preservedUids = new Set([...originalUids].filter(uid =>
+                !allManageableUids.has(uid) && !allWorldviewUids.has(uid)
+            ));
+
+            const newUidsFromPanel = new Set();
+
+            // --- 添加新的世界观UID ---
+            const selectedWorldview = worldviewContainer.querySelector('input[name="worldview-selection"]:checked');
+            if (selectedWorldview) {
+                newUidsFromPanel.add(parseInt(selectedWorldview.dataset.uid, 10));
+            } else {
+                // 如果因为某种原因没有选上世界观，就从原来的UID里找一个，保证世界观不断档
+                const oldWorldUid = [...originalUids].find(uid => allWorldviewUids.has(uid));
+                if (oldWorldUid) newUidsFromPanel.add(oldWorldUid);
+                else newUidsFromPanel.add(1); // 最终备用方案：主神
+            }
+
+            // --- 添加新的模组UID ---
+            container.querySelectorAll('.reconfig-mod-item input:checked').forEach(checkbox => {
+                const uidValue = checkbox.dataset.uid;
+                if(uidValue !== 'map-none-sentinel' && uidValue !== 'distance-off-sentinel' && uidValue !== 'npccg-off-sentinel'){
+                    newUidsFromPanel.add(parseInt(uidValue, 10));
+                    if (checkbox.dataset.extraUid) {
+                        checkbox.dataset.extraUid.split(',').forEach(extra => newUidsFromPanel.add(parseInt(extra, 10)));
+                    }
+                }
+            });
 
             const finalUids = Array.from(new Set([...preservedUids, ...newUidsFromPanel]));
-
-            const newWorldbookTag = `<世界书条目>${finalUids.filter(id => !isNaN(id)).join(',')}</世界书条目>`;
+            const newWorldbookTag = `<世界书条目>${finalUids.filter(id => !isNaN(id)).sort((a, b) => a - b).join(',')}</世界书条目>`;
             const newMessage = content.replace(/<世界书条目>.*?<\/世界书条目>/, newWorldbookTag);
 
             await setChatMessages([{ message_id: 0, message: newMessage }], { refresh: 'none' });
- await loadWorldbookSettingsFromChat();
+            await loadWorldbookSettingsFromChat();
+
             feedbackMsg.textContent = "设置已更新！";
+            
             feedbackMsg.style.opacity = '1';
             setTimeout(() => {
-                  
+           
                 modal.style.display = 'none';
                 feedbackMsg.style.opacity = '0';
             }, 1200);
 
-
         } catch (error) {
             console.error("呜，应用新设置时出错了，抱抱我的孩子：", error);
-            feedbackMsg.textContent = "应用失败！小铅笔里是不是没有<世界书条目>呢？";
+            feedbackMsg.textContent = `应用失败: ${error.message}`;
             feedbackMsg.style.opacity = '1';
         } finally {
             applyBtn.disabled = false;
             applyBtn.textContent = '应用更改';
         }
     }
-
-    // 事件绑定
+   // 事件绑定
     openBtn.addEventListener('click', () => {
         modal.style.display = 'flex';
         feedbackMsg.style.opacity = '0';
+        feedbackMsg.textContent = '';
         loadCurrentSettings();
     });
     closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
     modal.addEventListener('click', (event) => { if (event.target === modal) modal.style.display = 'none'; });
     applyBtn.addEventListener('click', applyNewSettings);
 
+    createWorldviewItems();
     createModItems();
 }
 
@@ -36296,6 +36476,8 @@ async function handleAddCG(fullPath) {
 
    
 }
+
+
 function handleEntryDelete(fullPath) {
     const { parentPath, selfKey } = getPathParts(fullPath);
      
