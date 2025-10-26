@@ -16271,7 +16271,7 @@ function handleUpdateNotifications(aiContent) {
     
     // 检查必需的规则是否触发
     if (!triggeredRules.has('summary-update')) {
-        showNovaAlert('没有正常输出小总结小总结，可能掉变量更新了哦，右键编辑看看，掉了请重按重roll或按继续', 'danger');
+        showNovaAlert('没有正常输出小总结，可能掉变量更新了哦，右键编辑看看，掉了请重按重roll或按继续', 'danger');
     }
 }
 const themeConfig = {
