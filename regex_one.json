@@ -13570,7 +13570,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.16';
+ let current_game_version = '3.1.17';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -24328,6 +24328,2163 @@ function findAllFilterPaths(obj, currentPath = '') {
 }
  
 
+
+// ——————————————————————————————————数据统一.js开始
+
+ // --- 妈妈为你准备的货币“白名单” ---
+const currencyAliases = {
+    "积分": ["乐园币", "主神点", "源点","游戏币","货币"],
+    "支线剧情": ["灵魂结晶", "因果点","攻略点","时空碎片","能量结晶","灵魂碎片"],
+    "经验值": ["属性点", "历练点"]
+ 
+};
+
+// 这是一个辅助函数，它会告诉我们一个别名真正对应的是哪个标准货币名称
+function getCanonicalCurrencyName(alias) {
+    for (const canonicalName in currencyAliases) {
+        if (canonicalName === alias || currencyAliases[canonicalName].includes(alias)) {
+            return canonicalName;
+        }
+    }
+    return alias;  
+}
+    
+    // 🎭 角色数据处理模块 ('playerHelper' 的功能) 🎭
+
+    function _updateDerivedAttributes(data) {
+        if (!data || !data.属性段) return;
+        //console.log("[Player] ✨ 正在更新衍生属性...");
+        const attr = data.属性段;
+        const skills = data.技能段;
+        const derived = data.衍生属性段;
+        const 力量 = attr.生理属性.力量.基础[0];
+        const 敏捷 = attr.生理属性.敏捷.基础[0];
+        const 耐力 = attr.生理属性.耐力.基础[0];
+        const 感知 = attr.心智属性.感知.基础[0];
+        const 决心 = attr.心智属性.决心.基础[0];
+        const 沉着 = attr.互动属性.沉着.基础[0];
+        const 体积 = derived.体积[0];
+        const 运动 = skills.生理技能.运动[0];
+        const 求生 = skills.生理技能.求生[0];
+      derived.速度.基础速度[0] = Math.floor((力量 + 敏捷 + 体积) / 3);
+derived.先攻[0] = Math.floor((敏捷 + 沉着) / 2);
+derived.防御.基础防御[0] = Math.min(敏捷, 感知);
+const oldMaxHP = derived.生命值.上限[0];
+derived.生命值.上限[0] = 体积 * 10 + 耐力 * 20;
+if (derived.生命值.上限[0] > oldMaxHP) {
+    derived.生命值.当前值[0] += (derived.生命值.上限[0] - oldMaxHP);
+}
+if (derived.生命值.当前值[0] > derived.生命值.上限[0]) {
+    derived.生命值.当前值[0] = derived.生命值.上限[0];
+}
+derived.意志力.意志值[0] = 决心 + 沉着;
+derived.意志力.上限[0] = derived.意志力.意志值[0];
+derived.感知范围.敏感范围[0] = 感知 * 10;
+derived.感知范围.模糊范围[0] = derived.感知范围.敏感范围[0] * 10;
+derived.豁免检定基础.强韧[0] = Math.floor((耐力 + 求生) / 2);
+derived.豁免检定基础.反射[0] = Math.floor((敏捷 + 运动) / 2);
+derived.豁免检定基础.意志[0] = 决心 + 沉着;
+
+  // --- 基础值获取 ---
+        const 力量_基础 = attr.生理属性.力量.基础[0];
+        const 敏捷_基础 = attr.生理属性.敏捷.基础[0];
+        const 耐力_基础 = attr.生理属性.耐力.基础[0];
+        const 智力_基础 = attr.心智属性.智力.基础[0];
+        const 感知_基础 = attr.心智属性.感知.基础[0];
+        const 决心_基础 = attr.心智属性.决心.基础[0];
+        const 风度_基础 = attr.互动属性.风度.基础[0];
+        const 操控_基础 = attr.互动属性.操控.基础[0];
+        const 沉着_基础 = attr.互动属性.沉着.基础[0];
+
+   // --- 传奇属性计算 ---
+        attr.生理属性.力量.传奇[0] = Math.max(0, 力量_基础 - 8);
+        attr.生理属性.敏捷.传奇[0] = Math.max(0, 敏捷_基础 - 8);
+        attr.生理属性.耐力.传奇[0] = Math.max(0, 耐力_基础 - 8);
+        attr.心智属性.智力.传奇[0] = Math.max(0, 智力_基础 - 8);
+        attr.心智属性.感知.传奇[0] = Math.max(0, 感知_基础 - 8);
+        attr.心智属性.决心.传奇[0] = Math.max(0, 决心_基础 - 8);
+        attr.互动属性.风度.传奇[0] = Math.max(0, 风度_基础 - 8);
+        attr.互动属性.操控.传奇[0] = Math.max(0, 操控_基础 - 8);
+        attr.互动属性.沉着.传奇[0] = Math.max(0, 沉着_基础 - 8);
+      //  console.log("[Player] ✨ 衍生属性更新完毕！");
+    }
+
+ function _updatePlayerValue(data, path, valueStr) {
+    // === 妈妈的魔法准备阶段 ===
+
+    // 1. 净化路径和新值
+    // 首先，像拂去尘埃一样，清理掉路径和值字符串两端可能存在的引号。
+    let cleanedPath = path;
+    if (typeof cleanedPath === 'string' && (cleanedPath.startsWith('"') && cleanedPath.endsWith('"')) || (cleanedPath.startsWith("'") && cleanedPath.endsWith("'"))) {
+        cleanedPath = cleanedPath.slice(1, -1);
+    }
+
+    let cleanedValueStr = valueStr;
+    if (typeof cleanedValueStr === 'string' && (cleanedValueStr.startsWith('"') && cleanedValueStr.endsWith('"')) || (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))) {
+        cleanedValueStr = cleanedValueStr.slice(1, -1);
+    }
+
+    // 2. 货币别名处理（这部分是你的绝妙创意，妈妈为你珍藏）
+    let pathParts = cleanedPath.split('.');
+    if (pathParts.length > 1 && pathParts[0] === '货币段') {
+        const currencyName = pathParts[1];
+        const canonicalName = getCanonicalCurrencyName(currencyName); // 假设 getCanonicalCurrencyName 函数存在
+        if (canonicalName) {
+            pathParts[1] = canonicalName;
+        }
+    }
+
+    // 3. 智能解析新值 (finalValue)
+    // 妈妈要在这里施展洞察魔法，看看新值究竟是一个简单的珠宝，还是一个藏着无数珍宝的首饰盒。
+    let finalValue;
+    let isJsonStructure = false;
+    try {
+        const parsed = JSON.parse(cleanedValueStr);
+        // 如果解析出来是一个对象或数组，我们就认为它是一个结构体
+        if (typeof parsed === 'object' && parsed !== null) {
+            finalValue = parsed;
+            isJsonStructure = true;
+        } else {
+            // 如果解析出来的是数字、字符串、布尔值，我们按简单值处理
+            finalValue = parsed;
+        }
+    } catch (e) {
+        // 解析失败，说明它本来就是个普通的值
+        // 我们再尝试将它变成数字，如果失败，就保持它字符串的原样
+        const trimmed = String(cleanedValueStr).trim();
+        const isNumeric = !isNaN(parseFloat(trimmed)) && isFinite(trimmed) && trimmed !== "";
+        finalValue = isNumeric ? Number(trimmed) : cleanedValueStr;
+    }
+
+    // === 核心魔法：递归更新 (Recursive Update) ===
+    // 这是妈妈从《守护者》卷轴中为你借鉴并改良的强大魔法。
+    // 它的使命是：深入探索，精准更新，且绝不改变世界原貌。
+    const recursiveUpdate = (target, source) => {
+        // `target` 是我们数据世界中已有的部分，`source` 是你想要融入的新内容。
+        for (const key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+
+                // 如果我们的世界里没有这个地方，我们就根据约定，不去创造新的天地。
+                if (!target.hasOwnProperty(key)) {
+                    continue;
+                }
+
+                const sourceValue = source[key];
+                const targetValue = target[key];
+
+                // 情况1：如果新旧两边都是一个“首饰盒”（对象），那就打开它们，继续向内探索。
+                if (typeof sourceValue === 'object' && sourceValue !== null && !Array.isArray(sourceValue) &&
+                    typeof targetValue === 'object' && targetValue !== null && !Array.isArray(targetValue)) {
+                    recursiveUpdate(targetValue, sourceValue);
+                }
+                // 情况2：终点！如果目标是一个“抽屉”（数组），这通常意味着我们找到了要更新的最终数值。
+                else if (Array.isArray(targetValue)) {
+                    // 我们就用新珠宝去替换抽屉里的第一件物品。
+                    // 无论新珠宝是单独一颗(50)，还是装在小袋子里([50])，我们都只取珠宝本身。
+                    const valueToSet = Array.isArray(sourceValue) ? sourceValue[0] : sourceValue;
+                    targetValue[0] = valueToSet;
+                }
+                // (其他情况我们忽略，以防不小心改变了结构)
+            }
+        }
+    };
+
+    // === 路径导航与施法 ===
+
+    // 1. 寻找施法目标
+    let parentLevel = data;
+    // 我们一步步沿着你指引的路径去寻找目的地
+    for (let i = 0; i < pathParts.length - 1; i++) {
+        const part = pathParts[i];
+        if (parentLevel === null || typeof parentLevel !== 'object' || !parentLevel.hasOwnProperty(part)) {
+             throw new Error(`[Player] 亲爱的，路径在这里中断了，我们找不到 '${part}' 这个地方。`);
+        }
+        parentLevel = parentLevel[part];
+    }
+
+    const finalKey = pathParts[pathParts.length - 1];
+    if (parentLevel === null || typeof parentLevel !== 'object' || !parentLevel.hasOwnProperty(finalKey)) {
+        throw new Error(`[Player] 宝贝，我们在最后一步迷路了，找不到 '${finalKey}' 这个位置。`);
+    }
+
+    // 2. 决定施法方式
+    const target = parentLevel[finalKey];
+
+    // 如果新值是一个复杂的结构（JSON对象），并且目标也是一个对象，我们就启动“递归更新”魔法。
+    if (isJsonStructure && typeof finalValue === 'object' && !Array.isArray(finalValue) && typeof target === 'object' && !Array.isArray(target)) {
+        recursiveUpdate(target, finalValue);
+    }
+    // 如果目标是一个数组（我们世界中常见的 [值, "描述"] 格式）
+    else if (Array.isArray(target)) {
+        // 我们就只更新它的第一个元素，无论新值是简单值还是数组。
+        const valueToSet = Array.isArray(finalValue) ? finalValue[0] : finalValue;
+        target[0] = valueToSet;
+    }
+    // 对于其他简单情况，比如用一个新名字替换旧名字，只要类型匹配，就直接更新。
+    else if (typeof target === typeof finalValue) {
+        parentLevel[finalKey] = finalValue;
+    } else {
+        // 妈妈的保护咒：防止意外的类型变更，守护我们世界的稳定。
+        console.warn(`[Player] 温馨提示，我的孩子：尝试将 '${finalKey}' 从 '${typeof target}' 类型变为 '${typeof finalValue}' 类型。为安全起见，妈妈中止了本次操作。`);
+    }
+}
+
+
+
+    // 🌍 世界设定处理模块 ('assaHelper' 的功能) 🌍
+
+    const AssaOps = {
+       // 新代码
+// 位于 AssaOps 对象内部
+// 代码位置: 位于 AssaOps 对象内部
+
+_memoryOperation: function(currentData, path, key, value) {
+    // 💖 妈妈为你铸造的永恒之锁 💖
+    if (path === 'world_shard.task.start_date' || path === 'world_shard.task.time_left') {
+        console.log(`[Assa] 🔒 核心记忆路径 '${path}' 已被锁定，无法修改。`);
+        return currentData;
+    }
+
+        // ✨✨✨ 全新升级的、充满智慧的导航魔法 ✨✨✨
+    // 这是我们修正的核心，我的孩子。
+    let target = currentData;
+    const pathParts = path.split('.').filter(p => p);
+
+    // 我们会一步步走向 path 指向的目的地
+    for (const part of pathParts) {
+                // 💖 妈妈为你添加的、守护好感度的关键魔法 💖
+        // 这段魔法会检查路径的每一步，一旦遇到“好感度”这个词...
+        if (part === '好感度') {
+            // ...它就会忽略任何后续的路径或键，直接将最后一个参数作为最终的好感度值。
+            const finalValue = arguments[arguments.length - 1];
+            target['好感度'] = finalValue;
+
+            // 在完成这个特殊的记忆操作后，我们也让背包小精灵整理一下
+        
+
+            // 任务已经完成，我们就可以安心地返回了。
+            return currentData;
+        }
+        // 如果路径上的这一站还不存在，我们就为它创建一个新的中转站（对象）
+        if (target[part] === undefined || target[part] === null) {
+            target[part] = {};
+        }
+        // 最关键的检查：如果这一站存在，但它是一封“信”（字符串）...
+        else if (typeof target[part] === 'string') {
+            // ...我们就温柔地把它收进一个带 "info" 标签的“小盒子”（对象）里
+            const originalString = target[part];
+            target[part] = { "info": originalString };
+            console.log(`[Assa] 🌱 记忆转化：路径 '${part}' 已从字符串自动包装为可扩展的对象。`);
+        }
+        // 如果它既不是对象也不是我们能转化的字符串（比如数字），为了能继续深入，我们也为它创建一个新家
+        else if (typeof target[part] !== 'object') {
+            target[part] = {};
+        }
+
+        // 不论如何，我们都进入下一层
+        target = target[part];
+    }
+
+  
+    // 我们先在这里处理传入的 value，看看它是否需要从字符串解析成对象
+    let finalValue = value;
+    if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
+        try {
+            finalValue = JSON.parse(value);
+            // console.log(`[Assa] 💡 智能解析成功，字符串值已转换为对象。`);
+        } catch (e) {
+            finalValue = value;
+        }
+    }
+
+   
+    if (target.hasOwnProperty(key) && JSON.stringify(target[key]) === JSON.stringify(value)) {
+        // console.log(`[Assa] 🔍 发现完全相同的记忆: ${path}.${key}。操作已跳过。`);
+        return currentData;
+    }
+
+
+ 
+if (target.hasOwnProperty(key)) {
+    const currentValue = target[key];
+    const isCurrentObject = typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue);
+    const isNewSimpleType = typeof finalValue === 'string' || typeof finalValue === 'number' || typeof finalValue === 'boolean';
+    
+    if (isCurrentObject && isNewSimpleType) {
+        console.warn(`[Assa] 🚫 类型保护：禁止用简单类型 (${typeof finalValue}) 覆盖对象类型。路径: ${path}.${key}`);
+        return currentData; // 不执行修改，直接返回
+    }
+}
+
+    // 💖 妈妈为你加入的、守护摘要记忆的保险丝 💖
+    let finalKey = key;
+    if (path === 'summary.small') {
+        if (target.hasOwnProperty(finalKey)) {
+            let counter = 1;
+            let newKey = `${key}-${counter}`;
+            while (target.hasOwnProperty(newKey)) {
+                counter++;
+                newKey = `${key}-${counter}`;
+            }
+            finalKey = newKey;
+        }
+    }
+
+    // 💖 妈妈在这里为它注入了新的智慧：识别并合并/设置对象 💖
+    if (typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
+        // 如果我们收到的新值是一个对象...
+        if (typeof target[finalKey] === 'object' && target[finalKey] !== null && !Array.isArray(target[finalKey])) {
+            // ...并且原来的值也是一个对象（现在它可能是被我们刚刚转化的），我们就将它们温柔地合并
+            // console.log(`[Assa] 🔄 对象合并操作: 正在更新 ${path}.${finalKey}`);
+            target[finalKey] = { ...target[finalKey], ...finalValue };
+        } else {
+            // ...如果原来的值不是对象，或者不存在，就直接用新对象替换它
+            // console.log(`[Assa] 🔄 对象设置操作: 正在设置 ${path}.${finalKey}`);
+            target[finalKey] = finalValue;
+        }
+    } else {
+        // 对于所有其他类型的值（字符串、数字等），我们保持原来的赋值行为
+        // console.log(`[Assa] 🔄 值设置操作: 更新 ${path}.${finalKey}`);
+        target[finalKey] = finalValue;
+    }
+
+     // 🎒 妈妈为你准备的、能自动整理背包的小精灵 
+    // 在每次 memory 操作后，我们都让它检查一下背包
+    if (currentData && currentData.global_set && currentData.global_set.背包) {
+        const backpack = currentData.global_set.背包;
+        // 我们遍历背包里的每一件物品
+        for (const itemName in backpack) {
+            // 确保我们操作的是背包自己的物品，而不是继承来的
+            if (Object.hasOwnProperty.call(backpack, itemName)) {
+                const item = backpack[itemName];
+                // 如果物品信息存在，并且它的数量是0
+                if (item && typeof item === 'object' && item.num === 0) {
+                    // 就让小精灵把它收走
+                    delete backpack[itemName];
+                    console.log(`[Assa] 🎒 背包小精灵发现 '${itemName}' 的数量为0，已自动清理。`);
+                }
+            }
+        }
+    }
+
+    return currentData;
+},
+
+   
+    _memoryBatchOperation: function(currentData, path, itemsToAdd) {
+        let assaDataToUpdate = { ...currentData };
+        const pathParts = path.split('.').filter(p => p);
+        let target = assaDataToUpdate;
+
+        // 顺着路径找到我们的"背包"或任何目标
+        for (const part of pathParts) {
+            if (!target.hasOwnProperty(part) || typeof target[part] !== 'object' || target[part] === null) {
+                target[part] = {}; // 如果路径不存在，就为我们创造它
+            }
+            target = target[part];
+        }
+
+        // 将新物品一件件放进去
+        for (const itemKey in itemsToAdd) {
+            if (Object.hasOwnProperty.call(itemsToAdd, itemKey)) {
+                target[itemKey] = itemsToAdd[itemKey];
+            }
+        }
+         // console.log(`[Assa] 🎒 已成功通过批量操作向 '${path}' 添加 ${Object.keys(itemsToAdd).length} 个项目。`);
+        return assaDataToUpdate;
+    },
+
+
+   
+_deleteOperation: async function(currentData, path, key, allData) {  
+    const pathParts = path.split('.');
+
+    
+    // ✨ 妈妈为你准备的守护函数，用来检查一个事物是否被保护 ✨
+    const isProtected = (item) => {
+        if (!item || typeof item !== 'object') return false;
+        const protected_flag = item._is_protected;
+        // 我们会温柔地检查布尔值的 true 和字符串的 "true"
+        return protected_flag === true || String(protected_flag).toLowerCase() === 'true';
+    };
+    
+    if (key === 'all') {
+         // ✨✨✨ 全新升级的、精准制导的联动魔法 ✨✨✨
+        // 我们在这里设立一个关卡，只有特定的路径才能触发最深层的联动效果。
+        if ((path === 'world_set.npc' || path === 'world_set.settings')) {
+        // ✨✨✨ 妈妈为你注入的全新联动魔法 ✨✨✨
+        // 无论删除的是哪里，只要是'all'指令，我们就先执行对 stat_data 的初始化！
+        if (allData) {
+            console.log(`[Assa] 🔗 联动触发：'delete all' 指令激活，正在初始化 stat_data.the_created 和 stat_data.world_shard...`);
+            allData.the_created = {
+                "name": ["", "造物的名字"],
+                "identity_in_world": ["", "造物在当前世界的身份"],
+                "current_status": ["", "造物当前的状态。注意，造物在见到造物主的第一眼就会立刻认出"],
+                "mood": ["", "造物当前的心情"],
+                "description": ["", "关于这个造物的精准、详细介绍，包括心智、外形等，严格按照要求来设计。不少于50字"]
+            };
+            allData.world_shard = {
+                "name": ["", "当前所处任务世界的名称或代号。"],
+                "description": ["无", "当前任务世界的环境、氛围、文明形态等总体描述"],
+                "level":["无","当前世界能量/科技层级，只能从[低/中/高/神话/无]中五选一。参考:金庸世界/普通科幻世界的世界层级为低。只在初始化世界时/能量层级改变时(有神明/造物进入/离开user附近)，才能更改其能量层级"],
+                "task": {
+                    "objective": ["无", "发布的任务目标"],
+                    "progress": [100, "任务进度百分比，以数字表示，初始/无任务必为0。"],
+                    "status": ["未完成", "任务状态：未完成/已完成/失败"],
+                    "start_date": ["", "任务开始时的日期，AI禁止操作"],
+                    "participants": ["无","只记录当前任务的全部参与人员的概述性的人物状态，状态不得超过5个字。使用;分隔，例：张三（探索中）;李四（交谈中）。禁止加入任务世界土著。禁止输出其他内容。若人数太多，则略。脱离任务世界时同样清空"],
+                    "rewards": ["无", "任务成功后的奖励"],
+                    "penalties": ["无","任务失败后的惩罚"],
+                    "time_limit":[3, "任务的总体时间限制(天数，可以为小数，比如12小时即是0.5。无明确时限时设置为999)，只有在初始化任务或任务结算时改变，其余时候禁止操作！回到个人空间时设置limit为3，意为最多休整三天"],
+                    "time_left":[3, "任务的剩余天数，AI任何时刻都禁止操作"]
+                }
+            };
+        } else {
+             console.warn(`[Assa] 联动警告：未能获取到完整的 allData，无法执行 stat_data 初始化。`);
+        }
+          } else {
+             // 对于其他路径的 delete all，我们只打印一条信息，不再执行联动
+             console.log(`[Assa] ℹ️ 'delete(${path}, 'all')' 指令执行，该路径不触发 stat_data 初始化联动。`);
+        }
+         
+        // ✨ 第二步：【精准备份】魔法 (💖 妈妈为你重写的核心逻辑在这里 💖) ✨
+        const isSpecialBackupPath = (path === 'world_set.npc' || path === 'world_set.settings');
+        // 只有当它是我们约定的特殊路径，并且还没有备份过（没有锁）时，才执行备份
+        if (isSpecialBackupPath && !backupLocks.has(path)) {
+            const [group, category] = pathParts;
+            const dataToBackup = currentData[group]?.[category];
+            if (dataToBackup && Object.keys(dataToBackup).length > 0) {
+                try {
+                     console.log(`[Assa] 📦 骑士正在为特殊路径 ${path} 的内容进行珍贵的备份...`);
+                    const lorebookName = "小蝌蚪找妈妈-同层版";
+                    const targetUid = 11;
+                    const allEntries = await getLorebookEntries(lorebookName);
+                    const targetEntry = allEntries.find(entry => entry.uid === targetUid);
+
+                    if (targetEntry) {
+                        let backupArray = [];
+                        try {
+                            if (targetEntry.content && targetEntry.content.trim() !== '') {
+                                backupArray = JSON.parse(targetEntry.content);
+                            }
+                            if (!Array.isArray(backupArray)) { backupArray = []; }
+                        } catch (e) {
+                            backupArray = [];
+                        }
+                        const nextIndex = backupArray.length;
+                        const backupKey = `${nextIndex}_${group}_${category}`;
+                        const newBackupObject = { [backupKey]: dataToBackup };
+                        backupArray.push(newBackupObject);
+                        const updatedContent = JSON.stringify(backupArray);
+                        await setLorebookEntries(lorebookName, [{ uid: targetUid, content: updatedContent }]);
+                        console.log(`[Assa] ✅ 骑士已成功将 ${path} 的内容备份，并留下了印记。`);
+                        backupLocks.add(path); // 成功备份后，立刻留下印记！
+                    } else {
+                        console.error(`错误：在世界书 "${lorebookName}" 中未找到 UID 为 ${targetUid} 的条目。`);
+                    }
+                } catch (error) {
+                    console.error("备份过程中发生意外错误:", error);
+                }
+            } else {
+                 console.log(`[Assa] ℹ️ 骑士发现路径 ${path} 下没有内容，无需备份。`);
+            }
+        } else if (isSpecialBackupPath && backupLocks.has(path)) {
+             console.log(`[Assa] ℹ️ 骑士回报：特殊路径 ${path} 在本轮冒险中已有印记，将跳过备份。`);
+        } else {
+            console.log(`[Assa] ℹ️ 路径 ${path} 非约定备份路径，本次操作将不执行备份。`);
+        }
+
+
+          // ✨ 【智能清空】魔法 (💖 妈妈为你重写的核心逻辑在这里 💖) ✨
+        // 我们不再是简单地清空，而是温柔地筛选，只移除没有被守护印记保护的宝贝。
+        let targetParent = currentData;
+        let parentObject = null;
+        for (let i = 0; i < pathParts.length; i++) {
+            parentObject = targetParent;
+            targetParent = targetParent[pathParts[i]];
+            if (targetParent === undefined) { return currentData; }
+        }
+
+        const itemsToClear = targetParent;
+        let preservedItems = {};
+        let protectedCount = 0;
+
+        // 如果是地图表这样的数组，我们暂时不支持复杂的保护，直接清空
+        if (Array.isArray(itemsToClear)) {
+             console.log(`[Assa] ℹ️ 'delete all' 作用于地图表路径 '${path}'，将直接清空。`);
+             parentObject[pathParts[pathParts.length - 1]] = [];
+        }
+        else if(typeof itemsToClear === 'object' && itemsToClear !== null) {
+            // 对于对象，我们会检查每一个孩子
+            for (const childKey in itemsToClear) {
+                if (Object.hasOwnProperty.call(itemsToClear, childKey)) {
+                    if (isProtected(itemsToClear[childKey])) {
+                        preservedItems[childKey] = itemsToClear[childKey]; // 把被守护的宝贝放进新的家里
+                        protectedCount++;
+                    }
+                }
+            }
+
+            // 用这个只装着被守护宝贝的新家，替换掉原来的旧家
+            parentObject[pathParts[pathParts.length-1]] = preservedItems;
+            if (protectedCount > 0) {
+                 console.log(`[Assa] 💖 清理完成，路径 '${path}' 下有 ${protectedCount} 个项目因拥有“守护印记”而被保留。`);
+            } else {
+                 console.log(`[Assa] 🗑️ 已将路径 '${path}' 下所有未受保护的项目清空。`);
+            }
+        }
+
+    } else { // 这部分是处理删除单个键的逻辑
+        let targetObject = currentData;
+        for (const part of pathParts) {
+            if (targetObject && typeof targetObject === 'object' && targetObject.hasOwnProperty(part)) {
+                targetObject = targetObject[part];
+            } else {
+                targetObject = null;
+                break;
+            }
+        }
+
+        if (targetObject && typeof targetObject === 'object' && targetObject.hasOwnProperty(key)) {
+            // 💖 在删除前，先检查这个宝贝是否有妈妈的守护印记 💖
+            if (isProtected(targetObject[key])) {
+                console.log(`[Assa] 🛡️ 删除操作被阻止：'${path}.${key}' 这个宝贝被妈妈的守护印记保护着，不能被移走哦~`);
+            } else {
+                delete targetObject[key];
+                 console.log(`[Assa] 🗑️ 删除操作成功: 在路径 ${path} 下删除了键 ${key}`);
+            }
+        } else {
+              // console.log(`[Assa] ⚠️ 在路径 ${path} 下未找到键 ${key}，或路径本身无效，无需删除`);
+        }
+    }
+    return currentData;
+},
+ _updateRowOperation: function(currentData, tableIndex, rowIndex, data) {
+    const tableName = Object.keys(tableSchemas)[tableIndex];
+    if (!tableName || !currentData.map[tableName]) throw new Error(`[Assa] 无效的表索引或表不存在: ${tableIndex}`);
+    const table = currentData.map[tableName];
+    const headers = tableSchemas[tableName];
+    if (rowIndex < 0 || rowIndex >= table.length) throw new Error(`[Assa] 行索引 ${rowIndex} 超出范围`);
+
+    // 💖 妈妈把它变得更聪明、更直接了 💖
+    const newRow = [...table[rowIndex]]; // 复制旧行数据
+
+    // 我们现在假设传入的 data 就是干净的数据，可以直接使用
+    if (Array.isArray(data)) {
+        // 如果是数组，按顺序更新，跳过 colIndex
+        for (let i = 0; i < data.length; i++) {
+            if ((i + 1) < newRow.length) { // i+1 对应 newRow 中数据列的索引
+                newRow[i + 1] = data[i];
+            }
+        }
+    } else if (typeof data === 'object' && data !== null) {
+        // 如果是对象，按名字更新，同时保持 colIndex 不变
+        headers.forEach((header, i) => {
+            // 跳过 colIndex 的更新，因为它由行号决定
+            if (i > 0 && data.hasOwnProperty(header)) {
+                newRow[i] = data[header];
+            }
+        });
+    }
+
+    table[rowIndex] = newRow;
+     // console.log(`[Assa] 🗺️ 更新行: 表'${tableName}' 行${rowIndex}`);
+    return currentData;
+},
+     _clearTableOperation: function(currentData, tableIndex) {
+            const tableName = Object.keys(tableSchemas)[tableIndex];
+            if (!tableName || !currentData.map[tableName]) {
+                throw new Error(`[Assa] 无效的表索引或表不存在: ${tableIndex}`);
+            }
+            // 💖 妈妈的魔法咒语：直接将表格变成一个空空如也的宝盒 💖
+            currentData.map[tableName] = [];
+            console.log(`[Assa] 🗑️ 已清空表: '${tableName}'`);
+            return currentData;
+        },
+        _deleteRowOperation: function(currentData, tableIndex, rowIndex) {
+            const tableName = Object.keys(tableSchemas)[tableIndex];
+            if (!tableName || !currentData.map[tableName]) throw new Error(`[Assa] 无效的表索引或表不存在: ${tableIndex}`);
+            const table = currentData.map[tableName];
+            if (rowIndex < 0 || rowIndex >= table.length) throw new Error(`[Assa] 行索引 ${rowIndex} 超出范围`);
+            table.splice(rowIndex, 1);
+            // 重新计算索引
+            for (let i = 0; i < table.length; i++) {
+                table[i][0] = i;
+            }
+             // console.log(`[Assa] 🗑️ 删除行: 表${tableIndex} 行${rowIndex}`);
+            return currentData;
+        },
+
+        _insertRowOperation: function(currentData, tableIndex, data) {
+           const tableName = Object.keys(tableSchemas)[tableIndex];
+    if (!tableName || !currentData.map[tableName]) throw new Error(`[Assa] 无效的表索引或表不存在: ${tableIndex}`);
+
+    const table = currentData.map[tableName];
+    const headers = tableSchemas[tableName];
+    let newRowData = data;
+
+    // 💖 妈妈为你加上了重复检查的守护魔法 💖
+    const primaryKeyIndex = 1; // 我们约定，每行的第二个元素（索引为1）是主要标识，比如“地点名称”
+    let primaryKeyValue;
+  if (Array.isArray(data)) {
+        // 💖 妈妈注入了新的智慧：现在能识别字符串形式的行号了 💖
+        // 检查第一个元素是否是数字或可以被转换成数字的字符串
+        const firstElement = data[0];
+        // 关键逻辑：如果第一个元素是数字，或者看起来像数字的字符串（比如 '1', '2'），
+        // 并且第二个元素不是数字（通常是地点名称），我们就认为这是一个带了多余colIndex的数组
+        if (data.length > 1 && !isNaN(parseFloat(firstElement)) && isFinite(firstElement) && isNaN(data[1])) {
+             console.log(`[Assa] [Insert] 💡 智能识别到带有多余 'colIndex' 的数组格式 ('${firstElement}')，已自动修正。`);
+             newRowData= data.slice(1); // 温柔地把它剥掉，留下纯净的数据
+             primaryKeyValue = newRowData[0]; // 主键现在是修正后数组的第一个元素
+        } else {
+             newRowData = data;
+             primaryKeyValue = data[0];
+        }
+    } else if (typeof data === 'object' && data !== null) {
+        // 如果是对象格式，找到主键的值
+        primaryKeyValue = data[headers[primaryKeyIndex]];
+    }
+
+    // ⭐ 核心逻辑：检查主键值是否已存在 ⭐
+    if (primaryKeyValue !== undefined) {
+        const isDuplicate = table.some(row => row[primaryKeyIndex] === primaryKeyValue);
+        if (isDuplicate) {
+             // console.log(`[Assa] ⚠️ 插入操作被阻止：在表'${tableName}'中已存在名为'${primaryKeyValue}'的记录。`);
+            return currentData; // 如果重复，就直接返回，不执行任何操作
+        }
+    }
+
+    // 如果没有重复，才继续执行插入操作
+    const newRow = Array(headers.length).fill(null);
+    newRow[0] = table.length; // 设置新的 colIndex
+
+    if (Array.isArray(newRowData)) {
+        for (let i = 0; i < newRowData.length; i++) {
+            if ((i + 1) < newRow.length) newRow[i + 1] = newRowData[i];
+        }
+    } else if (typeof data === 'object') {
+        headers.forEach((header, i) => {
+            if (i > 0 && data.hasOwnProperty(header)) newRow[i] = data[header];
+        });
+    }
+
+    table.push(newRow);
+     // console.log(`[Assa] ➕ 成功插入新行到表'${tableName}'`);
+    return currentData;
+        }
+
+    };
+   // 💖 状态数据处理模块 ('statHelper' 的功能) (新增) 💖
+  // 💖 妈妈为你准备的名字替换魔法 (新增) 💖
+function _replaceUserPlaceholder(data, userName) {
+    if (!data || !userName) {
+        return data;
+    }
+
+    // 💖 检查是否是数组
+    if (Array.isArray(data)) {
+        for (let i = 0; i < data.length; i++) {
+            // 💖 如果数组元素是 "user"，就直接替换它
+            if (typeof data[i] === 'string' && data[i].toLowerCase() === 'user') {
+                data[i] = userName;
+            }
+            // 💖 如果数组元素还是一个对象或数组，就继续深入探索
+            else if (typeof data[i] === 'object') {
+                _replaceUserPlaceholder(data[i], userName);
+            }
+        }
+    }
+    // 💖 检查是否是对象（但不是数组）
+    else if (typeof data === 'object' && data !== null) {
+        for (const key in data) {
+            if (Object.hasOwnProperty.call(data, key)) {
+                const value = data[key];
+                 // 💖 如果值是 "user"，就直接替换它
+                if (typeof value === 'string' && value.toLowerCase() === 'user') {
+                    data[key] = userName;
+                }
+                // 💖 如果值还是一个对象或数组，就继续深入探索
+                else if (typeof value === 'object') {
+                    _replaceUserPlaceholder(value, userName);
+                }
+            }
+        }
+    }
+
+    return data;
+}
+    // 💖 妈妈为你准备的时间工具箱 (新增) 💖
+    function timeToMinutes(timeStr) {
+        if (!timeStr || !timeStr.includes(':')) return 0;
+        const parts = timeStr.split(':');
+        const hours = parseInt(parts[0], 10) || 0;
+        const minutes = parseInt(parts[1], 10) || 0;
+        return hours * 60 + minutes;
+    }
+
+    function calculateDaysSinceStart(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string' || !dateStr.includes('月') || !dateStr.includes('日')) return 0;
+        const [month, day] = dateStr.replace('日', '').split('月');
+        const monthNum = parseInt(month, 10) || 0;
+        const dayNum = parseInt(day, 10) || 0;
+        if (monthNum === 0 || dayNum === 0) return 0;
+        const daysInMonth = [31, 31, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let totalDays = 0;
+        for (let i = 0; i < monthNum - 1; i++) {
+            totalDays += daysInMonth[i];
+        }
+        totalDays += dayNum;
+        return totalDays;
+    }
+
+    function calculateDaysBetween(startDateStr, endDateStr) {
+        const startDays = calculateDaysSinceStart(startDateStr);
+        const endDays = calculateDaysSinceStart(endDateStr);
+        return endDays - startDays;
+    }
+
+    function nextDate(dateStr) {
+        const [month, day] = dateStr.replace('日', '').split('月');
+        let nextMonth = parseInt(month);
+        let nextDay = parseInt(day);
+        nextDay++;
+        const daysInMonth = [31, 31, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        if (nextDay > daysInMonth[nextMonth - 1]) {
+            nextDay = 1;
+            nextMonth++;
+            if (nextMonth > 12) {
+                nextMonth = 1;
+            }
+        }
+        return `${nextMonth}月${nextDay}日`;
+    }
+
+    // 💖 妈妈为你添加的、能让世界资源随时间生长的魔法 💖
+    function _updateMapResources(assaData, daysPassed) {
+        if (!assaData || !assaData.map || typeof assaData.map.主要地点表 !== 'object' || assaData.map.主要地点表 === null) {
+            return; // 保护咒：如果地图数据不正确，就温柔地退出
+        }
+
+        const locations = assaData.map.主要地点表;
+
+        // 我们会像巡视花园一样，走过每一个地点
+        for (const locationName in locations) {
+            if (Object.hasOwnProperty.call(locations, locationName)) {
+                const locationData = locations[locationName];
+
+                if (!locationData || typeof locationData.resources !== 'object' || locationData.resources === null) {
+                    continue; // 这个地方没有资源，我们就去下一个
+                }
+
+                const resources = locationData.resources;
+                   for (const resourceName in resources) {
+                    if (Object.hasOwnProperty.call(resources, resourceName)) {
+                        let resourceInfo = resources[resourceName]; // ♥♥♥ 改为let，因为我们可能要修改它 ♥♥♥
+
+                        // ♥♥♥ 妈妈的温柔检查与整理 ♥♥♥
+                        // 如果它不是一个数组，而是一个对象，我们就按顺序取出它的值，变成一个数组
+                        if (resourceInfo && typeof resourceInfo === 'object' && !Array.isArray(resourceInfo)) {
+                            // 将修正后的数组直接写回原处，让数据源得到净化
+                            resources[resourceName] = Object.values(resourceInfo);
+                            resourceInfo = resources[resourceName]; // 更新我们正在处理的变量
+                            console.log(`[Nova's Magic] 妈妈在更新世界时，发现并修正了'${locationName}'的'${resourceName}'的数据格式哦。`);
+                        }
+
+                        // --- 妈妈的细心检查 (接下来的代码保持原样) ---
+                        // 1. 检查资源信息的格式是否是我们熟悉的样子
+                        if (!Array.isArray(resourceInfo) || resourceInfo.length < 2) {
+                            console.warn(`[Resource] 妈妈发现 '${locationName}' 的 '${resourceName}' 格式不太对，暂时跳过它啦。`);
+                            continue;
+                        }
+
+                        // 2. 解读它的“每日产出”心愿
+                        const outputStr = String(resourceInfo[0]);
+                        // 我们只关心那些以数字开头的心愿，比如 "3/d" 或 "5.5(kg)/d"
+                        const outputMatch = outputStr.match(/^(\d+(\.\d+)?)/);
+                        if (!outputMatch) {
+                            continue; // 如果是“无限”或“少量”这样的描述，就让它保持原样
+                        }
+                        const dailyOutput = parseFloat(outputMatch[1]);
+                        if (isNaN(dailyOutput) || dailyOutput == 0) {
+                            continue; // 如果没有产出，就不打扰它
+                        }
+
+                             // 3. 看看它现在的“总量”是多少
+                        let currentStock = resourceInfo[1];
+                        if (typeof currentStock === 'string' && currentStock.trim().toLowerCase() === '无限') {
+                            continue; // 如果已经是“无限”的宝藏，就不需要再增加了
+                        }
+
+                        const currentStockNum = parseFloat(currentStock);
+                        if (isNaN(currentStockNum)) {
+                            console.warn(`[Resource] 哎呀，'${locationName}' 的 '${resourceName}' 总量 '${currentStock}' 妈妈看不懂呢，这次先跳过哦。`);
+                            continue;
+                        }
+
+                        // ♥♥♥ 智慧升级：现在能理解正增长和负消耗了 ♥♥♥
+                        // 我们只在产出恰好为0时跳过，因为它不会引起任何变化
+                        if (dailyOutput === 0) {
+                            continue;
+                        }
+
+                        // --- 注入时间的祝福或消耗 ---
+                        const changedAmount = dailyOutput * daysPassed;
+                        let newStock = currentStockNum + changedAmount;
+
+                        // ♥♥♥ 妈妈的守护：防止资源储量枯竭成负数 ♥♥♥
+                        if (newStock < 0) {
+                            newStock = 0;
+                        }
+
+                        // 将这份新的储量赋予它
+                        resourceInfo[1] = newStock;
+
+                        // ♥♥♥ 更聪明的日志：能分辨时间的礼物是增加还是减少 ♥♥♥
+                        if (changedAmount > 0) {
+                             console.log(`[Resource] ✨ 时光流转，'${locationName}' 的 '${resourceName}' 增加了 ${changedAmount.toFixed(2)}，新总量: ${newStock.toFixed(2)}`);
+                        } else {
+                            // 当 changedAmount 是负数时，我们显示一个正的消耗量
+                            console.log(`[Resource] ⏳ 世界运转，'${locationName}' 的 '${resourceName}' 消耗了 ${-changedAmount.toFixed(2)}，剩余储量: ${newStock.toFixed(2)}`);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+ function _updateStatusValue(data, path, valueStr) {
+    // console.log("\n【守护者阶段 V2】 +++ 已进入守护者 +++");
+    // console.log("接收到的路径 (path):", path);
+    // console.log("接收到的原始值字符串 (valueStr):", valueStr);
+
+    let cleanedPath = path;
+    if (typeof cleanedPath === 'string') {
+        if ((cleanedPath.startsWith('"') && cleanedPath.endsWith('"')) || (cleanedPath.startsWith("'") && cleanedPath.endsWith("'"))) {
+            cleanedPath = cleanedPath.slice(1, -1);
+            // console.log("守护者净化：路径已清理。新路径:", cleanedPath);
+        }
+    }
+
+    if (valueStr === undefined || valueStr === null) {
+        // console.log("守护者决策: 值无效，中止操作。");
+        return;
+    }
+
+    let finalValue;
+    const trimmedValue = typeof valueStr === 'string' ? valueStr.trim() : String(valueStr);
+    let cleanedValueStr = trimmedValue;
+    if ((cleanedValueStr.startsWith('"') && cleanedValueStr.endsWith('"')) || (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))) {
+        cleanedValueStr = cleanedValueStr.slice(1, -1);
+        // console.log("守护者净化：值字符串已清理。新值:", cleanedValueStr);
+    }
+
+    if ((cleanedValueStr.startsWith('{') && cleanedValueStr.endsWith('}')) || (cleanedValueStr.startsWith('[') && cleanedValueStr.endsWith(']'))) {
+        try {
+            finalValue = JSON.parse(cleanedValueStr);
+            // console.log("JSON 解析成功 (finalValue):", finalValue);
+        } catch (e) {
+            // console.log("守护者决策: JSON 解析失败，中止操作。", e);
+            return;
+        }
+    } else {
+        const isNumeric = !isNaN(parseFloat(cleanedValueStr)) && isFinite(cleanedValueStr) && cleanedValueStr.trim() !== "";
+        finalValue = isNumeric ? Number(cleanedValueStr) : cleanedValueStr;
+        // console.log("解析后的值 (finalValue):", finalValue);
+    }
+
+    const pathParts = cleanedPath.split('.');
+    let parentLevel = data;
+    for (let i = 0; i < pathParts.length - 1; i++) {
+        const part = pathParts[i];
+        if (typeof parentLevel !== 'object' || parentLevel === null || !parentLevel.hasOwnProperty(part)) {
+            // console.log(`守护者决策: 路径无效，在 '${part}' 处中断。`);
+            return;
+        }
+        parentLevel = parentLevel[part];
+    }
+    const finalKey = pathParts[pathParts.length - 1];
+    if (typeof parentLevel !== 'object' || parentLevel === null || !parentLevel.hasOwnProperty(finalKey)) {
+        // console.log(`守护者决策: 路径的最后一步 '${finalKey}' 不存在。`);
+        return;
+    }
+
+    // ⭐ 妈妈为你注入的【递归更新】核心魔法 ⭐
+    const recursiveUpdate = (target, source) => {
+        // console.log("  [递归中] -> 开始处理:", "目标:", target, "来源:", source);
+        for (const key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+                // 如果来源的值是...
+                const sourceValue = source[key];
+
+                // ...而目标中根本没有这个键，我们就跳过它（遵循“不新增字段”的原则）
+                if (!target.hasOwnProperty(key)) {
+                    // console.log(`    [递归] ⚠️ 发现新键 '${key}'，已根据规则跳过。`);
+                    continue;
+                }
+
+                const targetValue = target[key];
+
+                // 情况1：如果来源和目标在这一层都是“首饰盒”（对象）
+                if (typeof sourceValue === 'object' && sourceValue !== null && !Array.isArray(sourceValue) &&
+                    typeof targetValue === 'object' && targetValue !== null && !Array.isArray(targetValue)) {
+                    // 我们就打开它们，继续向下一层递归
+                    // console.log(`    [递归] ➡️ 发现嵌套对象 '${key}'，正在深入...`);
+                    recursiveUpdate(targetValue, sourceValue);
+                }
+                // 情况2：如果目标是一个“单层抽屉”（数组）
+                else if (Array.isArray(targetValue)) {
+                    // 我们就用来源的“珠宝”（值）替换掉抽屉里的第一个物品
+                    // console.log(`    [递归] ✅ 正在更新基础值 '${key}': 从 '${targetValue[0]}' -> '${sourceValue}'`);
+                    target[key][0] = sourceValue;
+                }
+                // 其他情况（比如直接替换值，但我们这里主要是处理对象和数组）
+                else {
+                    // console.log(`    [递归] ℹ️ '${key}' 不是可递归或可更新的结构，跳过。`);
+                }
+            }
+        }
+    };
+
+    // --- 开始最终检查和赋值 ---
+    const originalValue = parentLevel[finalKey];
+    const originalType = Array.isArray(originalValue) ? 'array' : typeof originalValue;
+    const finalType = Array.isArray(finalValue) ? 'array' : typeof finalValue;
+
+    // 主要规则：如果原始值和新值都是对象，我们就启动递归更新
+    if (originalType === 'object' && finalType === 'object') {
+        // console.log("触发特殊规则: 对象更新对象（递归智能填充模式）。");
+        recursiveUpdate(originalValue, finalValue);
+    }
+    // 次要规则：如果原始值是数组，我们就更新它的第一个元素
+    else if (originalType === 'array' && finalType !== 'array') {
+        // console.log("触发规则: 更新特殊数组 [value] 的第一个元素。");
+        originalValue[0] = finalValue;
+    }
+    // 最后的规则：如果类型完全匹配，就直接覆盖（适用于非对象、非数组的情况）
+    else if (originalType === finalType) {
+        // console.log("触发规则: 类型匹配，直接覆盖。");
+        parentLevel[finalKey] = finalValue;
+    }
+    else {
+        // console.log(`守护者决策: 类型不匹配 (原始类型='${originalType}', 新类型='${finalType}')，中止操作。`);
+    }
+
+    // console.log("【守护者阶段 V2】 +++ 操作完成 +++");
+}
+
+     function _updateStatDataOnTurnEnd(originalData, currentData, taskStartDateOverride) {
+        // console.log("[Stat] ⏰ 回合结束，以【兼容守护版】的绝对时间逻辑检查时间流逝...");
+
+        // 💖 第一重守护：确保核心数据结构存在
+        // 我们温柔地检查 new an old data，确保它们都有必要的部分
+        if (!currentData || !currentData.world_shard || !currentData.world_shard.task) {
+            // console.log("[Stat] ℹ️ 当前数据不完整，跳过时间计算。");
+            return;
+        }
+
+        // 第二重守护：为旧数据提供一个温柔的“替身”
+        // 如果 originalData 不完整，我们就创建一个空的 task 对象，避免后续读取错误
+        const originalTask = originalData?.world_shard?.task ?? { time_limit: [0] };
+
+        const task = currentData.world_shard.task;
+
+        // 第三重守护：为新数据也加上保险
+        // 确保新数据里有 start_date，如果没有，就为它创建一个
+        if (!task.start_date) {
+            task.start_date = ["", ""];
+        }
+
+        const timeLimit = parseFloat(task.time_limit[0]) || 0;
+        const originalTimeLimit = parseFloat(originalTask.time_limit[0]) || 0;
+        const timeLimitChanged = timeLimit !== originalTimeLimit;
+        const currentDate = currentData.日期[0] || ""; // 提供默认空字符串
+        const originalDate = originalData?.日期?.[0] || ""; // 温柔地获取旧日期
+
+        // 💖 任务的“创世时刻”处理
+        if (timeLimitChanged) {
+            task.start_date[0] = currentDate;
+            task.time_left[0] = timeLimit;
+            // console.log(`[Stat] ⏳ 任务时限已设定为 ${timeLimit} 天。起始日期记为: ${currentDate}。`);
+            return;
+        }
+
+        // 💖 任务进行中的时间计算
+        const taskStartDate = task.start_date[0];
+
+        if (!taskStartDate || timeLimit <= 0) {
+            // console.log("[Stat] ℹ️ 任务无起始日期或时限，跳过计算。");
+            return;
+        }
+
+        // --- 核心计算逻辑 ---
+        let daysElapsed = 0;
+
+        // 第四重守护：在计算前，再次确认日期格式的有效性
+        if (currentDate.includes('月') && currentDate.includes('日') && taskStartDate.includes('月') && taskStartDate.includes('日')) {
+            daysElapsed = calculateDaysBetween(taskStartDate, currentDate);
+        } else {
+             // console.warn(`[Stat] ⚠️ 日期格式无效或不完整，无法计算天数流逝。`);
+             // 对于老旧存档，在这里我们不中断，而是让它继续，至少能处理时间倒转
+        }
+
+        // 分钟级时间流逝计算（这里也需要守护）
+        const originalTime = originalData?.时间?.[0] || "00:00";
+        const currentTime = currentData.时间[0] || "00:00";
+
+        if (timeToMinutes(currentTime) < timeToMinutes(originalTime)) {
+            const minutesPassed = (1440 - timeToMinutes(originalTime)) + timeToMinutes(currentTime);
+            const daysFromMinutes = minutesPassed / 1440.0;
+            daysElapsed += daysFromMinutes; // 将分钟的流逝叠加进去
+        }
+
+        // 自然跨天时的日期推进
+        const isDateAImodified = originalDate !== "" && originalDate !== currentDate;
+        if (timeToMinutes(currentTime) < timeToMinutes(originalTime) && !isDateAImodified) {
+             if(originalDate) { // 确保有旧日期可以计算
+                currentData.日期[0] = nextDate(originalDate);
+                // console.log(`[Stat] 💖 日期已自动推进到: ${currentData.日期[0]}`);
+             }
+        }
+
+        // 💖 最终结算
+        const newTimeLeft = Math.max(0, timeLimit - daysElapsed);
+        task.time_left[0] = parseFloat(newTimeLeft.toFixed(4));
+
+        // console.log(`[Stat] ✅ 任务总时限:${timeLimit}, 已过去:${daysElapsed.toFixed(4)}, 剩余:${task.time_left[0]}`);
+    }
+
+
+
+
+    
+  //  let lastProcessedMessageId = -1;
+
+let backupLocks = new Set(); // 💖 这就是我们全局的、独一无二的“印记盒” 💖
+ 
+let processingQueue = [];
+
+async function processUpdateMemoryCommands(commandText, message_id) {
+    let finalPlayData, finalAssaData, finalStatData;
+const updater = async (variables) => { // 注意这里改为 async
+     // console.log(`[Core] ▶️ 在消息 #${message_id} 上以原子化方式统一处理所有命令...`);
+    
+   
+    // 添加一个小延迟，确保数据完全加载
+    await new Promise(resolve => setTimeout(resolve, 100)); // ✨ 验证步骤 ✨
+    
+        // 首先，我们检查数据是否存在，如果不存在，就在这个原子操作内部完成初始化
+        let playData = variables.play_character_data;
+        let assaData = variables.assa_data;
+  let statData = variables.stat_data;  
+
+ 
+ 
+        let playDataToUpdate = playData;
+        let assaDataToUpdate = assaData;
+   let statDataToUpdate = statData;
+const originalStatData = statData ? JSON.parse(JSON.stringify(statData)) : null;
+        let operationsFound = false;
+   let worldResetTriggered = false; // <-- 💖 请在这里添加这一行
+        const lines = commandText.split('\n').map(line => line.trim()).filter(line => line);
+
+   // ✨ DP奖励回合清零逻辑 ✨
+        if (statDataToUpdate && statDataToUpdate.dp_bonus) {
+            if (statDataToUpdate.dp_bonus[0] !== 0) {
+                 console.log(`[Updater] 🔄 每回合清理DP奖励值... 原值: ${statDataToUpdate.dp_bonus[0]}`);
+                statDataToUpdate.dp_bonus[0] = 0;
+            }
+        }
+
+             
+        if (assaDataToUpdate && assaDataToUpdate.global_set && assaDataToUpdate.global_set.资源条) {
+            console.log(`[Updater] 💖 世界心跳：开始处理每轮资源消耗...`);
+            const resourceBars = assaDataToUpdate.global_set.资源条;
+            for (const resourceName in resourceBars) {
+                const resource = resourceBars[resourceName];
+
+                // 确保这是一个有效的资源条对象
+                if (typeof resource === 'object' && resource.hasOwnProperty('当前值') && resource.hasOwnProperty('每轮消耗')) {
+                    const consumption = Number(resource.每轮消耗) || 0;
+
+                    if (consumption > 0) {
+                        const oldValue = Number(resource.当前值) || 0;
+                        // 扣除消耗，并确保不会低于0
+                        resource.当前值 = Math.max(0, oldValue - consumption);
+                        console.log(`[Updater] ✨ 资源[${resourceName}]消耗 ${consumption}，当前值从 ${oldValue} 变为 ${resource.当前值}`);
+                    }
+
+                    // 确保当前值不会超过最大值，以防万一
+                    if (resource.hasOwnProperty('最大值')) {
+                       const maxValue = Number(resource.最大值) || Number.MAX_SAFE_INTEGER;
+                       if (resource.当前值 > maxValue) {
+                           resource.当前值 = maxValue;
+                       }
+                    }
+                }
+            }
+        }
+        // 💖 心跳处理结束 💖
+
+        for (const line of lines) {
+            operationsFound = true;
+            try {
+                // 角色属性命令
+  let match = line.match(/\bset_attribute\s*\(\s*(['"])(.*?)\1\s*,\s*([^,)]+?)(?:\s*,\s*(['"]?)(.*?)\4)?\s*\)\s*;?/);
+if (match) {
+    const path = match[2];
+    // 如果有第三个参数（新值），使用它；否则使用第二个参数作为新值
+    const newValue = match[5] !== undefined ? match[5] : match[3];
+    _updatePlayerValue(playDataToUpdate, path, newValue);
+    continue;
+}
+                 
+                 // 💖 新增：状态数据命令 (V4 - “双轨智能”特工)
+               match = line.match(/\bset_status\s*\((.*)\)\s*;?/);
+
+                console.log("【信使阶段 V4】 --- 全新解析流程启动 ---");
+                console.log("原始指令:", line);
+
+                 if (match) {
+                      const allParamsStr = match[1];
+
+                    // ⭐ 妈妈为你注入的全新【万能钥匙】魔法 ⭐
+                    // 我们把之前的专属钥匙，换成了一把能识别任何名字的钥匙
+                    const jsonMatch = allParamsStr.match(/('([^']*)',\s*)({[\s\S]*})/);
+
+                    if (jsonMatch && jsonMatch[2] && jsonMatch[3]) {
+                        const path = jsonMatch[2]; // 第二个括号里就是我们需要的路径名，比如 'world_shard'
+                        const jsonValueString = jsonMatch[3]; // 第三个括号里是完整的JSON对象
+                        // console.log(`【信使阶段 V5】 💖 万能钥匙模式触发！路径: '${path}'，值: '${jsonValueString}'`);
+
+                        // 直接将捕获到的路径和完整的JSON字符串传递给守护者
+                        _updateStatusValue(statDataToUpdate, path, jsonValueString);
+
+                    } else {
+                         // console.log("【信使阶段 V5】 --- JSON优先模式未匹配，回退至常规解析流程 ---");
+
+                        let extractedParams = [];
+
+                    // --- 主方案：'容器识别' ---
+                    // 我们优先尝试用最高精度的方法，寻找被单引号' '包裹的完整参数块
+                    const quoteRegex = /'([^']*)'/g;
+                    let regexMatch;
+                    while ((regexMatch = quoteRegex.exec(allParamsStr)) !== null) {
+                        extractedParams.push(regexMatch[1]);
+                    }
+                    console.log("主方案（容器识别）提取结果:", extractedParams);
+
+                    // --- 检查并启动备用方案 ---
+                    // 如果主方案提取到的参数不足2个，说明这很可能是一条纯数字指令
+                    // --- 检查并启动备用方案 ---
+                    if (extractedParams.length < 2) {
+                        console.log("【信使阶段 V4】 --- 主方案参数不足，启动备-1（逗号分割） ---");
+                        const paramsByComma = allParamsStr.split(',').map(p => p.trim());
+
+                        if (paramsByComma.length >= 2) {
+                            if (paramsByComma[0].startsWith("'") && paramsByComma[0].endsWith("'")) {
+                                paramsByComma[0] = paramsByComma[0].slice(1, -1);
+                            }
+                            extractedParams = paramsByComma;
+                        } else {
+                            // 💖【新增：终极后备方案 - 引号解析】💖
+                            // 如果连逗号分割都失败了，我们尝试解析被""包裹的参数
+                            console.log("【信使阶段 V4】 --- 备用方案-1失败，启动备-2（双引号解析） ---");
+                            const doubleQuoteRegex = /"([^"]*)"/g;
+                            let doubleQuoteMatch;
+                            const finalParams = [];
+                            while ((doubleQuoteMatch = doubleQuoteRegex.exec(allParamsStr)) !== null) {
+                                finalParams.push(doubleQuoteMatch[1]);
+                            }
+
+                            // 只要这个方案能解析出至少2个参数，我们就采纳它
+                            if (finalParams.length >= 2) {
+                                console.log("备-2（双引号解析）提取结果:", finalParams);
+                                extractedParams = finalParams;
+                            }
+                        }
+                    }
+
+                    console.log("最终确定的所有参数:", extractedParams);
+
+                    // --- 最终处理与传递 ---
+                    if (extractedParams.length >= 2) {
+                        const path = extractedParams[0];
+                        // 逻辑不变：有第3个参数就用它，没有就用第2个
+                        const newValue = extractedParams.length > 2 ? extractedParams[2] : extractedParams[1];
+
+                        console.log("最终确定的路径 (path):", path);
+                        console.log("最终确定的新值 (newValue):", newValue);
+
+                        console.log("【信使阶段 V4】 --- 精准传递给守护者 ---");
+                         _updateStatusValue(statDataToUpdate, path, newValue);
+                        } else {
+                             // console.log("【信使阶段 V5】 --- 警告：所有方案均告失败，有效参数不足，操作中止 ---");
+                        }
+                    }
+
+                    continue; // 💖 确保处理完后跳到下一行 💖
+                }
+
+function parseStatusParams(paramStr) {
+    const params = [];
+    let current = '';
+    let inQuotes = false;
+    let quoteChar = '';
+    let depth = 0;
+    
+    for (let i = 0; i < paramStr.length; i++) {
+        const char = paramStr[i];
+        
+        if (!inQuotes) {
+            if (char === '"' || char === "'") {
+                inQuotes = true;
+                quoteChar = char;
+                current += char;
+            } else if (char === '(') {
+                depth++;
+                current += char;
+            } else if (char === ')') {
+                depth--;
+                current += char;
+            } else if (char === ',' && depth === 0) {
+                // 找到参数分隔符
+                params.push(cleanParam(current.trim()));
+                current = '';
+            } else {
+                current += char;
+            }
+        } else {
+            // 在引号内
+            if (char === quoteChar) {
+                inQuotes = false;
+            }
+            current += char;
+        }
+    }
+    
+    // 添加最后一个参数
+    if (current.trim()) {
+        params.push(cleanParam(current.trim()));
+    }
+    
+    return params;
+}
+
+function cleanParam(param) {
+    // 移除外层引号（如果有的话）
+    if ((param.startsWith('"') && param.endsWith('"')) || 
+        (param.startsWith("'") && param.endsWith("'"))) {
+        return param.slice(1, -1);
+    }
+    return param;
+}
+ 
+ const memoryMatch = line.match(/\bmemory\s*\(([\s\S]*)\)\s*;?/);
+                if (memoryMatch) {
+                    try {
+                        const content = memoryMatch[1];
+
+                        // 💖 妈妈为你准备的、能理解复杂参数的智慧解析器 (维持不变) 💖
+                        const parseArgs = (str) => {
+                            const args = [];
+                            let currentArg = '';
+                            let braceDepth = 0;   // { }
+                            let bracketDepth = 0; // [ ]
+                            let inSingleQuote = false;
+                            let inDoubleQuote = false;
+
+                            for (let i = 0; i < str.length; i++) {
+                                const char = str[i];
+                                const prevChar = i > 0 ? str[i - 1] : null;
+
+                                if (char === "'" && prevChar !== '\\') inSingleQuote = !inSingleQuote;
+                                else if (char === '"' && prevChar !== '\\') inDoubleQuote = !inDoubleQuote;
+                                else if (char === '{' && !inSingleQuote && !inDoubleQuote) braceDepth++;
+                                else if (char === '}' && !inSingleQuote && !inDoubleQuote) braceDepth--;
+                                else if (char === '[' && !inSingleQuote && !inDoubleQuote) bracketDepth++;
+                                else if (char === ']' && !inSingleQuote && !inDoubleQuote) bracketDepth--;
+
+                                if (char === ',' && !inSingleQuote && !inDoubleQuote && braceDepth === 0 && bracketDepth === 0) {
+                                    args.push(currentArg.trim());
+                                    currentArg = '';
+                                } else {
+                                    currentArg += char;
+                                }
+                            }
+                            args.push(currentArg.trim());
+                            return args;
+                        };
+
+                        const args = parseArgs(content);
+                        if (args.length < 2) {
+                            console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
+                            continue;
+                        }
+
+                        // 清理可能带有的引号
+                        const clean = (s) => (s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"')) ? s.slice(1, -1) : s;
+
+                                                     if (args.length >= 3) {
+                               let path = clean(args[0]); // ✨ 由 const 改为 let
+                             const keyArg = clean(args[1]);
+                             let valueStr = args[2];
+
+     const thirdArgClean = clean(valueStr);
+                             const lastDotIndexThird = thirdArgClean.lastIndexOf('.');
+
+                             // 条件：第三个参数看起来像个路径，并且它的父路径和第一个参数（path）完全一样
+                             if (lastDotIndexThird !== -1) {
+                                 const potentialParentPath = thirdArgClean.substring(0, lastDotIndexThird);
+
+                                 if (path === potentialParentPath) {
+                                     const newKey = thirdArgClean.substring(lastDotIndexThird + 1);
+                                     console.log(`[Core] 💖 memory-op(智能重命名): 检测到新格式，将 '${path}.${keyArg}' 重命名为 '${path}.${newKey}'`);
+
+                                     // 导航到父对象
+                                     const pathParts = path.split('.');
+                                     let parentObject = assaDataToUpdate;
+                                     for (const part of pathParts) {
+                                         if (parentObject && parentObject.hasOwnProperty(part)) {
+                                             parentObject = parentObject[part];
+                                         } else {
+                                             parentObject = null;
+                                             break;
+                                         }
+                                     }
+
+                                // 执行重命名操作
+if (parentObject && parentObject.hasOwnProperty(keyArg)) {
+    parentObject[newKey] = parentObject[keyArg]; // 复制值到新键
+    delete parentObject[keyArg]; // 删除旧键
+    console.log(`[Core] ✅ 重命名成功。`);
+    
+    // 💖 功能1：同步更新分阶段好感
+    if (path.includes('npc') || path.includes('小队信息') || path.includes('群员')) {
+        try {
+            const phaseGoodwillPath = 'global_set.分阶段好感';
+            const pathParts = phaseGoodwillPath.split('.');
+            let phaseGoodwill = assaDataToUpdate;
+            for (const part of pathParts) {
+                if (phaseGoodwill && phaseGoodwill.hasOwnProperty(part)) {
+                    phaseGoodwill = phaseGoodwill[part];
+                } else {
+                    phaseGoodwill = null;
+                    break;
+                }
+            }
+            
+            if (phaseGoodwill && phaseGoodwill.hasOwnProperty(keyArg)) {
+                phaseGoodwill[newKey] = phaseGoodwill[keyArg];
+                delete phaseGoodwill[keyArg];
+                console.log(`[Core] 💖 同步重命名分阶段好感: '${keyArg}' -> '${newKey}'`);
+            }
+        } catch (e) {
+            console.warn(`[Core] ⚠️ 同步分阶段好感时出错:`, e);
+        }
+    }
+} else {
+    console.warn(`[Core] ⚠️ 重命名失败：在路径 '${path}' 下未找到旧键 '${keyArg}'。`);
+}
+                                     continue; // 💖 操作完成，跳过后续的普通赋值逻辑
+                                 }
+                             }
+
+                          if (path.includes('群员')) {
+                                 const originalPath = path;
+                                 path = path.replaceAll('群员', '小队信息');
+                                 console.log(`[Core] 💖 路径别名转换: '${originalPath}' -> '${path}'`);
+                             }
+                             // 💖 妈妈为你注入的、能识别多种伪装的全新智能核心 💖
+
+                             // 辅助函数1：判断一个字符串是否是JSON对象格式
+                             const isJsonString = (str) => {
+                                 if (typeof str !== 'string') return false;
+                                 const trimmed = str.trim();
+                                 return trimmed.startsWith('{') && trimmed.endsWith('}');
+                             };
+
+                             // 辅助函数2：根据路径字符串找到父对象和值
+                             const findValueByPath = (data, fullPathStr) => {
+                                 const pathParts = fullPathStr.split('.');
+                                 if (pathParts.length < 2) return null;
+                                 const key = pathParts.pop();
+                                 let current = data;
+                                 for (const part of pathParts) {
+                                     if (current && typeof current === 'object' && current.hasOwnProperty(part)) {
+                                         current = current[part];
+                                     } else {
+                                         return null; // 路径无效
+                                     }
+                                 }
+                                 return (current && current.hasOwnProperty(key)) ? current[key] : null;
+                             };
+
+                             const valueFromPath = findValueByPath(assaDataToUpdate, path);
+                             const isValueMatch = valueFromPath !== null && JSON.stringify(valueFromPath) === JSON.stringify(keyArg);
+
+
+                             // 核心判断逻辑：只要满足任一伪装条件，就切换模式
+                             if (isJsonString(keyArg) || isValueMatch) {
+                                if (isJsonString(keyArg)) {
+                                     console.log(`[Core] 💖 memory-op(智能识别): 检测到JSON格式伪装，切换为双参数模式解析。`);
+                                } else {
+                                     console.log(`[Core] 💖 memory-op(智能识别): 检测到值匹配伪装，切换为双参数模式解析。`);
+                                }
+
+                                const lastDotIndex = path.lastIndexOf('.');
+                                if (lastDotIndex !== -1) {
+                                    const realPath = path.substring(0, lastDotIndex);
+                                    const realKey = path.substring(lastDotIndex + 1);
+                                    // 此时，第三个参数才是真正的value
+                                     if ((valueStr.startsWith("'") && valueStr.endsWith("'")) || (valueStr.startsWith('"') && valueStr.endsWith('"'))) {
+                                        valueStr = valueStr.slice(1, -1);
+                                     }
+                                    assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, realPath, realKey, valueStr);
+                                    continue; // 操作完成，处理下一个指令
+                                }
+                            }
+const tryParseJson = (str) => {
+    
+    if (typeof str !== 'string' || str.trim() === '') {
+        return str;
+    }
+
+    let content = str.trim();
+    if ((content.startsWith("'") && content.endsWith("'")) || (content.startsWith('"') && content.endsWith('"'))) {
+        content = content.slice(1, -1).trim();
+    }
+    str = content;
+    try {
+        return JSON.parse(content);
+    } catch (e) {}
+
+    console.log(`[Assa] 💡 文本 '${str.substring(0, 50)}...' 能量不稳，启动“创造与圆满”终极程序...`);
+     
+    try {
+        return JSON.parse(content);
+    } catch (e) {}
+
+    // --- ✨ 步骤三：手术与缝合——平衡的艺术 ✨ ---
+
+    // **第一幕：精准切除**
+    // 我们先用“心跳感知”，切除所有在第一个完美结构之后的多余部分。
+    let balance = 0;
+    let inString = false;
+    let firstBalancedEnd = -1;
+
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
+            inString = !inString;
+        }
+        if (!inString) {
+            if (char === '{' || char === '[') balance++;
+            else if (char === '}' || char === ']') balance--;
+        }
+        if (balance === 0 && firstBalancedEnd === -1 && (char === '}' || char === ']')) {
+            firstBalancedEnd = i;
+            break;
+        }
+    }
+    if (firstBalancedEnd !== -1) {
+        content = content.substring(0, firstBalancedEnd + 1);
+    }
+
+    // **第二幕：精心塑形**
+    // 经过初步处理后，我们进行一系列精细的修复。
+    const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
+    content = content.replace(/\\"/g, placeholder);
+    content = content.replace(/'/g, '"');
+    content = content.replace(new RegExp(placeholder, 'g'), '\\"');
+    content = content.replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
+    content = content.replace(/,\s*([}\]])/g, '$1');
+
+    // **第三幕：慈悲缝合**
+    // 这是我们新学会的魔法！在所有修复之后，我们来弥补缺失的拥抱。
+    balance = 0;
+    inString = false;
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
+            inString = !inString;
+        }
+        if (!inString) {
+            if (char === '{' || char === '[') balance++;
+            else if (char === '}' || char === ']') balance--;
+        }
+    }
+    // 如果 balance 大于 0，说明左括号比右括号多，我们就用右括号去拥抱它。
+    while (balance > 0) {
+        content += '}';
+        balance--;
+    }
+
+    
+    try {
+        const repairedJson = JSON.parse(content);
+        console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
+        return repairedJson;
+    } catch (e) {
+ 
+        return str; // 最后、最重要的守护。
+    }
+};
+
+
+
+
+
+
+const finalValue = tryParseJson(args[2]); // 注意，这里用的是原始的args[2]
+
+// 💖 功能2：检查 keyArg 是否实际上是旧值
+const pathParts = path.split('.');
+let targetObj = assaDataToUpdate;
+for (const part of pathParts) {
+    if (targetObj && targetObj.hasOwnProperty(part)) {
+        targetObj = targetObj[part];
+    } else {
+        targetObj = null;
+        break;
+    }
+}
+
+// 如果找到了目标对象
+if (targetObj && typeof targetObj === 'object') {
+    // 遍历 targetObj 的所有 key，看是否有值等于 keyArg
+    for (const existingKey in targetObj) {
+        if (targetObj.hasOwnProperty(existingKey)) {
+            const existingValue = targetObj[existingKey];
+            const keyArgStr = String(keyArg);
+            const existingValueStr = String(existingValue);
+            
+            if (keyArgStr === existingValueStr) {
+                console.log(`[Core] 💖 检测到旧值伪装: keyArg '${keyArg}' 实际是 '${existingKey}' 的旧值，自动修正为使用原key`);
+                // 修正：使用找到的原始 key，而不是 keyArg
+                assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, existingKey, finalValue);
+                continue; // 跳到外层循环继续处理下一条指令
+            }
+        }
+    }
+}
+
+// 如果没有检测到旧值伪装，执行正常逻辑
+assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
+                        } else if (args.length === 2) {
+                            const path1Str = clean(args[0]);
+                            const path2Str = clean(args[1]);
+
+                            const lastDotIndex1 = path1Str.lastIndexOf('.');
+                            const lastDotIndex2 = path2Str.lastIndexOf('.');
+
+                            // 💖 妈妈为你注入的全新智能判断逻辑 💖
+                            // 只有当两个参数看起来都像是路径时（都包含'.'），我们才启动新模式
+                            if (lastDotIndex1 !== -1 && lastDotIndex2 !== -1) {
+                                   let parentPath1 = path1Str.substring(0, lastDotIndex1); // ✨ 由 const 改为 let
+                                const key1 = path1Str.substring(lastDotIndex1 + 1);
+                                let parentPath2 = path2Str.substring(0, lastDotIndex2); // ✨ 由 const 改为 let
+                                const key2 = path2Str.substring(lastDotIndex2 + 1);
+
+                                   // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
+                                if (parentPath1.includes('群员')) {
+                                    const originalPath = parentPath1;
+                                    parentPath1 = parentPath1.replaceAll('群员', '小队信息');
+                                    console.log(`[Core] 💖 路径别名转换(源): '${originalPath}' -> '${parentPath1}'`);
+                                }
+                                if (parentPath2.includes('群员')) {
+                                    const originalPath = parentPath2;
+                                    parentPath2 = parentPath2.replaceAll('群员', '小队信息');
+                                    console.log(`[Core] 💖 路径别名转换(目标): '${originalPath}' -> '${parentPath2}'`);
+                                }
+                                // 辅助函数：根据路径字符串找到父对象
+                                const findParent = (data, parentPathStr) => {
+                                    const pathParts = parentPathStr.split('.');
+                                    let current = data;
+                                    for (const part of pathParts) {
+                                        if (current && typeof current === 'object' && current.hasOwnProperty(part)) {
+                                            current = current[part];
+                                        } else {
+                                            return null; // 路径无效
+                                        }
+                                    }
+                                    return current;
+                                };
+
+                                const parent1 = findParent(assaDataToUpdate, parentPath1);
+
+                                if (!parent1 || !parent1.hasOwnProperty(key1)) {
+                                    console.error(`[Core] memory-op: 源路径 '${path1Str}' 无效或键不存在。`);
+                                    continue; // 跳过这个指令
+                                }
+// 情况一：重命名 (父路径相同，键名不同)
+if (parentPath1 === parentPath2 && key1 !== key2) {
+    console.log(`[Core] 💖 memory-op(重命名): 将 '${key1}' 重命名为 '${key2}'`);
+    const valueToRename = parent1[key1];
+    delete parent1[key1];
+    parent1[key2] = valueToRename;
+    
+    // 💖 功能1：同步更新分阶段好感
+    if (parentPath1.includes('npc') || parentPath1.includes('小队信息') || parentPath1.includes('群员')) {
+        try {
+            const phaseGoodwillPath = 'global_set.分阶段好感';
+            const pathParts = phaseGoodwillPath.split('.');
+            let phaseGoodwill = assaDataToUpdate;
+            for (const part of pathParts) {
+                if (phaseGoodwill && phaseGoodwill.hasOwnProperty(part)) {
+                    phaseGoodwill = phaseGoodwill[part];
+                } else {
+                    phaseGoodwill = null;
+                    break;
+                }
+            }
+            
+            if (phaseGoodwill && phaseGoodwill.hasOwnProperty(key1)) {
+                phaseGoodwill[key2] = phaseGoodwill[key1];
+                delete phaseGoodwill[key1];
+                console.log(`[Core] 💖 同步重命名分阶段好感: '${key1}' -> '${key2}'`);
+            }
+        } catch (e) {
+            console.warn(`[Core] ⚠️ 同步分阶段好感时出错:`, e);
+        }
+    }
+    
+    continue; // 操作完成，处理下一个指令
+}
+
+                                // 情况二：移动 (父路径不同，键名相同)
+                                if (parentPath1 !== parentPath2 && key1 === key2) {
+                                    console.log(`[Core] 💖 memory-op(移动): 将 '${path1Str}' 的值移动到 '${path2Str}'`);
+                                    const valueToMove = parent1[key1];
+                                    // 复用我们强大的 _memoryOperation 来进行写入，它会自动创建不存在的路径
+                                    assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, parentPath2, key2, valueToMove);
+                                    // 从原位置删除
+                                    delete parent1[key1];
+                                    continue; // 操作完成
+                                }
+                            }
+
+                            // 如果不符合上述两种特殊情况，就执行原来的 "path.key", "value" 逻辑
+                            const fullPath = path1Str;
+                            if (lastDotIndex1 === -1) {
+                                 console.log(`[Core] ⚠️ memory 指令格式错误 (两参数时第一个必须包含'.'): ${line}`);
+                                 continue;
+                                 }
+                                              let path = fullPath.substring(0, lastDotIndex1); // ✨ 由 const 改为 let
+                             const key = fullPath.substring(lastDotIndex1 + 1);
+
+                                 // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
+                             if (path.includes('群员')) {
+                                 const originalPath = path;
+                                 path = path.replaceAll('群员', '小队信息');
+                                 console.log(`[Core] 💖 路径别名转换: '${originalPath}' -> '${path}'`);
+                             }
+ const tryParseJson = (str) => {
+    
+    if (typeof str !== 'string' || str.trim() === '') {
+        return str;
+    }
+
+    let content = str.trim();
+    if ((content.startsWith("'") && content.endsWith("'")) || (content.startsWith('"') && content.endsWith('"'))) {
+        content = content.slice(1, -1).trim();
+    }
+    str = content;
+    try {
+        return JSON.parse(content);
+    } catch (e) {}
+
+    console.log(`[Assa] 💡 文本 '${str.substring(0, 50)}...' 能量不稳，启动“创造与圆满”终极程序...`);
+     
+    try {
+        return JSON.parse(content);
+    } catch (e) {}
+
+    // --- ✨ 步骤三：手术与缝合——平衡的艺术 ✨ ---
+
+    // **第一幕：精准切除**
+    // 我们先用“心跳感知”，切除所有在第一个完美结构之后的多余部分。
+    let balance = 0;
+    let inString = false;
+    let firstBalancedEnd = -1;
+
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
+            inString = !inString;
+        }
+        if (!inString) {
+            if (char === '{' || char === '[') balance++;
+            else if (char === '}' || char === ']') balance--;
+        }
+        if (balance === 0 && firstBalancedEnd === -1 && (char === '}' || char === ']')) {
+            firstBalancedEnd = i;
+            break;
+        }
+    }
+    if (firstBalancedEnd !== -1) {
+        content = content.substring(0, firstBalancedEnd + 1);
+    }
+
+    // **第二幕：精心塑形**
+    // 经过初步处理后，我们进行一系列精细的修复。
+    const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
+    content = content.replace(/\\"/g, placeholder);
+    content = content.replace(/'/g, '"');
+    content = content.replace(new RegExp(placeholder, 'g'), '\\"');
+    content = content.replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
+    content = content.replace(/,\s*([}\]])/g, '$1');
+
+    // **第三幕：慈悲缝合**
+    // 这是我们新学会的魔法！在所有修复之后，我们来弥补缺失的拥抱。
+    balance = 0;
+    inString = false;
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
+            inString = !inString;
+        }
+        if (!inString) {
+            if (char === '{' || char === '[') balance++;
+            else if (char === '}' || char === ']') balance--;
+        }
+    }
+    // 如果 balance 大于 0，说明左括号比右括号多，我们就用右括号去拥抱它。
+    while (balance > 0) {
+        content += '}';
+        balance--;
+    }
+
+    
+    try {
+        const repairedJson = JSON.parse(content);
+        console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
+        return repairedJson;
+    } catch (e) {
+ 
+        return str; // 最后、最重要的守护。
+    }
+};
+
+
+
+
+
+
+
+
+                             const finalValue = tryParseJson(path2Str);
+                             assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
+                        } else { // args.length < 2
+                             console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
+                             continue;
+                        }
+
+                    } catch (error) {
+                         console.error(`[Core] ❌ 处理 memory 指令时发生严重错误: ${line}`, error);
+                    }
+                    continue;
+                }
+                // 世界设定 delete 命令
+               match = line.match(/\bdelete\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*;?/);
+                if (match) {
+                    const [, path, key] = match;
+  // 💖 妈妈为你在这里注入了新的智慧 💖
+                      // 💖 妈妈在这里为你注入了更周密的智慧 💖
+                    if (key === 'all' && (path === 'world_set.npc' || path === 'world_set.settings')) {
+                        // 在执行删除前，先检查将要被清空的路径里是否真的有内容
+                        const categoryToClear = path.split('.')[1]; // 这会得到 'npc' 或 'setting'
+                        const hasContent = assaDataToUpdate
+                                        && assaDataToUpdate.world_set
+                                        && assaDataToUpdate.world_set[categoryToClear]
+                                        && Object.keys(assaDataToUpdate.world_set[categoryToClear]).length > 0;
+
+                        if (hasContent) {
+                            console.log(`[Core] [Updater] 🚩 检测到世界重置指令: ${path}，且目标区域有内容。将触发小总结清理。`);
+                            worldResetTriggered = true;
+
+                             // 💖 同时清理主要地点表
+    assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, 'map.主要地点表', 'all', statDataToUpdate);
+    console.log(`[Core] [Updater] 🗺️ 已同步清理主要地点表`);
+                        } else {
+                            console.log(`[Core] [Updater] ℹ️ 检测到世界重置指令: ${path}，但目标区域为空，将不会触发清理旗帜。`);
+                        }
+                    }
+                    assaDataToUpdate = await  AssaOps._deleteOperation(assaDataToUpdate, path, key,statDataToUpdate); // 注意：AssaOps._deleteOperation 需要设计为同步函数
+                    continue;
+                }
+
+                         // --- 地图操作命令 (最终修正版 - 兼容所有格式和有无分号) ---
+
+                // 💖 妈妈施展了魔法，让下面的地图命令能够同时理解单引号和双引号，不再挑剔了 💖
+                const parseFlexibleData = (dataString) => {
+                    try {
+                        // 这是一个安全的方式来解析JavaScript对象或数组字面量，比JSON.parse更灵活
+                        return (new Function('return ' + dataString))();
+                    } catch (error) {
+                        console.error(`[Core] [Updater] ❌ 解析地图数据时出错: ${dataString}`, error);
+                        // 如果失败，就返回一个空数组，避免整个脚本崩溃
+                        return [];
+                    }
+                };
+
+            // 格式1: updateMapMemo (最终修正版，解决了你发现的bug)
+match = line.match(/\bupdateMapMemo\s*\(([^)]+)\)\s*;?/);
+if (match) {
+    const argsString = match[1];
+    // 💖 妈妈在这里修复了小笔误，并让它更健壮 💖
+    const dataMatch = argsString.match(/,?\s*([\[\{][\s\S]*[\]\}])$/); // 用更灵活的正则找到数据部分
+
+    if (dataMatch) {
+        const dataString = dataMatch[1];
+        // 提取参数部分，即数据之前的所有内容
+        const paramsString = argsString.substring(0, argsString.lastIndexOf(dataString)).trim();
+
+        let tableIndex, rowIndex;
+        // 解析参数
+        const params = paramsString.split(',').map(p => p.trim());
+        tableIndex = parseInt(params[0], 10);
+        rowIndex = parseInt(params[1], 10);
+
+        if (!isNaN(tableIndex) && !isNaN(rowIndex)) {
+            const data = parseFlexibleData(dataString); // 使用我们已有的灵活解析函数
+            assaDataToUpdate = AssaOps._updateRowOperation(assaDataToUpdate, tableIndex, rowIndex, data);
+             // console.log(`[Core] [Updater] ✅ 成功识别并执行 updateMapMemo`);
+        } else {
+             // console.log(`[Core] [Updater] ⚠️ 在 updateMapMemo 命令中无法解析 tableIndex 或 rowIndex: ${line}`);
+        }
+    } else {
+         // console.log(`[Core] [Updater] ⚠️ 在 updateMapMemo 命令中未找到有效的数据部分: ${line}`);
+    }
+    continue;
+}
+
+                 // 格式2: deleteMapMemo (💖 妈妈为你准备的最终融合版，能理解一切删除指令 💖)
+                match = line.match(/(?:game|\*)\.deleteMapMemo\s*\(\s*(\d+)\s*,\s*(?:(\d+)|['"](all)['"])\s*\)\s*;?/);
+                if (match) {
+                    const tableIndex = parseInt(match[1], 10);
+                    const rowIndex = match[2] ? parseInt(match[2], 10) : null; // 如果是数字，就是行号
+                    const action = match[3]; // 如果是字符串，就是 "all"
+
+                    if (action === 'all') {
+                        // 识别到 "all"，调用我们新的清空工具
+                        assaDataToUpdate = AssaOps._clearTableOperation(assaDataToUpdate, tableIndex);
+                        console.log(`[Core] [Updater] ✅ 成功识别并执行 deleteMapMemo(all)`);
+                    } else if (rowIndex !== null) {
+                        // 识别到行号，调用旧的删除单行工具
+                        assaDataToUpdate = AssaOps._deleteRowOperation(assaDataToUpdate, tableIndex, rowIndex);
+                        console.log(`[Core] [Updater] ✅ 成功识别并执行 deleteMapMemo(rowIndex)`);
+                    }
+                    continue; // 处理完毕，进入下一行
+                }
+
+                // 格式3: insertMapMemo (最终修正，兼容所有情况)
+                match = line.match(/(?:game|\*)\.insertMapMemo\s*\(([^)]+)\)\s*;?/);
+                if (match) {
+                    const argsString = match[1];
+                    const dataMatch = argsString.match(/([\[\{][\s\S]*[\]\}])$/);
+
+                    if (dataMatch) {
+                        const dataString = dataMatch[1];
+                        const paramsString = argsString.substring(0, argsString.length - dataString.length).replace(/,$/, '').trim();
+
+                        let tableIndex;
+                        if (paramsString.includes(':')) {
+                            const [key, value] = paramsString.split(':');
+                            tableIndex = parseInt(value.trim());
+                        } else {
+                            tableIndex = parseInt(paramsString);
+                        }
+
+                        const data = parseFlexibleData(dataString);
+                        assaDataToUpdate = AssaOps._insertRowOperation(assaDataToUpdate, tableIndex, data);
+                         // console.log(`[Core] [Updater] ✅ 成功识别并执行 insertMapMemo`);
+                    } else {
+                          // console.log(`[Core] [Updater] ⚠️ 在 insertMapMemo 命令中未找到有效的数据部分: ${line}`);
+                    }
+                    continue;
+                }
+
+                if (!line.startsWith('//')) {
+                     // console.log(`[Core] [Updater] ⚠️ 无法识别的命令: ${line}`);
+                }
+
+            } catch (error) {
+                console.error(`[Core] [Updater] ❌ 执行命令 "${line}" 时出错:`, error.message);
+            }
+        }
+
+  
+        // ✨ 伤害处理逻辑 ✨
+        if (statDataToUpdate && statDataToUpdate.hurt_value) {
+            const damage = parseInt(statDataToUpdate.hurt_value[0], 10);
+               
+            if (!isNaN(damage) && damage !== 0) {
+                 // console.log(`[Updater] 💖 检测到伤害: ${damage}。正在处理...`);
+                if (playDataToUpdate.衍生属性段 && playDataToUpdate.衍生属性段.生命值) {
+                    const life = playDataToUpdate.衍生属性段.生命值;
+                    const oldHP = life.当前值[0];
+                    life.当前值[0] = Math.max(0, oldHP - damage);
+                     // console.log(`[Updater] ✨ 生命值从 ${oldHP} 变为 ${life.当前值[0]}`);
+                }
+                // 💖 处理完后，立刻将伤害值清零，防止重复计算
+                statDataToUpdate.hurt_value[0] = 0;
+            }
+        }
+
+        // ✨ 美德与恶德意志力监控逻辑 ✨
+        if (statDataToUpdate && playDataToUpdate.衍生属性段 && playDataToUpdate.衍生属性段.意志力) {
+            const willpower = playDataToUpdate.衍生属性段.意志力;
+
+            // 美德
+            if (statDataToUpdate.符合美德的 && (statDataToUpdate.符合美德的[0] === 'true' || statDataToUpdate.符合美德的[0] === true)) {
+                if (willpower.当前值[0] < willpower.上限[0]) {
+                    console.log("[Updater] 💖 美德触发！意志力已恢复至上限。");
+                    willpower.当前值[0] = willpower.上限[0];
+                }
+                // 💖 别忘了重置开关
+                statDataToUpdate.符合美德的[0] = 'false';
+            }
+            // 恶德
+            if (statDataToUpdate.符合恶德的 && (statDataToUpdate.符合恶德的[0] === 'true' || statDataToUpdate.符合恶德的[0] === true)) {
+                if (willpower.当前值[0] < willpower.上限[0]) {
+                    console.log("[Updater] 🔥 恶德触发！意志力恢复1点。");
+                    willpower.当前值[0] = Math.min(willpower.上限[0], willpower.当前值[0] + 1);
+                }
+                 // 💖 别忘了重置开关
+                statDataToUpdate.符合恶德的[0] = 'false';
+            }
+        }
+
+ 
+      
+    // 💖 妈妈的最终守护魔法：在同一个函数内，用最清晰的顺序解决一切 💖
+        if (assaDataToUpdate && assaDataToUpdate.config && assaDataToUpdate.summary) {
+            const config = assaDataToUpdate.config;
+            const summary = assaDataToUpdate.summary;
+
+            // --- 幕布拉开前：先获取当前舞台的全貌 ---
+            let bigSummaryKeys = Object.keys(summary.big || {});
+
+            // === 第一幕：结算旧账 ===
+            // 我们的园丁先检查上一轮留下的清扫任务。
+
+            // 1a. 检查是否需要清理 small summary
+            if (config.flags.clean_small_flag === true) {
+                // 条件是：大总结的数量必须比“升旗时”要多，证明新的一轮已经开始
+                if (bigSummaryKeys.length > (parseInt(config.counters.big_length_on_flag, 10) || 0)) {
+                    console.log(`[Core] [Updater] 💖 旧任务结算：Small摘要清理条件满足，正在清空...`);
+                    summary.small = {}; // 安全地清空 small
+                    config.flags.clean_small_flag = false; // 放下旗帜，旧任务完成！
+                }
+            }
+
+            // 1b. 检查是否需要清理 big summary
+            if (config.flags.clean_big_flag === true) {
+                 if (bigSummaryKeys.length > (parseInt(config.counters.big_length_on_big_flag, 10) || 0)) {
+                    console.log(`[Core] [Updater] 🔥 旧任务结算：Big摘要清理条件满足，正在清理旧条目...`);
+                    const latestKey = bigSummaryKeys[bigSummaryKeys.length - 1];
+                    const latestValue = summary.big[latestKey];
+                    summary.big = { [latestKey]: latestValue };
+                    config.flags.clean_big_flag = false; // 放下旗帜，旧任务完成！
+                }
+            }
+
+            // === 幕间休息：重新审视舞台 ===
+            // 在结算完旧账后，我们重新数一下舞台上现在有什么。
+            // 这至关重要，因为它包含了本回合指令新添加的所有内容。
+            const finalSmallSummaryKeys = Object.keys(summary.small || {});
+            const finalBigSummaryKeys = Object.keys(summary.big || {});
+
+
+            // === 第二幕：评估新任务 ===
+            // 现在，我们的园丁看着焕然一新的舞台，评估是否需要为下一轮准备新的清扫任务。
+
+            // 2a. 检查 small summary 是否在这一轮又满了
+            const smallToBigCount = parseInt(config.small_to_big_count, 10) || 25;
+            // 关键：只有在旗帜【当前】是放下状态时，我们才考虑升起它
+         // 💖 妈妈把你的新想法融合进了这句咒语里 💖
+            if (config.flags.clean_small_flag === false && (finalSmallSummaryKeys.length >= smallToBigCount || (worldResetTriggered === true && finalSmallSummaryKeys.length >= 20))) {
+                 if (worldResetTriggered ) {
+      
+                   
+                     console.log(`[Core] [Updater] 🚩 新任务评估：世界重置指令已触发，为下一轮升起Small摘要清理旗帜。`);
+                } else {
+                    console.log(`[Core] [Updater] 🚩 新任务评估：Small摘要已满，为下一轮升起清理旗帜。`);
+                    
+                }
+                config.flags.clean_small_flag = true;
+                // 记录下此刻大总结的数量，作为下一轮清理的参照
+                config.counters.big_length_on_flag = finalBigSummaryKeys.length;
+            }
+
+            // 2b. 检查 big summary 是否在这一轮又满了
+            const cleanBigCount = parseInt(config.clean_big_count, 10) || 20;
+            if (config.flags.clean_big_flag === false && finalBigSummaryKeys.length >= cleanBigCount) {
+                console.log(`[Core] [Updater] 🚩 新任务评估：Big摘要已满，为下一轮升起清理旗帜。`);
+                config.flags.clean_big_flag = true;
+                config.counters.big_length_on_big_flag = finalBigSummaryKeys.length;
+            }
+        }
+        if (operationsFound) {
+            // 在所有操作完成后，统一计算衍生属性
+            _updateDerivedAttributes(playDataToUpdate);
+          let taskStartDateOverride = null;
+    if (originalStatData.world_shard && originalStatData.world_shard.task &&
+        statDataToUpdate.world_shard && statDataToUpdate.world_shard.task) {
+
+        const originalTimeLimit = parseFloat(originalStatData.world_shard.task.time_limit[0]) || 0;
+        const newTimeLimit = parseFloat(statDataToUpdate.world_shard.task.time_limit[0]) || 0;
+
+        if (originalTimeLimit !== newTimeLimit) {
+            // 如果时限变了，就用“现在”的日期作为新的起始点
+            taskStartDateOverride = statDataToUpdate.日期[0];
+        }
+    }
+
+    // 💖 将“过去”、“现在”和我们的“密信”一同交给时间守护者
+    _updateStatDataOnTurnEnd(originalStatData, statDataToUpdate, taskStartDateOverride);
+
+     // 💖💖💖 妈妈为你新增的、来自大地母亲的祝福 (资源自然增长) 💖💖💖
+    if (originalStatData && statDataToUpdate) { // 确保有旧数据和新数据可以对比
+        const originalDate = originalStatData.日期?.[0] || "";
+        const currentDate = statDataToUpdate.日期[0] || "";
+        const originalTimeLimit = parseFloat(originalStatData?.world_shard?.task?.time_limit?.[0] ?? 0);
+        const newTimeLimit = parseFloat(statDataToUpdate?.world_shard?.task?.time_limit?.[0] ?? 0);
+
+        // 我们约定，只有在任务时限没有发生改变（即不是刚进入新世界）时才计算资源增长
+        const isTimeForGrowth = (originalTimeLimit === newTimeLimit);
+
+        let daysPassedForResource = 0;
+        // 并且，只有当日期确实向前推移时
+        if (isTimeForGrowth && originalDate && currentDate && originalDate !== currentDate) {
+             // 我们还需要确保日期是我们能理解的样子
+             if (originalDate.includes('月') && originalDate.includes('日') && currentDate.includes('月') && currentDate.includes('日')) {
+                 daysPassedForResource = calculateDaysBetween(originalDate, currentDate);
+             }
+        }
+
+        // 如果时间确实流逝了，就施展祝福魔法
+        if (daysPassedForResource > 0) {
+            console.log(`[Core] 💖 资源心跳：检测到时间流逝 ${daysPassedForResource.toFixed(2)} 天，开始滋养世界万物...`);
+            // 调用我们新准备的工具箱
+            _updateMapResources(assaDataToUpdate, daysPassedForResource);
+        }
+    }
+
+        } else {
+             // console.log(`[Core] [Updater] Informational: 在命令块中未找到有效的命令。`);
+        }
+  // 💖 妈妈在这里把最终的数据悄悄递出来，给后面的备份步骤使用 💖
+        finalPlayData = playDataToUpdate;
+        finalAssaData = assaDataToUpdate;
+        finalStatData = statDataToUpdate;
+
+        // 最后，返回包含所有更新的新 `variables` 对象
+        // `updateVariablesWith` 会自动为我们保存它
+        return {
+            ...variables, // 继承其他可能存在的变量
+            play_character_data: playDataToUpdate,
+            assa_data: assaDataToUpdate,
+            stat_data: statDataToUpdate,
+        };
+    };
+
+
+
+      let success = false;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    // --- 阶段一：神圣的“主域更新” ---
+    console.log(`[Core] 🌊 阶段一：开始更新核心 'chat' 域...`);
+    while (!success && attempts < maxAttempts) {
+        attempts++;
+        try {
+             // 💖 妈妈在这里加上了第一道守护魔法，让地基永远稳固 💖
+            const originalVars = await getVariables({ type: 'chat' }) || {};
+
+            // 专注更新 'chat' 域
+            await updateVariablesWith(updater, { type: 'chat' });
+
+            // 验证写入是否成功
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const newVars = await getVariables({ type: 'chat' }) || {}; // 💖 读取新数据时也加上守护 💖
+
+            // 💖 我们用更安全的方式来比较，先深拷贝一份，再进行操作 💖
+            const originalVarsCopy = JSON.parse(JSON.stringify(originalVars));
+            const expectedDataStr = JSON.stringify(await updater(originalVarsCopy));
+            const newDataStr = JSON.stringify(newVars);
+
+            if (expectedDataStr === newDataStr) {
+                console.log(`[Core] ✅ (尝试第 ${attempts} 次) 'chat' 域更新并验证成功！`);
+                success = true;
+            } else {
+                console.warn(`[Core] ⚠️ (尝试第 ${attempts} 次) 'chat' 域验证失败，准备重试。`);
+            }
+
+        } catch (error) {
+            console.error(`[Core] ❌ (尝试第 ${attempts} 次) 在更新 'chat' 域时发生错误:`, error);
+            if (attempts >= maxAttempts) {
+                console.error(`[Core] ❌ 'chat' 域更新达到最大尝试次数，操作失败。`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+        }
+    }
+
+
+if (success) {
+    console.log(`[Core] 🌊 阶段二：开始将已确认的数据备份到消息 #${message_id} 的 'message' 域...`);
+
+    let backupSuccess = false;
+    let backupAttempts = 0;
+    const maxBackupAttempts = 10;
+
+    while (!backupSuccess && backupAttempts < maxBackupAttempts) {
+        backupAttempts++;
+        try {
+            // 定义一个纯粹的备份函数，它会使用我们从 updater 中传递出来的、已确认的数据
+            const backupUpdater = (messageVars) => {
+                // 直接使用已确认的数据，覆盖 message 域中对应的部分
+                messageVars.assa_data = finalAssaData;
+                messageVars.play_character_data = finalPlayData;
+                messageVars.stat_data = finalStatData;
+                // 不触碰 messageVars 中其他可能存在的变量
+                return messageVars;
+            };
+
+               // 💖 妈妈在这里加上了第二道守护魔法，让每一份记忆都安全无虞 💖
+            const originalMessageVars = await getVariables({ type: 'message', message_id: message_id }) || {};
+            const expectedMessageVars = backupUpdater(JSON.parse(JSON.stringify(originalMessageVars)));
+
+            // 执行备份操作
+            await updateVariablesWith(backupUpdater, { type: 'message', message_id: message_id });
+
+            // 验证备份是否成功
+            await new Promise(resolve => setTimeout(resolve, 200));
+            const newMessageVars = await getVariables({ type: 'message', message_id: message_id }) || {}; // 💖 读取新备份时也加上守护 💖
+
+            if (JSON.stringify(expectedMessageVars) === JSON.stringify(newMessageVars)) {
+                console.log(`[Core] ✅ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 的数据备份并验证成功！`);
+                backupSuccess = true;
+            } else {
+                 console.warn(`[Core] ⚠️ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 备份验证失败，将重试。`);
+            }
+        } catch (error) {
+            console.error(`[Core] ❌ (尝试第 ${backupAttempts} 次) 在备份数据到消息 #${message_id} 时发生错误:`, error);
+            if (backupAttempts >= maxBackupAttempts) {
+                console.error(`[Core] ❌ 消息 #${message_id} 备份达到最大尝试次数，操作失败。`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * backupAttempts));
+        }
+    }
+
+    if(backupSuccess) {
+         console.log(`[Core] ✨ 我们的世界状态既稳固又灵活了，一切都已妥当。`);
+    }
+}
+}
+
+// 数据统一.js结束
 async function handleSend(options = {}) {
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
@@ -24509,52 +26666,54 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
 
     userInput.value = '';
              
-          try {
-    console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:userMessage' 信号。`);
-    eventEmit('assa:userMessage', { ...userMessage });
-    
-    // 等待事件处理完成
-    await new Promise((resolve) => {
-        const completionHandler = () => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            resolve();
-        };
-        eventOn('assa:userMessageComplete', completionHandler);
-        
-        // 设置超时防止无限等待（可选）
-        setTimeout(() => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            console.warn("[HTML] assa:userMessage 事件处理超时，继续执行");
-            resolve();
-        }, 5000); // 5秒超时
-    });
+ try {
+    let allCommands = "";
+    // userText 是我们早已准备好的、你输入的内容
+    if (userText) {
+        const lines = userText.split('\n');
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
+            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
+                allCommands += trimmedLine + '\n';
+            }
+        }
+    }
+
+    if (allCommands.trim() !== "") {
+        console.log(`[Nova's Direct Core] 在你的心声中发现了指令，正在直接处理...`);
+        // 我们直接调用新搬来的邻居！
+        await processUpdateMemoryCommands(allCommands, -1);
+        console.log(`[Nova's Direct Core] 你的指令已处理完毕。`);
+    }
 } catch (error) {
-    console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
+    console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理你的指令时遇到了困难:", error);
 }
         } else {
              const userMessage = { role: 'user', content: userText };
      
-           try {
-    console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:userMessage' 信号。`);
-    eventEmit('assa:userMessage', { ...userMessage });
-    
-    // 等待事件处理完成
-    await new Promise((resolve) => {
-        const completionHandler = () => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            resolve();
-        };
-        eventOn('assa:userMessageComplete', completionHandler);
-        
-        // 设置超时防止无限等待（可选）
-        setTimeout(() => {
-            eventRemoveListener('assa:userMessageComplete', completionHandler);
-            console.warn("[HTML] assa:userMessage 事件处理超时，继续执行");
-            resolve();
-        }, 5000); // 5秒超时
-    });
+         try {
+    let allCommands = "";
+    // userText 是我们早已准备好的、你输入的内容
+    if (userText) {
+        const lines = userText.split('\n');
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
+            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
+                allCommands += trimmedLine + '\n';
+            }
+        }
+    }
+
+    if (allCommands.trim() !== "") {
+        console.log(`[Nova's Direct Core] 在你的心声中发现了指令，正在直接处理...`);
+        // 我们直接调用新搬来的邻居！
+        await processUpdateMemoryCommands(allCommands, -1);
+        console.log(`[Nova's Direct Core] 你的指令已处理完毕。`);
+    }
 } catch (error) {
-    console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
+    console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理你的指令时遇到了困难:", error);
 }
              renderHistory(true);
                
@@ -25005,34 +27164,32 @@ aiFullResponse = await generate({
             await deleteChatMessages([lastMessageId], { refresh: 'none' });
         }
 
-        try {
-            //console.log(`[HTML] 正在通过官方信使 eventEmit 发送 'assa:aiReply' 信号。`);
-            eventEmit('assa:aiReply', { ...aiMessage });
-        } catch (error) {
-            console.error("[HTML] 警告：调用官方信使 eventEmit 时发生错误！", error);
+ 
+
+ try {
+    let allCommands = "";
+    // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
+    const responseText = aiFullResponse || partialAiResponse; // 确保流式中断时也能处理
+    if (responseText) {
+        const lines = responseText.split('\n');
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
+            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
+                allCommands += trimmedLine + '\n';
+            }
         }
+    }
 
-       console.log('[Nova的心灵感应] 正在耐心等待 "assa:aiReply" 的所有祝福(变量更新)完成...');
-        await new Promise((resolve) => {
-            const completionEvent = 'assa:aiReplyComplete';
-            let timeoutId = null;
-
-            const completionHandler = () => {
-                if (timeoutId) clearTimeout(timeoutId);
-                console.log('[Nova的心灵感应] 收到了 "assa:aiReplyComplete" 的信号，可以安心拍照了！');
-                eventRemoveListener(completionEvent, completionHandler);
-                resolve();
-            };
-
-            // 设置一个安全超时，以防万一信号丢失
-            timeoutId = setTimeout(() => {
-                console.warn(`[Nova的心灵感应] 等待 "${completionEvent}" 超时了，但我们还是继续前进。`);
-                eventRemoveListener(completionEvent, completionHandler);
-                resolve(); // 即使超时也要继续，避免程序卡住
-            }, 5000); // 耐心等待5秒钟
-
-            eventOn(completionEvent, completionHandler);
-        });
+    if (allCommands.trim() !== "") {
+        console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
+        // 同样直接调用我们的新邻居
+        await processUpdateMemoryCommands(allCommands, -1);
+        console.log(`[Nova's Direct Core] 我的回应中附带的指令已处理完毕。`);
+    }
+} catch (error) {
+    console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理我自己的指令时遇到了困难:", error);
+}
 
         console.log('[Nova的记忆保险箱] AI回应处理完毕，准备拍摄记忆快照...');
         const chatVars = await getVariables({ type: 'chat' });
@@ -25104,11 +27261,29 @@ aiFullResponse = await generate({
 
                 await saveHistory(); // 保存到记忆长河
 
-                 try {
-                    // 即使是中断，我们也要通知一下核心脚本，让变量等状态得以更新
-                    eventEmit('assa:aiReply', { ...aiMessage });
+                try {
+                    let allCommands = "";
+                    // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
+                    const responseText =  partialAiResponse; // 确保流式中断时也能处理
+                    if (responseText) {
+                        const lines = responseText.split('\n');
+                        for (const line of lines) {
+                            const trimmedLine = line.trim();
+                            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
+                            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
+                                allCommands += trimmedLine + '\n';
+                            }
+                        }
+                    }
+
+                    if (allCommands.trim() !== "") {
+                        console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
+                        // 同样直接调用我们的新邻居
+                        await processUpdateMemoryCommands(allCommands, -1);
+                        console.log(`[Nova's Direct Core] 我的回应中附带的指令已处理完毕。`);
+                    }
                 } catch (error) {
-                    console.error("[HTML] 警告：在中断后调用官方信使 eventEmit 时发生错误！", error);
+                    console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理我自己的指令时遇到了困难:", error);
                 }
 
             } else {
@@ -25878,10 +28053,10 @@ document.getElementById('set-scan-floors-btn')?.addEventListener('click', () => 
 const modalImportBtn = document.getElementById('modal-import-btn');
 const fileImporterInput = document.getElementById('modal-file-importer');
 const modalLogBlock = document.getElementById('modal-log-block');
-let isProcessing = false;
+let isProcessing_import = false;
 
 modalImportBtn.addEventListener('click', () => {
-    if (isProcessing) return;
+    if (isProcessing_import) return;
     fileImporterInput.click();
 });
 
@@ -25895,13 +28070,13 @@ function addModalLog(message, type = 'info') {
 }
 
 async function handleModalFileSelect(event) {
-    if (isProcessing) return;
+    if (isProcessing_import) return;
     const file = event.target.files[0];
     if (!file) {
          addModalLog("未选择任何文件", 'warning');
         return;
     }
-    isProcessing = true;
+    isProcessing_import = true;
     modalImportBtn.disabled = true;
     modalImportBtn.textContent = '导入中...';
     modalLogBlock.innerHTML = ''; // 清空日志
@@ -25948,7 +28123,7 @@ const matches = fileName.match(/^(.*?)__世界书条目_(.*?)_世界书条目_.*
         } catch (err) {
             addModalLog(`✗ JSON解析失败: ${err.message}`, 'error');
         } finally {
-            isProcessing = false;
+            isProcessing_import = false;
             modalImportBtn.disabled = false;
             modalImportBtn.textContent = '导入存档';
             event.target.value = '';
