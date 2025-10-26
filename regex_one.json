@@ -13556,7 +13556,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.13';
+ let current_game_version = '3.1.14';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -20820,7 +20820,14 @@ async function renderReadingModeChapter(msg) {
             .replace(/NOVA_BR/g, '<br>');
         finalHtml = finalHtml.replace(placeholder, cleanBlock);
     }
-
+ if (typeof memeImageMap !== 'undefined' && memeImageMap) {
+            finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
+                if (memeImageMap[memeName]) {
+                    return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+                }
+                return match;
+            });
+        }
     bubble.innerHTML = finalHtml;
 
     // 6. ✨ 使用稳定可靠的 srcdoc 方法处理 iframe ✨
@@ -20951,7 +20958,8 @@ window.addEventListener('message', function(event) {
     return bubble.innerHTML;
 }
  
-   async function createMessageBubble(msg, mode = 'chat') {  
+   async function createMessageBubble(msg, mode = 'chat') { 
+
     let content = msg.content;
    
     const originalIndex = conversationHistory.indexOf(msg);
@@ -21090,6 +21098,14 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
                  .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
     .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
             finalHtml = finalHtml.replace(placeholder, cleanBlock);
+        }
+        if (typeof memeImageMap !== 'undefined' && memeImageMap) {
+            finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
+                if (memeImageMap[memeName]) {
+                    return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+                }
+                return match;
+            });
         }
 
         bubble.innerHTML = finalHtml;
@@ -21234,21 +21250,7 @@ iframe.srcdoc = `<!DOCTYPE html>
             bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
          }
 
- // 🎭 最后一步：替换表情包 - 简单粗暴版
-if (typeof memeImageMap !== 'undefined' && memeImageMap) {
-    let htmlContent = bubble.innerHTML;
-    
-    htmlContent = htmlContent.replace(/\[([^\]]+)\]/g, (match, memeName) => {
-        console.log('找到:', memeName, '对应URL:', memeImageMap[memeName]);
-        if (memeImageMap[memeName]) {
-            return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
-        }
-        return match;
-    });
-    
-    bubble.innerHTML = htmlContent;
-}
-
+ 
     // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
 }
@@ -21276,6 +21278,7 @@ async function renderHistory(is_entry = false) {
     } else {
         if (initContainer) initContainer.style.display = 'none';
         if (mainWrapper) mainWrapper.style.display = 'flex';
+    
     }
 
     const dynamicContentArea = document.getElementById('dynamic-content-area');
@@ -22117,8 +22120,8 @@ function updateRerollButtonState(){
             rerollButton.disabled = true;
         }
     }
- function processSpecialModulesInMessage(content) {
-    // ✨✨✨ 妈妈的“主动索取”终极魔法！ ✨✨✨
+ function processSpecialModprocessulesInMessage(content) {
+ 
     try {
         if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
             // console.log("[Nova's Archives] 历史记录为空，无法寻找战斗。");
@@ -22506,6 +22509,14 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
     .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
             finalHtml = finalHtml.replace(placeholder, cleanBlock);
         }
+        if (typeof memeImageMap !== 'undefined' && memeImageMap) {
+            finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
+                if (memeImageMap[memeName]) {
+                    return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+                }
+                return match;
+            });
+        }
 
         bubble.innerHTML = finalHtml;
         // 步骤3：在气泡中寻找“画卷”占位符，并用安全的“魔法结界”(iframe)替换它们
@@ -22649,21 +22660,7 @@ iframe.srcdoc = `<!DOCTYPE html>
             bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
          }
 
- // 🎭 最后一步：替换表情包 - 简单粗暴版
-if (typeof memeImageMap !== 'undefined' && memeImageMap) {
-    let htmlContent = bubble.innerHTML;
-    
-    htmlContent = htmlContent.replace(/\[([^\]]+)\]/g, (match, memeName) => {
-        console.log('找到:', memeName, '对应URL:', memeImageMap[memeName]);
-        if (memeImageMap[memeName]) {
-            return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
-        }
-        return match;
-    });
-    
-    bubble.innerHTML = htmlContent;
-}
-
+ 
     // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
 }
