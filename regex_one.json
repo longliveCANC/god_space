@@ -13556,7 +13556,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.14';
+ let current_game_version = '3.1.15';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21789,7 +21789,7 @@ if (forceUpdateRegexButton) {
 }
 
 
-function showBackupConfirmation() {
+  function showBackupConfirmation() {
     // 如果这个确认弹窗还不存在，我们就创造它
     if (!document.getElementById('backup-confirmation-modal')) {
         const confirmationModalHTML = `
@@ -21822,14 +21822,14 @@ function showBackupConfirmation() {
             hideModal('backup-confirmation-modal');
             toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
 
-            try {
-                await Promise.all([
-                    performWorldbookUpdate(),
-                    performRegexUpdate()
-                    
-                ]);
-                showNovaAlert("世界已彻底重塑！法则与记忆均已更新！", "success", 4000);
-            } catch (error) {
+          try {
+    // 先完成世界书更新,等它彻底稳定
+    await performWorldbookUpdate();
+ 
+    // 世界书稳定后,再更新正则
+    await performRegexUpdate();
+ 
+}catch (error) {
                 console.error('双重更新过程中发生错误:', error);
                 toastr.error('更新过程中断，世界未能完全重塑。请查看控制台日志。');
             }
@@ -21839,7 +21839,7 @@ function showBackupConfirmation() {
     // 显示这个确认弹窗
     showModal('backup-confirmation-modal');
 }
- 
+
    // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
    function showContextMenu(event, index, bubbleElement) {
        // 首先，检查这个消息气泡是否正处于“编辑模式”
@@ -25491,14 +25491,14 @@ async function performRegexUpdate() {
             hideModal('backup-confirmation-modal');
             toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
 
-            try {
-                await Promise.all([
-                    performWorldbookUpdate(),
-                    performRegexUpdate()
-                    
-                ]);
-                showNovaAlert("世界已彻底重塑！法则与记忆均已更新！", "success", 4000);
-            } catch (error) {
+          try {
+    // 先完成世界书更新,等它彻底稳定
+    await performWorldbookUpdate();
+ 
+    // 世界书稳定后,再更新正则
+    await performRegexUpdate();
+ 
+}catch (error) {
                 console.error('双重更新过程中发生错误:', error);
                 toastr.error('更新过程中断，世界未能完全重塑。请查看控制台日志。');
             }
