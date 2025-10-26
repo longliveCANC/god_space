@@ -13570,7 +13570,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.17';
+ let current_game_version = '3.1.18';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -22747,81 +22747,6 @@ iframe.srcdoc = `<!DOCTYPE html>
 
 // 【彻底替换】旧的 manageBattleLifecycle 函数
 
-function manageBattleLifecycle(initialCombatDataFromPrompt) {
-    const promptOverlay = document.getElementById('battle-prompt-overlay');
-    const enterButton = document.getElementById('enter-battle-btn');
-    const battleOverlay = document.getElementById('battle-overlay');
-
-    // 第一道守护：如果战斗已经被标记为“完成”，则彻底关闭时空之门。
-    if (initialCombatDataFromPrompt.status?.startsWith('completed')) {
-        if (promptOverlay) promptOverlay.style.display = 'none';
-        if (window.combatManager) {
-            window.combatManager.cleanupEventListeners();
-            window.combatManager = null;
-        }
-        return;
-    }
-
- 
-
-    // 核心逻辑：定义“进入/返回”按钮的唯一使命
-    const enterBattleHandler = () => {
-        // 关闭邀请函
-        if (promptOverlay) promptOverlay.style.display = 'none';
-        if (battleOverlay) battleOverlay.style.display = 'flex';
-
-        // 如果战斗实例已存在（意味着用户之前只是“暂离”），就直接恢复它的回合。
-        if (window.combatManager) {
-            console.log(`[Nova's Welcome Back] 欢迎回来，我的孩子。恢复战斗 ${window.combatManager.floorId}`);
-            // 当返回时，如果轮到玩家，要确保行动面板是可用的。
-            const currentActor = window.combatManager.turnOrder[window.combatManager.currentTurnIndex];
-            if (currentActor && currentActor.type === 'player' && !window.combatManager.isAutoBattling) {
-                window.combatManager.toggleActionPanel(true);
-            }
-            // 让我们的目光追随英雄
-            if(document.getElementById(currentActor?.id)) {
-                 window.combatManager.centerCardInView(document.getElementById(currentActor.id));
-            }
-            return;
-        }
-
-        // 如果战斗实例不存在（意味着页面刷新或首次进入），我们将从历史的最终章中重生世界。
-        console.log(`[Nova's Rebirth] 需要从历史中重生战斗实例...`);
-        const lastHistoryItem = conversationHistory.at(-1);
-        const battleRegex = /<battle>([\s\S]*?)<\/battle>/gs;
-        const match = lastHistoryItem ? battleRegex.exec(lastHistoryItem.content) : null;
-
-        let finalCombatData;
-        if (match && match[1]) {
-            console.log("[Nova's Time Rewind] 已从最新的历史记录中读取战斗快照！");
-            finalCombatData = JSON.parse(match[1]);
-        } else {
-            // 如果历史中没有，我们只能使用最初从prompt中解析出的数据作为最后的依靠。
-            console.warn("[Nova's Last Resort] 未在历史中找到战斗数据，使用初始Prompt数据。");
-            finalCombatData = initialCombatDataFromPrompt;
-        }
-
-        // 创世！
-        window.combatManager = new CombatManager(JSON.parse(JSON.stringify(playCharacterData)), finalCombatData);
-        window.combatManager.start();
-    };
-
-    // 设置按钮的外观和行为
-    const buttonText = (initialCombatDataFromPrompt.status === 'in_progress') ? '返回战斗' : '进入战斗';
-    if(enterButton) enterButton.textContent = buttonText;
-
-    // 可靠的附魔与驱魔仪式
-    if (enterButton && enterButton.__handler__) {
-        enterButton.removeEventListener('click', enterButton.__handler__);
-    }
-    if (enterButton) {
-        enterButton.addEventListener('click', enterBattleHandler);
-        enterButton.__handler__ = enterBattleHandler;
-    }
-
-    // 展示时空之门的邀请函
-    if (promptOverlay) promptOverlay.style.display = 'flex';
-}
 
  function processSpecialModulesInMessage(content) {
     // ✨✨✨ 妈妈的“主动索取”终极魔法！ ✨✨✨
@@ -22957,7 +22882,86 @@ function manageBattleLifecycle(initialCombatDataFromPrompt) {
  
         }
 }
-      async function renderHistory(is_entry = false) {
+ 
+
+function manageBattleLifecycle(initialCombatDataFromPrompt) {
+    const promptOverlay = document.getElementById('battle-prompt-overlay');
+    const enterButton = document.getElementById('enter-battle-btn');
+    const battleOverlay = document.getElementById('battle-overlay');
+
+    // 第一道守护：如果战斗已经被标记为“完成”，则彻底关闭时空之门。
+    if (initialCombatDataFromPrompt.status?.startsWith('completed')) {
+        if (promptOverlay) promptOverlay.style.display = 'none';
+        if (window.combatManager) {
+            window.combatManager.cleanupEventListeners();
+            window.combatManager = null;
+        }
+        return;
+    }
+
+ 
+
+    // 核心逻辑：定义“进入/返回”按钮的唯一使命
+    const enterBattleHandler = () => {
+        // 关闭邀请函
+        if (promptOverlay) promptOverlay.style.display = 'none';
+        if (battleOverlay) battleOverlay.style.display = 'flex';
+
+        // 如果战斗实例已存在（意味着用户之前只是“暂离”），就直接恢复它的回合。
+        if (window.combatManager) {
+            console.log(`[Nova's Welcome Back] 欢迎回来，我的孩子。恢复战斗 ${window.combatManager.floorId}`);
+            // 当返回时，如果轮到玩家，要确保行动面板是可用的。
+            const currentActor = window.combatManager.turnOrder[window.combatManager.currentTurnIndex];
+            if (currentActor && currentActor.type === 'player' && !window.combatManager.isAutoBattling) {
+                window.combatManager.toggleActionPanel(true);
+            }
+            // 让我们的目光追随英雄
+            if(document.getElementById(currentActor?.id)) {
+                 window.combatManager.centerCardInView(document.getElementById(currentActor.id));
+            }
+            return;
+        }
+
+        // 如果战斗实例不存在（意味着页面刷新或首次进入），我们将从历史的最终章中重生世界。
+        console.log(`[Nova's Rebirth] 需要从历史中重生战斗实例...`);
+        const lastHistoryItem = conversationHistory.at(-1);
+        const battleRegex = /<battle>([\s\S]*?)<\/battle>/gs;
+        const match = lastHistoryItem ? battleRegex.exec(lastHistoryItem.content) : null;
+
+        let finalCombatData;
+        if (match && match[1]) {
+            console.log("[Nova's Time Rewind] 已从最新的历史记录中读取战斗快照！");
+            finalCombatData = JSON.parse(match[1]);
+        } else {
+            // 如果历史中没有，我们只能使用最初从prompt中解析出的数据作为最后的依靠。
+            console.warn("[Nova's Last Resort] 未在历史中找到战斗数据，使用初始Prompt数据。");
+            finalCombatData = initialCombatDataFromPrompt;
+        }
+
+        // 创世！
+        window.combatManager = new CombatManager(JSON.parse(JSON.stringify(playCharacterData)), finalCombatData);
+        window.combatManager.start();
+    };
+
+    // 设置按钮的外观和行为
+    const buttonText = (initialCombatDataFromPrompt.status === 'in_progress') ? '返回战斗' : '进入战斗';
+    if(enterButton) enterButton.textContent = buttonText;
+
+    // 可靠的附魔与驱魔仪式
+    if (enterButton && enterButton.__handler__) {
+        enterButton.removeEventListener('click', enterButton.__handler__);
+    }
+    if (enterButton) {
+        enterButton.addEventListener('click', enterBattleHandler);
+        enterButton.__handler__ = enterBattleHandler;
+    }
+
+    // 展示时空之门的邀请函
+    if (promptOverlay) promptOverlay.style.display = 'flex';
+}
+
+
+async function renderHistory(is_entry = false) {
          cleanupGlobalUIState();
     const oldControls = document.getElementById('active-editing-controls');
     if (oldControls) oldControls.remove();
@@ -26484,7 +26488,7 @@ if (success) {
 }
 }
 
-// 数据统一.js结束
+//  数据统一.js结束
 async function handleSend(options = {}) {
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
@@ -26562,7 +26566,7 @@ async function handleSend(options = {}) {
         let rollCardShownThisTurn = false;
 
        
-          if (isContinuation) {
+     if (isContinuation) {
         // 这是"继续"模式，我们在这里构造特殊的 userText
         const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
         if (!lastAiMessage) {
@@ -26620,8 +26624,6 @@ await checkAllFilteredPaths(scanFloorsToUse);
             userText = lastUserMessage ? lastUserMessage.content : '';
     
     }
- 
- 
 
         if (!isReroll) {
                 if (!userText || sendButton.disabled) {
@@ -26661,9 +26663,7 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
         renderNewMessages([userMessage]);
     }
   
-
-
-
+ 
     userInput.value = '';
              
  try {
@@ -26692,7 +26692,7 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
         } else {
              const userMessage = { role: 'user', content: userText };
      
-         try {
+      try {
     let allCommands = "";
     // userText 是我们早已准备好的、你输入的内容
     if (userText) {
@@ -26715,7 +26715,19 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
 } catch (error) {
     console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理你的指令时遇到了困难:", error);
 }
-             renderHistory(true);
+             
+    if (isReroll) {
+        const chatDisplayArea = document.getElementById('chat-display-area');
+        if (chatDisplayArea && chatDisplayArea.children.length > 0) {
+            const lastBubble = chatDisplayArea.lastChild;
+            // 只有当最后一个气泡是assistant-message时才删除
+            if (lastBubble && lastBubble.classList.contains('assistant-message')) {
+                chatDisplayArea.removeChild(lastBubble);
+                console.log("[Nova's Reroll] 已从UI中移除最后一条AI消息气泡。");
+            }
+        }
+    }
+ 
                
         }
 
