@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.19';
+ let current_game_version = '3.2.0';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -24254,17 +24254,37 @@ async function checkAndUpdateMemoryVisibility(fullPath, messageCount = 5, return
         return;
     }
     
-const keyword = pathParts[2];
+ // 1. 获取原始的、未处理的关键词字符串
+const rawKeyword = pathParts[2];
 
-// 同时添加验证
-if (!keyword) {
+// 2. 添加验证
+if (!rawKeyword) {
     console.log(`路径 ${fullPath} 层级不足3层，无法提取关键词`);
     return;
 }
- 
-    // 在最近的消息中搜索关键词
-    const isFound = combinedContent.includes(keyword);
-    
+
+// 3. 使用正则表达式分割关键词，并过滤掉空字符串
+// 这个正则表达式会匹配一个或多个非字母、非数字、非下划线的字符（基本上就是各种符号和空格）
+const keywords = rawKeyword.split(/[^\u4e00-\u9fa5a-zA-Z0-9]+/).filter(k => k.length > 0);
+console.log(`[智能过滤] 从 "${rawKeyword}" 中提取的关键词: [${keywords.join(', ')}]`);
+
+// 4. 在最近的消息中搜索关键词列表中的任何一个词
+// a. 检查关键词列表是否为空，如果为空则没法搜索
+if (keywords.length === 0) {
+    console.log(`[智能过滤] 从 "${rawKeyword}" 中未能提取出有效关键词。`);
+    // 根据你的需求，这里可以默认视为未找到
+    const showValue = 'false';
+    const memoryCommand = `memory('${fullPath}','_showInEJS','${showValue}');\n`;
+    if (returnOnly) {
+        return memoryCommand;
+    }
+    const messageToSend = `<updateMemory>\n${memoryCommand}</updateMemory>`;
+    triggerassa(`/setinput ${messageToSend}`);
+    return;
+}
+
+// b. 遍历关键词列表，只要找到一个匹配项就视为成功
+const isFound = keywords.some(k => combinedContent.includes(k));
     // 根据是否找到,设置 _showInEJS 的值
     const showValue = isFound ? 'true' : 'false';
     
@@ -24283,7 +24303,7 @@ if (!keyword) {
     triggerassa(`/setinput ${messageToSend}`);
  
 }
-// findAllFilterPaths 和 checkAllFilteredPaths 保持不变
+ 
 function findAllFilterPaths(obj, currentPath = '') {
     const filterPaths = [];
     
@@ -25655,7 +25675,7 @@ function cleanParam(param) {
                                    if (args.length >= 3) {
                                  let path = cleanPath(clean(args[0])); 
                                 // <--- 把妈妈的悄悄话加在这里！
-                             const keyArg = clean(args[1]);
+                             const keyArg = cleanPath(clean(args[1]));
                              let valueStr = args[2];
 
      const thirdArgClean = clean(valueStr);
@@ -25999,7 +26019,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                                  continue;
                                  }
                                     let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
-                             const key = fullPath.substring(lastDotIndex1 + 1);
+                             const key = cleanPath(fullPath.substring(lastDotIndex1 + 1));
 
                                  // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
                              if (path.includes('群员')) {
@@ -26117,7 +26137,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                match = line.match(/\bdelete\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*;?/);
                 if (match) {
                const path = cleanPath(match[1]); // 💖 清理路径
-    const key = match[2];
+    const key = cleanPath(match[2]);
   // 💖 妈妈为你在这里注入了新的智慧 💖
                       // 💖 妈妈在这里为你注入了更周密的智慧 💖
                     if (key === 'all' && (path === 'world_set.npc' || path === 'world_set.settings')) {
@@ -36747,8 +36767,10 @@ initializeReadingMode();
 
    setTimeout(() => {
         // 然后以“静默模式”咏唱探寻咒语，只有发现惊喜时才告诉你
+         initDisplay();
+
         checkForFutureEchoes(false);
-    }, 1000);
+    }, 3000);
 
      const addQrButton = document.getElementById('add-qr-button');
     if (addQrButton) {
