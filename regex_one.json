@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.2.0';
+ let current_game_version = '3.2.1';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21863,10 +21863,11 @@ if (checkForUpdatesButton) {
 // 强制更新世界书的守护者
 const forceUpdateWorldbookButton = document.getElementById('force-update-worldbook-btn');
 if (forceUpdateWorldbookButton) {
-    forceUpdateWorldbookButton.addEventListener('click', () => {
+    forceUpdateWorldbookButton.addEventListener('click', async () => {
         toastr.info('收到强制指令！正在从远方重新拉取世界书...');
         // 直接召唤世界书更新的魔法
-        performWorldbookUpdate();
+         await performWorldbookUpdate();
+         await loadWorldbookSettingsFromChat();
     });
 }
 
@@ -27772,10 +27773,7 @@ async function checkForFutureEchoes(isManualTrigger = false) {
         }
     }
 }
- /* existing code before the function */
-
- /* existing code before the function */
-
+ 
 async function performRegexUpdate() {
     toastr.info('拉取远程同层代码...');
 
@@ -36196,7 +36194,7 @@ function initAutoSetNpcFilter() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-   await loadWorldbookSettingsFromChat();
+  
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 setupReconfigModal();
 initAutoSetNpcFilter();
@@ -36349,7 +36347,7 @@ if (activeUrlSet.size > 0) {
 }
  
  
-    await initDisplay();
+ await initDisplay();
 
 await applyThemeAndData(); 
 
@@ -36403,31 +36401,9 @@ await applyThemeAndData();
         });
     });
 
-
-    // tabs.forEach(tab => {
-    //     tab.addEventListener('click', () => {
-    //         tabs.forEach(item => item.classList.remove('active'));
-    //         pages.forEach(page => page.classList.remove('active'));
-    //         tab.classList.add('active');
-    //         const targetPage = document.getElementById(tab.dataset.tab);
-    //         if (targetPage) {
-    //             targetPage.classList.add('active');
-    //         }
-    //         if (tab.dataset.tab !== 'page-basic') {
-    //             hideMap();
-    //         }
-    //     });
-    // });
-
-    // 绑定按钮事件
-    // document.getElementById('view-map-btn').addEventListener('click', showMap);
-    // document.getElementById('back-to-world-btn').addEventListener('click', hideMap);
+ 
     document.getElementById('roll-result-orb').addEventListener('click', showRollResultModal);
-    // document.getElementById('view-summary-btn').addEventListener('click', showSummaryModal);
-    // const themeSwitcherBtn = document.getElementById('theme-switcher');
-    // if (themeSwitcherBtn) {
-    //     themeSwitcherBtn.addEventListener('click', switchTheme);
-    // }
+ 
     document.getElementById('manage-inventory-btn').addEventListener('click', () => {
         populateInventoryModal();
         showModal('inventory-modal');
@@ -36765,12 +36741,11 @@ const closeTaskSummaryModal = () => {
 initGroupChatInterface();
 initializeReadingMode();
 
-   setTimeout(() => {
-        // 然后以“静默模式”咏唱探寻咒语，只有发现惊喜时才告诉你
-         initDisplay();
-
-        checkForFutureEchoes(false);
-    }, 3000);
+   setTimeout(async () => {
+     await loadWorldbookSettingsFromChat();
+      await initDisplay();
+     checkForFutureEchoes(false);
+    }, 2000);
 
      const addQrButton = document.getElementById('add-qr-button');
     if (addQrButton) {
