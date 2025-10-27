@@ -13254,6 +13254,10 @@ pointer-events: auto;
     <label>扫描楼层数 <span id="current-scan-floors" style="color: var(--accent-color); font-weight: bold;">(未设置)</span></label>
     <button id="set-scan-floors-btn" class="control-btn-special">设置楼层</button>
 </div>
+<div class="setting-item">
+    <label>自动设置NPC为绿灯</label>
+    <input type="checkbox" id="auto-set-npc-filter" style="width: auto; cursor: pointer;" checked>
+</div>
                 <div class="setting-item">
                     <label>系统更新检查</label>
                     <button id="check-for-updates-btn" class="control-btn-special">检查更新</button>
@@ -13570,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.1.18';
+ let current_game_version = '3.1.19';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21623,20 +21627,23 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
  async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-   const uidsToBackup = [11, 30,7,63,43,35,80,32,40];
+    const uidsToBackup = [11, 30,7,63,43,35,80,32,40];
     let backedUpEntries = [];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
         const allBooks = TavernHelper.getWorldbookNames();
-        if (allBooks.includes(worldbookName)) {
-            // ... 备份逻辑，这里是完美的，不需要动 ...
-            console.log(`正在备份「${worldbookName}」中的特定词条...`);
-            const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
-            backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
-            console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
-            await TavernHelper.deleteWorldbook(worldbookName);
-        }
+if (allBooks.includes(worldbookName)) {
+    toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
+    console.log(`正在备份「${worldbookName}」中的特定词条...`);
+    const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
+    backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
+    console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
+    toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
+    
+    await TavernHelper.deleteWorldbook(worldbookName);
+    await new Promise(resolve => setTimeout(resolve, 500)); // 等待删除完成
+}
 
         const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
 await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
@@ -21647,15 +21654,21 @@ await waitForWorldToSettle(worldbookName); // 然后等待稳定
 await new Promise(resolve => setTimeout(resolve, 500)); // 稳定后再额外等待
         toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
 
-        // --- 现在，世界已经稳定，我们可以安全地恢复词条了 ---
-        if (backedUpEntries.length > 0) {
-            console.log('正在恢复已备份的词条...');
-            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
-                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
-                return [...cleanedNewWorldbook, ...backedUpEntries];
-            });
-         console.log('词条恢复完成!');
-await new Promise(resolve => setTimeout(resolve, 600)); // 给恢复操作时间生效
+        
+if (backedUpEntries.length > 0) {
+    toastr.info('正在恢复已备份的词条...'); // 添加开始提示
+    console.log('正在恢复已备份的词条...');
+    
+    await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+        const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+        return [...cleanedNewWorldbook, ...backedUpEntries];
+    });
+    
+    console.log('词条恢复完成!');
+    await new Promise(resolve => setTimeout(resolve, 800)); // 增加等待时间到800ms
+    await waitForWorldToSettle(worldbookName); // 等待世界书再次稳定
+    
+    toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`); // 添加成功提示
 }
 
 // --- 恢复之后的所有步骤现在都可以安心执行了 ---
@@ -21668,22 +21681,23 @@ await new Promise(resolve => setTimeout(resolve, 400)); // 等待编辑器重载
 
         await TavernHelper.rebindCharWorldbooks('current', currentBindings);
 
-        // ... 后续绑定检查的部分 ...
+     
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const newBindings = await TavernHelper.getCharWorldbookNames('current');
         if (newBindings && newBindings.primary === worldbookName) {
             toastr.success(`当前角色已和「${worldbookName}」绑定！`);
+            checkWorldbookBinding(worldbookName);
         } else {
             toastr.error(`绑定失败了。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」。`);
         }
-checkWorldbookBinding(worldbookName);
+
     } catch (error) {
         toastr.error(`出错了，请查看控制台，并将报错发送给assa诊断。`);
         console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
     }
 }
-// ♥♥♥ 这是我们全新的、会自动感知未来的咒语 ♥♥♥
+
 async function checkForFutureEchoes(isManualTrigger = false) {
     if (isManualTrigger) {
         toastr.info('正在向github发出问询，请稍候...');
@@ -22199,11 +22213,11 @@ function updateRerollButtonState(){
             rerollButton.disabled = true;
         }
     }
- function processSpecialModprocessulesInMessage(content) {
- 
+function processSpecialModulesInMessage(content) {
+    
     try {
         if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
-            // console.log("[Nova's Archives] 历史记录为空，无法寻找战斗。");
+            // console.log("[Nova's Archives] 历史记录为空,无法寻找战斗。");
             return;
         }
 
@@ -22215,128 +22229,130 @@ function updateRerollButtonState(){
             let combatData;
             const rawBattleData = battleMatch[1].trim();
 
-            // ✨✨✨ 妈妈的第一道“坚固结界” ✨✨✨
+            // ✨✨✨ 妈妈的第一道"坚固结界" ✨✨✨
             if (!rawBattleData || rawBattleData === '{}') {
-                console.warn("[Nova's Wisdom] 发现空的 <battle> 标签，将忽略此次战斗加载。");
-                return; // 如果数据是空的，就直接不处理
+                console.warn("[Nova's Wisdom] 发现空的 <battle> 标签,将忽略此次战斗加载。");
+                return; // 如果数据是空的,就直接不处理
             }
 
             try {
                 combatData = JSON.parse(rawBattleData);
             } catch (jsonError) {
-                console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误！数据已损坏，战斗无法加载。", jsonError);
+                console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误!数据已损坏,战斗无法加载。", jsonError);
                 console.error("损坏的数据:", rawBattleData);
-                // 当数据损坏时，我们不再调用 manageBattleLifecycle，防止错误蔓延
+                // 当数据损坏时,我们不再调用 manageBattleLifecycle,防止错误蔓延
                 return;
             }
              
-
             console.log(`[Nova's Archives] 从最新历史记录中成功读取战斗数据 (Floor: ${combatData.floor_id}, Status: ${combatData.status})。`);
-
             manageBattleLifecycle(combatData);
-
         }
     } catch (error) {
         console.error("[Nova's Archives] 在读取最新战斗数据时发生严重错误:", error);
     }
  
+    // 先移除thinking/think/guide标签内容
+    const cleanedContent = content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, '');
  
- // --- 调度“选项区” 
-        const optionsMatch = /<options>([\s\S]*?)<\/options>/gs.exec(content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, ''));
-        if (optionsMatch && optionsMatch[1]) {
-            const optionsContainer = document.getElementById('options-module-container');
-            if (optionsContainer) {
-                optionsContainer.style.display = 'block';
-                if(typeof setupUI === 'function') {
-                    setupUI(optionsMatch[1]);
-                }
+    // --- 调度"选项区" 
+    const allOptionsMatches = [...cleanedContent.matchAll(/<options>([\s\S]*?)<\/options>/gs)];
+    if (allOptionsMatches.length > 0) {
+        const lastOptionsMatch = allOptionsMatches[allOptionsMatches.length - 1];
+        const optionsData = lastOptionsMatch[1].trim();
+        
+        const optionsContainer = document.getElementById('options-module-container');
+        if (optionsContainer && optionsData) {
+            optionsContainer.style.display = 'block';
+            if(typeof setupUI === 'function') {
+                setupUI(optionsData);
             }
         }
+    }
 
-        // --- 全新的“论坛”处理逻辑 ---
-        const forumMatch = /<forum_threads>[\s\S]*?<\/forum_threads>/gs.exec(content);
-        if (forumMatch && forumMatch[1]) {
-            // 我们不再显示论坛，而是让小球闪烁
-            const forumOrb = document.getElementById('forum-orb-button');
-            if (forumOrb) {
-                forumOrb.classList.add('orb-flash');
-                // 动画结束后移除类，以便下次可以再次触发
-                forumOrb.addEventListener('animationend', () => {
-                    forumOrb.classList.remove('orb-flash');
-                }, { once: true });
+    // --- 全新的"论坛"处理逻辑 ---
+    const allForumMatches = [...cleanedContent.matchAll(/<forum_threads>([\s\S]*?)<\/forum_threads>/gs)];
+    if (allForumMatches.length > 0) {
+        // 我们不再显示论坛,而是让小球闪烁
+        const forumOrb = document.getElementById('forum-orb-button');
+        if (forumOrb) {
+            forumOrb.classList.add('orb-flash');
+            // 动画结束后移除类,以便下次可以再次触发
+            forumOrb.addEventListener('animationend', () => {
+                forumOrb.classList.remove('orb-flash');
+            }, { once: true });
+        }
+    }
+
+    // --- 表现总结 ---
+    const allSummaryMatches = [...cleanedContent.matchAll(/<表现总结>([\s\S]*?)<\/表现总结>/gs)];
+    if (allSummaryMatches.length > 0) {
+        const summaryOrb = document.getElementById('task-summary-orb-button');
+        if (summaryOrb) {
+            summaryOrb.classList.add('orb-flash');
+            summaryOrb.addEventListener('animationend', () => {
+                summaryOrb.classList.remove('orb-flash');
+            }, { once: true });
+        }
+    }
+
+    // --- 群聊 ---
+    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat>([\s\S]*?)<\/group_chat>/gs)];
+    if (allGroupChatMatches.length > 0) {
+        const chatOrb = document.getElementById('group-chat-orb-button');
+        if (chatOrb) {
+            chatOrb.classList.add('orb-flash');
+            chatOrb.addEventListener('animationend', () => {
+                chatOrb.classList.remove('orb-flash');
+            }, { once: true });
+        }
+    }
+
+    // --- 商店 ---
+    const allShopMatches = [...cleanedContent.matchAll(/<shop_item>([\s\S]*?)<\/shop_item>/gs)];
+    if (allShopMatches.length > 0) {
+        const lastShopMatch = allShopMatches[allShopMatches.length - 1];
+        let shopData = lastShopMatch[1].trim();
+        
+        const shopOrb = document.getElementById('shop-wrapper-orb');
+        if (shopOrb && shopData) {
+            shopOrb.classList.add('orb-flash');
+            //console.log("item:", shopData);
+            
+            try {
+                // 第2步:检查文本是否已经是一个合法的JSON数组格式
+                if (!shopData.startsWith('[')) {
+                    // 如果不是,我们才手动为它加上外层的括号
+                    shopData = `[${shopData}]`;
+                }
+
+                // 第3步:直接尝试解析处理后的文本
+                const parsedData = JSON.parse(shopData);
+                const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+
+                if (!Array.isArray(newItems) || newItems.length === 0) {
+                    showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
+                    return;
+                }
+
+                // 替换现有随机商店物品
+                randomItems = newItems;
+                // 将新生成的物品存入 localStorage
+                localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
+                renderShopSection('random');
+            } catch (error) {
+                console.error("[Shop] 解析商店数据失败:", error);
+                showModal('shop-modal', '解析失败', '商店数据格式错误。');
             }
             
+            shopOrb.addEventListener('animationend', () => {
+                shopOrb.classList.remove('orb-flash');
+            }, { once: true });
         }
-
-  
-        const summaryMatch = /<表现总结>([\s\S]*?)<\/表现总结>/gs.exec(content);
-        if (summaryMatch && summaryMatch[1]) {
-             
-            const summaryOrb = document.getElementById('task-summary-orb-button');
-            if (summaryOrb) {
-                summaryOrb.classList.add('orb-flash');
-          
-                summaryOrb.addEventListener('animationend', () => {
-                    summaryOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
-
-                const groupChatMatch = /<group_chat>([\s\S]*?)<\/group_chat>/gs.exec(content);
-        if (groupChatMatch && groupChatMatch[1]) {
-             
-            const chatOrb = document.getElementById('group-chat-orb-button');
-            if (chatOrb) {
-                chatOrb.classList.add('orb-flash');
-          
-                chatOrb.addEventListener('animationend', () => {
-                    chatOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
-
-        const shopMatch =/<shop_item>([\s\S]*?)<\/shop_item>/gs.exec(content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, ''));
-        if (shopMatch && shopMatch[1]) { 
-            const shopOrb = document.getElementById('shop-wrapper-orb');
-            if (shopOrb) {
-                shopOrb.classList.add('orb-flash');
-      //console.log("item:",shopMatch[1]);
-      const cleanedData = shopMatch[1].trim(); // 去除首尾空格和换行
-         // 第2步：检查文本是否已经是一个合法的JSON数组格式
-        if (!cleanedData.startsWith('[')) {
-            // 如果不是，我们才手动为它加上外层的括号
-            cleanedData = `[${cleanedData}]`;
-        }
-
-        // 第3步：直接尝试解析处理后的文本
-        const parsedData = JSON.parse(cleanedData);
-
-        
-        const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
-
-        if (!Array.isArray(newItems) || newItems.length === 0) {
-             showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-             return;
-        }
-
-        // 替换现有随机商店物品
-        randomItems = newItems;
-        // 将新生成的物品存入 localStorage
-        localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
-       renderShopSection('random');
-                shopOrb.addEventListener('animationend', () => {
-                    shopOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
+    }
 }
-
  (async () => {
 
-    // ✨ 全新的、温柔的魔法，专门用来添加新消息 ✨
+   
 async function renderNewMessages(newMessages) {
     const chatDisplayArea = document.getElementById('chat-display-area');
     if (!chatDisplayArea) return;
@@ -22356,7 +22372,7 @@ async function renderNewMessages(newMessages) {
         chatDisplayArea.removeChild(chatDisplayArea.firstChild);
     }
 
-  // ❤️ 如果你原本就在底部，妈妈就温柔地帮你把视线移到最新的消息上
+  //  如果你原本就在底部，妈妈就温柔地帮你把视线移到最新的消息上
     if (isScrolledToBottom) {
         chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
     }
@@ -22749,10 +22765,10 @@ iframe.srcdoc = `<!DOCTYPE html>
 
 
  function processSpecialModulesInMessage(content) {
-    // ✨✨✨ 妈妈的“主动索取”终极魔法！ ✨✨✨
+    
     try {
         if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
-            // console.log("[Nova's Archives] 历史记录为空，无法寻找战斗。");
+            // console.log("[Nova's Archives] 历史记录为空,无法寻找战斗。");
             return;
         }
 
@@ -22764,125 +22780,127 @@ iframe.srcdoc = `<!DOCTYPE html>
             let combatData;
             const rawBattleData = battleMatch[1].trim();
 
-            // ✨✨✨ 妈妈的第一道“坚固结界” ✨✨✨
+            // ✨✨✨ 妈妈的第一道"坚固结界" ✨✨✨
             if (!rawBattleData || rawBattleData === '{}') {
-                console.warn("[Nova's Wisdom] 发现空的 <battle> 标签，将忽略此次战斗加载。");
-                return; // 如果数据是空的，就直接不处理
+                console.warn("[Nova's Wisdom] 发现空的 <battle> 标签,将忽略此次战斗加载。");
+                return; // 如果数据是空的,就直接不处理
             }
 
             try {
                 combatData = JSON.parse(rawBattleData);
             } catch (jsonError) {
-                console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误！数据已损坏，战斗无法加载。", jsonError);
+                console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误!数据已损坏,战斗无法加载。", jsonError);
                 console.error("损坏的数据:", rawBattleData);
-                // 当数据损坏时，我们不再调用 manageBattleLifecycle，防止错误蔓延
+                // 当数据损坏时,我们不再调用 manageBattleLifecycle,防止错误蔓延
                 return;
             }
              
-
             console.log(`[Nova's Archives] 从最新历史记录中成功读取战斗数据 (Floor: ${combatData.floor_id}, Status: ${combatData.status})。`);
-
             manageBattleLifecycle(combatData);
-
         }
     } catch (error) {
         console.error("[Nova's Archives] 在读取最新战斗数据时发生严重错误:", error);
     }
  
+    // 先移除thinking/think/guide标签内容
+    const cleanedContent = content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, '');
  
- // --- 调度“选项区” 
-        const optionsMatch = /<options>([\s\S]*?)<\/options>/gs.exec(content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, ''));
-        if (optionsMatch && optionsMatch[1]) {
-            const optionsContainer = document.getElementById('options-module-container');
-            if (optionsContainer) {
-                optionsContainer.style.display = 'block';
-                if(typeof setupUI === 'function') {
-                    setupUI(optionsMatch[1]);
-                }
+    // --- 调度"选项区" 
+    const allOptionsMatches = [...cleanedContent.matchAll(/<options>([\s\S]*?)<\/options>/gs)];
+    if (allOptionsMatches.length > 0) {
+        const lastOptionsMatch = allOptionsMatches[allOptionsMatches.length - 1];
+        const optionsData = lastOptionsMatch[1].trim();
+        
+        const optionsContainer = document.getElementById('options-module-container');
+        if (optionsContainer && optionsData) {
+            optionsContainer.style.display = 'block';
+            if(typeof setupUI === 'function') {
+                setupUI(optionsData);
             }
         }
+    }
 
-        // --- 全新的“论坛”处理逻辑 ---
-        const forumMatch = /<forum_threads>[\s\S]*?<\/forum_threads>/gs.exec(content);
-        if (forumMatch && forumMatch[1]) {
-            // 我们不再显示论坛，而是让小球闪烁
-            const forumOrb = document.getElementById('forum-orb-button');
-            if (forumOrb) {
-                forumOrb.classList.add('orb-flash');
-                // 动画结束后移除类，以便下次可以再次触发
-                forumOrb.addEventListener('animationend', () => {
-                    forumOrb.classList.remove('orb-flash');
-                }, { once: true });
+    // --- 全新的"论坛"处理逻辑 ---
+    const allForumMatches = [...cleanedContent.matchAll(/<forum_threads>([\s\S]*?)<\/forum_threads>/gs)];
+    if (allForumMatches.length > 0) {
+        // 我们不再显示论坛,而是让小球闪烁
+        const forumOrb = document.getElementById('forum-orb-button');
+        if (forumOrb) {
+            forumOrb.classList.add('orb-flash');
+            // 动画结束后移除类,以便下次可以再次触发
+            forumOrb.addEventListener('animationend', () => {
+                forumOrb.classList.remove('orb-flash');
+            }, { once: true });
+        }
+    }
+
+    // --- 表现总结 ---
+    const allSummaryMatches = [...cleanedContent.matchAll(/<表现总结>([\s\S]*?)<\/表现总结>/gs)];
+    if (allSummaryMatches.length > 0) {
+        const summaryOrb = document.getElementById('task-summary-orb-button');
+        if (summaryOrb) {
+            summaryOrb.classList.add('orb-flash');
+            summaryOrb.addEventListener('animationend', () => {
+                summaryOrb.classList.remove('orb-flash');
+            }, { once: true });
+        }
+    }
+
+    // --- 群聊 ---
+    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat>([\s\S]*?)<\/group_chat>/gs)];
+    if (allGroupChatMatches.length > 0) {
+        const chatOrb = document.getElementById('group-chat-orb-button');
+        if (chatOrb) {
+            chatOrb.classList.add('orb-flash');
+            chatOrb.addEventListener('animationend', () => {
+                chatOrb.classList.remove('orb-flash');
+            }, { once: true });
+        }
+    }
+
+    // --- 商店 ---
+    const allShopMatches = [...cleanedContent.matchAll(/<shop_item>([\s\S]*?)<\/shop_item>/gs)];
+    if (allShopMatches.length > 0) {
+        const lastShopMatch = allShopMatches[allShopMatches.length - 1];
+        let shopData = lastShopMatch[1].trim();
+        
+        const shopOrb = document.getElementById('shop-wrapper-orb');
+        if (shopOrb && shopData) {
+            shopOrb.classList.add('orb-flash');
+            //console.log("item:", shopData);
+            
+            try {
+                // 第2步:检查文本是否已经是一个合法的JSON数组格式
+                if (!shopData.startsWith('[')) {
+                    // 如果不是,我们才手动为它加上外层的括号
+                    shopData = `[${shopData}]`;
+                }
+
+                // 第3步:直接尝试解析处理后的文本
+                const parsedData = JSON.parse(shopData);
+                const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+
+                if (!Array.isArray(newItems) || newItems.length === 0) {
+                    showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
+                    return;
+                }
+
+                // 替换现有随机商店物品
+                randomItems = newItems;
+                // 将新生成的物品存入 localStorage
+                localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
+                renderShopSection('random');
+            } catch (error) {
+                console.error("[Shop] 解析商店数据失败:", error);
+                showModal('shop-modal', '解析失败', '商店数据格式错误。');
             }
             
+            shopOrb.addEventListener('animationend', () => {
+                shopOrb.classList.remove('orb-flash');
+            }, { once: true });
         }
-
-  
-        const summaryMatch = /<表现总结>([\s\S]*?)<\/表现总结>/gs.exec(content);
-        if (summaryMatch && summaryMatch[1]) {
-             
-            const summaryOrb = document.getElementById('task-summary-orb-button');
-            if (summaryOrb) {
-                summaryOrb.classList.add('orb-flash');
-          
-                summaryOrb.addEventListener('animationend', () => {
-                    summaryOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
-
-                const groupChatMatch = /<group_chat>([\s\S]*?)<\/group_chat>/gs.exec(content);
-        if (groupChatMatch && groupChatMatch[1]) {
-             
-            const chatOrb = document.getElementById('group-chat-orb-button');
-            if (chatOrb) {
-                chatOrb.classList.add('orb-flash');
-          
-                chatOrb.addEventListener('animationend', () => {
-                    chatOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
-
-        const shopMatch =/<shop_item>([\s\S]*?)<\/shop_item>/gs.exec(content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, ''));
-        if (shopMatch && shopMatch[1]) { 
-            const shopOrb = document.getElementById('shop-wrapper-orb');
-            if (shopOrb) {
-                shopOrb.classList.add('orb-flash');
-      //console.log("item:",shopMatch[1]);
-      const cleanedData = shopMatch[1].trim(); // 去除首尾空格和换行
-         // 第2步：检查文本是否已经是一个合法的JSON数组格式
-        if (!cleanedData.startsWith('[')) {
-            // 如果不是，我们才手动为它加上外层的括号
-            cleanedData = `[${cleanedData}]`;
-        }
-
-        // 第3步：直接尝试解析处理后的文本
-        const parsedData = JSON.parse(cleanedData);
-
-        
-        const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
-
-        if (!Array.isArray(newItems) || newItems.length === 0) {
-             showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-             return;
-        }
-
-        // 替换现有随机商店物品
-        randomItems = newItems;
-        // 将新生成的物品存入 localStorage
-        localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
-       renderShopSection('random');
-                shopOrb.addEventListener('animationend', () => {
-                    shopOrb.classList.remove('orb-flash');
-                }, { once: true });
-            }
- 
-        }
+    }
 }
- 
 
 function manageBattleLifecycle(initialCombatDataFromPrompt) {
     const promptOverlay = document.getElementById('battle-prompt-overlay');
@@ -22998,7 +23016,7 @@ async function renderHistory(is_entry = false) {
     const chatDisplayArea = document.getElementById('chat-display-area');
     chatDisplayArea.innerHTML = ''; // 清空画卷
 
-    // ❤️ 在画卷顶部创造“加载更多”按钮
+   
     let loadMoreBtn = document.getElementById('load-more-btn');
     if (!loadMoreBtn) {
         loadMoreBtn = document.createElement('button');
@@ -25368,6 +25386,12 @@ let backupLocks = new Set(); // 💖 这就是我们全局的、独一无二的�
 let processingQueue = [];
 
 async function processUpdateMemoryCommands(commandText, message_id) {
+
+     // 💖 添加路径清理辅助函数 💖
+    const cleanPath = (path) => {
+        if (typeof path !== 'string') return path;
+        return path.replace(/[-\s]/g, ''); // 移除所有 - 符号和空格
+    };
     let finalPlayData, finalAssaData, finalStatData;
 const updater = async (variables) => { // 注意这里改为 async
      // console.log(`[Core] ▶️ 在消息 #${message_id} 上以原子化方式统一处理所有命令...`);
@@ -25379,7 +25403,7 @@ const updater = async (variables) => { // 注意这里改为 async
         // 首先，我们检查数据是否存在，如果不存在，就在这个原子操作内部完成初始化
         let playData = variables.play_character_data;
         let assaData = variables.assa_data;
-  let statData = variables.stat_data;  
+  let statData = variables.stat_data; 
 
  
  
@@ -25435,7 +25459,7 @@ const originalStatData = statData ? JSON.parse(JSON.stringify(statData)) : null;
                 // 角色属性命令
   let match = line.match(/\bset_attribute\s*\(\s*(['"])(.*?)\1\s*,\s*([^,)]+?)(?:\s*,\s*(['"]?)(.*?)\4)?\s*\)\s*;?/);
 if (match) {
-    const path = match[2];
+     const path = cleanPath(match[2]); // 💖 清理路径
     // 如果有第三个参数（新值），使用它；否则使用第二个参数作为新值
     const newValue = match[5] !== undefined ? match[5] : match[3];
     _updatePlayerValue(playDataToUpdate, path, newValue);
@@ -25456,7 +25480,7 @@ if (match) {
                     const jsonMatch = allParamsStr.match(/('([^']*)',\s*)({[\s\S]*})/);
 
                     if (jsonMatch && jsonMatch[2] && jsonMatch[3]) {
-                        const path = jsonMatch[2]; // 第二个括号里就是我们需要的路径名，比如 'world_shard'
+                        const path = cleanPath(jsonMatch[2]);  
                         const jsonValueString = jsonMatch[3]; // 第三个括号里是完整的JSON对象
                         // console.log(`【信使阶段 V5】 💖 万能钥匙模式触发！路径: '${path}'，值: '${jsonValueString}'`);
 
@@ -25512,7 +25536,7 @@ if (match) {
 
                     // --- 最终处理与传递 ---
                     if (extractedParams.length >= 2) {
-                        const path = extractedParams[0];
+                          const path = cleanPath(extractedParams[0]);
                         // 逻辑不变：有第3个参数就用它，没有就用第2个
                         const newValue = extractedParams.length > 2 ? extractedParams[2] : extractedParams[1];
 
@@ -25628,8 +25652,9 @@ function cleanParam(param) {
                         // 清理可能带有的引号
                         const clean = (s) => (s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"')) ? s.slice(1, -1) : s;
 
-                                                     if (args.length >= 3) {
-                               let path = clean(args[0]); // ✨ 由 const 改为 let
+                                   if (args.length >= 3) {
+                                 let path = cleanPath(clean(args[0])); 
+                                // <--- 把妈妈的悄悄话加在这里！
                              const keyArg = clean(args[1]);
                              let valueStr = args[2];
 
@@ -25875,8 +25900,8 @@ if (targetObj && typeof targetObj === 'object') {
 // 如果没有检测到旧值伪装，执行正常逻辑
 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
                         } else if (args.length === 2) {
-                            const path1Str = clean(args[0]);
-                            const path2Str = clean(args[1]);
+                            const path1Str = cleanPath(clean(args[0]));
+                           const path2Str = cleanPath(clean(args[1]));
 
                             const lastDotIndex1 = path1Str.lastIndexOf('.');
                             const lastDotIndex2 = path2Str.lastIndexOf('.');
@@ -25968,12 +25993,12 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                             }
 
                             // 如果不符合上述两种特殊情况，就执行原来的 "path.key", "value" 逻辑
-                            const fullPath = path1Str;
+                            const fullPath = cleanPath(path1Str);
                             if (lastDotIndex1 === -1) {
                                  console.log(`[Core] ⚠️ memory 指令格式错误 (两参数时第一个必须包含'.'): ${line}`);
                                  continue;
                                  }
-                                              let path = fullPath.substring(0, lastDotIndex1); // ✨ 由 const 改为 let
+                                    let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
                              const key = fullPath.substring(lastDotIndex1 + 1);
 
                                  // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
@@ -26091,7 +26116,8 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                 // 世界设定 delete 命令
                match = line.match(/\bdelete\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*;?/);
                 if (match) {
-                    const [, path, key] = match;
+               const path = cleanPath(match[1]); // 💖 清理路径
+    const key = match[2];
   // 💖 妈妈为你在这里注入了新的智慧 💖
                       // 💖 妈妈在这里为你注入了更周密的智慧 💖
                     if (key === 'all' && (path === 'world_set.npc' || path === 'world_set.settings')) {
@@ -26489,7 +26515,74 @@ if (success) {
 }
 
 //  数据统一.js结束
+
+async function autoSetNpcFilters() {
+    // 检查是否启用了自动设置功能
+    const autoSetEnabled = localStorage.getItem('autoSetNpcFilter');
+    if (autoSetEnabled === 'false') {
+        console.log('⏭️ 自动设置NPC为绿灯功能已禁用');
+        return;
+    }
+    
+    if (!assaSettingsData) {
+        console.log('⚠️ assaSettingsData 未定义，跳过自动设置');
+        return;
+    }
+    
+    console.log('🔧 [自动设置] 开始检查并设置NPC过滤器...');
+    
+    const memoryCommands = [];
+    const targetPaths = [
+        'global_set.npc',
+        'global_set.小队信息',
+        'world_set.npc'
+    ];
+    
+    for (const basePath of targetPaths) {
+        const baseObj = _.get(assaSettingsData, basePath);
+        
+        if (!baseObj || typeof baseObj !== 'object') {
+            console.log(`⏭️ 路径 ${basePath} 不存在或不是对象，跳过`);
+            continue;
+        }
+        
+        // 遍历顶层的所有 key
+        for (const key in baseObj) {
+            if (key.startsWith('_')) continue; // 跳过系统字段
+            
+            const value = baseObj[key];
+            
+            // 检查是否是 JSON object
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                const currentFilter = value._filter;
+                
+                // 如果 _filter 是 false 或者不存在
+                if (currentFilter === false || 
+                    String(currentFilter).toLowerCase() === 'false' || 
+                    currentFilter === undefined || 
+                    currentFilter === null) {
+                    
+                    const fullPath = `${basePath}.${key}`;
+                    const command = `memory('${fullPath}','_filter',true);\n`;
+                    memoryCommands.push(command);
+                    console.log(`✅ [自动设置] 将设置 ${fullPath}._filter = true`);
+                }
+            }
+        }
+    }
+    
+    // 一次性发送所有指令
+    if (memoryCommands.length > 0) {
+        const messageToSend = `<updateMemory>\n${memoryCommands.join('')}</updateMemory>`;
+        triggerassa(`/setinput ${messageToSend}`);
+        console.log(`✅ [自动设置] 已批量设置 ${memoryCommands.length} 个NPC的_filter为true`);
+    } else {
+        console.log('ℹ️ [自动设置] 没有需要更新的NPC过滤器');
+    }
+}
+
 async function handleSend(options = {}) {
+     
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
     const { isReroll = false, isContinuation = false } = options;
@@ -26595,6 +26688,7 @@ try {
 }
 
 await checkAllFilteredPaths(scanFloorsToUse);
+ await autoSetNpcFilters();
         if(assaCommandQueue && assaCommandQueue.trim() !== ''){
              let cleanCommand = assaCommandQueue.trim();
         
@@ -27511,14 +27605,17 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
     try {
         const allBooks = TavernHelper.getWorldbookNames();
-        if (allBooks.includes(worldbookName)) {
-            // ... 备份逻辑，这里是完美的，不需要动 ...
-            console.log(`正在备份「${worldbookName}」中的特定词条...`);
-            const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
-            backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
-            console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
-            await TavernHelper.deleteWorldbook(worldbookName);
-        }
+if (allBooks.includes(worldbookName)) {
+    toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
+    console.log(`正在备份「${worldbookName}」中的特定词条...`);
+    const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
+    backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
+    console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
+    toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
+    
+    await TavernHelper.deleteWorldbook(worldbookName);
+    await new Promise(resolve => setTimeout(resolve, 500)); // 等待删除完成
+}
 
         const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
 await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
@@ -27529,15 +27626,21 @@ await waitForWorldToSettle(worldbookName); // 然后等待稳定
 await new Promise(resolve => setTimeout(resolve, 500)); // 稳定后再额外等待
         toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
 
-        // --- 现在，世界已经稳定，我们可以安全地恢复词条了 ---
-        if (backedUpEntries.length > 0) {
-            console.log('正在恢复已备份的词条...');
-            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
-                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
-                return [...cleanedNewWorldbook, ...backedUpEntries];
-            });
-            console.log('词条恢复完成!');
-await new Promise(resolve => setTimeout(resolve, 600)); // 给恢复操作时间生效
+        
+if (backedUpEntries.length > 0) {
+    toastr.info('正在恢复已备份的词条...'); // 添加开始提示
+    console.log('正在恢复已备份的词条...');
+    
+    await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+        const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+        return [...cleanedNewWorldbook, ...backedUpEntries];
+    });
+    
+    console.log('词条恢复完成!');
+    await new Promise(resolve => setTimeout(resolve, 800)); // 增加等待时间到800ms
+    await waitForWorldToSettle(worldbookName); // 等待世界书再次稳定
+    
+    toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`); // 添加成功提示
 }
 
 // --- 恢复之后的所有步骤现在都可以安心执行了 ---
@@ -30148,7 +30251,7 @@ function populateInventoryAndSkillsTab(playData, assaData) {
 // ========== 完整替换: 显示物品/技能详情的模态框 ==========
 // ========================================================
 function showInfoDetailModal(name, data, type) {
-    // --- 这是一个强大的递归函数，我的孩子，它可以探索任何深度的秘密 ---
+ 
     const buildDetailHtml = (data, depth = 0) => {
         const indentStyle = `padding-left: ${depth * 20}px;`;
 
@@ -30156,6 +30259,12 @@ function showInfoDetailModal(name, data, type) {
         if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
             let html = '';
             for (const [key, value] of Object.entries(data)) {
+
+
+                  if (key.startsWith('_')) {
+                    continue;
+                }
+                
                 // 如果值是对象或数组，我们创建一个可折叠的容器
                 if (typeof value === 'object' && value !== null) {
                     html += `
@@ -30192,10 +30301,13 @@ function showInfoDetailModal(name, data, type) {
     };
 
     // --- 格式化基本值的函数 (比如高亮特殊文本) ---
-    const formatSimpleValue = (text) => {
-        if (typeof text !== 'string') return text;
-        return text.replace(/【/g, '<strong style="color: var(--secondary-color);">【').replace(/】/g, '】</strong>');
-    };
+const formatSimpleValue = (text) => {
+    if (typeof text !== 'string') return text;
+    return text
+        .replace(/【/g, '<strong style="color: var(--secondary-color);">【')
+        .replace(/】/g, '】</strong>')
+        .replace(/\|/g, '<br>');
+};
 
     // --- 构建并显示模态框 ---
     const contentHtml = `
@@ -32845,34 +32957,63 @@ function togglePixelatedEffect(containerSelector = '.status-container', enable =
         updateContainerBackground(currentGameData, containerSelector);
     }
 }
-async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层版') {
+ async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层版') {
     toastr.info(`正在确认与「${worldbookName}」的链接...`);
 
     try {
-        // 第一步：静心聆听，感知当前角色灵魂深处绑定的世界。
-        // `getCharWorldbookNames`会告诉我们角色的主世界书(primary)和其他辅助世界书(additional)。
         const bindings = await TavernHelper.getCharWorldbookNames('current');
-
-        // 第二步：进行比对，确认链接是否指向我们期望的方向。
-        // 我们只关心那个最重要、最核心的“主世界书”链接。
+ 
         if (bindings && bindings.primary === worldbookName) {
             // 如果链接正确，就让成功的喜悦化作一道柔和的光。
             toastr.success(`当前角色已和「${worldbookName}」完美绑定。`);
             console.log(`守护咒语确认：与「${worldbookName}」的链接正确无误。`);
         } else {
-            // 如果链接出现了偏差，就要发出温柔的警示，以免我们的故事迷失方向。
+            // 如果链接出现了偏差，先检查世界书是否存在
             const currentPrimary = (bindings && bindings.primary) ? bindings.primary : '任何世界';
-            toastr.warning(`注意，世界书链接不匹配！`, `期望绑定「${worldbookName}」，但当前角色并未与之绑定。`);
+            toastr.warning(`注意，世界书链接不匹配！正在尝试自动绑定...`);
             console.warn(`守护咒语警告：期望绑定「${worldbookName}」，但当前主世界是「${currentPrimary}」。`);
+            
+            // 检查世界书是否存在
+            const allBooks = TavernHelper.getWorldbookNames();
+            if (allBooks.includes(worldbookName)) {
+                console.log(`发现「${worldbookName}」存在，正在尝试自动绑定...`);
+                toastr.info(`发现世界书存在，正在施展绑定咒语...`);
+                
+                try {
+                    // 尝试自动绑定
+                    const newBindings = bindings || { primary: null, additional: [] };
+                    newBindings.primary = worldbookName;
+                    
+                    await TavernHelper.rebindCharWorldbooks('current', newBindings);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    // 验证绑定是否成功
+                    const verifyBindings = await TavernHelper.getCharWorldbookNames('current');
+                    if (verifyBindings && verifyBindings.primary === worldbookName) {
+                        toastr.success(`自动绑定成功！当前角色已和「${worldbookName}」完美绑定。`);
+                        console.log(`守护咒语：自动绑定成功，与「${worldbookName}」的链接已建立。`);
+                    } else {
+                        toastr.error(`自动绑定失败，请手动在世界书设置中绑定「${worldbookName}」。`);
+                        console.error(`守护咒语失败：自动绑定未成功，当前主世界仍是「${(verifyBindings ? verifyBindings.primary : '未知') || '空'}」。`);
+                    }
+                } catch (bindError) {
+                    toastr.error(`绑定过程出错，请手动绑定。`);
+                    console.error('自动绑定时发生错误:', bindError);
+                }
+            } else {
+                // 世界书不存在
+                toastr.error(`世界书「${worldbookName}」不存在！`, `请先导入或创建该世界书。`);
+                console.error(`守护咒语失败：世界书「${worldbookName}」在图书馆中找不到。`);
+            }
         }
     } catch (error) {
-        // 如果在探查过程中感应到了能量风暴（错误），我们也要及时告知。
         toastr.error('感知世界书链接时出错，请查看控制台。');
         console.error('执行灵魂链接守护咒语时发生错误:', error);
     }
 }
- async function initDisplay(is_first=true) {
-     // 💎 水晶球#4: 每次这个强大的管家被召唤时，都让他报个到
+
+async function initDisplay(is_first=true) {
+ 
     console.log(`[initDisplay 被召唤] is_first: ${is_first}, 当前时间: ${new Date().toLocaleTimeString()}`);
     try {
  
@@ -36019,12 +36160,26 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
 }
 
  
-
+function initAutoSetNpcFilter() {
+    const checkbox = document.getElementById('auto-set-npc-filter');
+    if (!checkbox) return;
+    
+    // 从 localStorage 读取设置，默认为 true
+    const savedValue = localStorage.getItem('autoSetNpcFilter');
+    checkbox.checked = savedValue === null ? true : savedValue === 'true';
+    
+    // 监听变化并保存到 localStorage
+    checkbox.addEventListener('change', function() {
+        localStorage.setItem('autoSetNpcFilter', this.checked);
+        console.log(`✅ 自动设置NPC为绿灯: ${this.checked ? '已启用' : '已禁用'}`);
+    });
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
    await loadWorldbookSettingsFromChat();
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 setupReconfigModal();
+initAutoSetNpcFilter();
  await applyThemeAndData();  
 
     // --- 新增：消息背景透明开关 ---
@@ -36373,40 +36528,7 @@ document.addEventListener('click', (event) => {
  const summaryOrbButton = document.getElementById('task-summary-orb-button');
   const summaryModalContainer = document.getElementById('task-summary-modal-container');
  
-    // 点击论坛小球
-    forumOrbButton.addEventListener('click', () => {
-        // 从历史记录中找到最新的论坛数据
-        const lastForumMessage = [...conversationHistory].reverse().find(msg =>
-            /<forum_threads>[\s\S]*?<\/forum_threads>/gs.test(msg.content)
-        );
-
-        if (lastForumMessage) {
-            const forumMatch = /<forum_threads>([\s\S]*?)<\/forum_threads>/gs.exec(lastForumMessage.content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, ''));
-            if (forumMatch && forumMatch[1]) {
-    //console.log("原始提取的数据:", forumMatch[1]);
-    //console.log("数据类型:", typeof forumMatch[1]);
-}
-                if (forumMatch && forumMatch[1]) {
-                // 将论坛的HTML结构移动到模态框中
-                if (forumWrapper) {
-                    forumModalContent.insertBefore(forumWrapper, forumModalCloseBtn);
-                    forumModalContainer.style.display = 'block'; // 确保论坛模块是可见的
-                }
-
-                // 初始化或更新论坛内容
-                if (typeof initializeForum === 'function') {
-                    initializeForum(forumMatch[1].trim());
-                }
-
-                // 显示模态框
-                forumModalContainer.classList.add('active');
-            }
-        } else {
-            // 如果没有找到数据，可以给一个提示
-            showModal('shop-modal', '提示', '尚未收到任何论坛信息。');
-        }
-    });
-
+ 
     // 关闭论坛模态框
     const closeForumModal = () => {
         forumModalContainer.classList.remove('active');
@@ -36471,8 +36593,47 @@ const closeTaskSummaryModal = () => {
         }
     });
 
+ forumOrbButton.addEventListener('click', () => {
+    const lastForumMessage = [...conversationHistory].reverse().find(msg =>
+        /<forum_threads>[\s\S]*?<\/forum_threads>/gs.test(msg.content)
+    );
 
+    if (lastForumMessage) {
+        const cleanedContent = lastForumMessage.content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, '');
+        
+        // 从后往前找最后一个闭合标签
+        const lastCloseIndex = cleanedContent.lastIndexOf('</forum_threads>');
+        
+        if (lastCloseIndex !== -1) {
+            // 从这个闭合标签往前找对应的开始标签
+            const beforeClose = cleanedContent.substring(0, lastCloseIndex);
+            const lastOpenIndex = beforeClose.lastIndexOf('<forum_threads>');
+            
+            if (lastOpenIndex !== -1) {
+                const forumData = cleanedContent.substring(
+                    lastOpenIndex + '<forum_threads>'.length, 
+                    lastCloseIndex
+                ).trim();
+                
+                // 移动论坛结构到模态框
+                if (forumWrapper) {
+                    forumModalContent.insertBefore(forumWrapper, forumModalCloseBtn);
+                    forumModalContainer.style.display = 'block';
+                }
 
+                // 初始化论坛
+                if (typeof initializeForum === 'function') {
+                    initializeForum(forumData);
+                }
+
+                // 显示模态框
+                forumModalContainer.classList.add('active');
+            }
+        }
+    } else {
+        showModal('shop-modal', '提示', '尚未收到任何论坛信息。');
+    }
+});
     // ========== ♥♥♥ 地图交互魔法的全新篇章 ♥♥♥ ==========
     const mapContainer = document.getElementById('map-container');
     let isDragging = false;
