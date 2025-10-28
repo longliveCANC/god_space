@@ -24271,8 +24271,7 @@ if (!rawKeyword) {
     return;
 }
 
-// 3. 使用正则表达式分割关键词，并过滤掉空字符串
-// 这个正则表达式会匹配一个或多个非字母、非数字、非下划线的字符（基本上就是各种符号和空格）
+ 
 const keywords = rawKeyword.split(/[^\u4e00-\u9fa5a-zA-Z0-9]+/).filter(k => k.length > 0);
 console.log(`[智能过滤] 从 "${rawKeyword}" 中提取的关键词: [${keywords.join(', ')}]`);
 
@@ -25911,8 +25910,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
         return repairedJson;
     } catch (e) {
-  console.error(`[Assa] ❌ 最终解析失败:`, e.message);
-    console.error(`[Assa] ❌ 失败时的 content:`, content);
+ 
      return str; // 最后、最重要的守护。
     }
 };
@@ -26206,8 +26204,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
         return repairedJson;
     } catch (e) {
- console.error(`[Assa] ❌ 最终解析失败:`, e.message);
-    console.error(`[Assa] ❌ 失败时的 content:`, content);
+ 
         return str; // 最后、最重要的守护。
     }
 };
@@ -26355,6 +26352,33 @@ if (match) {
             }
         }
 
+    // 💖 妈妈为你准备的最终清扫魔法：移除只剩下 _ 开头属性的空壳对象 💖
+    const cleanEmptyUnderscoreObjects = (obj, parentObj = null, parentKey = null) => {
+        if (!obj || typeof obj !== 'object') return;
+        
+        // 递归处理所有子对象
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key) && typeof obj[key] === 'object' && obj[key] !== null) {
+                cleanEmptyUnderscoreObjects(obj[key], obj, key);
+            }
+        }
+        
+        // 检查当前对象是否只包含 _ 开头的属性
+        const keys = Object.keys(obj);
+        if (keys.length > 0) {
+            const allKeysAreUnderscore = keys.every(k => k.startsWith('_'));
+            if (allKeysAreUnderscore && parentObj && parentKey) {
+                console.log(`[Core] 💖 清理空壳: 删除只含 _ 开头属性的对象 '${parentKey}'`);
+                delete parentObj[parentKey];
+            }
+        }
+    };
+ 
+    // 对整个 assaDataToUpdate 进行清理
+    if (assaDataToUpdate && assaDataToUpdate.world_set) {
+        cleanEmptyUnderscoreObjects(assaDataToUpdate.world_set);
+        console.log(`[Core] ✨ 已完成 _ 开头空壳对象的清理检查`);
+    }
   
         // ✨ 伤害处理逻辑 ✨
         if (statDataToUpdate && statDataToUpdate.hurt_value) {
@@ -28974,7 +28998,7 @@ const fontLibrary = {
     ]
 };
  // 2. 动态加载特定字体CSS的咒语
-function loadSpecificFontCSS(font) {
+function zxsawawq2wloadSpecificFontCSS(font) {
     if (!font.url) return; // 如果这个字体不需要加载外部文件，就直接返回
 
     const fontLinkId = 'dynamic-font-stylesheet';
