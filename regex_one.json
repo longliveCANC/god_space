@@ -15608,7 +15608,8 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
             'world_set': '世界',
             'npc': '人物',
             'settings': '设定',
-            'map':'地图'
+            'map':'地图',
+            'plot':'剧情'
         };
         return pathString.split('.').map(part => translationMap[part] || part).join('');
     };
@@ -15721,7 +15722,8 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
             'world_set': '世界',
             'npc': '人物',
             'settings': '设定',
-            'map':'地图'
+            'map':'地图',
+            'plot':'剧情'
         };
 
         const pathParts = fullPath.split('.');
@@ -16282,6 +16284,7 @@ function handleUpdateNotifications(aiContent) {
     
     // 检查必需的规则是否触发
     if (!triggeredRules.has('summary-update')) {
+        showUpdateNotification('没有正常输出小总结，可能掉变量更新了哦', 'danger');
         showNovaAlert('没有正常输出小总结，可能掉变量更新了哦，右键编辑看看，掉了请重按重roll或按继续', 'danger');
     }
 }
@@ -37501,216 +37504,220 @@ function bindEquippedItemEvents(slotType) {
 }
 
 // 新增：装备物品
-function equipItems(slotType, itemNames) {
+async function equipItems(slotType, itemNames) {
     //console.log('装备物品:', slotType, itemNames);
     
-    updateVariablesWith((variables) => {
-        //console.log('装备更新前的变量:', variables);
-        
-        if (!variables.stat_data) variables.stat_data = {};
-        if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
-        if (!variables.stat_data.user_character['当前装备']) {
-            variables.stat_data.user_character['当前装备'] = {
-                "手持": ["无", "当前手持的武器或工具名称"],
-                "穿戴": {
-                    "头部": ["无", "头部的装备名称"],
-                    "身体": ["无", "身体的装备名称"],
-                    "手部": ["无", "手部的装备名称"],
-                    "脚部": ["无", "脚部的装备名称"],
-                    "饰品": ["无", "特殊饰品名称"]
-                }
-            };
-        }
-        
-        const currentEquipment = variables.stat_data.user_character['当前装备'];
-        
-        if (slotType === '手持') {
-            // 获取当前手持装备
-            const currentItems = currentEquipment['手持'][0] !== '无' ? 
-                currentEquipment['手持'][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无') : [];
-            
-            // 添加新装备
-            const newItems = [...new Set([...currentItems, ...itemNames])];
-            currentEquipment['手持'][0] = newItems.length > 0 ? newItems.join(';') : '无';
-        } else {
-            // 穿戴装备
-            if (!currentEquipment['穿戴'][slotType]) {
-                currentEquipment['穿戴'][slotType] = ['无', `${slotType}的装备名称`];
-            }
-            
-            const currentItems = currentEquipment['穿戴'][slotType][0] !== '无' ? 
-                currentEquipment['穿戴'][slotType][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无') : [];
-            
-            const newItems = [...new Set([...currentItems, ...itemNames])];
-            currentEquipment['穿戴'][slotType][0] = newItems.length > 0 ? newItems.join(';') : '无';
-        }
-               // 生成描述
-        let description = '';
-        const itemsStr = itemNames.join('、');
-        switch (slotType) {
-            case '手持':
-                description = `<${userName}将「${itemsStr}」握在了手中。>\n`;
-                break;
-            case '头部':
-                description = `<${userName}将「${itemsStr}」戴在了头上。>\n`;
-                break;
-            case '身体':
-                description = `<${userName}穿上了「${itemsStr}」。>\n`;
-                break;
-            case '手部':
-                description = `<${userName}将「${itemsStr}」穿戴在了手上。>\n`;
-                break;
-            case '脚部':
-                description = `<${userName}将脚伸入了「${itemsStr}」>。\n`;
-                break;
-            case '饰品':
-                description = `<${userName}将「${itemsStr}」佩戴好了。>\n`;
-                break;
-        }
-        triggerassa(`/setinput ${description}`);
-         
-        return variables;
-    }, { type: 'chat' }).then(() => {
-       
-        return updateVariablesWith((variables) => {
+    try {
+        // 第一步:更新 chat 变量中的装备
+        await updateVariablesWith((variables) => {
+            //console.log('装备更新前的变量:', variables);
             
             if (!variables.stat_data) variables.stat_data = {};
             if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
-
-        
-if (!variables.stat_data) variables.stat_data = {};
-if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
-
- 
-return updateVariablesWith((chatVars) => {
-    if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
-        variables.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
- 
-        if (currentGameData) {
-            if (!currentGameData.stat_data) currentGameData.stat_data = {};
-            if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
-            currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
-        }
-        if (currentGameData) {
-            if (!currentGameData.stat_data) currentGameData.stat_data = {};
-            if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
-            currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
-        }
-    }
-  
-    return variables;
-}, { type: 'chat' });
+            if (!variables.stat_data.user_character['当前装备']) {
+                variables.stat_data.user_character['当前装备'] = {
+                    "手持": ["无", "当前手持的武器或工具名称"],
+                    "穿戴": {
+                        "头部": ["无", "头部的装备名称"],
+                        "身体": ["无", "身体的装备名称"],
+                        "手部": ["无", "手部的装备名称"],
+                        "脚部": ["无", "脚部的装备名称"],
+                        "饰品": ["无", "特殊饰品名称"]
+                    }
+                };
+            }
             
-            //console.log('message变量同步更新:', variables);
+            const currentEquipment = variables.stat_data.user_character['当前装备'];
+            
+            if (slotType === '手持') {
+                // 获取当前手持装备
+                const currentItems = currentEquipment['手持'][0] !== '无' ? 
+                    currentEquipment['手持'][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无') : [];
+                
+                // 添加新装备
+                const newItems = [...new Set([...currentItems, ...itemNames])];
+                currentEquipment['手持'][0] = newItems.length > 0 ? newItems.join(';') : '无';
+            } else {
+                // 穿戴装备
+                if (!currentEquipment['穿戴'][slotType]) {
+                    currentEquipment['穿戴'][slotType] = ['无', `${slotType}的装备名称`];
+                }
+                
+                const currentItems = currentEquipment['穿戴'][slotType][0] !== '无' ? 
+                    currentEquipment['穿戴'][slotType][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无') : [];
+                
+                const newItems = [...new Set([...currentItems, ...itemNames])];
+                currentEquipment['穿戴'][slotType][0] = newItems.length > 0 ? newItems.join(';') : '无';
+            }
+            
+            // 生成描述
+            let description = '';
+            const itemsStr = itemNames.join('、');
+            switch (slotType) {
+                case '手持':
+                    description = `<${userName}将「${itemsStr}」握在了手中。>\n`;
+                    break;
+                case '头部':
+                    description = `<${userName}将「${itemsStr}」戴在了头上。>\n`;
+                    break;
+                case '身体':
+                    description = `<${userName}穿上了「${itemsStr}」。>\n`;
+                    break;
+                case '手部':
+                    description = `<${userName}将「${itemsStr}」穿戴在了手上。>\n`;
+                    break;
+                case '脚部':
+                    description = `<${userName}将脚伸入了「${itemsStr}」。>\n`;
+                    break;
+                case '饰品':
+                    description = `<${userName}将「${itemsStr}」佩戴好了。>\n`;
+                    break;
+            }
+            triggerassa(`/setinput ${description}`);
+            
+            return variables;
+        }, { type: 'chat' });
+        
+        // 第二步:同步到 message 变量
+        await updateVariablesWith((variables) => {
+            if (!variables.stat_data) variables.stat_data = {};
+            if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
+            
             return variables;
         }, { type: 'message', message_id: 'latest' });
-    }).then(() => {
-        //console.log('装备完成，关闭模态框并刷新显示');
-      refreshEquipmentModal(slotType);
+        
+        // 第三步:从 chat 读取最新数据并同步到 message 和 currentGameData
+        await updateVariablesWith((chatVars) => {
+            return chatVars;
+        }, { type: 'chat' });
+        
+        await updateVariablesWith((variables) => {
+            // 从 chat 变量获取最新装备数据
+            return updateVariablesWith((chatVars) => {
+                if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
+                    if (!variables.stat_data) variables.stat_data = {};
+                    if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
+                    
+                    variables.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                    
+                    // 同步到 currentGameData
+                    if (currentGameData) {
+                        if (!currentGameData.stat_data) currentGameData.stat_data = {};
+                        if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
+                        currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                    }
+                }
+                
+                return variables;
+            }, { type: 'chat' });
+        }, { type: 'message', message_id: 'latest' });
+        
+        //console.log('装备完成,关闭模态框并刷新显示');
+        refreshEquipmentModal(slotType);
         // 触发界面刷新
         initDisplay(false);
-    }).catch(error => {
+        
+    } catch (error) {
         console.error('装备过程中发生错误:', error);
-    });
+    }
 }
-
 // 新增：卸下装备
-function unequipItem(slotType, itemName) {
+async function unequipItem(slotType, itemName) {
     //console.log('卸下装备:', slotType, itemName);
     
-    updateVariablesWith((variables) => {
-        //console.log('卸下装备前的变量:', variables);
-        
-        if (!variables.stat_data || !variables.stat_data.user_character || !variables.stat_data.user_character['当前装备']) {
-            //console.log('装备数据不存在');
+    try {
+        // 第一步:更新 chat 变量中的装备
+        await updateVariablesWith((variables) => {
+            //console.log('卸下装备前的变量:', variables);
+            
+            if (!variables.stat_data || !variables.stat_data.user_character || !variables.stat_data.user_character['当前装备']) {
+                //console.log('装备数据不存在');
+                return variables;
+            }
+            
+            const currentEquipment = variables.stat_data.user_character['当前装备'];
+            
+            if (slotType === '手持') {
+                if (currentEquipment['手持'][0] !== '无') {
+                    const currentItems = currentEquipment['手持'][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无' && item !== itemName);
+                    currentEquipment['手持'][0] = currentItems.length > 0 ? currentItems.join(';') : '无';
+                }
+            } else {
+                if (currentEquipment['穿戴'][slotType] && currentEquipment['穿戴'][slotType][0] !== '无') {
+                    const currentItems = currentEquipment['穿戴'][slotType][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无' && item !== itemName);
+                    currentEquipment['穿戴'][slotType][0] = currentItems.length > 0 ? currentItems.join(';') : '无';
+                }
+            }
+            
+            // 生成描述
+            let description = '';
+            switch (slotType) {
+                case '手持':
+                    description = `<${userName}将手中的「${itemName}」放回背包。>\n`;
+                    break;
+                case '头部':
+                    description = `<${userName}抬起手，将头上的「${itemName}」取下。>\n`;
+                    break;
+                case '身体':
+                    description = `<${userName}解开了「${itemName}」。>\n`;
+                    break;
+                case '手部':
+                    description = `<${userName}脱下了「${itemName}」。>\n`;
+                    break;
+                case '脚部':
+                    description = `<${userName}脱下了「${itemName}」。>\n`;
+                    break;
+                case '饰品':
+                    description = `<${userName}脱下了「${itemName}」。>\n`;
+                    break;
+            }
+            triggerassa(`/setinput ${description}`);
+            
+            //console.log('卸下装备后的变量:', variables);
             return variables;
-        }
+        }, { type: 'chat' });
         
-        const currentEquipment = variables.stat_data.user_character['当前装备'];
-        
-        if (slotType === '手持') {
-            if (currentEquipment['手持'][0] !== '无') {
-                const currentItems = currentEquipment['手持'][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无' && item !== itemName);
-                currentEquipment['手持'][0] = currentItems.length > 0 ? currentItems.join(';') : '无';
-            }
-        } else {
-            if (currentEquipment['穿戴'][slotType] && currentEquipment['穿戴'][slotType][0] !== '无') {
-                const currentItems = currentEquipment['穿戴'][slotType][0].split(/[;；]/).map(item => item.trim()).filter(item => item !== '无' && item !== itemName);
-                currentEquipment['穿戴'][slotType][0] = currentItems.length > 0 ? currentItems.join(';') : '无';
-            }
-        }
-          // 生成描述
-        let description = '';
-        switch (slotType) {
-            case '手持':
-                description = `<${userName}将手中的「${itemName}」放回背包。>\n`;
-                break;
-            case '头部':
-                description = `<${userName}抬起手，将头上的「${itemName}」取下。>\n`;
-                break;
-            case '身体':
-                description = `<${userName}解开了「${itemName}」。>\n`;
-                break;
-            case '手部':
-                description = `<${userName}脱下了「${itemName}」。>\n`;
-                break;
-            case '脚部':
-                description = `<${userName}脱下了「${itemName}」。>\n`;
-                break;
-            case '饰品':
-                description = `<${userName}脱下了「${itemName}」。>\n`;
-                break;
-        }
-        triggerassa(`/setinput ${description}`);
-        //console.log('卸下装备后的变量:', variables);
-        return variables;
-    }, { type: 'chat' }).then(() => {
-       
-        return updateVariablesWith((variables) => {
-           
+        // 第二步:初始化 message 变量
+        await updateVariablesWith((variables) => {
             if (!variables.stat_data) variables.stat_data = {};
             if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
             
-         // 从chat变量中复制最新的装备数据到message变量
-if (!variables.stat_data) variables.stat_data = {};
-if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
-
-// 直接从前面更新的变量中获取最新装备数据
-// 注意：这里我们需要从前面的updateVariablesWith结果中获取数据
-return updateVariablesWith((chatVars) => {
-    if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
-        variables.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
-        
-        // 同时更新全局currentGameData以便立即生效
-        if (currentGameData) {
-            if (!currentGameData.stat_data) currentGameData.stat_data = {};
-            if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
-            currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
-        }
-        if (currentGameData) {
-            if (!currentGameData.stat_data) currentGameData.stat_data = {};
-            if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
-            currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
-        }
-    }
-    //console.log('message变量同步更新:', variables);
-    return variables;
-}, { type: 'chat' });
-            
-            //console.log('message变量同步更新:', variables);
             return variables;
         }, { type: 'message', message_id: 'latest' });
-    }).then(() => {
+        
+        // 第三步:从 chat 读取最新数据并同步到 message 和 currentGameData
+        await updateVariablesWith((variables) => {
+            // 从 chat 变量获取最新装备数据
+            return updateVariablesWith((chatVars) => {
+                if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
+                    if (!variables.stat_data) variables.stat_data = {};
+                    if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
+                    
+                    variables.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                    
+                    // 同时更新全局currentGameData以便立即生效
+                    if (currentGameData) {
+                        if (!currentGameData.stat_data) currentGameData.stat_data = {};
+                        if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
+                        currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                    }
+                }
+                
+                //console.log('message变量同步更新:', variables);
+                return variables;
+            }, { type: 'chat' });
+        }, { type: 'message', message_id: 'latest' });
+        
         //console.log('卸下完成，关闭模态框并刷新显示');
         refreshEquipmentModal(slotType);
-       
+        
         // 触发界面刷新
         initDisplay(false);
-    }).catch(error => {
+        
+    } catch (error) {
         console.error('卸下装备过程中发生错误:', error);
-    });
+    }
 }
-
 
 // 新增：刷新装备管理模态框
 function refreshEquipmentModal(slotType) {
