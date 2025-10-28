@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.2.3';
+let current_game_version = '3.2.3';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -25913,6 +25913,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
     } catch (e) {
   console.error(`[Assa] ❌ 最终解析失败:`, e.message);
     console.error(`[Assa] ❌ 失败时的 content:`, content);
+     return str; // 最后、最重要的守护。
     }
 };
 
