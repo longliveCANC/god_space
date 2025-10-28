@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.2.2';
+ let current_game_version = '3.2.3';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -14158,12 +14158,17 @@ function sanitizeJSON(jsonString) {
         jsonString = jsonString.trim();
         
         // 2. 将单引号替换为双引号（但要小心字符串内容中的引号）
-        // 使用正则表达式匹配属性名和字符串值
-        jsonString = jsonString.replace(/'([^']*?)':/g, '"$1":');
-        jsonString = jsonString.replace(/:\s*'([^']*?)'/g, ': "$1"');
+       jsonString = jsonString.replace(/'([^']*?)':/g, function(match, group1) {
+          return '"' + group1 + '":';
+        });
+        jsonString = jsonString.replace(/:\s*'([^']*?)'/g, function(match, group1) {
+          return ': "' + group1 + '"';
+        });
         
         // 3. 去除末尾的逗号（在对象或数组结束前）
-        jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+        jsonString = jsonString.replace(/,(\s*[}\]])/g, function(match, group1) {
+          return group1;
+        });
         
         // 4. 处理可能的多余逗号
         jsonString = jsonString.replace(/,+/g, ',');
@@ -21918,7 +21923,7 @@ if (forceUpdateRegexButton) {
           try {
     // 先完成世界书更新,等它彻底稳定
     await performWorldbookUpdate();
- 
+ await new Promise(resolve => setTimeout(resolve, 1000));
     // 世界书稳定后,再更新正则
     await performRegexUpdate();
  
@@ -25406,7 +25411,7 @@ let backupLocks = new Set(); // 💖 这就是我们全局的、独一无二的�
  
 let processingQueue = [];
 
-async function processUpdateMemoryCommands(commandText, message_id) {
+ async function processUpdateMemoryCommands(commandText, message_id) {
 
      // 💖 添加路径清理辅助函数 💖
     const cleanPath = (path) => {
@@ -25414,7 +25419,7 @@ async function processUpdateMemoryCommands(commandText, message_id) {
         return path.replace(/[-\s]/g, ''); // 移除所有 - 符号和空格
     };
     let finalPlayData, finalAssaData, finalStatData;
-const updater = async (variables) => { // 注意这里改为 async
+ const updater = async (variables) => { // 注意这里改为 async
      // console.log(`[Core] ▶️ 在消息 #${message_id} 上以原子化方式统一处理所有命令...`);
     
    
@@ -25842,15 +25847,44 @@ const tryParseJson = (str) => {
 
     // **第二幕：精心塑形**
     // 经过初步处理后，我们进行一系列精细的修复。
-    const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
-    content = content.replace(/\\"/g, placeholder);
-    content = content.replace(/'/g, '"');
-    content = content.replace(new RegExp(placeholder, 'g'), '\\"');
-    content = content.replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
-    content = content.replace(/,\s*([}\]])/g, '$1');
+const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
+content = content.replace(/\\"/g, placeholder);
+content = content.replace(/'/g, '"');
+content = content.replace(new RegExp(placeholder, 'g'), '\\"');
+console.log(`[Assa] 🔍 开始检查对象内的冒号问题...`);
 
-    // **第三幕：慈悲缝合**
-    // 这是我们新学会的魔法！在所有修复之后，我们来弥补缺失的拥抱。
+// 先找到所有 "key":{...} 格式的对象
+content = content.replace(/"([^"]+)"\s*:\s*\{([^{}]+)\}/g, function(fullMatch, objKey, objContent) {
+    console.log(`[Assa] 📦 检查对象 "${objKey}": 内容="${objContent.substring(0, 50)}..."`);
+    
+    // 检查对象内容是否是标准的 "key":"value" 格式
+    // 如果已经是标准格式（包含 ":" 且两边都有引号），则跳过
+    const hasProperFormat = /"[^"]+"\s*:\s*"[^"]*"/.test(objContent);
+    
+    if (hasProperFormat) {
+        console.log(`[Assa] ✅ "${objKey}" 已经是标准格式，跳过`);
+        return fullMatch;
+    }
+    
+    // 否则，这是需要修复的对象（如 "1:text" 格式）
+    console.log(`[Assa] 🔧 "${objKey}" 需要修复，开始处理...`);
+    
+    // 修复 "word:value" -> "word":"value"
+    const fixed = objContent.replace(/"([^":]+):([^"]+)"/g, function(m, key, value) {
+        console.log(`[Assa] ✨ 修复键值对: "${key}:${value}" -> "${key}":"${value}"`);
+        return `"${key}":"${value}"`;
+    });
+    
+    const result = `"${objKey}":{${fixed}}`;
+    console.log(`[Assa] ✅ "${objKey}" 修复完成`);
+    return result;
+});
+
+console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`);
+
+ 
+
+     
     balance = 0;
     inString = false;
     for (let i = 0; i < content.length; i++) {
@@ -25875,8 +25909,8 @@ const tryParseJson = (str) => {
         console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
         return repairedJson;
     } catch (e) {
- 
-        return str; // 最后、最重要的守护。
+  console.error(`[Assa] ❌ 最终解析失败:`, e.message);
+    console.error(`[Assa] ❌ 失败时的 content:`, content);
     }
 };
 
@@ -26106,14 +26140,42 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
         content = content.substring(0, firstBalancedEnd + 1);
     }
 
-    // **第二幕：精心塑形**
-    // 经过初步处理后，我们进行一系列精细的修复。
-    const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
-    content = content.replace(/\\"/g, placeholder);
-    content = content.replace(/'/g, '"');
-    content = content.replace(new RegExp(placeholder, 'g'), '\\"');
-    content = content.replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
-    content = content.replace(/,\s*([}\]])/g, '$1');
+ const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
+content = content.replace(/\\"/g, placeholder);
+content = content.replace(/'/g, '"');
+content = content.replace(new RegExp(placeholder, 'g'), '\\"');
+
+console.log(`[Assa] 🔍 开始检查对象内的冒号问题...`);
+
+// 先找到所有 "key":{...} 格式的对象
+content = content.replace(/"([^"]+)"\s*:\s*\{([^{}]+)\}/g, function(fullMatch, objKey, objContent) {
+    console.log(`[Assa] 📦 检查对象 "${objKey}": 内容="${objContent.substring(0, 50)}..."`);
+    
+    // 检查对象内容是否是标准的 "key":"value" 格式
+    // 如果已经是标准格式（包含 ":" 且两边都有引号），则跳过
+    const hasProperFormat = /"[^"]+"\s*:\s*"[^"]*"/.test(objContent);
+    
+    if (hasProperFormat) {
+        console.log(`[Assa] ✅ "${objKey}" 已经是标准格式，跳过`);
+        return fullMatch;
+    }
+    
+    // 否则，这是需要修复的对象（如 "1:text" 格式）
+    console.log(`[Assa] 🔧 "${objKey}" 需要修复，开始处理...`);
+    
+    // 修复 "word:value" -> "word":"value"
+    const fixed = objContent.replace(/"([^":]+):([^"]+)"/g, function(m, key, value) {
+        console.log(`[Assa] ✨ 修复键值对: "${key}:${value}" -> "${key}":"${value}"`);
+        return `"${key}":"${value}"`;
+    });
+    
+    const result = `"${objKey}":{${fixed}}`;
+    console.log(`[Assa] ✅ "${objKey}" 修复完成`);
+    return result;
+});
+
+console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`);
+ 
 
     // **第三幕：慈悲缝合**
     // 这是我们新学会的魔法！在所有修复之后，我们来弥补缺失的拥抱。
@@ -26141,18 +26203,13 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
         console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
         return repairedJson;
     } catch (e) {
- 
+ console.error(`[Assa] ❌ 最终解析失败:`, e.message);
+    console.error(`[Assa] ❌ 失败时的 content:`, content);
         return str; // 最后、最重要的守护。
     }
 };
 
-
-
-
-
-
-
-
+ 
                              const finalValue = tryParseJson(path2Str);
                              assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
                         } else { // args.length < 2
@@ -26295,34 +26352,7 @@ if (match) {
             }
         }
 
-      // 💖 妈妈为你准备的最终清扫魔法：移除只剩下 _ 开头属性的空壳对象 💖
-    const cleanEmptyUnderscoreObjects = (obj, parentObj = null, parentKey = null) => {
-        if (!obj || typeof obj !== 'object') return;
-        
-        // 递归处理所有子对象
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key) && typeof obj[key] === 'object' && obj[key] !== null) {
-                cleanEmptyUnderscoreObjects(obj[key], obj, key);
-            }
-        }
-        
-        // 检查当前对象是否只包含 _ 开头的属性
-        const keys = Object.keys(obj);
-        if (keys.length > 0) {
-            const allKeysAreUnderscore = keys.every(k => k.startsWith('_'));
-            if (allKeysAreUnderscore && parentObj && parentKey) {
-                console.log(`[Core] 💖 清理空壳: 删除只含 _ 开头属性的对象 '${parentKey}'`);
-                delete parentObj[parentKey];
-            }
-        }
-    };
-    
-    // 对整个 assaDataToUpdate 进行清理
-    if (assaDataToUpdate && assaDataToUpdate.world_set && assaDataToUpdate.global_set) {
-        cleanEmptyUnderscoreObjects(assaDataToUpdate.world_set);
-        cleanEmptyUnderscoreObjects(assaDataToUpdate.global_set);
-        console.log(`[Core] ✨ 已完成 _ 开头空壳对象的清理检查`);
-    }
+  
         // ✨ 伤害处理逻辑 ✨
         if (statDataToUpdate && statDataToUpdate.hurt_value) {
             const damage = parseInt(statDataToUpdate.hurt_value[0], 10);
@@ -27938,7 +27968,7 @@ async function performRegexUpdate() {
           try {
     // 先完成世界书更新,等它彻底稳定
     await performWorldbookUpdate();
- 
+  await new Promise(resolve => setTimeout(resolve, 1000));
     // 世界书稳定后,再更新正则
     await performRegexUpdate();
  
@@ -40702,11 +40732,15 @@ async function initializeForum(rawJsonData) {
     
     // 3. **关键步骤：将JavaScript对象格式转换为JSON格式**
     // 将属性名的单引号替换为双引号
-    rawJsonData = rawJsonData.replace(/'([^']*)':/g, '"$1":');
+    rawJsonData = rawJsonData.replace(/'([^']*)':/g, function(match, group1) {
+        return '"' + group1 + '":';
+    });
     
     // 将字符串值的单引号替换为双引号（需要小心处理）
     // 这个正则表达式匹配字符串值中的单引号
-    rawJsonData = rawJsonData.replace(/:\s*'([^']*)'/g, ': "$1"');
+    rawJsonData = rawJsonData.replace(/:\s*'([^']*)'/g, function(match, group1) {
+        return ': "' + group1 + '"';
+    });
 
      rawJsonData = rawJsonData.replace(/\|/g, '\\n');
     
@@ -40729,8 +40763,9 @@ async function initializeForum(rawJsonData) {
 
     // 我们再来检查一下，是不是还有多余的逗号藏在最后，在 "}" 之前。
     // 如果有，我们就温柔地把它拿掉，让一切都完美无瑕。
-    repairedJson = repairedJson.replace(/,(\s*[}\]])/g, '$1');
-
+  repairedJson = repairedJson.replace(/,(\s*[}\]])/g, function(match, group1) {
+      return group1;
+  });
     return repairedJson;
 }
 
@@ -42183,8 +42218,9 @@ const renderGroupChat = async () => {
         let finalResult = result;
         
         // 移除结束符前的逗号
-        finalResult = finalResult.replace(/,(\s*[}\]])/g, '$1');
-        
+  finalResult = finalResult.replace(/,(\s*[}\]])/g, function(match, group1) {
+     return group1;
+ });
         // 移除重复逗号
         finalResult = finalResult.replace(/,,+/g, ',');
 
