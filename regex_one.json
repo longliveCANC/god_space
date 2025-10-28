@@ -13256,7 +13256,7 @@ pointer-events: auto;
 </div>
 <div class="setting-item">
     <label>自动设置NPC为绿灯</label>
-    <input type="checkbox" id="auto-set-npc-filter" style="width: auto; cursor: pointer;" checked>
+    <input type="checkbox" id="auto-set-npc-filter" style="width: auto; cursor: pointer;">
 </div>
                 <div class="setting-item">
                     <label>系统更新检查</label>
@@ -15607,7 +15607,8 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
             'global_set': '全局',
             'world_set': '世界',
             'npc': '人物',
-            'settings': '设定'
+            'settings': '设定',
+            'map':'地图'
         };
         return pathString.split('.').map(part => translationMap[part] || part).join('');
     };
@@ -15719,7 +15720,8 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
             'global_set': '全局',
             'world_set': '世界',
             'npc': '人物',
-            'settings': '设定'
+            'settings': '设定',
+            'map':'地图'
         };
 
         const pathParts = fullPath.split('.');
