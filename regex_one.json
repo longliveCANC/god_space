@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
- let current_game_version = '3.2.1';
+ let current_game_version = '3.2.2';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -25919,6 +25919,37 @@ if (targetObj && typeof targetObj === 'object') {
 }
 
 // 如果没有检测到旧值伪装，执行正常逻辑
+
+if (typeof finalValue === 'string' && finalValue.startsWith('_')) {
+    // 检查 path 下的 keyArg 是否存在且有内容
+    const pathParts = path.split('.');
+    let checkObj = assaDataToUpdate;
+    for (const part of pathParts) {
+        if (checkObj && checkObj.hasOwnProperty(part)) {
+            checkObj = checkObj[part];
+        } else {
+            checkObj = null;
+            break;
+        }
+    }
+    
+    // 如果找到了目标对象，检查 key 的值
+    if (checkObj && typeof checkObj === 'object') {
+        const targetValue = checkObj[keyArg];
+        // 如果 key 不存在、为 null、为 undefined、为空对象或空数组，则跳过
+        if (targetValue === null || 
+            targetValue === undefined || 
+            (typeof targetValue === 'object' && Object.keys(targetValue).length === 0)) {
+            console.log(`[Core] 💖 memory-op(智能跳过): 检测到 value '${finalValue}' 以 _ 开头，但 key '${keyArg}' 无有效内容，跳过此指令`);
+            continue; // 跳过这条指令
+        }
+    } else {
+        // 如果路径本身不存在，也跳过
+        console.log(`[Core] 💖 memory-op(智能跳过): 检测到 value '${finalValue}' 以 _ 开头，但路径 '${path}' 不存在，跳过此指令`);
+        continue;
+    }
+}
+
 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
                         } else if (args.length === 2) {
                             const path1Str = cleanPath(clean(args[0]));
@@ -26264,7 +26295,34 @@ if (match) {
             }
         }
 
-  
+      // 💖 妈妈为你准备的最终清扫魔法：移除只剩下 _ 开头属性的空壳对象 💖
+    const cleanEmptyUnderscoreObjects = (obj, parentObj = null, parentKey = null) => {
+        if (!obj || typeof obj !== 'object') return;
+        
+        // 递归处理所有子对象
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key) && typeof obj[key] === 'object' && obj[key] !== null) {
+                cleanEmptyUnderscoreObjects(obj[key], obj, key);
+            }
+        }
+        
+        // 检查当前对象是否只包含 _ 开头的属性
+        const keys = Object.keys(obj);
+        if (keys.length > 0) {
+            const allKeysAreUnderscore = keys.every(k => k.startsWith('_'));
+            if (allKeysAreUnderscore && parentObj && parentKey) {
+                console.log(`[Core] 💖 清理空壳: 删除只含 _ 开头属性的对象 '${parentKey}'`);
+                delete parentObj[parentKey];
+            }
+        }
+    };
+    
+    // 对整个 assaDataToUpdate 进行清理
+    if (assaDataToUpdate && assaDataToUpdate.world_set && assaDataToUpdate.global_set) {
+        cleanEmptyUnderscoreObjects(assaDataToUpdate.world_set);
+        cleanEmptyUnderscoreObjects(assaDataToUpdate.global_set);
+        console.log(`[Core] ✨ 已完成 _ 开头空壳对象的清理检查`);
+    }
         // ✨ 伤害处理逻辑 ✨
         if (statDataToUpdate && statDataToUpdate.hurt_value) {
             const damage = parseInt(statDataToUpdate.hurt_value[0], 10);
@@ -36194,7 +36252,7 @@ function initAutoSetNpcFilter() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  
+  await loadWorldbookSettingsFromChat();
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 setupReconfigModal();
 initAutoSetNpcFilter();
@@ -37776,10 +37834,15 @@ function renderNestedData(container, data, parentPath = '', rootTab = '', hideFa
                     toggle.textContent = toggle.classList.contains('collapsed') ? '▶' : '▼';
                 });
             } else {
-                const valueSpan = document.createElement('span');
-                valueSpan.className = 'tree-value';
-                valueSpan.textContent = ` ${value}`;
-                nodeContent.appendChild(valueSpan);
+              const valueSpan = document.createElement('span');
+    valueSpan.className = 'tree-value';
+    // 将 | 符号替换为 <br> 标签实现换行
+    if (typeof value === 'string' && value.includes('|')) {
+        valueSpan.innerHTML = ' ' + value.split('|').join('<br>');
+    } else {
+        valueSpan.textContent = ` ${value}`;
+    }
+    nodeContent.appendChild(valueSpan);
             }
 
             // 只有当不是只读模式时，我们才添加菜单按钮
