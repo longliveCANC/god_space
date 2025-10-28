@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
-let current_game_version = '3.2.3';
+let current_game_version = '3.2.5';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -25984,7 +25984,32 @@ if (typeof finalValue === 'string' && finalValue.startsWith('_')) {
         continue;
     }
 }
+    const pathToShieldCheck = path.split('.');
+    let objectToShield = assaDataToUpdate;
+    let shieldFound = false;
 
+    for (const part of pathToShieldCheck) {
+        if (objectToShield && typeof objectToShield === 'object' && objectToShield.hasOwnProperty(part)) {
+            objectToShield = objectToShield[part];
+        } else {
+            objectToShield = null;
+            break;
+        }
+    }
+
+    if (objectToShield && typeof objectToShield === 'object') {
+         const targetObject = objectToShield[keyArg];
+
+         if (targetObject && typeof targetObject === 'object') {
+             const targetIsFiltered = targetObject._filter === true || String(targetObject._filter) === 'true';
+             const targetIsShown = targetObject._showInEJS === false || String(targetObject._showInEJS) === 'false';
+
+             if(targetIsFiltered && targetIsShown) {
+                console.log(`[Core] 💖 memory-op(水晶外壳守护): 检测到对 '${path}.${keyArg}' 的整体替换操作，但其受到守护，操作被跳过。`);
+                continue; // 跳过这条指令，保护它不被覆盖
+             }
+         }
+    }
 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
                         } else if (args.length === 2) {
                             const path1Str = cleanPath(clean(args[0]));
@@ -26375,8 +26400,8 @@ if (match) {
     };
  
     // 对整个 assaDataToUpdate 进行清理
-    if (assaDataToUpdate && assaDataToUpdate.world_set) {
-        cleanEmptyUnderscoreObjects(assaDataToUpdate.world_set);
+    if (assaDataToUpdate) {
+        cleanEmptyUnderscoreObjects(assaDataToUpdate);
         console.log(`[Core] ✨ 已完成 _ 开头空壳对象的清理检查`);
     }
   
@@ -28998,7 +29023,7 @@ const fontLibrary = {
     ]
 };
  // 2. 动态加载特定字体CSS的咒语
-function zxsawawq2wloadSpecificFontCSS(font) {
+function loadSpecificFontCSS(font) {
     if (!font.url) return; // 如果这个字体不需要加载外部文件，就直接返回
 
     const fontLinkId = 'dynamic-font-stylesheet';
