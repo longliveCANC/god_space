@@ -15148,7 +15148,7 @@ all_in: {
         get_a_car: (val) => val.playCharacterData.技能段.生理技能.驾驶[0] >= 5,
         occultist: (val) => val.playCharacterData.技能段.心智技能.神秘学[0] >= 5,
         team_player: (val) => val.assaSettingsData.global_set && val.assaSettingsData.global_set.小队信息 && Object.keys(val.assaSettingsData.global_set.小队信息).length > 0,
-        lone_wolf: (val) => val.currentGameData.user_character.total_task[0] >= 10 && (!val.assaSettingsData.global_set || !val.assaSettingsData.global_set.小队信息 || Object.keys(val.assaSettingsData.global_set.小队信息).length < 1),
+        lone_wolf: (val) =>  val.currentGameData.user_character.total_task[0]  >= 10 && (!val.assaSettingsData.global_set || !val.assaSettingsData.global_set.小队信息 || Object.keys(val.assaSettingsData.global_set.小队信息).length < 1),
  
         // ========== 生死与状态 ==========
          first_death: (val) => (val.playCharacterData?.衍生属性段?.生命值?.当前值?.[0] ?? 1) <= 0,
@@ -28290,7 +28290,6 @@ streamingToggle.addEventListener('click', () => {
 
 // 初始化
 updateStreamingToggleState();
-// 初始化时显示当前楼层数
 function updateScanFloorsDisplay() {
     const currentFloors = localStorage.getItem('scanFloorsCount');
     const displayElement = document.getElementById('current-scan-floors');
@@ -28301,20 +28300,32 @@ function updateScanFloorsDisplay() {
             displayElement.textContent = '(未设置)';
         }
     }
+    
+    // 初始化 checkbox 状态
+    const rememberCheckbox = document.getElementById('remember-scan-floors');
+    console.log('rememberCheckbox element:', rememberCheckbox); // 检查元素是否找到
+    if (rememberCheckbox) {
+        const rememberValue = localStorage.getItem('rememberScanFloors');
+        console.log('rememberValue from localStorage:', rememberValue, typeof rememberValue); // 检查值和类型
+        rememberCheckbox.checked = rememberValue === 'true' || rememberValue === true;
+        console.log('checkbox.checked set to:', rememberCheckbox.checked); // 检查设置结果
+    }
 }
-
-// 在页面加载时调用
 updateScanFloorsDisplay();
 
 // 设置按钮点击事件
+ // 监听 checkbox 变化，实时保存
+document.getElementById('remember-scan-floors')?.addEventListener('change', (e) => {
+    localStorage.setItem('rememberScanFloors', e.target.checked ? 'true' : 'false');
+});
+
+// 设置按钮只负责保存楼层数
 document.getElementById('set-scan-floors-btn')?.addEventListener('click', () => {
     const input = prompt('请输入绿灯扫描楼层数（数字）:');
     if (input !== null) {
         const floors = parseInt(input);
         if (!isNaN(floors) && floors > 0) {
             localStorage.setItem('scanFloorsCount', floors.toString());
-            localStorage.setItem('rememberScanFloors', 
-                document.getElementById('remember-scan-floors')?.checked ? 'true' : 'false');
             
             // 更新显示
             updateScanFloorsDisplay();
@@ -37860,7 +37871,8 @@ function renderNestedData(container, data, parentPath = '', rootTab = '', hideFa
         "type": "种类",
         "quality": "质量",
         "num": "数量",
-        "status":"状态"
+        "status":"状态",
+        "level": "等级",
     };
 
     container.innerHTML = '';
