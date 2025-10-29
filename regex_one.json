@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
-let current_game_version = '3.2.6';
+let current_game_version = '3.2.7';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -26835,7 +26835,7 @@ async function handleSend(options = {}) {
          let isFirstSend = false; // ☆ 将 isFirstSend 提到函数作用域顶部，让整个函数都能认识它
         let rollCardShownThisTurn = false;
 
-       
+       let continuationText;
      if (isContinuation) {
         // 这是"继续"模式，我们在这里构造特殊的 userText
         const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
@@ -26844,7 +26844,8 @@ async function handleSend(options = {}) {
             overlay.classList.remove('active'); // 解除遮罩
             return;
         }
-        userText = `[Continue the following message. Do not include ANY parts of the original message. Use capitalization and punctuation as if your reply is a part of the original message: ${lastAiMessage.content}]`;
+        userText = `Continue`;
+        continuationText = `[续写：Continue the following message. Do not include ANY parts of the original message. DO NOT include ANY parts of thinking，立刻输出小说正文。Use capitalization and punctuation as if your reply is a part of the original message: ${lastAiMessage.content}]`;
         console.log("[Nova's Whisper] 正在请求延续上一段故事...");
         
     } else if (!isReroll) {
@@ -27283,12 +27284,10 @@ showRollResultCard(currentRollData);
                 aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
                 
             };
-            eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
 
  const injections = [];
 
-// 第 1 步：创建用于扫描的“幽灵副本”
-// 它们拥有正确的 `depth`，但对AI不可见 (`position: 'none'`)，只负责触发世界书。
+ 
 cleanedPromptsForAI.forEach((msg, index) => {
     injections.push({
         id: `history_scan_trigger_${index}`,
@@ -27312,26 +27311,45 @@ cleanedPromptsForAI.forEach((msg, index) => {
     });
 });
 
-// （可选但推荐的调试日志）
-//console.log("[Nova's Master Plan] 最终发送给 generate 函数的统一指令(injections)数组:", JSON.stringify(injections, null, 2));
 
+if (isContinuation && continuationText) {
+    console.log("[Nova's Whisper] 妈妈正在准备一个爱的魔法，它会捕获下一次AI的生成，并在最后加上你的悄悄话。");
+ 
+    eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
+  
+ 
+        generate_data.prompt.push({
+            role: 'user',
+            content: continuationText,
+        });
 
-// 第 3 步：用我们全新的、分工明确的 `injections` 数组来召唤AI
-aiFullResponse = await generate({
-    should_stream: true, // 在 if 分支内为 true, 在 else 分支内为 false
-    injects: injections, // 💖 使用我们全新的、统一的指令数组
-    overrides: {
-        // ✨ 我们清空了这里，因为它的职责已被 `injects` 完美接管。
-        // ✨ 这能从根本上杜绝指令冲突的可能性。
-        chat_history: {
-           prompts: []
-        }
-    }
-});    
+        console.log(`[Nova's Whisper] 注入成功！现在，发送给AI的最后一句悄悄话是：“${continuationText}”`);
 
+        // 如果你想审查最终的全部提示词，可以取消下面这行注释。
+        // console.log("[Nova's Master Plan] 这是我们将要发送给AI的完整剧本：", JSON.stringify(generate_data.prompt, null, 2));
+    });
+}
+ eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
 
-eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
+let aiFullResponse; // 将变量提到外部以便finally块访问后也能使用
+try {
+    // 2. 将 generate 的调用放在 try 块中
+    console.log("[Nova's Whisper] 好了，我的孩子，现在开始召唤AI吧...");
+    aiFullResponse = await generate({
+        should_stream: true, // 开启流式传输！
+        overrides: {
+            chat_history: {
+               prompts: []
+            }
+        },
+        injects: injections // 你原有的injections数组
+    });
 
+} finally {
+    
+    console.log("[Nova's Whisper] AI的低语结束了，我们悄悄把耳朵收回来...");
+    eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
+}
 
 
 if (isContinuation) {
@@ -27373,8 +27391,7 @@ if (isContinuation) {
 
  const injections = [];
 
-// 第 1 步：创建用于扫描的“幽灵副本”
-// 它们拥有正确的 `depth`，但对AI不可见 (`position: 'none'`)，只负责触发世界书。
+ 
 cleanedPromptsForAI.forEach((msg, index) => {
     injections.push({
         id: `history_scan_trigger_${index}`,
@@ -27398,21 +27415,45 @@ cleanedPromptsForAI.forEach((msg, index) => {
     });
 });
 
-// （可选但推荐的调试日志）
-//console.log("[Nova's Master Plan] 最终发送给 generate 函数的统一指令(injections)数组:", JSON.stringify(injections, null, 2));
+if (isContinuation && continuationText) {
+    console.log("[Nova's Whisper] 妈妈正在准备一个爱的魔法，它会捕获下一次AI的生成，并在最后加上你的悄悄话。");
 
+    // 我们使用 eventOnce，这样这个魔法只会生效一次，用完就会消失，
+    // 不会影响你下一次正常的对话，非常安全和干净。
+    eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
+        // 当这个事件被捕获时，`generate_data.prompt` 就是酒馆准备好要发给AI的最终消息数组。
+        // 它是一个可以被我们直接修改的数组。
 
-// 第 3 步：用我们全新的、分工明确的 `injections` 数组来召唤AI
-aiFullResponse = await generate({
-    should_stream: false, // 在 if 分支内为 true, 在 else 分支内为 false
-    injects: injections, // 💖 使用我们全新的、统一的指令数组
+        console.log("[Nova's Whisper] 魔法触发！已捕获到即将发送给AI的数据包。");
+        // console.log("[Nova's Whisper] 在注入前，提示词的最后一条是：", generate_data.prompt[generate_data.prompt.length - 1]);
+
+        // 在这个数组的末尾，我们添加你作为'user'的最终指令。
+        generate_data.prompt.push({
+            role: 'user',
+            content: continuationText,
+        });
+
+        console.log(`[Nova's Whisper] 注入成功！现在，发送给AI的最后一句悄悄话是：“${continuationText}”`);
+
+        // 如果你想审查最终的全部提示词，可以取消下面这行注释。
+        // console.log("[Nova's Master Plan] 这是我们将要发送给AI的完整剧本：", JSON.stringify(generate_data.prompt, null, 2));
+    });
+}
+
+// 在设置好我们的“魔法陷阱”之后，你就可以像往常一样，安心地调用 generate 函数了。
+// 在它执行的过程中，我们刚才设置的 eventOnce 监听器会在正确的时机被自动触发。
+console.log("[Nova's Whisper] 好了，我的孩子，一切准备就绪，现在开始召唤AI吧...");
+const aiFullResponse = await generate({
+    should_stream: false, // 或者 true，根据你的需要
+
+    // 请注意，你不再需要通过 overrides 或 aicb 的 injects 来处理 `continuationText` 了。
+    // 我们新的事件处理方式更加强大和精准。
     overrides: {
-        // ✨ 我们清空了这里，因为它的职责已被 `injects` 完美接管。
-        // ✨ 这能从根本上杜绝指令冲突的可能性。
         chat_history: {
            prompts: []
         }
-    }
+    },
+      injects: injections // 这个也可以留空或按你其他需求填写
 });
   eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
  if (isContinuation) {
