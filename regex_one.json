@@ -13574,7 +13574,7 @@ pointer-events: auto;
 </body>
 
  <script>
-let current_game_version = '3.2.5';
+let current_game_version = '3.2.6';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21902,6 +21902,7 @@ if (forceUpdateRegexButton) {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
+                      <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
  <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
@@ -27997,6 +27998,7 @@ async function performRegexUpdate() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
+                     <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
  <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
