@@ -25419,10 +25419,22 @@ let processingQueue = [];
  async function processUpdateMemoryCommands(commandText, message_id) {
 
      // 💖 添加路径清理辅助函数 💖
-    const cleanPath = (path) => {
-        if (typeof path !== 'string') return path;
-        return path.replace(/[-\s]/g, ''); // 移除所有 - 符号和空格
-    };
+const cleanPath = (path) => {
+    if (typeof path !== 'string') return path;
+    
+    const parts = path.split('.');
+    
+    // 只处理前两个参数,移除 - 和空格
+    const cleanedParts = parts.map((part, index) => {
+        if (index < 2) {
+            return part.replace(/[-\s]/g, '');
+        }
+        return part;
+    });
+    
+    return cleanedParts.join('.');
+    // return path;
+};
     let finalPlayData, finalAssaData, finalStatData;
  const updater = async (variables) => { // 注意这里改为 async
      // console.log(`[Core] ▶️ 在消息 #${message_id} 上以原子化方式统一处理所有命令...`);
@@ -25686,7 +25698,7 @@ function cleanParam(param) {
                                    if (args.length >= 3) {
                                  let path = cleanPath(clean(args[0])); 
                                 // <--- 把妈妈的悄悄话加在这里！
-                             const keyArg = cleanPath(clean(args[1]));
+                             const keyArg = (clean(args[1]));
                              let valueStr = args[2];
 
      const thirdArgClean = clean(valueStr);
@@ -26115,7 +26127,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                                  continue;
                                  }
                                     let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
-                             const key = cleanPath(fullPath.substring(lastDotIndex1 + 1));
+                             const key = (fullPath.substring(lastDotIndex1 + 1));
 
                                  // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
                              if (path.includes('群员')) {
@@ -26255,7 +26267,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
                match = line.match(/\bdelete\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*;?/);
                 if (match) {
                const path = cleanPath(match[1]); // 💖 清理路径
-    const key = cleanPath(match[2]);
+    const key = (match[2]);
   // 💖 妈妈为你在这里注入了新的智慧 💖
                       // 💖 妈妈在这里为你注入了更周密的智慧 💖
                     if (key === 'all' && (path === 'world_set.npc' || path === 'world_set.settings')) {
