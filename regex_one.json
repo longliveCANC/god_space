@@ -20864,7 +20864,8 @@ async function renderReadingModeChapter(msg) {
     );
     // 2. 清理内容，但保留所有非交互性标签
     let renderedHtml = pureContent
-        .replace(/<(thinking|think|battle|guide|options|forum_threads|shop_item|表现总结|group_chat|private_chat\b[^>]*?)>[\s\S]*?<\/\1>/gs, ''); // 简化清理规则
+        .replace(/<(thinking|think|battle|guide|options|forum_threads|shop_item|表现总结|group_chat)>[\s\S]*?<\/\1>/gs, '')
+        .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, ''); // 简化清理规则
 
 
 
