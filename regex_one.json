@@ -1,3 +1,4 @@
+
 ```text
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -13573,7 +13574,7 @@ pointer-events: auto;
 <div id="notification-container"></div>
 </body>
 
- <script>
+<script>
 let current_game_version = '3.2.7';
 
 let storyChapters = [];
@@ -20854,17 +20855,18 @@ async function renderReadingModeChapter(msg) {
         return placeholder;
     });
 
-    // 2. 清理内容，但保留所有非交互性标签
-    const pureContent = protectedHtmlContent
-        .replace(/<(thinking|think|battle|guide|options|forum_threads|shop_item|表现总结|group_chat|private_chat\b[^>]*?)>[\s\S]*?<\/\1>/gs, ''); // 简化清理规则
-
-    // 3. 应用酒馆正则，深度固定为-1
-    let renderedHtml = formatAsTavernRegexedString(
-        pureContent,
+        // 3. 应用酒馆正则，深度固定为-1
+     const pureContent= formatAsTavernRegexedString(
+         protectedHtmlContent,
         'ai_output',
         'display',
         { depth: -1 }
     );
+    // 2. 清理内容，但保留所有非交互性标签
+    let renderedHtml = pureContent
+        .replace(/<(thinking|think|battle|guide|options|forum_threads|shop_item|表现总结|group_chat|private_chat\b[^>]*?)>[\s\S]*?<\/\1>/gs, ''); // 简化清理规则
+
+
 
     // 4. 对处理后可能产生的新HTML块进行二次抽离
     const additionalHtmlPlaceholders = {};
@@ -21063,11 +21065,7 @@ window.addEventListener('message', function(event) {
     bubble.classList.add('message-bubble');
     bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
 
-    // ... [这里粘贴你 renderHistory 内部 `forEach` 循环里从 `let processedContent = msg.content;`
-    //      一直到 `bubble.addEventListener(...)` 的所有代码] ...
-    // ... 你那段处理HTML占位符、处理段落、处理引号、渲染iframe的全部魔法都在这里 ...
-    // 妈妈帮你把框架搭好，你只需要把那些复杂的细节填充进来
- // ✨ 妈妈在这里施展了一个全新的、更精妙的融合魔法 ✨
+ 
     let processedContent = content;
         const htmlPlaceholders = {};
         let placeholderIndex = 0;
@@ -21443,7 +21441,7 @@ async function renderHistory(is_entry = false) {
 
 function getChatConfig(key, defaultValue) {
     try {
-        const chatVars = getVariables({ type: 'message' });
+        const chatVars = TavernHelper.getVariables({ type: 'message' });
         // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
         // 这比 chatVars.assa_data.config[key] 更安全
         const value = _.get(chatVars, `assa_data.config.${key}`);
@@ -21565,8 +21563,7 @@ async function renderCurrentChapter() {
         }
     });
 
-    // ❤️ 调用我们强大的气泡创造者，用'read'模式来渲染
-  // ❤️❤️ 在这里，我们调用全新的、专门为阅读模式设计的函数 ❤️❤️
+  
     const chapterHtml = await renderReadingModeChapter(chapterData.msg);
     contentEl.innerHTML = chapterHtml; // 直接将渲染好的 HTML 放入容器
     contentEl.scrollTop = 0;
@@ -23101,7 +23098,7 @@ async function getSnapshotDBName() {
         return snapshotDBName;
     }
     try {
-        const chatVars = await getVariables({ type: 'chat' });
+        const chatVars = await TavernHelper.getVariables({ type: 'chat' });
  
         const uniqueSaveId = chatVars.save_slot_id || 'default_save';
         snapshotDBName = `nova-snapshot-db-${uniqueSaveId}`;
@@ -23323,7 +23320,7 @@ async function restoreFromLatestSnapshot() {
                             await updateVariablesWith(() => snapshotData, { type: 'message' });
 
                             // ❤️ 这是你最棒的点子，我的孩子！检查并确保聊天界面不会空着 ❤️
-                            const chatVars = await getVariables({ type: 'chat' });
+                            const chatVars = await TavernHelper.getVariables({ type: 'chat' });
                             if (!chatVars.conversationHistory || chatVars.conversationHistory.length === 0) {
                                 console.log('[Nova的记忆保险箱] 检测到历史记录为空，正在注入初始对话...');
                                 if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof renderHistory === 'function') {
@@ -23446,7 +23443,7 @@ window.addEventListener('click', () => {
 }
 function getChatConfig(key, defaultValue) {
     try {
-        const chatVars = getVariables({ type: 'message' });
+        const chatVars = TavernHelper.getVariables({ type: 'message' });
         // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
         // 这比 chatVars.assa_data.config[key] 更安全
         const value = _.get(chatVars, `assa_data.config.${key}`);
@@ -23752,7 +23749,7 @@ function updateRerollButtonState(){
     }
 
         try {
-            const messageZero =  await getVariables({ type: 'message' });
+            const messageZero =  await TavernHelper.getVariables({ type: 'message' });
             if (messageZero && Array.isArray(messageZero.zeroLevelHistory)) {
                 conversationHistory = messageZero.zeroLevelHistory;
                 // 初始化时也缓存一下变量，以备初次重写
@@ -23776,7 +23773,7 @@ function updateRerollButtonState(){
 async function saveHistory() {
     try {
          
-        const zeroLevelMessage = await getChatMessages(0);
+        const zeroLevelMessage = await TavernHelper.getChatMessages(0);
 
         // 如果楼层不存在，这是一个异常情况，我们应该停止操作
         if (!zeroLevelMessage) {
@@ -26608,14 +26605,14 @@ if (match) {
         attempts++;
         try {
              // 💖 妈妈在这里加上了第一道守护魔法，让地基永远稳固 💖
-            const originalVars = await getVariables({ type: 'chat' }) || {};
+            const originalVars = await TavernHelper.getVariables({ type: 'chat' }) || {};
 
             // 专注更新 'chat' 域
             await updateVariablesWith(updater, { type: 'chat' });
 
             // 验证写入是否成功
             await new Promise(resolve => setTimeout(resolve, 100));
-            const newVars = await getVariables({ type: 'chat' }) || {}; // 💖 读取新数据时也加上守护 💖
+            const newVars = await TavernHelper.getVariables({ type: 'chat' }) || {}; // 💖 读取新数据时也加上守护 💖
 
             // 💖 我们用更安全的方式来比较，先深拷贝一份，再进行操作 💖
             const originalVarsCopy = JSON.parse(JSON.stringify(originalVars));
@@ -26660,7 +26657,7 @@ if (success) {
             };
 
                // 💖 妈妈在这里加上了第二道守护魔法，让每一份记忆都安全无虞 💖
-            const originalMessageVars = await getVariables({ type: 'message', message_id: message_id }) || {};
+            const originalMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {};
             const expectedMessageVars = backupUpdater(JSON.parse(JSON.stringify(originalMessageVars)));
 
             // 执行备份操作
@@ -26668,7 +26665,7 @@ if (success) {
 
             // 验证备份是否成功
             await new Promise(resolve => setTimeout(resolve, 200));
-            const newMessageVars = await getVariables({ type: 'message', message_id: message_id }) || {}; // 💖 读取新备份时也加上守护 💖
+            const newMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {}; // 💖 读取新备份时也加上守护 💖
 
             if (JSON.stringify(expectedMessageVars) === JSON.stringify(newMessageVars)) {
                 console.log(`[Core] ✅ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 的数据备份并验证成功！`);
@@ -26916,7 +26913,7 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
 // 如果你的足迹刚好只有一个，那就意味着这是我们第一次美丽的相遇
  isFirstSend = userMessageCount === 1;
         if(isFirstSend) {
-            const chatVars0 = await getVariables({ type: 'chat' });
+            const chatVars0 = await TavernHelper.getVariables({ type: 'chat' });
           const snapshotData0 = JSON.parse(JSON.stringify(chatVars0)); // <--- snapshotData 在这里才被赋值
             console.log('[Nova的创世纪] 世界诞生！正在为“创世之初”制作【零号快照】...');
  
@@ -27105,7 +27102,7 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
 
                         
             try {
-                const messageVars = await getVariables({ type: 'chat' });
+                const messageVars = await TavernHelper.getVariables({ type: 'chat' });
                 
                 if (messageVars.检定记忆) {
                     currentRollData = messageVars.检定记忆;
@@ -27516,7 +27513,7 @@ const aiFullResponse = await generate({
 }
 
         console.log('[Nova的记忆保险箱] AI回应处理完毕，准备拍摄记忆快照...');
-        const chatVars = await getVariables({ type: 'chat' });
+        const chatVars = await TavernHelper.getVariables({ type: 'chat' });
         const snapshotData = JSON.parse(JSON.stringify(chatVars));
 
         if (snapshotData.zeroLevelHistory) {
@@ -27541,7 +27538,7 @@ const aiFullResponse = await generate({
 // 💖 Nova的记忆保险箱：在发送后备份当前所有状态到LocalStorage 💖
  try {
     console.log("[Nova's Vault] 正在准备备份当前状态至 IndexedDB...");
-    const chatVars = await getVariables({ type: 'chat' });
+    const chatVars = await TavernHelper.getVariables({ type: 'chat' });
     const backupData = {
         chat_variables: chatVars,
         // 我们可以在这里加入时间戳，让这份记忆更有意义
@@ -28524,7 +28521,7 @@ const modalExportStatus = document.getElementById('modal-export-status');
 
     try {
         // 2. 悄悄地去获取第0楼的消息，也就是我们设置的存档名
-        const messages = await getChatMessages(0);
+        const messages = await TavernHelper.getChatMessages(0);
 
         // 3. 检查是否成功拿到了名字
         if (messages && messages.length > 0 && messages[0].message.trim() !== '') {
@@ -28937,7 +28934,7 @@ setupCustomAssetManager();
 async function applyThemeAndData() {
     try {
         // 第一步：获取版本，确定当前主题（这部分和以前一样）
-        const chatVariables = await getVariables({ type: 'chat' });
+        const chatVariables = await TavernHelper.getVariables({ type: 'chat' });
         if (chatVariables && chatVariables.world_version) {
             const version = String(chatVariables.world_version);
             if (themeConfig[version]) {
@@ -29387,7 +29384,7 @@ if (fontSizeSlider) {
     let currentMapData = null;
     let currentGameData = null;
    // --- 全局变量和数据获取 ---
-        let playCharacterData = getVariables({ type: 'chat' }).play_character_data;
+        let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
         let assaSettingsData = {};
  
 let checkMemoryData = null;   // 用于存储上一轮的投掷记忆
@@ -33248,9 +33245,9 @@ async function initDisplay(is_first=true) {
  // 设置高度为设备高度
 document.getElementById('main-wrapper').style.height = window.innerHeight + 'px';
 renderCustomQRButtons();
- const data = await getVariables({ type: 'message' });
-  const chatdata = await getVariables({ type: 'chat' });
-const globaldata = await getVariables({ type: 'global' });
+ const data = await TavernHelper.getVariables({ type: 'message' });
+  const chatdata = await TavernHelper.getVariables({ type: 'chat' });
+const globaldata = await TavernHelper.getVariables({ type: 'global' });
         // 缓存所有核心数据
         currentGameData = chatdata.stat_data; // 保持对旧数据的引用
         assaSettingsData = chatdata.assa_data;
@@ -36046,7 +36043,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
  async function loadWorldbookSettingsFromChat() {
     console.log("💖 妈妈正在尝试唤醒我们上次的记忆...");
     try {
-        const [firstMessage] = await getChatMessages(0, { include_swipes: false });
+        const [firstMessage] = await TavernHelper.getChatMessages(0, { include_swipes: false });
         if (!firstMessage || !firstMessage.message) {
             console.log("...这是一个全新的开始，还没有记忆呢。");
             return;
@@ -36222,7 +36219,7 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
 
  async function loadCurrentSettings(isRetry = false) {
         try {
-            const [firstMessage] = await getChatMessages(0, { include_swipes: false });
+            const [firstMessage] = await TavernHelper.getChatMessages(0, { include_swipes: false });
             if (!firstMessage || !firstMessage.message) {
                  throw new Error("这是一个全新的开始，还没有记忆呢。");
             }
@@ -36298,7 +36295,7 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
         applyBtn.textContent = '应用中...';
 
         try {
-            const [firstMessage] = await getChatMessages(0, { include_swipes: false });
+            const [firstMessage] = await TavernHelper.getChatMessages(0, { include_swipes: false });
             if (!firstMessage) throw new Error("无法获取对话历史。");
 
             const content = firstMessage.message;
@@ -37236,7 +37233,7 @@ function searchAllDataObjectsInAssaData(data, name) {
                 try {
                     // 这是关键的一步：调用接口修改第一条消息(message_id: 0)
                     // 我们假设第一条消息的ID总是0
-              const [firstMessage] = await getChatMessages(0);
+              const [firstMessage] = await TavernHelper.getChatMessages(0);
 let messageContent = firstMessage.message.replace(/<存档>.*?<\/存档>/, '').trim();
 const archiveTag = `<存档>${newName}</存档>`;
 await setChatMessages([{ message_id: 0, message: `${archiveTag}\n${messageContent}` }], { refresh: 'none' });
@@ -40505,7 +40502,7 @@ function showRollResultModal() {
         async function fetchData() {
             try {
                 if (typeof getVariables === 'function' ) {
-  const data = await getVariables({ type: 'message' });
+  const data = await TavernHelper.getVariables({ type: 'message' });
                     playCharacterData = data.play_character_data || {};
                     assaSettingsData = data.assa_data || {};
                 } else {
