@@ -24606,15 +24606,39 @@ _memoryOperation: function(currentData, path, key, value) {
     let target = currentData;
     const pathParts = path.split('.').filter(p => p);
 
- for (const part of pathParts) {
+for (const part of pathParts) {
     if (part === '好感度' || key === '好感度') {
+        console.log('path and key:', path, key);
+        
         let oldValue = 0; // 在外部声明
+        let fullPath = ''; // 完整路径
         
         if (part === '好感度') {
-            oldValue = target['好感度'] || 0; // 获取旧值
+            // path = 'global_set.npc.不死川玄弥.好感度'
+            // 需要移除最后的 '.好感度' 来获取父对象路径
+            const pathArray = path.split('.');
+            const parentPath = pathArray.slice(0, -1); // 去掉最后的 '好感度'
+            
+            // 逐层访问获取父对象
+            let parentObj = target;
+            for (const p of parentPath) {
+                parentObj = parentObj[p];
+                if (!parentObj) break;
+            }
+            
+            oldValue = parentObj?.['好感度'] || 0;
         } else if (key === '好感度') {
-            // 如果是通过 key 访问，target 已经是父对象
-            oldValue = target[key] || 0; // 获取旧值
+            // path = 'global_set.npc.不死川玄弥', key = '好感度'
+            const pathArray = path.split('.');
+            
+            // 逐层访问获取对象
+            let obj = target;
+            for (const p of pathArray) {
+                obj = obj[p];
+                if (!obj) break;
+            }
+            
+            oldValue = obj?.[key] || 0;
         }
         
         const newValue = arguments[arguments.length - 1]; // 获取新值
@@ -24642,14 +24666,28 @@ _memoryOperation: function(currentData, path, key, value) {
         console.log('四舍五入后:', roundedValue);
         console.log('====================================');
         
-        // 设置新值
+        // 设置新值 - 同样需要逐层访问
         if (part === '好感度') {
-            target['好感度'] = roundedValue;
+            const pathArray = path.split('.');
+            const parentPath = pathArray.slice(0, -1);
+            
+            let parentObj = target;
+            for (const p of parentPath) {
+                parentObj = parentObj[p];
+            }
+            
+            parentObj['好感度'] = roundedValue;
         } else if (key === '好感度') {
-            target[key] = roundedValue;
+            const pathArray = path.split('.');
+            
+            let obj = target;
+            for (const p of pathArray) {
+                obj = obj[p];
+            }
+            
+            obj[key] = roundedValue;
         }
 
-  
         return currentData;
     }
         
