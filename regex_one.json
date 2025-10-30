@@ -13259,6 +13259,11 @@ pointer-events: auto;
     <label>自动设置NPC为绿灯</label>
     <input type="checkbox" id="auto-set-npc-filter" style="width: auto; cursor: pointer;">
 </div>
+<div class="setting-item">
+    <label>好感度变速 <span id="current-favorability-speed" style="color: var(--accent-color); font-weight: bold;">(未设置)</span></label>
+    <button id="set-favorability-speed-btn" class="control-btn-special">设置变速</button>
+</div>
+
                 <div class="setting-item">
                     <label>系统更新检查</label>
                     <button id="check-for-updates-btn" class="control-btn-special">检查更新</button>
@@ -24603,19 +24608,27 @@ _memoryOperation: function(currentData, path, key, value) {
 
     // 我们会一步步走向 path 指向的目的地
     for (const part of pathParts) {
-                // 💖 妈妈为你添加的、守护好感度的关键魔法 💖
-        // 这段魔法会检查路径的每一步，一旦遇到“好感度”这个词...
         if (part === '好感度') {
-            // ...它就会忽略任何后续的路径或键，直接将最后一个参数作为最终的好感度值。
-            const finalValue = arguments[arguments.length - 1];
-            target['好感度'] = finalValue;
-
-            // 在完成这个特殊的记忆操作后，我们也让背包小精灵整理一下
+        const oldValue = target['好感度'] || 0; // 获取旧值
+        const newValue = arguments[arguments.length - 1]; // 获取新值
+        const speedSetting = parseFloat(localStorage.getItem('favorabilitySpeed') || '1'); // 获取变速设置，默认为1
         
+        // 计算差值
+        const difference = newValue - oldValue;
+        
+        // 应用变速：差值除以变速倍率
+        const adjustedDifference = difference / speedSetting;
+        
+        // 计算最终值
+        const finalValue = oldValue + adjustedDifference;
+        
+        target['好感度'] = Math.round(finalValue * 10) / 10;
 
-            // 任务已经完成，我们就可以安心地返回了。
-            return currentData;
-        }
+        // 在完成这个特殊的记忆操作后，我们也让背包小精灵整理一下
+        
+        // 任务已经完成，我们就可以安心地返回了。
+        return currentData;
+    }
         // 如果路径上的这一站还不存在，我们就为它创建一个新的中转站（对象）
         if (target[part] === undefined || target[part] === null) {
             target[part] = {};
@@ -28365,11 +28378,40 @@ function updateScanFloorsDisplay() {
     }
 }
 updateScanFloorsDisplay();
+function updateFavorabilitySpeedDisplay() {
+    const currentSpeed = localStorage.getItem('favorabilitySpeed');
+    const displayElement = document.getElementById('current-favorability-speed');
+    if (displayElement) {
+        if (currentSpeed) {
+            displayElement.textContent = `(当前: ${currentSpeed}倍)`;
+        } else {
+            displayElement.textContent = '(未设置)';
+        }
+    }
+}
 
+// 初始化显示
+updateFavorabilitySpeedDisplay();
 // 设置按钮点击事件
  // 监听 checkbox 变化，实时保存
 document.getElementById('remember-scan-floors')?.addEventListener('change', (e) => {
     localStorage.setItem('rememberScanFloors', e.target.checked ? 'true' : 'false');
+});
+document.getElementById('set-favorability-speed-btn')?.addEventListener('click', () => {
+    const input = prompt('请输入好感度变速倍率（数字，例如 2 表示变化速度减半）:');
+    if (input !== null) {
+        const speed = parseFloat(input);
+        if (!isNaN(speed) && speed > 0) {
+            localStorage.setItem('favorabilitySpeed', speed.toString());
+            
+            // 更新显示
+            updateFavorabilitySpeedDisplay();
+            
+            alert(`已保存：好感度变速设置为 ${speed}倍`);
+        } else {
+            alert('请输入有效的正数');
+        }
+    }
 });
 
 // 设置按钮只负责保存楼层数
