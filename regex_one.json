@@ -24606,29 +24606,53 @@ _memoryOperation: function(currentData, path, key, value) {
     let target = currentData;
     const pathParts = path.split('.').filter(p => p);
 
-    // 我们会一步步走向 path 指向的目的地
-    for (const part of pathParts) {
+ for (const part of pathParts) {
+    if (part === '好感度' || key === '好感度') {
+        let oldValue = 0; // 在外部声明
+        
         if (part === '好感度') {
-        const oldValue = target['好感度'] || 0; // 获取旧值
+            oldValue = target['好感度'] || 0; // 获取旧值
+        } else if (key === '好感度') {
+            // 如果是通过 key 访问，target 已经是父对象
+            oldValue = target[key] || 0; // 获取旧值
+        }
+        
         const newValue = arguments[arguments.length - 1]; // 获取新值
         const speedSetting = parseFloat(localStorage.getItem('favorabilitySpeed') || '1'); // 获取变速设置，默认为1
         
+        console.log('========== 好感度变速计算 ==========');
+        console.log('旧值:', oldValue);
+        console.log('新值:', newValue);
+        console.log('变速倍率:', speedSetting);
+        
         // 计算差值
         const difference = newValue - oldValue;
+        console.log('原始差值:', difference);
         
         // 应用变速：差值除以变速倍率
         const adjustedDifference = difference / speedSetting;
+        console.log('调整后差值:', adjustedDifference);
         
         // 计算最终值
         const finalValue = oldValue + adjustedDifference;
+        console.log('计算最终值:', finalValue);
         
-        target['好感度'] = Math.round(finalValue * 10) / 10;
+        // 四舍五入到0.1精度
+        const roundedValue = Math.round(finalValue * 10) / 10;
+        console.log('四舍五入后:', roundedValue);
+        console.log('====================================');
+        
+        // 设置新值
+        if (part === '好感度') {
+            target['好感度'] = roundedValue;
+        } else if (key === '好感度') {
+            target[key] = roundedValue;
+        }
 
-        // 在完成这个特殊的记忆操作后，我们也让背包小精灵整理一下
-        
-        // 任务已经完成，我们就可以安心地返回了。
+  
         return currentData;
     }
+        
         // 如果路径上的这一站还不存在，我们就为它创建一个新的中转站（对象）
         if (target[part] === undefined || target[part] === null) {
             target[part] = {};
@@ -25523,8 +25547,7 @@ if (match) {
                  // 💖 新增：状态数据命令 (V4 - “双轨智能”特工)
                match = line.match(/\bset_status\s*\((.*)\)\s*;?/);
 
-                console.log("【信使阶段 V4】 --- 全新解析流程启动 ---");
-                console.log("原始指令:", line);
+      
 
                  if (match) {
                       const allParamsStr = match[1];
