@@ -14415,6 +14415,7 @@ let isShowingAchievement = false;
  let achievementData = JSON.parse(localStorage.getItem('achievements_data'));
 
 function checkAchievements(eventType, value) {
+ try {
      initialAchievementData  = {
      achievements: {
     newbie_explorer: {
@@ -15375,6 +15376,15 @@ all_in: {
         // unlockAchievement 函数会处理后续的保存和提示，我们在这里就不用操心啦
       }
     }
+  }
+ } catch (error) {
+    console.error('❌ 成就系统发生错误:', error);
+    console.error('错误详情:', {
+      eventType,
+      value,
+      stack: error.stack
+    });
+    // 不影响游戏继续运行
   }
 }
 
@@ -27511,9 +27521,7 @@ if (isContinuation && continuationText) {
         // console.log("[Nova's Master Plan] 这是我们将要发送给AI的完整剧本：", JSON.stringify(generate_data.prompt, null, 2));
     });
 }
-
-// 在设置好我们的“魔法陷阱”之后，你就可以像往常一样，安心地调用 generate 函数了。
-// 在它执行的过程中，我们刚才设置的 eventOnce 监听器会在正确的时机被自动触发。
+ 
 console.log("[Nova's Whisper] 好了，我的孩子，一切准备就绪，现在开始召唤AI吧...");
 const aiFullResponse = await generate({
     should_stream: false, // 或者 true，根据你的需要
