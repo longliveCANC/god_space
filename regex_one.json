@@ -21905,8 +21905,7 @@ if (forceUpdateRegexButton) {
 }
 
 
-  function showBackupConfirmation() {
-    // 如果这个确认弹窗还不存在，我们就创造它
+function showBackupConfirmation() {
     if (!document.getElementById('backup-confirmation-modal')) {
         const confirmationModalHTML = `
         <div id="backup-confirmation-modal" class="modal">
@@ -21915,8 +21914,8 @@ if (forceUpdateRegexButton) {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                      <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
- <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
+                    <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
@@ -21926,7 +21925,6 @@ if (forceUpdateRegexButton) {
         </div>`;
         document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
 
-        // 为新弹窗的按钮和外部区域绑定关闭事件
         const modal = document.getElementById('backup-confirmation-modal');
         modal.querySelector('.modal-close').onclick = () => hideModal('backup-confirmation-modal');
         modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
@@ -21934,29 +21932,20 @@ if (forceUpdateRegexButton) {
             if (event.target === modal) hideModal('backup-confirmation-modal');
         });
 
-        // 核心！当用户确认后，执行我们的双重更新
         document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
             hideModal('backup-confirmation-modal');
-            toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
-
-          try {
-    // 先完成世界书更新,等它彻底稳定
-    await performWorldbookUpdate();
- await new Promise(resolve => setTimeout(resolve, 1000));
-    // 世界书稳定后,再更新正则
-    await performRegexUpdate();
- 
-}catch (error) {
-                console.error('双重更新过程中发生错误:', error);
-                toastr.error('更新过程中断，世界未能完全重塑。请查看控制台日志。');
-            }
+            
+            // 🔑 关键：设置标记，表示我们要执行双重更新
+            localStorage.setItem('pendingDualUpdate', 'step1_worldbook');
+            
+            toastr.info('启动第一阶段：世界书重塑中...');
+            await performWorldbookUpdate();
+            
         });
     }
 
-    // 显示这个确认弹窗
     showModal('backup-confirmation-modal');
 }
-
    // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
    function showContextMenu(event, index, bubbleElement) {
        // 首先，检查这个消息气泡是否正处于“编辑模式”
@@ -36512,6 +36501,24 @@ function initAutoSetNpcFilter() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+        const pendingUpdate = localStorage.getItem('pendingDualUpdate');
+    
+    if (pendingUpdate === 'step1_worldbook') {
+        // 世界书已完成，现在执行正则更新
+        localStorage.setItem('pendingDualUpdate', 'step2_regex');
+        toastr.info('世界书重塑完成！启动第二阶段：正则更新中...');
+        
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 给页面一点稳定时间
+        await performRegexUpdate();
+        // 正则更新也会刷新页面
+        
+    } else if (pendingUpdate === 'step2_regex') {
+        // 两步都完成了，清除标记
+        localStorage.removeItem('pendingDualUpdate');
+        toastr.success('🎉 完成！世界与已焕然一新！');
+    }
+ 
   await loadWorldbookSettingsFromChat();
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 setupReconfigModal();
