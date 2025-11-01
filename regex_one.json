@@ -13604,7 +13604,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.8';
+let current_game_version = '3.2.9';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21929,7 +21929,8 @@ if (forceUpdateRegexButton) {
         performRegexUpdate();
     });
 }
-function showBackupConfirmation() {
+
+ function showBackupConfirmation() {
     if (!document.getElementById('backup-confirmation-modal')) {
         const confirmationModalHTML = `
         <div id="backup-confirmation-modal" class="modal">
@@ -21964,13 +21965,29 @@ function showBackupConfirmation() {
             
             toastr.info('启动第一阶段：世界书重塑中...');
             await performWorldbookUpdate();
-            // 世界书更新可能会触发刷新，后续在页面加载时继续
+        
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待页面稳定
+    
+            // 词条恢复完成，进入下一阶段
+            localStorage.setItem('pendingDualUpdate', 'step2_regex');
+            toastr.info('世界书完全重塑完成！启动正则更新...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await performRegexUpdate();
+  
+            localStorage.removeItem('worldbookBackup');
+            localStorage.removeItem('pendingDualUpdate');
+     
         });
     }
 
     showModal('backup-confirmation-modal');
 }
-   function showContextMenu(event, index, bubbleElement) {
+
+
+ 
+
+
+function showContextMenu(event, index, bubbleElement) {
        // 首先，检查这个消息气泡是否正处于“编辑模式”
     const isEditing = bubbleElement.classList.contains('editing');
 
@@ -28175,12 +28192,25 @@ async function performRegexUpdate() {
             
             toastr.info('启动第一阶段：世界书重塑中...');
             await performWorldbookUpdate();
-            // 世界书更新可能会触发刷新，后续在页面加载时继续
+        
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待页面稳定
+    
+            // 词条恢复完成，进入下一阶段
+            localStorage.setItem('pendingDualUpdate', 'step2_regex');
+            toastr.info('世界书完全重塑完成！启动正则更新...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await performRegexUpdate();
+  
+            localStorage.removeItem('worldbookBackup');
+            localStorage.removeItem('pendingDualUpdate');
+     
         });
     }
 
     showModal('backup-confirmation-modal');
 }
+
+
 const settingsBtn = document.getElementById('settings-btn');
 const settingsinitBtn = document.getElementById('settings-btn-init');
 const settingsModal = document.getElementById('settings-modal');
