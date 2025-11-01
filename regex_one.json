@@ -20402,7 +20402,7 @@ async function saveCurrentBuildAsTemplate() {
     }
 
  async function generateFullCommand(isMission, customText = null) {
-if (!currentGameData || !currentGameData.user_character || typeof currentGameData !== 'object') {
+if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
             await initializeCurrentGameData();
         }
         userName = currentGameData.user_character.name || '用户';
