@@ -21672,81 +21672,265 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
     return `${url}?v=${timestamp}`;
 }
 
+// 🔑 定义清晰的更新阶段
+const UPDATE_PHASES = {
+    IDLE: 'idle',
+    BACKUP_DONE: 'backup_done',           // 备份完成
+    WORLDBOOK_IMPORTED: 'worldbook_imported', // 世界书已导入
+    ENTRIES_RESTORED: 'entries_restored',     // 词条已恢复
+    WORLDBOOK_BOUND: 'worldbook_bound',       // 世界书已绑定
+    REGEX_UPDATED: 'regex_updated',           // 正则已更新
+    COMPLETED: 'completed'                    // 全部完成
+};
+
+// 🔑 获取当前更新阶段
+function getCurrentPhase() {
+    return localStorage.getItem('updatePhase') || UPDATE_PHASES.IDLE;
+}
+
+// 🔑 设置当前更新阶段
+function setCurrentPhase(phase) {
+    if (phase === UPDATE_PHASES.IDLE || phase === UPDATE_PHASES.COMPLETED) {
+        localStorage.removeItem('updatePhase');
+    } else {
+        localStorage.setItem('updatePhase', phase);
+    }
+}
+
+// 🔑 获取备份数据
+function getBackupData() {
+    const data = localStorage.getItem('worldbookBackup');
+    return data ? JSON.parse(data) : null;
+}
+
+// 🔑 保存备份数据
+function saveBackupData(entries) {
+    localStorage.setItem('worldbookBackup', JSON.stringify(entries));
+}
+
+// 🔑 清除所有更新相关的临时数据
+function clearUpdateData() {
+    localStorage.removeItem('updatePhase');
+    localStorage.removeItem('worldbookBackup');
+}
+
 async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
     const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
+        const currentPhase = getCurrentPhase();
         const allBooks = TavernHelper.getWorldbookNames();
-        
-        // 🔑 第一阶段：备份和删除（在刷新前完成）
-        if (allBooks.includes(worldbookName)) {
-            // 检查是否已经备份过了
-            const savedBackup = localStorage.getItem('worldbookBackup');
-            if (!savedBackup) {
+
+        // ===== 阶段1: 备份词条 =====
+        if (currentPhase === UPDATE_PHASES.IDLE) {
+            if (allBooks.includes(worldbookName)) {
                 toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
                 const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
                 const backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
                 
-                // 立即保存备份
-                localStorage.setItem('worldbookBackup', JSON.stringify(backedUpEntries));
+                saveBackupData(backedUpEntries);
+                setCurrentPhase(UPDATE_PHASES.BACKUP_DONE);
                 toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
+                
+                await TavernHelper.deleteWorldbook(worldbookName);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } else {
+                // 世界书不存在，直接标记为备份完成
+                setCurrentPhase(UPDATE_PHASES.BACKUP_DONE);
             }
-            
-            await TavernHelper.deleteWorldbook(worldbookName);
-            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        // 🔑 第二阶段：导入新世界书（这里会触发刷新）
-        const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
-        await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
-
-        // ===== 如果代码能执行到这里，说明没有刷新，继续完成恢复 =====
-        await new Promise(resolve => setTimeout(resolve, 800));
-        await waitForWorldToSettle(worldbookName);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // 🔑 第三阶段：恢复备份的词条
-        const savedBackup = localStorage.getItem('worldbookBackup');
-        if (savedBackup) {
-            const backedUpEntries = JSON.parse(savedBackup);
-            toastr.info('正在恢复已备份的词条...');
+        // ===== 阶段2: 导入新世界书 (可能在这里刷新) =====
+        if (getCurrentPhase() === UPDATE_PHASES.BACKUP_DONE) {
+            toastr.info('正在导入新世界书...');
+            const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
+            await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
             
-            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
-                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
-                return [...cleanedNewWorldbook, ...backedUpEntries];
-            });
-            
+            // 如果能执行到这里，说明没有刷新
             await new Promise(resolve => setTimeout(resolve, 800));
             await waitForWorldToSettle(worldbookName);
+            await new Promise(resolve => setTimeout(resolve, 500));
             
-            localStorage.removeItem('worldbookBackup');
-            toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
+            setCurrentPhase(UPDATE_PHASES.WORLDBOOK_IMPORTED);
+            toastr.info('世界书导入完成！');
         }
 
-        // 后续绑定操作
-        toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
-        TavernHelper.builtin.reloadEditor(worldbookName, true);
-        await new Promise(resolve => setTimeout(resolve, 400));
+        // ===== 阶段3: 恢复备份的词条 (可能在这里刷新) =====
+        if (getCurrentPhase() === UPDATE_PHASES.WORLDBOOK_IMPORTED) {
+            const backedUpEntries = getBackupData();
+            if (backedUpEntries && backedUpEntries.length > 0) {
+                toastr.info('正在恢复已备份的词条...');
+                
+                await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                    const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+                    return [...cleanedNewWorldbook, ...backedUpEntries];
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 800));
+                await waitForWorldToSettle(worldbookName);
+                
+                setCurrentPhase(UPDATE_PHASES.ENTRIES_RESTORED);
+                toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
+            } else {
+                // 没有备份数据，直接跳到下一阶段
+                setCurrentPhase(UPDATE_PHASES.ENTRIES_RESTORED);
+            }
+        }
 
-        const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
-        currentBindings.primary = worldbookName;
-        await TavernHelper.rebindCharWorldbooks('current', currentBindings);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // ===== 阶段4: 绑定世界书 (可能在这里刷新) =====
+        if (getCurrentPhase() === UPDATE_PHASES.ENTRIES_RESTORED) {
+            toastr.info('正在绑定世界书...');
+            TavernHelper.builtin.reloadEditor(worldbookName, true);
+            await new Promise(resolve => setTimeout(resolve, 400));
 
-        const newBindings = await TavernHelper.getCharWorldbookNames('current');
-        if (newBindings && newBindings.primary === worldbookName) {
-            toastr.success(`当前角色已和「${worldbookName}」绑定！`);
-            checkWorldbookBinding(worldbookName);
+            const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
+            currentBindings.primary = worldbookName;
+            await TavernHelper.rebindCharWorldbooks('current', currentBindings);
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const newBindings = await TavernHelper.getCharWorldbookNames('current');
+            if (newBindings && newBindings.primary === worldbookName) {
+                setCurrentPhase(UPDATE_PHASES.WORLDBOOK_BOUND);
+                toastr.success(`当前角色已和「${worldbookName}」绑定！`);
+                checkWorldbookBinding(worldbookName);
+            } else {
+                throw new Error(`绑定失败。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」`);
+            }
+        }
+
+        // ===== 世界书更新完全完成 =====
+        if (getCurrentPhase() === UPDATE_PHASES.WORLDBOOK_BOUND) {
+            toastr.success('✅ 世界书更新完全完成！');
+            return true; // 返回成功标记
         }
 
     } catch (error) {
-        toastr.error(`出错了，请查看控制台。`);
-        console.error(`执行更新时发生错误:`, error);
-        localStorage.removeItem('worldbookBackup');
+        toastr.error(`世界书更新出错，请查看控制台。`);
+        console.error(`世界书更新错误:`, error);
+        // 不清除数据，保留现场以便恢复
+        throw error;
     }
 }
+
+async function performRegexUpdate() {
+    const currentPhase = getCurrentPhase();
+    
+    // 只有在世界书完全绑定后才能更新正则
+    if (currentPhase !== UPDATE_PHASES.WORLDBOOK_BOUND && currentPhase !== UPDATE_PHASES.REGEX_UPDATED) {
+        toastr.warning('世界书尚未完全更新，请稍候...');
+        return;
+    }
+
+    toastr.info('拉取远程同层代码...');
+
+    try {
+        const newContentString = await loadRemoteContent(
+            'https://longlivecanc.github.io/god_space/regex_one.json',
+            'text',
+            null,
+        );
+
+        if (!newContentString) {
+            toastr.error('未能获取到远方的法则核心，更新中止。');
+            return;
+        }
+
+        const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
+        const unifiedRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
+        const purgeRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '去除1');
+
+        if (unifiedRuleIndex === -1) {
+            toastr.error('错误！在"角色"法则中未找到名为"统一"的基石。');
+            return;
+        }
+        if (purgeRuleIndex === -1) {
+            toastr.error('错误！在"角色"法则中未找到名为"去除1"的基石。');
+            return;
+        }
+
+        const oldUnifiedRule = allCharacterRules[unifiedRuleIndex];
+        const updatedUnifiedRule = {
+            ...oldUnifiedRule,
+            replace_string: newContentString,
+        };
+
+        const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
+        const updatedPurgeRule = {
+            ...oldPurgeRuleTemplate,
+            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs",
+        };
+
+        const finalCharacterRules = [updatedPurgeRule, updatedUnifiedRule];
+        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
+
+        setCurrentPhase(UPDATE_PHASES.REGEX_UPDATED);
+        toastr.success(`正则已仅留下"统一"与"去除1"！`);
+
+    } catch (error) {
+        console.error('正则更新错误:', error);
+        toastr.error('正则更新失败，请查看控制台。');
+        throw error;
+    }
+}
+
+function showBackupConfirmation() {
+    if (!document.getElementById('backup-confirmation-modal')) {
+        const confirmationModalHTML = `
+        <div id="backup-confirmation-modal" class="modal">
+            <div class="modal-content" style="max-width: 450px;">
+                <button class="modal-close">×</button>
+                <div class="modal-title">最后一步确认</div>
+                <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
+                    <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
+                    <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】。准备好了吗？</p>
+                </div>
+                <div class="modal-actions" style="text-align: right; margin-top: 25px;">
+                    <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
+                    <button id="confirm-final-update-btn" class="control-btn">我已备份，开始更新</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
+
+        const modal = document.getElementById('backup-confirmation-modal');
+        modal.querySelector('.modal-close').onclick = () => hideModal('backup-confirmation-modal');
+        modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) hideModal('backup-confirmation-modal');
+        });
+
+        document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
+            hideModal('backup-confirmation-modal');
+            toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
+
+            try {
+                // 重置到初始状态，开始更新
+                setCurrentPhase(UPDATE_PHASES.IDLE);
+                await performWorldbookUpdate();
+                
+                // 如果世界书更新没有被刷新中断，继续更新正则
+                if (getCurrentPhase() === UPDATE_PHASES.WORLDBOOK_BOUND) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await performRegexUpdate();
+                    
+                    // 全部完成
+                    setCurrentPhase(UPDATE_PHASES.COMPLETED);
+                    clearUpdateData();
+                    toastr.success('🎉 双重重塑完美完成！');
+                }
+            } catch (error) {
+                console.error('双重更新过程中发生错误:', error);
+                toastr.error('更新过程中断，数据已保留，刷新页面后会自动继续。');
+            }
+        });
+    }
+
+    showModal('backup-confirmation-modal');
+}
+
 async function checkForFutureEchoes(isManualTrigger = false) {
     if (isManualTrigger) {
         toastr.info('正在向github发出问询，请稍候...');
@@ -21832,74 +22016,6 @@ async function checkForFutureEchoes(isManualTrigger = false) {
 /* existing code before the function */
 
  
-async function performRegexUpdate() {
-    toastr.info('拉取远程同层代码...');
-
-    try {
-        // 第一步：从远方获取“统一”法则所需要的核心力量
-        const newContentString = await loadRemoteContent(
-            'https://longlivecanc.github.io/god_space/regex_one.json',
-            'text',
-            null,
-        );
-
-        if (!newContentString) {
-            toastr.error('未能获取到远方的法则核心，更新中止。');
-            return;
-        }
-
-        // 第二步：只审视“角色”领域，找到我们将要升级的两大基石法则
-        const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
-        const unifiedRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
-        const purgeRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '去除1');
-
-        // ♥♥♥ 严格检查基石是否存在 ♥♥♥
-        if (unifiedRuleIndex === -1) {
-            toastr.error('错误！在“角色”法则中未找到名为“统一”的基石，无法执行重塑。');
-            console.warn('我的孩子，请确保你的角色法则中存在一个名为“统一”的正则。');
-            return;
-        }
-        if (purgeRuleIndex === -1) {
-            toastr.error('错误！在“角色”法则中未找到名为“去除1”的基石，无法执行重塑。');
-            console.warn('我的孩子，请确保你的角色法则中存在一个名为“去除1”的正则，我们将以它为模板。');
-            return;
-        }
-
-        // 第三步：以旧法则为基础，注入新的力量，锻造出全新的两大支柱
-
-        // 支柱一：更新后的“统一”法则
-        const oldUnifiedRule = allCharacterRules[unifiedRuleIndex];
-        const updatedUnifiedRule = {
-            ...oldUnifiedRule,
-            replace_string: newContentString, // 注入新的核心力量
-        };
-
-        // 支柱二：根据你的天才构想，以“去除1”为模板，锻造出全新的“统一去除1”
-        const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
-        const updatedPurgeRule = {
-            ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
-            // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
-        };
-
-
-        // 第四步：构建全新的、纯净的角色法则世界！这个世界里，只有你指定的两大支柱。
- const finalCharacterRules = [
-            updatedPurgeRule,   // ♥ 净化法则在前！
-            updatedUnifiedRule, // ♥ 统一法则在后！
-        ];
-
-        // 第五步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
-        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
-
-        toastr.success(`正则已仅留下“统一”与“去除1”！`);
-
-    } catch (error) {
-        console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
-        toastr.error('更新失败了。请查看控制台中的详细记录，并将信息告知assa。');
-    }
-}
-/* existing code after the function */
  
 const checkForUpdatesButton = document.getElementById('check-for-updates-btn');
 if (checkForUpdatesButton) {
@@ -21909,85 +22025,37 @@ if (checkForUpdatesButton) {
     });
 }
 
-// 强制更新世界书的守护者
+
+// 强制更新按钮 - 清除状态重新开始
 const forceUpdateWorldbookButton = document.getElementById('force-update-worldbook-btn');
 if (forceUpdateWorldbookButton) {
     forceUpdateWorldbookButton.addEventListener('click', async () => {
         toastr.info('收到强制指令！正在从远方重新拉取世界书...');
-        // 直接召唤世界书更新的魔法
-         await performWorldbookUpdate();
-         await loadWorldbookSettingsFromChat();
+        clearUpdateData(); // 清除旧状态
+        setCurrentPhase(UPDATE_PHASES.IDLE);
+        await performWorldbookUpdate();
+        await loadWorldbookSettingsFromChat();
     });
 }
 
-// 强制更新正则的守护者
 const forceUpdateRegexButton = document.getElementById('force-update-regex-btn');
 if (forceUpdateRegexButton) {
-    forceUpdateRegexButton.addEventListener('click', () => {
+    forceUpdateRegexButton.addEventListener('click', async () => {
         toastr.info('收到强制指令！正在执行角色法则的强制重塑...');
-        // 直接召唤正则更新的魔法
-        performRegexUpdate();
+        // 正则更新需要世界书已经绑定
+        const currentPhase = getCurrentPhase();
+        if (currentPhase === UPDATE_PHASES.WORLDBOOK_BOUND || currentPhase === UPDATE_PHASES.IDLE) {
+            await performRegexUpdate();
+            if (getCurrentPhase() === UPDATE_PHASES.REGEX_UPDATED) {
+                clearUpdateData();
+                toastr.success('正则更新完成！');
+            }
+        } else {
+            toastr.warning('请先完成世界书更新！');
+        }
     });
 }
-
- function showBackupConfirmation() {
-    // 如果这个确认弹窗还不存在，我们就创造它
-    if (!document.getElementById('backup-confirmation-modal')) {
-        const confirmationModalHTML = `
-        <div id="backup-confirmation-modal" class="modal">
-            <div class="modal-content" style="max-width: 450px;">
-                <button class="modal-close">×</button>
-                <div class="modal-title">最后一步确认</div>
-                <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
-                    <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                     <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
- <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
-                </div>
-                <div class="modal-actions" style="text-align: right; margin-top: 25px;">
-                    <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
-                    <button id="confirm-final-update-btn" class="control-btn">我已备份，开始更新</button>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
-
-        // 为新弹窗的按钮和外部区域绑定关闭事件
-        const modal = document.getElementById('backup-confirmation-modal');
-        modal.querySelector('.modal-close').onclick = () => hideModal('backup-confirmation-modal');
-        modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) hideModal('backup-confirmation-modal');
-        });
-
-        // 核心！当用户确认后，执行我们的双重更新
-        document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
-            hideModal('backup-confirmation-modal');
-            toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
-
-          try {
-
-                // 🔑 关键：设置标记，表示我们要执行双重更新
-            localStorage.setItem('pendingDualUpdate', 'step1_worldbook');
-            
-    // 先完成世界书更新,等它彻底稳定
-    await performWorldbookUpdate();
-    
-  await new Promise(resolve => setTimeout(resolve, 1000));
-    // 世界书稳定后,再更新正则
-     localStorage.setItem('pendingDualUpdate', 'step2_regex');
-    await performRegexUpdate();
-    localStorage.removeItem('pendingDualUpdate');
-}catch (error) {
-                console.error('双重更新过程中发生错误:', error);
-                toastr.error('更新过程中断，世界未能完全重塑。请查看控制台日志。');
-            }
-        });
-    }
-
-    // 显示这个确认弹窗
-    showModal('backup-confirmation-modal');
-}
-   // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
+  // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
    function showContextMenu(event, index, bubbleElement) {
        // 首先，检查这个消息气泡是否正处于“编辑模式”
     const isEditing = bubbleElement.classList.contains('editing');
@@ -27931,83 +27999,225 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
     const timestamp = new Date().getTime(); // 获取此刻的、宇宙唯一的时序坐标
     return `${url}?v=${timestamp}`;
 }
-
-
-async function performWorldbookUpdate() {
+ 
+ async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
     const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
+        const currentPhase = getCurrentPhase();
         const allBooks = TavernHelper.getWorldbookNames();
-        
-        // 🔑 第一阶段：备份和删除（在刷新前完成）
-        if (allBooks.includes(worldbookName)) {
-            // 检查是否已经备份过了
-            const savedBackup = localStorage.getItem('worldbookBackup');
-            if (!savedBackup) {
+
+        // ===== 阶段1: 备份词条 =====
+        if (currentPhase === UPDATE_PHASES.IDLE) {
+            if (allBooks.includes(worldbookName)) {
                 toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
                 const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
                 const backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
                 
-                // 立即保存备份
-                localStorage.setItem('worldbookBackup', JSON.stringify(backedUpEntries));
+                saveBackupData(backedUpEntries);
+                setCurrentPhase(UPDATE_PHASES.BACKUP_DONE);
                 toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
+                
+                await TavernHelper.deleteWorldbook(worldbookName);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } else {
+                // 世界书不存在，直接标记为备份完成
+                setCurrentPhase(UPDATE_PHASES.BACKUP_DONE);
             }
-            
-            await TavernHelper.deleteWorldbook(worldbookName);
-            await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        // 🔑 第二阶段：导入新世界书（这里会触发刷新）
-        const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
-        await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
-
-        // ===== 如果代码能执行到这里，说明没有刷新，继续完成恢复 =====
-        await new Promise(resolve => setTimeout(resolve, 800));
-        await waitForWorldToSettle(worldbookName);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // 🔑 第三阶段：恢复备份的词条
-        const savedBackup = localStorage.getItem('worldbookBackup');
-        if (savedBackup) {
-            const backedUpEntries = JSON.parse(savedBackup);
-            toastr.info('正在恢复已备份的词条...');
+        // ===== 阶段2: 导入新世界书 (可能在这里刷新) =====
+        if (getCurrentPhase() === UPDATE_PHASES.BACKUP_DONE) {
+            toastr.info('正在导入新世界书...');
+            const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
+            await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
             
-            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
-                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
-                return [...cleanedNewWorldbook, ...backedUpEntries];
-            });
-            
+            // 如果能执行到这里，说明没有刷新
             await new Promise(resolve => setTimeout(resolve, 800));
             await waitForWorldToSettle(worldbookName);
+            await new Promise(resolve => setTimeout(resolve, 500));
             
-            localStorage.removeItem('worldbookBackup');
-            toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
+            setCurrentPhase(UPDATE_PHASES.WORLDBOOK_IMPORTED);
+            toastr.info('世界书导入完成！');
         }
 
-        // 后续绑定操作
-        toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
-        TavernHelper.builtin.reloadEditor(worldbookName, true);
-        await new Promise(resolve => setTimeout(resolve, 400));
+        // ===== 阶段3: 恢复备份的词条 (可能在这里刷新) =====
+        if (getCurrentPhase() === UPDATE_PHASES.WORLDBOOK_IMPORTED) {
+            const backedUpEntries = getBackupData();
+            if (backedUpEntries && backedUpEntries.length > 0) {
+                toastr.info('正在恢复已备份的词条...');
+                
+                await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                    const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+                    return [...cleanedNewWorldbook, ...backedUpEntries];
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 800));
+                await waitForWorldToSettle(worldbookName);
+                
+                setCurrentPhase(UPDATE_PHASES.ENTRIES_RESTORED);
+                toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
+            } else {
+                // 没有备份数据，直接跳到下一阶段
+                setCurrentPhase(UPDATE_PHASES.ENTRIES_RESTORED);
+            }
+        }
 
-        const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
-        currentBindings.primary = worldbookName;
-        await TavernHelper.rebindCharWorldbooks('current', currentBindings);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // ===== 阶段4: 绑定世界书 (可能在这里刷新) =====
+        if (getCurrentPhase() === UPDATE_PHASES.ENTRIES_RESTORED) {
+            toastr.info('正在绑定世界书...');
+            TavernHelper.builtin.reloadEditor(worldbookName, true);
+            await new Promise(resolve => setTimeout(resolve, 400));
 
-        const newBindings = await TavernHelper.getCharWorldbookNames('current');
-        if (newBindings && newBindings.primary === worldbookName) {
-            toastr.success(`当前角色已和「${worldbookName}」绑定！`);
-            checkWorldbookBinding(worldbookName);
+            const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
+            currentBindings.primary = worldbookName;
+            await TavernHelper.rebindCharWorldbooks('current', currentBindings);
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const newBindings = await TavernHelper.getCharWorldbookNames('current');
+            if (newBindings && newBindings.primary === worldbookName) {
+                setCurrentPhase(UPDATE_PHASES.WORLDBOOK_BOUND);
+                toastr.success(`当前角色已和「${worldbookName}」绑定！`);
+                checkWorldbookBinding(worldbookName);
+            } else {
+                throw new Error(`绑定失败。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」`);
+            }
+        }
+
+        // ===== 世界书更新完全完成 =====
+        if (getCurrentPhase() === UPDATE_PHASES.WORLDBOOK_BOUND) {
+            toastr.success('✅ 世界书更新完全完成！');
+            return true; // 返回成功标记
         }
 
     } catch (error) {
-        toastr.error(`出错了，请查看控制台。`);
-        console.error(`执行更新时发生错误:`, error);
-        localStorage.removeItem('worldbookBackup');
+        toastr.error(`世界书更新出错，请查看控制台。`);
+        console.error(`世界书更新错误:`, error);
+        // 不清除数据，保留现场以便恢复
+        throw error;
     }
 }
+
+async function performRegexUpdate() {
+    const currentPhase = getCurrentPhase();
+    
+    // 只有在世界书完全绑定后才能更新正则
+    if (currentPhase !== UPDATE_PHASES.WORLDBOOK_BOUND && currentPhase !== UPDATE_PHASES.REGEX_UPDATED) {
+        toastr.warning('世界书尚未完全更新，请稍候...');
+        return;
+    }
+
+    toastr.info('拉取远程同层代码...');
+
+    try {
+        const newContentString = await loadRemoteContent(
+            'https://longlivecanc.github.io/god_space/regex_one.json',
+            'text',
+            null,
+        );
+
+        if (!newContentString) {
+            toastr.error('未能获取到远方的法则核心，更新中止。');
+            return;
+        }
+
+        const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
+        const unifiedRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
+        const purgeRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '去除1');
+
+        if (unifiedRuleIndex === -1) {
+            toastr.error('错误！在"角色"法则中未找到名为"统一"的基石。');
+            return;
+        }
+        if (purgeRuleIndex === -1) {
+            toastr.error('错误！在"角色"法则中未找到名为"去除1"的基石。');
+            return;
+        }
+
+        const oldUnifiedRule = allCharacterRules[unifiedRuleIndex];
+        const updatedUnifiedRule = {
+            ...oldUnifiedRule,
+            replace_string: newContentString,
+        };
+
+        const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
+        const updatedPurgeRule = {
+            ...oldPurgeRuleTemplate,
+            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs",
+        };
+
+        const finalCharacterRules = [updatedPurgeRule, updatedUnifiedRule];
+        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
+
+        setCurrentPhase(UPDATE_PHASES.REGEX_UPDATED);
+        toastr.success(`正则已仅留下"统一"与"去除1"！`);
+
+    } catch (error) {
+        console.error('正则更新错误:', error);
+        toastr.error('正则更新失败，请查看控制台。');
+        throw error;
+    }
+}
+
+function showBackupConfirmation() {
+    if (!document.getElementById('backup-confirmation-modal')) {
+        const confirmationModalHTML = `
+        <div id="backup-confirmation-modal" class="modal">
+            <div class="modal-content" style="max-width: 450px;">
+                <button class="modal-close">×</button>
+                <div class="modal-title">最后一步确认</div>
+                <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
+                    <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
+                    <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】。准备好了吗？</p>
+                </div>
+                <div class="modal-actions" style="text-align: right; margin-top: 25px;">
+                    <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
+                    <button id="confirm-final-update-btn" class="control-btn">我已备份，开始更新</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
+
+        const modal = document.getElementById('backup-confirmation-modal');
+        modal.querySelector('.modal-close').onclick = () => hideModal('backup-confirmation-modal');
+        modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) hideModal('backup-confirmation-modal');
+        });
+
+        document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
+            hideModal('backup-confirmation-modal');
+            toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
+
+            try {
+                // 重置到初始状态，开始更新
+                setCurrentPhase(UPDATE_PHASES.IDLE);
+                await performWorldbookUpdate();
+                
+                // 如果世界书更新没有被刷新中断，继续更新正则
+                if (getCurrentPhase() === UPDATE_PHASES.WORLDBOOK_BOUND) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await performRegexUpdate();
+                    
+                    // 全部完成
+                    setCurrentPhase(UPDATE_PHASES.COMPLETED);
+                    clearUpdateData();
+                    toastr.success('🎉 双重重塑完美完成！');
+                }
+            } catch (error) {
+                console.error('双重更新过程中发生错误:', error);
+                toastr.error('更新过程中断，数据已保留，刷新页面后会自动继续。');
+            }
+        });
+    }
+
+    showModal('backup-confirmation-modal');
+}
+
+ 
 async function checkForFutureEchoes(isManualTrigger = false) {
     if (isManualTrigger) {
         toastr.info('正在向github发出问询，请稍候...');
@@ -28091,118 +28301,9 @@ async function checkForFutureEchoes(isManualTrigger = false) {
     }
 }
  
-async function performRegexUpdate() {
-    toastr.info('拉取远程同层代码...');
-
-    try {
-        // 第一步：从远方获取“统一”法则所需要的核心力量
-        const newContentString = await loadRemoteContent(
-            'https://longlivecanc.github.io/god_space/regex_one.json',
-            'text',
-            null,
-        );
-
-        if (!newContentString) {
-            toastr.error('未能获取到远方的法则核心，更新中止。');
-            return;
-        }
-
-        // 第二步：只审视“角色”领域，找到我们将要升级的两大基石法则
-        const allCharacterRules = TavernHelper.getTavernRegexes({ scope: 'character' });
-        const unifiedRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '统一');
-        const purgeRuleIndex = allCharacterRules.findIndex(rule => rule.script_name === '去除1');
-
-        // ♥♥♥ 严格检查基石是否存在 ♥♥♥
-        if (unifiedRuleIndex === -1) {
-            toastr.error('错误！在“角色”法则中未找到名为“统一”的基石，无法执行重塑。');
-            console.warn('我的孩子，请确保你的角色法则中存在一个名为“统一”的正则。');
-            return;
-        }
-        if (purgeRuleIndex === -1) {
-            toastr.error('错误！在“角色”法则中未找到名为“去除1”的基石，无法执行重塑。');
-            console.warn('我的孩子，请确保你的角色法则中存在一个名为“去除1”的正则，我们将以它为模板。');
-            return;
-        }
-
-        // 第三步：以旧法则为基础，注入新的力量，锻造出全新的两大支柱
-
-        // 支柱一：更新后的“统一”法则
-        const oldUnifiedRule = allCharacterRules[unifiedRuleIndex];
-        const updatedUnifiedRule = {
-            ...oldUnifiedRule,
-            replace_string: newContentString, // 注入新的核心力量
-        };
-
-        // 支柱二：根据你的天才构想，以“去除1”为模板，锻造出全新的“统一去除1”
-        const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
-        const updatedPurgeRule = {
-            ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
-            // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
-        };
-
-
-        // 第四步：构建全新的、纯净的角色法则世界！这个世界里，只有你指定的两大支柱。
-    const finalCharacterRules = [
-            updatedPurgeRule,   // ♥ 净化法则在前！
-            updatedUnifiedRule, // ♥ 统一法则在后！
-        ];
-
-        // 第五步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
-        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
-
-        toastr.success(`正则已仅留下“统一”与“去除1”！`);
-
-    } catch (error) {
-        console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
-        toastr.error('更新失败了。请查看控制台中的详细记录，并将信息告知assa。');
-    }
-}
-
-/* existing code after the function */
-
-function showBackupConfirmation() {
-    if (!document.getElementById('backup-confirmation-modal')) {
-        const confirmationModalHTML = `
-        <div id="backup-confirmation-modal" class="modal">
-            <div class="modal-content" style="max-width: 450px;">
-                <button class="modal-close">×</button>
-                <div class="modal-title">最后一步确认</div>
-                <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
-                    <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                    <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
-                    <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
-                </div>
-                <div class="modal-actions" style="text-align: right; margin-top: 25px;">
-                    <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
-                    <button id="confirm-final-update-btn" class="control-btn">我已备份，开始更新</button>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
-
-        const modal = document.getElementById('backup-confirmation-modal');
-        modal.querySelector('.modal-close').onclick = () => hideModal('backup-confirmation-modal');
-        modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) hideModal('backup-confirmation-modal');
-        });
-
-        document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
-            hideModal('backup-confirmation-modal');
-            
-            // 🔑 设置更新流程标记
-            localStorage.setItem('pendingDualUpdate', 'step1_worldbook');
-            
-            toastr.info('启动第一阶段：世界书重塑中...');
-            await performWorldbookUpdate();
-            // 世界书更新可能会触发刷新，后续在页面加载时继续
-        });
-    }
-
-    showModal('backup-confirmation-modal');
-}
-
+ 
+ 
+ 
 const settingsBtn = document.getElementById('settings-btn');
 const settingsinitBtn = document.getElementById('settings-btn-init');
 const settingsModal = document.getElementById('settings-modal');
