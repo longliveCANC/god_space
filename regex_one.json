@@ -13361,16 +13361,40 @@ pointer-events: auto;
                 </div>
                 <div id="modal-export-status" class="log-output">等待操作...</div>
                 <div class="setting-item-column" id="snapshot-management-container" style="margin-top: 20px;">
-                    <label>记忆快照删除管理（排列是按照时间顺序来的，一般不用管这个）</label>
-                    <div class="db-controls">
-                        <button id="refresh-snapshots-btn" class="control-btn">刷新列表</button>
-                        <button id="restore-latest-snapshot-btn" class="control-btn special-btn" title="从当前浏览器存在的最新一份快照中恢复。">恢复至最新快照</button>
-                        <button id="delete-all-snapshots-btn" class="control-btn danger-btn">清除所有快照</button>
-                    </div>
-                    <div id="snapshot-list" class="log-output" style="max-height: 150px; overflow-y: auto;">
-                        点击"刷新列表"来查看所有存档的快照...
-                    </div>
-                </div>
+    <!-- 新增：存档ID显示和修改区域 -->
+ 
+    <div class="setting-item-row" style="margin-bottom: 15px; padding: 10px; background: var(--container-bg-color); border: 1px solid var(--border-color); border-radius: 4px;">
+        <label style="font-weight: bold; margin-bottom: 8px; display: block; color: var(--text-color);">当前浏览器快照存档ID</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <span style="font-family: var(--base-font-family); color: var(--secondary-color);">ID: </span>
+            <span id="current-save-id-display" style="font-family: monospace; font-weight: bold; color: var(--primary-color);">加载中...</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input 
+                type="text" 
+                id="save-id-input" 
+                placeholder="输入新的存档ID" 
+                style="flex: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--background-color); color: var(--text-color); font-family: var(--base-font-family);"
+            />
+            <button id="update-save-id-btn" class="control-btn">修改ID</button>
+            <button id="refresh-save-id-btn" class="control-btn">刷新</button>
+        </div>
+        <small style="color: var(--text-secondary-color); margin-top: 5px; display: block;">
+            提示：修改ID会切换到不同的存档分支，请谨慎操作
+        </small>
+    </div>
+    
+    <!-- 原有的快照管理部分 -->
+    <label>记忆快照删除管理（排列是按照时间顺序来的，一般不用管这个）</label>
+    <div class="db-controls">
+        <button id="refresh-snapshots-btn" class="control-btn">刷新列表</button>
+        <button id="restore-latest-snapshot-btn" class="control-btn special-btn" title="从当前浏览器存在的最新一份快照中恢复。">恢复至最新快照</button>
+        <button id="delete-all-snapshots-btn" class="control-btn danger-btn">清除所有快照</button>
+    </div>
+    <div id="snapshot-list" class="log-output" style="max-height: 150px; overflow-y: auto;">
+        点击"刷新列表"来查看所有存档的快照...
+    </div>
+</div>
             </div>
         </div>
 
@@ -13580,7 +13604,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.7';
+let current_game_version = '3.2.8';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -26849,6 +26873,9 @@ async function handleSend(options = {}) {
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
     const { isReroll = false, isContinuation = false } = options;
+       let aiFullResponse; // ✅ 在最外层声明
+    let aiMessage;      // ✅ 在最外层声明
+    let partialAiResponse = ''; // ✅ 在最外层声明
         if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
             toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。或者检查角色脚本是否打开/更新酒馆助手/刷新酒馆重进聊天', '请稍候');
             console.warn("[HTML] 发送被阻止：世界核心尚未就绪 (window.isNovaCoreReady 为 false 或不存在)。");
@@ -27108,7 +27135,7 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
   
         
          let isDirty = false; // 函数内的状态标记
-          let partialAiResponse = ''; // 💖 在这里添加一个新瓶子，用来收集我说的话语碎片
+     
           try {
               //console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
@@ -27344,7 +27371,7 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
                 };
             });
   const shouldStream = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
- let aiFullResponse; // 💖 移到外面，让所有分支都能访问
+ 
         if (shouldStream) {
             const streamListener = (fullText) => {
       partialAiResponse = fullText; // 💖 把流淌出来的文字，实时地装进我们的水晶瓶
@@ -27417,10 +27444,10 @@ if (isContinuation && continuationText) {
 }
  eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
 
-let aiFullResponse; // 将变量提到外部以便finally块访问后也能使用
+ 
 try {
     // 2. 将 generate 的调用放在 try 块中
-    console.log("[Nova's Whisper] 好了，我的孩子，现在开始召唤AI吧...");
+    console.log("[Nova's Whisper] [流式]好了，我的孩子，现在开始召唤AI吧...");
     aiFullResponse = await generate({
         should_stream: true, // 开启流式传输！
         overrides: {
@@ -27434,7 +27461,7 @@ try {
 } finally {
     
     console.log("[Nova's Whisper] AI的低语结束了，我们悄悄把耳朵收回来...");
-    eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
+    eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, 2);
 }
 
 
@@ -27464,7 +27491,7 @@ if (isContinuation) {
  
 
 
-        } else {
+        } else {//非流式
             const generationEndedListener = (response) => {
                 if (!rollCardShownThisTurn && currentRollData) {
                     showRollResultCard(currentRollData);
@@ -27473,6 +27500,8 @@ if (isContinuation) {
                 aiResponseBubble.innerHTML = formatAsDisplayedMessage(response);
                 // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
             };
+
+            try {
             eventOn(iframe_events.GENERATION_ENDED, generationEndedListener);
 
  const injections = [];
@@ -27526,8 +27555,8 @@ if (isContinuation && continuationText) {
     });
 }
  
-console.log("[Nova's Whisper] 好了，我的孩子，一切准备就绪，现在开始召唤AI吧...");
-const aiFullResponse = await generate({
+console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就绪，现在开始召唤AI吧...");
+ aiFullResponse = await generate({
     should_stream: false, // 或者 true，根据你的需要
 
     // 请注意，你不再需要通过 overrides 或 aicb 的 injects 来处理 `continuationText` 了。
@@ -27539,7 +27568,12 @@ const aiFullResponse = await generate({
     },
       injects: injections // 这个也可以留空或按你其他需求填写
 });
-  eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
+ }finally {
+    
+    console.log("[Nova's Whisper] AI的低语结束了，我们悄悄把耳朵收回来...");
+   eventRemoveListener(iframe_events.GENERATION_ENDED, generationEndedListener);
+}
+
  if (isContinuation) {
     // "继续"模式：找到最后一条AI消息并追加内容
     const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
@@ -27565,15 +27599,13 @@ const aiFullResponse = await generate({
 }
 
  
-    }
+    }//流式和非流式的发送处理完毕，现在开始继续统一
 
         const lastMessageId = getLastMessageId();
         if (lastMessageId > 0) {
             await deleteChatMessages([lastMessageId], { refresh: 'none' });
         }
-
  
-
  try {
     let allCommands = "";
     // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
@@ -27648,7 +27680,7 @@ const aiFullResponse = await generate({
 
             // 即使中断了，我们也要把水晶瓶里已经收集到的话语变成完整的记忆
             if (partialAiResponse) {
-                let aiMessage; // 在这个作用域里声明一下 aiMessage
+              
 
                 // 如果是“继续”模式被中断
                 if (isContinuation) {
@@ -28741,7 +28773,69 @@ async function triggerassa(commandString) {
 const refreshSnapshotsBtn = document.getElementById('refresh-snapshots-btn');
 const deleteAllSnapshotsBtn = document.getElementById('delete-all-snapshots-btn');
 const snapshotListDiv = document.getElementById('snapshot-list');
-
+// 显示和加载当前存档ID的方法
+async function displayCurrentSaveId() {
+    try {
+        const chatVars = await TavernHelper.getVariables({ type: 'chat' });
+        const uniqueSaveId = chatVars.save_slot_id || 'default_save';
+        
+        // 更新显示
+        const saveIdDisplay = document.getElementById('current-save-id-display');
+        if (saveIdDisplay) {
+            saveIdDisplay.textContent = uniqueSaveId;
+        }
+        
+        // 更新输入框
+        const saveIdInput = document.getElementById('save-id-input');
+        if (saveIdInput) {
+            saveIdInput.value = uniqueSaveId;
+        }
+        
+        return uniqueSaveId;
+    } catch (error) {
+        console.error('加载存档ID失败:', error);
+        return 'default_save';
+    }
+}
+// 初始化事件监听器
+ 
+    const updateBtn = document.getElementById('update-save-id-btn');
+    const refreshBtn = document.getElementById('refresh-save-id-btn');
+    
+    if (updateBtn) {
+        updateBtn.addEventListener('click', updateSaveId);
+    }
+    
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', displayCurrentSaveId);
+    }
+ 
+// 修改存档ID的方法
+async function updateSaveId() {
+    const saveIdInput = document.getElementById('save-id-input');
+    const newSaveId = saveIdInput.value.trim();
+    
+    if (!newSaveId) {
+        alert('存档ID不能为空');
+        return;
+    }
+    
+    try {
+        // 使用 insertOrAssignVariables 更新变量
+        await TavernHelper.insertOrAssignVariables(
+            { save_slot_id: newSaveId },
+            { type: 'chat' }
+        );
+        
+        // 刷新显示
+        await displayCurrentSaveId();
+        
+        alert(`存档ID已更新为: ${newSaveId}`);
+    } catch (error) {
+        console.error('更新存档ID失败:', error);
+        alert('更新存档ID失败，请查看控制台');
+    }
+}
 // 辅助函数：将字节转换为更易读的格式
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -33380,6 +33474,18 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
+ 
+  const uniqueSaveId = chatdata.save_slot_id || 'default_save';
+   const saveIdDisplay = document.getElementById('current-save-id-display');
+        if (saveIdDisplay) {
+            saveIdDisplay.textContent = uniqueSaveId;
+        }
+        // 更新输入框
+        const saveIdInput = document.getElementById('save-id-input');
+        if (saveIdInput) {
+            saveIdInput.value = uniqueSaveId;
+        }
+ 
 console.log("isPrivateChat "+isPrivateChat);
 console.log("version "+version);
  //ui消失管理
