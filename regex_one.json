@@ -21683,8 +21683,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
         // 🔑 第一阶段：备份和删除（在刷新前完成）
         if (allBooks.includes(worldbookName)) {
             // 检查是否已经备份过了
-            const savedBackup = localStorage.getItem('worldbookBackup');
-            if (!savedBackup) {
+    
                 toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
                 const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
                 const backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
@@ -21692,7 +21691,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
                 // 立即保存备份
                 localStorage.setItem('worldbookBackup', JSON.stringify(backedUpEntries));
                 toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
-            }
+     
             
             await TavernHelper.deleteWorldbook(worldbookName);
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -27926,9 +27925,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
         
         // 🔑 第一阶段：备份和删除（在刷新前完成）
         if (allBooks.includes(worldbookName)) {
-            // 检查是否已经备份过了
-            const savedBackup = localStorage.getItem('worldbookBackup');
-            if (!savedBackup) {
+       
                 toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
                 const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
                 const backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
@@ -27936,7 +27933,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
                 // 立即保存备份
                 localStorage.setItem('worldbookBackup', JSON.stringify(backedUpEntries));
                 toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
-            }
+      
             
             await TavernHelper.deleteWorldbook(worldbookName);
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -36642,9 +36639,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (pendingUpdate === 'step2_regex') {
         localStorage.removeItem('pendingDualUpdate');
         toastr.success('🎉 双重重塑完美完成！');
-    }
+    }else{
   await loadWorldbookSettingsFromChat();
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
+
+    }
+
 setupReconfigModal();
 initAutoSetNpcFilter();
  await applyThemeAndData();  
