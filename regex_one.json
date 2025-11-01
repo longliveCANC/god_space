@@ -2856,9 +2856,9 @@ input[type="range"]::-moz-range-thumb {
     margin-bottom: 15px;
     
     border: 1px solid var(--border-color);
-    box-shadow: 
+    /* box-shadow: 
         inset 0 0 15px var(--glow-color),
-        0 2px 20px var(--border-color);
+        0 2px 20px var(--border-color); */
     /* animation: fadeIn 0.5s ease-in-out, messageGlow 3s ease-in-out infinite; */
     font-size: var(--base-font-size, 16px);
     position: relative;
@@ -20982,7 +20982,7 @@ async function renderReadingModeChapter(msg) {
             const iframe = document.createElement('iframe');
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
             iframe.style.width = '100%';
-            iframe.style.border = '1px solid #ccc';
+            // iframe.style.border = '1px solid #ccc';
             iframe.style.resize = 'vertical';
             iframe.style.overflow = 'auto';
 
@@ -20997,11 +20997,12 @@ const fullHtmlContent = `<!DOCTYPE html>
     <style>
         /* 妈妈把样式里的 --base-font-family 替换为具体值，因为 iframe 可能无法直接继承 CSS 变量 */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-            color: #e0e0e0;
-            background-color: transparent; /* 让背景透明，与外部融合 */
+           font-family: var(--base-font-family);
+             
+            color: black;
+            background-color: transparent;  
             margin: 0;
-            padding: 20px;
+            padding: 0px;
             box-sizing: border-box;
         }
         body::-webkit-scrollbar { width: 8px; }
@@ -21254,7 +21255,7 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
 const iframe = document.createElement('iframe');
 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
 iframe.style.width = '100%';
-iframe.style.border = '1px solid #ccc';
+// iframe.style.border = '1px solid #ccc';
 iframe.style.resize = 'vertical';
 iframe.style.overflow = 'auto';
 
@@ -21308,9 +21309,9 @@ iframe.onload = function() {
         body {
             font-family: var(--base-font-family);
              
-            color: #e0e0e0;
+             color: black;
             margin: 0;
-            padding: 20px;
+            padding: 0px;
             box-sizing: border-box;
         }
         body::-webkit-scrollbar { width: 8px; }
@@ -22530,11 +22531,7 @@ delayedUpdate(finalMessage.content);
     bubble.classList.add('message-bubble');
     bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
 
-    // ... [这里粘贴你 renderHistory 内部 `forEach` 循环里从 `let processedContent = msg.content;`
-    //      一直到 `bubble.addEventListener(...)` 的所有代码] ...
-    // ... 你那段处理HTML占位符、处理段落、处理引号、渲染iframe的全部魔法都在这里 ...
-    // 妈妈帮你把框架搭好，你只需要把那些复杂的细节填充进来
- // ✨ 妈妈在这里施展了一个全新的、更精妙的融合魔法 ✨
+ 
     let processedContent = content;
         const htmlPlaceholders = {};
         let placeholderIndex = 0;
@@ -22683,7 +22680,7 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
 const iframe = document.createElement('iframe');
 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
 iframe.style.width = '100%';
-iframe.style.border = '1px solid #ccc';
+// iframe.style.border = '1px solid #ccc';
 iframe.style.resize = 'vertical';
 iframe.style.overflow = 'auto';
 
@@ -22737,9 +22734,9 @@ iframe.onload = function() {
         body {
             font-family: var(--base-font-family);
              
-            color: #e0e0e0;
+            color: black;
             margin: 0;
-            padding: 20px;
+            padding: 0px;
             box-sizing: border-box;
         }
         body::-webkit-scrollbar { width: 8px; }
