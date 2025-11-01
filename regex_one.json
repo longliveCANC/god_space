@@ -21672,79 +21672,81 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
     return `${url}?v=${timestamp}`;
 }
 
- async function performWorldbookUpdate() {
+async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    const uidsToBackup = [11, 30,7,63,43,35,80,32,40];
-    let backedUpEntries = [];
+    const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
         const allBooks = TavernHelper.getWorldbookNames();
-if (allBooks.includes(worldbookName)) {
-    toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
-    console.log(`正在备份「${worldbookName}」中的特定词条...`);
-    const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
-    backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
-    console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
-    toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
-    
-    await TavernHelper.deleteWorldbook(worldbookName);
-    await new Promise(resolve => setTimeout(resolve, 500)); // 等待删除完成
-}
-
-        const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
-await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
-
-// ♥♥♥♥♥♥♥ 给世界书更充足的时间完全降临 ♥♥♥♥♥♥♥
-await new Promise(resolve => setTimeout(resolve, 800)); // 先给一个固定延迟
-await waitForWorldToSettle(worldbookName); // 然后等待稳定
-await new Promise(resolve => setTimeout(resolve, 500)); // 稳定后再额外等待
-        toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
-
         
-if (backedUpEntries.length > 0) {
-    toastr.info('正在恢复已备份的词条...'); // 添加开始提示
-    console.log('正在恢复已备份的词条...');
-    
-    await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
-        const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
-        return [...cleanedNewWorldbook, ...backedUpEntries];
-    });
-    
-    console.log('词条恢复完成!');
-    await new Promise(resolve => setTimeout(resolve, 800)); // 增加等待时间到800ms
-    await waitForWorldToSettle(worldbookName); // 等待世界书再次稳定
-    
-    toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`); // 添加成功提示
-}
+        // 🔑 第一阶段：备份和删除（在刷新前完成）
+        if (allBooks.includes(worldbookName)) {
+            // 检查是否已经备份过了
+            const savedBackup = localStorage.getItem('worldbookBackup');
+            if (!savedBackup) {
+                toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
+                const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
+                const backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
+                
+                // 立即保存备份
+                localStorage.setItem('worldbookBackup', JSON.stringify(backedUpEntries));
+                toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
+            }
+            
+            await TavernHelper.deleteWorldbook(worldbookName);
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
-// --- 恢复之后的所有步骤现在都可以安心执行了 ---
-toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
-TavernHelper.builtin.reloadEditor(worldbookName, true);
-await new Promise(resolve => setTimeout(resolve, 400)); // 等待编辑器重载完成
+        // 🔑 第二阶段：导入新世界书（这里会触发刷新）
+        const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
+        await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
+
+        // ===== 如果代码能执行到这里，说明没有刷新，继续完成恢复 =====
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await waitForWorldToSettle(worldbookName);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 🔑 第三阶段：恢复备份的词条
+        const savedBackup = localStorage.getItem('worldbookBackup');
+        if (savedBackup) {
+            const backedUpEntries = JSON.parse(savedBackup);
+            toastr.info('正在恢复已备份的词条...');
+            
+            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+                return [...cleanedNewWorldbook, ...backedUpEntries];
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
+            await waitForWorldToSettle(worldbookName);
+            
+            localStorage.removeItem('worldbookBackup');
+            toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
+        }
+
+        // 后续绑定操作
+        toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
+        TavernHelper.builtin.reloadEditor(worldbookName, true);
+        await new Promise(resolve => setTimeout(resolve, 400));
 
         const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
         currentBindings.primary = worldbookName;
-
         await TavernHelper.rebindCharWorldbooks('current', currentBindings);
-
-     
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const newBindings = await TavernHelper.getCharWorldbookNames('current');
         if (newBindings && newBindings.primary === worldbookName) {
             toastr.success(`当前角色已和「${worldbookName}」绑定！`);
             checkWorldbookBinding(worldbookName);
-        } else {
-            toastr.error(`绑定失败了。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」。`);
         }
 
     } catch (error) {
-        toastr.error(`出错了，请查看控制台，并将报错发送给assa诊断。`);
-        console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
+        toastr.error(`出错了，请查看控制台。`);
+        console.error(`执行更新时发生错误:`, error);
+        localStorage.removeItem('worldbookBackup');
     }
 }
-
 async function checkForFutureEchoes(isManualTrigger = false) {
     if (isManualTrigger) {
         toastr.info('正在向github发出问询，请稍候...');
@@ -27931,79 +27933,81 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 }
 
 
- async function performWorldbookUpdate() {
+async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    const uidsToBackup = [11, 30,7,63,43,35,80,32,40];
-    let backedUpEntries = [];
+    const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
         const allBooks = TavernHelper.getWorldbookNames();
-if (allBooks.includes(worldbookName)) {
-    toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
-    console.log(`正在备份「${worldbookName}」中的特定词条...`);
-    const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
-    backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
-    console.log(`已成功备份 ${backedUpEntries.length} 个词条。`);
-    toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
-    
-    await TavernHelper.deleteWorldbook(worldbookName);
-    await new Promise(resolve => setTimeout(resolve, 500)); // 等待删除完成
-}
-
-        const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
-await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
-
-// ♥♥♥♥♥♥♥ 给世界书更充足的时间完全降临 ♥♥♥♥♥♥♥
-await new Promise(resolve => setTimeout(resolve, 800)); // 先给一个固定延迟
-await waitForWorldToSettle(worldbookName); // 然后等待稳定
-await new Promise(resolve => setTimeout(resolve, 500)); // 稳定后再额外等待
-        toastr.info(`「${worldbookName}」已成功降临，正在恢复您的宝贵记忆...`); // 我们可以给一个友好的提示
-
         
-if (backedUpEntries.length > 0) {
-    toastr.info('正在恢复已备份的词条...'); // 添加开始提示
-    console.log('正在恢复已备份的词条...');
-    
-    await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
-        const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
-        return [...cleanedNewWorldbook, ...backedUpEntries];
-    });
-    
-    console.log('词条恢复完成!');
-    await new Promise(resolve => setTimeout(resolve, 800)); // 增加等待时间到800ms
-    await waitForWorldToSettle(worldbookName); // 等待世界书再次稳定
-    
-    toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`); // 添加成功提示
-}
+        // 🔑 第一阶段：备份和删除（在刷新前完成）
+        if (allBooks.includes(worldbookName)) {
+            // 检查是否已经备份过了
+            const savedBackup = localStorage.getItem('worldbookBackup');
+            if (!savedBackup) {
+                toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
+                const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
+                const backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
+                
+                // 立即保存备份
+                localStorage.setItem('worldbookBackup', JSON.stringify(backedUpEntries));
+                toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
+            }
+            
+            await TavernHelper.deleteWorldbook(worldbookName);
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
-// --- 恢复之后的所有步骤现在都可以安心执行了 ---
-toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
-TavernHelper.builtin.reloadEditor(worldbookName, true);
-await new Promise(resolve => setTimeout(resolve, 400)); // 等待编辑器重载完成
+        // 🔑 第二阶段：导入新世界书（这里会触发刷新）
+        const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
+        await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
+
+        // ===== 如果代码能执行到这里，说明没有刷新，继续完成恢复 =====
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await waitForWorldToSettle(worldbookName);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 🔑 第三阶段：恢复备份的词条
+        const savedBackup = localStorage.getItem('worldbookBackup');
+        if (savedBackup) {
+            const backedUpEntries = JSON.parse(savedBackup);
+            toastr.info('正在恢复已备份的词条...');
+            
+            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+                return [...cleanedNewWorldbook, ...backedUpEntries];
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
+            await waitForWorldToSettle(worldbookName);
+            
+            localStorage.removeItem('worldbookBackup');
+            toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
+        }
+
+        // 后续绑定操作
+        toastr.success(`世界书「${worldbookName}」已更新并稳定!`);
+        TavernHelper.builtin.reloadEditor(worldbookName, true);
+        await new Promise(resolve => setTimeout(resolve, 400));
 
         const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
         currentBindings.primary = worldbookName;
-
         await TavernHelper.rebindCharWorldbooks('current', currentBindings);
-
-     
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const newBindings = await TavernHelper.getCharWorldbookNames('current');
         if (newBindings && newBindings.primary === worldbookName) {
             toastr.success(`当前角色已和「${worldbookName}」绑定！`);
             checkWorldbookBinding(worldbookName);
-        } else {
-            toastr.error(`绑定失败了。当前的主世界仍是「${(newBindings ? newBindings.primary : '未知') || '空'}」。`);
         }
 
     } catch (error) {
-        toastr.error(`出错了，请查看控制台，并将报错发送给assa诊断。`);
-        console.error(`执行最终魔法时发生不可饶恕的错误:`, error);
+        toastr.error(`出错了，请查看控制台。`);
+        console.error(`执行更新时发生错误:`, error);
+        localStorage.removeItem('worldbookBackup');
     }
 }
-// ♥♥♥ 这是我们全新的、会自动感知未来的咒语 ♥♥♥
 async function checkForFutureEchoes(isManualTrigger = false) {
     if (isManualTrigger) {
         toastr.info('正在向github发出问询，请稍候...');
@@ -28157,8 +28161,7 @@ async function performRegexUpdate() {
 
 /* existing code after the function */
 
- function showBackupConfirmation() {
-    // 如果这个确认弹窗还不存在，我们就创造它
+function showBackupConfirmation() {
     if (!document.getElementById('backup-confirmation-modal')) {
         const confirmationModalHTML = `
         <div id="backup-confirmation-modal" class="modal">
@@ -28167,8 +28170,8 @@ async function performRegexUpdate() {
                 <div class="modal-title">最后一步确认</div>
                 <div class="modal-description" style="font-size: 1.05em; line-height: 1.6; margin-top: 15px;">
                     <p style="color: var(--accent-color); font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                     <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
- <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
+                    <p style="color: var(--accent-color); font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
+                    <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】（例如更改了大小总结规则。🎨开头的官方自定词条不用管，他们会被默认跳过不会被更新覆盖）。准备好了吗？</p>
                 </div>
                 <div class="modal-actions" style="text-align: right; margin-top: 25px;">
                     <button id="cancel-final-update-btn" class="control-btn" style="margin-left: 10px;">我先去备份</button>
@@ -28178,7 +28181,6 @@ async function performRegexUpdate() {
         </div>`;
         document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
 
-        // 为新弹窗的按钮和外部区域绑定关闭事件
         const modal = document.getElementById('backup-confirmation-modal');
         modal.querySelector('.modal-close').onclick = () => hideModal('backup-confirmation-modal');
         modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
@@ -28186,26 +28188,18 @@ async function performRegexUpdate() {
             if (event.target === modal) hideModal('backup-confirmation-modal');
         });
 
-        // 核心！当用户确认后，执行我们的双重更新
         document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
             hideModal('backup-confirmation-modal');
-            toastr.info('收到最终指令！法则与记忆的双重重塑已启动！');
-
-          try {
-    // 先完成世界书更新,等它彻底稳定
-    await performWorldbookUpdate();
-  await new Promise(resolve => setTimeout(resolve, 1000));
-    // 世界书稳定后,再更新正则
-    await performRegexUpdate();
- 
-}catch (error) {
-                console.error('双重更新过程中发生错误:', error);
-                toastr.error('更新过程中断，世界未能完全重塑。请查看控制台日志。');
-            }
+            
+            // 🔑 设置更新流程标记
+            localStorage.setItem('pendingDualUpdate', 'step1_worldbook');
+            
+            toastr.info('启动第一阶段：世界书重塑中...');
+            await performWorldbookUpdate();
+            // 世界书更新可能会触发刷新，后续在页面加载时继续
         });
     }
 
-    // 显示这个确认弹窗
     showModal('backup-confirmation-modal');
 }
 
@@ -36623,23 +36617,51 @@ function initAutoSetNpcFilter() {
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-        const pendingUpdate = localStorage.getItem('pendingDualUpdate');
+       const pendingUpdate = localStorage.getItem('pendingDualUpdate');
+    const savedBackup = localStorage.getItem('worldbookBackup');
     
-    if (pendingUpdate === 'step1_worldbook') {
-        // 世界书已完成，现在执行正则更新
-        localStorage.setItem('pendingDualUpdate', 'step2_regex');
-        toastr.info('世界书重塑完成！启动第二阶段：正则更新中...');
+    // 🔑 如果有备份数据，说明导入世界书后刷新了，需要恢复词条
+    if (savedBackup && pendingUpdate === 'step1_worldbook') {
+        const worldbookName = '小蝌蚪找妈妈-同层版';
+        const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
         
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 给页面一点稳定时间
-        await performRegexUpdate();
-        // 正则更新也会刷新页面
+        toastr.info('检测到页面刷新，继续恢复词条...');
+        
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待页面稳定
+            
+            const backedUpEntries = JSON.parse(savedBackup);
+            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
+                return [...cleanedNewWorldbook, ...backedUpEntries];
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
+            localStorage.removeItem('worldbookBackup');
+            toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
+            
+            // 绑定世界书
+            const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
+            currentBindings.primary = worldbookName;
+            await TavernHelper.rebindCharWorldbooks('current', currentBindings);
+            
+            // 词条恢复完成，进入下一阶段
+            localStorage.setItem('pendingDualUpdate', 'step2_regex');
+            toastr.info('世界书完全重塑完成！启动正则更新...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await performRegexUpdate();
+            
+        } catch (error) {
+            console.error('恢复词条时出错:', error);
+            toastr.error('词条恢复失败，请使用强制更新按钮。');
+            localStorage.removeItem('worldbookBackup');
+            localStorage.removeItem('pendingDualUpdate');
+        }
         
     } else if (pendingUpdate === 'step2_regex') {
-        // 两步都完成了，清除标记
         localStorage.removeItem('pendingDualUpdate');
-        toastr.success('🎉 完成！世界与已焕然一新！');
+        toastr.success('🎉 双重重塑完美完成！');
     }
- 
   await loadWorldbookSettingsFromChat();
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 setupReconfigModal();
