@@ -13604,7 +13604,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.9';
+let current_game_version = '3.2.10';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
