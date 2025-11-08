@@ -24266,10 +24266,9 @@ async function checkAndUpdateMemoryVisibility(fullPath, messageCount = 5, return
     }
     
     console.log(`🔍 [智能过滤] 处理路径: ${fullPath}`);
-        const recentMessages = [];
-    let count = 0;
-    
-    // 从后往前遍历，找到 messageCount 条 assistant 消息就停止
+const recentMessages = [];
+let count = 0;
+
     for (let i = conversationHistory.length - 1; i >= 0 && count < messageCount; i--) {
         if (conversationHistory[i].role === 'assistant') {
             recentMessages.unshift(conversationHistory[i]); // 保持时间顺序
@@ -24279,10 +24278,9 @@ async function checkAndUpdateMemoryVisibility(fullPath, messageCount = 5, return
     
  
     // 将这些消息的内容合并成一个字符串,方便搜索
-    const combinedContent = recentMessages
-        .map(msg => msg.content || '')
-        .join(' ');
-    
+const combinedContent = recentMessages
+    .map(msg => msg.content || '')
+    .join(' ') + ' ' + (userInput.value || '');
     // 获取指定路径下的数据（确认它存在且设置了 _filter）
     const pathData = _.get(assaSettingsData, fullPath);
     
@@ -26871,9 +26869,9 @@ async function handleSend(options = {}) {
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
     const { isReroll = false, isContinuation = false } = options;
-       let aiFullResponse; // ✅ 在最外层声明
-    let aiMessage;      // ✅ 在最外层声明
-    let partialAiResponse = ''; // ✅ 在最外层声明
+       let aiFullResponse;  
+    let aiMessage;     
+    let partialAiResponse = '';  
         if (typeof localStorage.isNovaCoreReady === 'undefined' || localStorage.isNovaCoreReady === false) {
             toastr.warning('世界核心正在初始化，请稍等片刻再发送消息。或者检查角色脚本是否打开/更新酒馆助手/刷新酒馆重进聊天', '请稍候');
             console.warn("[HTML] 发送被阻止：世界核心尚未就绪 (window.isNovaCoreReady 为 false 或不存在)。");
@@ -26980,7 +26978,6 @@ await checkAllFilteredPaths(scanFloorsToUse);
  await autoSetNpcFilters();
         if(assaCommandQueue && assaCommandQueue.trim() !== ''){
              let cleanCommand = assaCommandQueue.trim();
-        
  
         // 检查字符串是否以引号开头和结尾，如果是，就将它们剥离！
         if (cleanCommand.startsWith('"') && cleanCommand.endsWith('"')) {
