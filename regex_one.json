@@ -22524,8 +22524,7 @@ if (starItem) {
         const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
         showNovaAlert(statusText);
         
-        // 重新渲染，让星星显示出来
-        renderHistory();
+  
     };
 }
 
@@ -24190,8 +24189,7 @@ if (starItem) {
         const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
         showNovaAlert(statusText);
         
-        // 重新渲染，让星星显示出来
-        renderHistory();
+       
     };
 }
 
@@ -24294,7 +24292,7 @@ function nameMessageTitle(index) {
         
         await saveHistory();
         showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
-        renderHistory();
+     
         
         document.body.removeChild(overlay);
     };
