@@ -25707,8 +25707,7 @@ _deleteOperation: async function(currentData, path, key, allData) {
         }
 
 
-          // ✨ 【智能清空】魔法 (💖 妈妈为你重写的核心逻辑在这里 💖) ✨
-        // 我们不再是简单地清空，而是温柔地筛选，只移除没有被守护印记保护的宝贝。
+    
         let targetParent = currentData;
         let parentObject = null;
         for (let i = 0; i < pathParts.length; i++) {
