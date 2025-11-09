@@ -11598,6 +11598,106 @@ pointer-events: auto;
     font-weight: bold;
     font-family: var(--base-font-family);
 }
+
+.filter-star-btn {
+    padding: 6px 12px;
+    background: var(--container-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.filter-star-btn:hover {
+    background: var(--primary-color);
+    color: var(--background-color);
+    box-shadow: 0 0 10px var(--glow-color);
+}
+
+.filter-star-btn.active-filter {
+    background: var(--primary-color);
+    color: var(--background-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px var(--glow-color);
+}
+
+/* 章节列表中收藏项的样式优化 */
+#reading-mode-chapters-list li {
+    /* 原有样式保持不变，只添加: */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ✨ 右上角菜单触发按钮 */
+.chapter-menu-trigger {
+    position: fixed;
+    top: 7%;
+    right: 11%;  /* X按钮的左边 */
+    width: 36px;
+    height: 36px;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--text-color);
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.chapter-menu-trigger:hover {
+    background: var(--primary-color);
+    color: var(--background-color);
+    box-shadow: 0 0 15px var(--glow-color);
+    transform: scale(1.1);
+}
+
+/* ✨ 下拉菜单样式 */
+.chapter-dropdown-menu {
+    position: fixed;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px var(--glow-color);
+    z-index: 10002;
+    min-width: 150px;
+    overflow: hidden;
+}
+
+.dropdown-item {
+    padding: 12px 16px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: var(--primary-color);
+    color: var(--background-color);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .chapter-menu-trigger {
+        
+        right: 20%;
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+}
   </style>
  
 </head>
@@ -13162,8 +13262,9 @@ pointer-events: auto;
  <div id="context-menu" style="display: none; position: fixed;    padding: 5px; border-radius: 5px; ">
     <div class="context-menu-item" data-action="edit">编辑楼层</div>
     <div class="context-menu-item" data-action="delete">删除楼层</div>
-    <div class="context-menu-item" data-action="copy" display="none">复制</div>
- 
+    <div class="context-menu-item" data-action="star">收藏</div>
+    <div class="context-menu-item" data-action="name">命名标题</div>
+ <div class="context-menu-item" data-action="copy">复制</div>
 </div>
   <div id="char-tooltip" class="char-tooltip"></div>
 
@@ -13480,11 +13581,18 @@ pointer-events: auto;
 <div id="reading-mode-container" class="reading-mode-hidden">
     <div id="reading-mode-backdrop"></div>
     <div id="reading-mode-modal">
-        <div class="reading-mode-header">
-              <div id="reading-mode-toggle-chapters" class="chapters-toggle-btn">目录</div>
+<div class="reading-mode-header">
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <div id="reading-mode-toggle-chapters" class="chapters-toggle-btn">目录</div>
+        <button id="starred-filter-btn" class="filter-star-btn">⭐</button>
+    </div>
     <span id="reading-mode-chapter-title"></span>
-    <div id="reading-mode-close-btn">×</div>
-        </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <!-- 菜单按钮会通过 JS 动态插入到这里，但CSS定位已调整 -->
+        <div id="reading-mode-close-btn">×</div>
+    </div>
+</div>
+
         <div class="reading-mode-body">
             <div id="reading-mode-chapters-nav">
                 <div class="chapters-nav-header">章节目录</div>
@@ -13604,7 +13712,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.10';
+let current_game_version = '3.2.11';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -20982,6 +21090,7 @@ async function renderReadingModeChapter(msg) {
             const iframe = document.createElement('iframe');
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
             iframe.style.width = '100%';
+            
             // iframe.style.border = '1px solid #ccc';
             iframe.style.resize = 'vertical';
             iframe.style.overflow = 'auto';
@@ -20998,7 +21107,6 @@ const fullHtmlContent = `<!DOCTYPE html>
         /* 妈妈把样式里的 --base-font-family 替换为具体值，因为 iframe 可能无法直接继承 CSS 变量 */
         body {
            font-family: var(--base-font-family);
-             
             color: black;
             background-color: transparent;  
             margin: 0;
@@ -21255,6 +21363,7 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
 const iframe = document.createElement('iframe');
 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
 iframe.style.width = '100%';
+ 
 // iframe.style.border = '1px solid #ccc';
 iframe.style.resize = 'vertical';
 iframe.style.overflow = 'auto';
@@ -21516,6 +21625,10 @@ function initializeReadingMode() {
     prevBtn.addEventListener('click', () => navigateChapter(-1));
     nextBtn.addEventListener('click', () => navigateChapter(1));
   toggleChaptersBtn.addEventListener('click', toggleChaptersDrawer); // 新增
+  const starredFilterBtn = document.getElementById('starred-filter-btn');
+    if (starredFilterBtn) {
+        starredFilterBtn.addEventListener('click', toggleStarredFilter);
+    }
     mobilePrevBtn.addEventListener('click', () => navigateChapter(-1));
     mobileNextBtn.addEventListener('click', () => navigateChapter(1));
     document.addEventListener('keydown', (e) => {
@@ -21525,32 +21638,59 @@ function initializeReadingMode() {
         if (e.key === 'Escape') closeReadingMode();
     });
 }
-
+let showOnlyStarred = false; // 是否只显示收藏的章节
 function openReadingMode() {
-    // 1. 收集章节数据
-    storyChapters = conversationHistory
+    // 1. 收集所有章节数据
+    const allChapters = conversationHistory
         .map((msg, index) => ({ msg, originalIndex: index }))
         .filter(item => item.msg.role === 'assistant');
+    
+    // 根据收藏过滤状态决定显示哪些章节
+    storyChapters = showOnlyStarred 
+        ? allChapters.filter(item => item.msg.isStarred)
+        : allChapters;
 
-    if (storyChapters.length === 0) {
+    if (allChapters.length === 0) {
         alert("还没有故事内容可以阅读哦，我的孩子。");
         return;
+    }
+
+    // ✨ 如果没有收藏章节，自动切换回显示全部
+    if (storyChapters.length === 0 && showOnlyStarred) {
+        showOnlyStarred = false;
+        storyChapters = allChapters;
+        const filterBtn = document.getElementById('starred-filter-btn');
+        if (filterBtn) {
+            filterBtn.textContent = '⭐';
+            filterBtn.classList.remove('active-filter');
+        }
+        showNovaAlert('没有收藏的章节，已切换到显示全部');
     }
 
     isReadingModeOpen = true;
 
     // 2. 渲染章节列表
     const chapterListEl = document.getElementById('reading-mode-chapters-list');
-     // 渲染章节列表时，给 li 添加点击事件
     chapterListEl.innerHTML = '';
     storyChapters.forEach((chapter, index) => {
         const li = document.createElement('li');
-        li.textContent = `第 ${index + 1} 章`;
+        
+        // ✨ 构建章节显示文本：序号 + 自定义标题（如果有）
+        let chapterText = `第 ${index + 1} 章`;
+        if (chapter.msg.customTitle) {
+            chapterText += `: ${chapter.msg.customTitle}`;
+        }
+        
+        // ✨ 如果被收藏，添加星标
+        if (chapter.msg.isStarred) {
+            chapterText = '⭐ ' + chapterText;
+        }
+        
+        li.textContent = chapterText;
         li.dataset.chapterIndex = index;
         li.addEventListener('click', () => {
             currentChapterIndex = index;
             renderCurrentChapter();
-            // ✨ 选择章节后，自动关闭抽屉
             const modal = document.getElementById('reading-mode-modal');
             modal.classList.remove('chapters-open');
         });
@@ -21591,8 +21731,15 @@ async function renderCurrentChapter() {
     // 清空现有内容并显示加载提示
     contentEl.innerHTML = '<p>正在为你精心渲染故事...</p>';
 
-    // 更新标题
-    titleEl.textContent = `第 ${currentChapterIndex + 1} 章`;
+  let titleText = `第 ${currentChapterIndex + 1} 章`;
+    if (chapterData.msg.customTitle) {
+        titleText += `: ${chapterData.msg.customTitle}`;
+    }
+    if (chapterData.msg.isStarred) {
+        titleText = '⭐ ' + titleText;
+    }
+    titleEl.textContent = titleText;
+
 
     // 更新章节列表的激活状态
     chapterListItems.forEach(li => {
@@ -21608,7 +21755,20 @@ async function renderCurrentChapter() {
     const chapterHtml = await renderReadingModeChapter(chapterData.msg);
     contentEl.innerHTML = chapterHtml; // 直接将渲染好的 HTML 放入容器
     contentEl.scrollTop = 0;
-
+  // ✨ 为当前章节添加右上角菜单按钮
+    const existingMenu = contentEl.querySelector('.chapter-menu-trigger');
+    if (!existingMenu) {
+        const menuTrigger = document.createElement('div');
+        menuTrigger.className = 'chapter-menu-trigger';
+        menuTrigger.innerHTML = '⋯';
+        menuTrigger.onclick = (e) => {
+            console.log('chapter-menu-trigger');
+            e.stopPropagation();
+            showReadingModeMenu(e, chapterData);
+        };
+        contentEl.style.position = 'relative';
+        contentEl.appendChild(menuTrigger);
+    }
   // ✨ 用切换class的方式，优雅地更新所有翻页按钮的状态 ✨
     const isFirstChapter = currentChapterIndex === 0;
     const isLastChapter = currentChapterIndex === storyChapters.length - 1;
@@ -21629,7 +21789,286 @@ function navigateChapter(direction) {
     }
 }
 
+function showReadingModeMenu(event, chapterData) {
+    // 移除已存在的菜单
+    const existingDropdown = document.querySelector('.chapter-dropdown-menu');
+    if (existingDropdown) {
+        existingDropdown.remove();
+        return; // 如果已打开，点击关闭
+    }
 
+    // 创建下拉菜单
+    const dropdown = document.createElement('div');
+    dropdown.className = 'chapter-dropdown-menu';
+    dropdown.innerHTML = `
+        <div class="dropdown-item" data-action="edit">✏️ 编辑</div>
+        <div class="dropdown-item" data-action="star">${chapterData.msg.isStarred ? '⭐ 取消收藏' : '☆ 收藏'}</div>
+        <div class="dropdown-item" data-action="name">🏷️ 命名</div>
+    `;
+
+    // 定位菜单（在按钮下方）
+    const trigger = event.target;
+    const rect = trigger.getBoundingClientRect();
+    dropdown.style.position = 'fixed';
+    dropdown.style.top = `${rect.bottom + 5}px`;
+    dropdown.style.right = `${window.innerWidth - rect.right}px`;
+    
+    document.body.appendChild(dropdown);
+
+    // 点击外部关闭
+    const closeMenu = (e) => {
+        if (!dropdown.contains(e.target) && e.target !== trigger) {
+            dropdown.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+
+    // 编辑功能 - 弹出大窗口编辑
+    dropdown.querySelector('[data-action="edit"]').onclick = () => {
+        dropdown.remove();
+        
+        // 创建编辑弹窗
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: flex;
+            align-items: center; justify-content: center; z-index: 10001;
+        `;
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: var(--container-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90vw;
+            height: 80vh;
+            box-shadow: 0 8px 32px var(--glow-color);
+            display: flex;
+            flex-direction: column;
+        `;
+        
+        const title = document.createElement('h3');
+        title.textContent = '编辑章节内容';
+        title.style.cssText = `
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            color: var(--text-color);
+        `;
+        
+        const textarea = document.createElement('textarea');
+        textarea.value = chapterData.msg.content;
+        textarea.style.cssText = `
+            flex: 1;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            background: var(--background-color);
+            color: var(--text-color);
+            resize: none;
+            font-family: var(--base-font-family);
+        `;
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        `;
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '取消';
+        cancelBtn.className = 'editing-btn cancel';
+        
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '保存';
+        saveBtn.className = 'editing-btn save';
+        
+        cancelBtn.onclick = () => document.body.removeChild(overlay);
+        
+        saveBtn.onclick = async () => {
+            const newText = textarea.value.trim();
+            if (newText && newText !== chapterData.msg.content) {
+                conversationHistory[chapterData.originalIndex].content = newText;
+                await saveHistory();
+                showNovaAlert('内容已保存！');
+                
+                // 重新渲染当前章节
+                await renderCurrentChapter();
+            }
+            document.body.removeChild(overlay);
+        };
+        
+        // ESC 取消
+        textarea.onkeydown = (e) => {
+            if (e.key === 'Escape') {
+                cancelBtn.onclick();
+            }
+        };
+        
+        buttonContainer.appendChild(cancelBtn);
+        buttonContainer.appendChild(saveBtn);
+        dialog.appendChild(title);
+        dialog.appendChild(textarea);
+        dialog.appendChild(buttonContainer);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        textarea.focus();
+        
+        // 点击遮罩层关闭
+        overlay.onclick = (e) => {
+            if (e.target === overlay) cancelBtn.onclick();
+        };
+    };
+
+    // 收藏功能
+    dropdown.querySelector('[data-action="star"]').onclick = async () => {
+        dropdown.remove();
+        const message = conversationHistory[chapterData.originalIndex];
+        message.isStarred = !message.isStarred;
+        await saveHistory();
+        showNovaAlert(message.isStarred ? '已收藏！' : '已取消收藏');
+        
+        // 重新渲染当前章节
+        await renderCurrentChapter();
+        
+        // 更新章节列表
+        const chapterListEl = document.getElementById('reading-mode-chapters-list');
+        const lis = chapterListEl.querySelectorAll('li');
+        if (lis[currentChapterIndex]) {
+            let chapterText = `第 ${currentChapterIndex + 1} 章`;
+            if (message.customTitle) {
+                chapterText += `: ${message.customTitle}`;
+            }
+            if (message.isStarred) {
+                chapterText = '⭐ ' + chapterText;
+            }
+            lis[currentChapterIndex].textContent = chapterText;
+        }
+    };
+
+    // 命名功能
+    dropdown.querySelector('[data-action="name"]').onclick = () => {
+        dropdown.remove();
+        
+        // 创建命名对话框
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: flex;
+            align-items: center; justify-content: center; z-index: 10001;
+        `;
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: var(--container-bg-color); border-radius: 12px;
+            padding: 24px; min-width: 320px; max-width: 500px;
+            box-shadow: 0 8px 32px var(--glow-color);
+            border: 1px solid var(--border-color);
+        `;
+        
+        const title = document.createElement('h3');
+        title.textContent = '为这个章节命名';
+        title.style.cssText = `margin: 0 0 16px 0; font-size: 18px; color: var(--text-color);`;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = '输入标题...';
+        input.value = chapterData.msg.customTitle || '';
+        input.style.cssText = `
+            width: 100%; padding: 12px; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 14px; box-sizing: border-box;
+            margin-bottom: 16px; background: var(--background-color);
+            color: var(--text-color);
+        `;
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `display: flex; gap: 12px; justify-content: flex-end;`;
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '取消';
+        cancelBtn.className = 'editing-btn cancel';
+        
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '保存';
+        saveBtn.className = 'editing-btn save';
+        
+        cancelBtn.onclick = () => document.body.removeChild(overlay);
+        
+        saveBtn.onclick = async () => {
+            const newTitle = input.value.trim();
+            const message = conversationHistory[chapterData.originalIndex];
+            
+            if (newTitle) {
+                message.customTitle = newTitle;
+            } else {
+                delete message.customTitle;
+            }
+            
+            await saveHistory();
+            showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
+            document.body.removeChild(overlay);
+            
+            // 重新渲染
+            await renderCurrentChapter();
+            
+            // 更新章节列表
+            const chapterListEl = document.getElementById('reading-mode-chapters-list');
+            const lis = chapterListEl.querySelectorAll('li');
+            if (lis[currentChapterIndex]) {
+                let chapterText = `第 ${currentChapterIndex + 1} 章`;
+                if (message.customTitle) {
+                    chapterText += `: ${message.customTitle}`;
+                }
+                if (message.isStarred) {
+                    chapterText = '⭐ ' + chapterText;
+                }
+                lis[currentChapterIndex].textContent = chapterText;
+            }
+        };
+        
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') saveBtn.onclick();
+            else if (e.key === 'Escape') cancelBtn.onclick();
+        };
+        
+        buttonContainer.appendChild(cancelBtn);
+        buttonContainer.appendChild(saveBtn);
+        dialog.appendChild(title);
+        dialog.appendChild(input);
+        dialog.appendChild(buttonContainer);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        input.focus();
+        input.select();
+        
+        overlay.onclick = (e) => {
+            if (e.target === overlay) cancelBtn.onclick();
+        };
+    };
+}
+// ===== 7. 新增：切换收藏过滤的函数 =====
+function toggleStarredFilter() {
+    showOnlyStarred = !showOnlyStarred;
+    
+    // 更新按钮文本
+    const filterBtn = document.getElementById('starred-filter-btn');
+    if (filterBtn) {
+        filterBtn.textContent = showOnlyStarred ? '☆' : '⭐';
+        filterBtn.classList.toggle('active-filter', showOnlyStarred);
+    }
+    
+    // 重新打开阅读模式（会自动应用过滤）
+    closeReadingMode();
+    setTimeout(() => openReadingMode(), 100);
+}
  
 function compareVersions(v1, v2) {
     if (!v1 || !v2) return 0;
@@ -22065,7 +22504,160 @@ editItem.onclick = () => {
             document.addEventListener('click', hideMenuOnClickOutside);
             document.addEventListener('contextmenu', hideMenuOnClickOutside);
         }, 0);
+
+
+
+        const starItem = menu.querySelector('[data-action="star"]');
+if (starItem) {
+    starItem.onclick = async () => {
+        menu.style.display = 'none';
+        removeGlobalListeners();
+        
+        // 切换收藏状态（如果已收藏就取消，未收藏就添加）
+        const message = conversationHistory[index];
+        message.isStarred = !message.isStarred; // 布尔值切换
+        
+        // 保存到历史记录
+        await saveHistory();
+        
+        // 给个小提示
+        const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
+        showNovaAlert(statusText);
+        
+        // 重新渲染，让星星显示出来
+        renderHistory();
+    };
+}
+
+// ☆☆☆ 命名标题功能：给楼层起个独特的名字 ☆☆☆
+const nameItem = menu.querySelector('[data-action="name"]');
+if (nameItem) {
+    nameItem.onclick = () => {
+        menu.style.display = 'none';
+        removeGlobalListeners();
+        
+        // 打开命名对话框
+        nameMessageTitle(index);
+    };
+}
     }
+
+function nameMessageTitle(index) {
+    const messageToName = conversationHistory[index];
+    
+    // 创建一个优雅的对话框
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        min-width: 320px;
+        max-width: 500px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = '为这个楼层命名';
+    title.style.cssText = `
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        color: #333;
+    `;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '输入标题...';
+    input.value = messageToName.customTitle || ''; // 如果已有标题就显示
+    input.style.cssText = `
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+        margin-bottom: 16px;
+    `;
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    `;
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.className = 'editing-btn cancel';
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '保存';
+    saveBtn.className = 'editing-btn save';
+    
+    // 取消按钮
+    cancelBtn.onclick = () => {
+        document.body.removeChild(overlay);
+    };
+    
+    // 保存按钮
+    saveBtn.onclick = async () => {
+        const newTitle = input.value.trim();
+        
+        if (newTitle) {
+            conversationHistory[index].customTitle = newTitle;
+        } else {
+            // 如果清空了标题，就删除这个字段
+            delete conversationHistory[index].customTitle;
+        }
+        
+        await saveHistory();
+        showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
+ 
+        document.body.removeChild(overlay);
+    };
+    
+    // 支持回车键保存
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            saveBtn.onclick();
+        } else if (e.key === 'Escape') {
+            cancelBtn.onclick();
+        }
+    };
+    
+    // 组装对话框
+    buttonContainer.appendChild(cancelBtn);
+    buttonContainer.appendChild(saveBtn);
+    dialog.appendChild(title);
+    dialog.appendChild(input);
+    dialog.appendChild(buttonContainer);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    // 自动聚焦到输入框
+    input.focus();
+    input.select();
+    
+    // 点击遮罩层也能关闭
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            cancelBtn.onclick();
+        }
+    };
+}
   function showConfirmModal(title, message, onConfirm, onCancel) {
     const modal = document.getElementById('delete-modal');
     if (!modal) return;
@@ -22257,6 +22849,10 @@ function editMessage(index, bubbleElement) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     textarea.focus();
     textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+
+
+    
 }
 
 function updateRerollButtonState(){
@@ -22680,6 +23276,7 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
 const iframe = document.createElement('iframe');
 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
 iframe.style.width = '100%';
+ 
 // iframe.style.border = '1px solid #ccc';
 iframe.style.resize = 'vertical';
 iframe.style.overflow = 'auto';
@@ -23496,8 +24093,7 @@ function getChatConfig(key, defaultValue) {
     }
 }
 
-   // ☆ 新增函数：显示右键菜单 (V2.1 究极稳定版)
-   function showContextMenu(event, index, bubbleElement) {
+ function showContextMenu(event, index, bubbleElement) {
        // 首先，检查这个消息气泡是否正处于“编辑模式”
     const isEditing = bubbleElement.classList.contains('editing');
 
@@ -23574,7 +24170,165 @@ editItem.onclick = () => {
             document.addEventListener('click', hideMenuOnClickOutside);
             document.addEventListener('contextmenu', hideMenuOnClickOutside);
         }, 0);
+
+
+
+        const starItem = menu.querySelector('[data-action="star"]');
+if (starItem) {
+    starItem.onclick = async () => {
+        menu.style.display = 'none';
+        removeGlobalListeners();
+        
+        // 切换收藏状态（如果已收藏就取消，未收藏就添加）
+        const message = conversationHistory[index];
+        message.isStarred = !message.isStarred; // 布尔值切换
+        
+        // 保存到历史记录
+        await saveHistory();
+        
+        // 给个小提示
+        const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
+        showNovaAlert(statusText);
+        
+        // 重新渲染，让星星显示出来
+        renderHistory();
+    };
+}
+
+// ☆☆☆ 命名标题功能：给楼层起个独特的名字 ☆☆☆
+const nameItem = menu.querySelector('[data-action="name"]');
+if (nameItem) {
+    nameItem.onclick = () => {
+        menu.style.display = 'none';
+        removeGlobalListeners();
+        
+        // 打开命名对话框
+        nameMessageTitle(index);
+    };
+}
     }
+// ===== 新增：命名标题的完整函数 =====
+function nameMessageTitle(index) {
+    const messageToName = conversationHistory[index];
+    
+    // 创建一个优雅的对话框
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: var(--container-bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        min-width: 320px;
+        max-width: 500px;
+        box-shadow: 0 8px 32px var(--glow-color);
+    `;
+    
+    const title = document.createElement('h3');
+    title.textContent = '为这个楼层命名';
+    title.style.cssText = `
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        color: var(--text-color);
+    `;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '输入标题...';
+    input.value = messageToName.customTitle || ''; // 如果已有标题就显示
+    input.style.cssText = `
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+        margin-bottom: 16px;
+        background: var(--background-color);
+        color: var(--text-color);
+    `;
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    `;
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.className = 'editing-btn cancel';
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '保存';
+    saveBtn.className = 'editing-btn save';
+    
+    // 取消按钮
+    cancelBtn.onclick = () => {
+        document.body.removeChild(overlay);
+    };
+    
+    // 保存按钮
+    saveBtn.onclick = async () => {
+        const newTitle = input.value.trim();
+        
+        if (newTitle) {
+            conversationHistory[index].customTitle = newTitle;
+        } else {
+            // 如果清空了标题，就删除这个字段
+            delete conversationHistory[index].customTitle;
+        }
+        
+        await saveHistory();
+        showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
+        renderHistory();
+        
+        document.body.removeChild(overlay);
+    };
+    
+    // 支持回车键保存
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            saveBtn.onclick();
+        } else if (e.key === 'Escape') {
+            cancelBtn.onclick();
+        }
+    };
+    
+    // 组装对话框
+    buttonContainer.appendChild(cancelBtn);
+    buttonContainer.appendChild(saveBtn);
+    dialog.appendChild(title);
+    dialog.appendChild(input);
+    dialog.appendChild(buttonContainer);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    // 自动聚焦到输入框
+    input.focus();
+    input.select();
+    
+    // 点击遮罩层也能关闭
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            cancelBtn.onclick();
+        }
+    };
+}
+  
    function showConfirmModal(title, message, onConfirm, onCancel) {
     const modal = document.getElementById('delete-modal');
     if (!modal) return;
