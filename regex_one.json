@@ -11866,8 +11866,8 @@ pointer-events: auto;
  
    
         
-           <input type="radio" id="dice-1" name="dice-level" value="61" checked>
-        <input type="radio" id="dice-2" name="dice-level" value="59">
+           <input type="radio" id="dice-1" name="dice-level" value="61" >
+        <input type="radio" id="dice-2" name="dice-level" value="59" checked>
         <input type="radio" id="dice-3" name="dice-level" value="60">
 
         <input type="radio" id="options-on" name="options-mode" value="10" checked>
@@ -11889,8 +11889,8 @@ pointer-events: auto;
         <input type="radio" id="live-on" name="live-mode" value="69">
         <input type="radio" id="live-off" name="live-mode" value="70" checked>
 
-                <input type="radio" id="battle-on" name="battle-mode" value="74" checked> 
-        <input type="radio" id="battle-off" name="battle-mode" value="75" >
+                <input type="radio" id="battle-on" name="battle-mode" value="74" > 
+        <input type="radio" id="battle-off" name="battle-mode" value="75" checked>
 
 
  <input type="radio" id="things-on" name="things-mode" value="77" checked> 
@@ -27616,7 +27616,11 @@ async function autoSetNpcFilters() {
 }
 
 async function handleSend(options = {}) {
-     
+      if (!conversationHistory || !Array.isArray(conversationHistory)) {
+        console.error('[Nova] conversationHistory 未正确初始化');
+        toastr.error('对话历史未初始化，请刷新页面', '严重错误');
+        return;
+    }
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
     const { isReroll = false, isContinuation = false } = options;
@@ -27641,10 +27645,8 @@ async function handleSend(options = {}) {
         // [修正处] 这里使用了正确的getWorldbook函数
         const worldInfo = await getWorldbook(worldBookName);
         if (worldInfo && worldInfo.length > 0) { // 确保世界书存在且不为空
-            const validationEntry = worldInfo.find(entry => entry.uid === validationEntryId);
-
-            // 如果验证条目不存在，或者其内容不是以 EJS 标签开头，则判定为异常
-            if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
+const validationEntry = worldInfo.find(entry => entry.uid === validationEntryId);
+if (!validationEntry || !validationEntry.content || validationEntry.content.trim().startsWith('<ready>')) {
                 toastr.error('世界书核心检测到异常，正在尝试从备份自动修复。', '紧急修复');
                 console.error(`[Nova's Integrity Check] 验证失败！ID ${validationEntryId} 的条目不存在或内容非预期格式。${validationEntry.content}`);
 
@@ -27892,9 +27894,9 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
     // 【新代码位置】 在备份前进行完整性验证！
     if (originalWorldInfo && originalWorldInfo.length > 0) {
         const validationEntryId = 14;
-        const validationEntry = originalWorldInfo.find(entry => entry.uid === 14);
-
-if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
+// 修复为
+const validationEntry = originalWorldInfo.find(entry => entry.uid === 14);
+if (!validationEntry || !validationEntry.content || validationEntry.content.trim().startsWith('<ready>')) {
     console.error(`[Nova's Integrity Check] 验证失败！检测到世界书异常。正在尝试从备份自动修复...`);
     toastr.warning('世界书核心检测到异常，正在尝试自动修复...', '紧急修复');
 
@@ -27948,11 +27950,13 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
                 //console.log(`[Nova's Log] 成功获取 ${worldInfoForProcessing.length} 条世界书条目进行处理。`);
                 const renderContext = await EjsTemplate.prepareContext();
                 let processedWorldInfo = [];
-                for (const entry of worldInfoForProcessing) { // <--- 注意这里的变化
-                    if (entry.enabled) { // 只处理启用的条目
-                        const processedEntry = { ...entry };
-                        // 使用 EjsTemplate.evalTemplate 来渲染内容
-                        processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
+for (const entry of worldInfoForProcessing) {
+    if (entry && entry.enabled) {
+        const processedEntry = { ...entry };
+        // 确保 content 存在再处理
+        if (entry.content) {
+            processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
+        }
                         processedWorldInfo.push(processedEntry);
                     } else {
                         processedWorldInfo.push(entry); // 未启用的条目直接保留
@@ -27964,10 +27968,9 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
 
                         
             try {
-                const messageVars = await TavernHelper.getVariables({ type: 'chat' });
-                
-                if (messageVars.检定记忆) {
-                    currentRollData = messageVars.检定记忆;
+      const messageVars = await TavernHelper.getVariables({ type: 'chat' });
+if (messageVars && messageVars.检定记忆) {
+    currentRollData = messageVars.检定记忆;
                      console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
                 }else{
                      console.log("messageVars.checkMemory不存在？");
@@ -28006,23 +28009,24 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
                 }
 
                 // 3. 遍历我们限定好的历史范围
-                for (const message of historyToSearch) {
-                    if (message.content) {
-                        const groupChatRegex = /<group_chat>([\s\S]*?)<\/group_chat>/g;
+   for (const message of historyToSearch) {
+    if (message && message.content) {
+        const groupChatRegex = /<group_chat>([\s\S]*?)<\/group_chat>/g;
                         let match;
 
                         // 在单条消息内容中循环查找所有 <group_chat> 标签
                         while ((match = groupChatRegex.exec(message.content)) !== null) {
-                            try {
-                                const jsonString = match[1];
-                                // ★ 这里我们直接解析出对象，而不是一个数组
-                                const chatObject = JSON.parse(jsonString);
-
-                                // 检查解析出的对象是否存在，并且有 chat_summary 字段
-                                if (chatObject && chatObject.chat_summary) {
-                                    summaries.push(chatObject.chat_summary);
-                                }
-                            } catch (e) {
+                         try {
+    const jsonString = match[1];
+    if (!jsonString || jsonString.trim() === '') {
+        console.warn("[Nova's Group Chat Extractor] 空的 JSON 字符串，跳过");
+        continue;
+    }
+    const chatObject = JSON.parse(jsonString);
+    if (chatObject && typeof chatObject === 'object' && chatObject.chat_summary) {
+        summaries.push(chatObject.chat_summary);
+    }
+} catch (e) {
                                 console.warn("[Nova's Group Chat Extractor] 解析群聊JSON失败，已跳过此部分:", match[1], e);
                             }
                         }
@@ -28060,7 +28064,7 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
             // 【新代码 V2 结束】
             
             const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop(); // 获取最后一条用户消息
-            const recentAiMessages = conversationHistory.filter(m => m.role === 'assistant').slice(-hideLatestCount); // 获取最近的AI消息
+const recentAiMessages = conversationHistory.filter(m => m && m.role === 'assistant').slice(-hideLatestCount); // 获取最近的AI消息
             let promptsForAI = [];
              if (lastUserMessage || isContinuation) {
             promptsForAI = [];
@@ -28068,6 +28072,11 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
                 promptsForAI.push({ role: 'assistant', content: groupChatSummariesString });
             }
             promptsForAI.push(...recentAiMessages);
+    //          const recentAiAsUser = recentAiMessages.map(msg => ({
+    //     ...msg,
+    //     role: 'user'
+    // }));
+    // promptsForAI.push(...recentAiAsUser);
             promptsForAI.push({
                 role: 'user',
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
@@ -28079,9 +28088,12 @@ if (!validationEntry || validationEntry.content.trim().startsWith('<ready>')) {
 
           
  
-      const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
-                // 第一步：先移除我们自己的特殊标签，比如选项和论坛
-                let content = msg.content;
+const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
+    if (!msg || !msg.content) {
+        console.warn(`[Nova's Regex] 消息 ${index} 为空或缺少内容，跳过处理`);
+        return msg; // 返回原始消息避免后续出错
+    }
+    let content = msg.content;
 
                 // 根据消息的角色确定来源
                 // 注意：promptsForAI数组的最后一条是经过特殊构造的user message
@@ -28491,12 +28503,13 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
 // 在保存历史之前，检查是否需要添加时间标记
 if (isEmphasizeTime === 'true' && currentGameData) {
     
-    // 定义一个温柔的函数来获取值，如果值不存在就返回空字符串
-    const SafeGetValue = (value) => value || '';
+const SafeGetValue = (value) => {
+    if (value === null || value === undefined) return '';
+    return String(value);
+};
 
-    // 将时间信息优雅地组合起来
-    const timeString = `${SafeGetValue(currentGameData.user_character.current_location[0])}-${SafeGetValue(currentGameData.纪年)}- ${SafeGetValue(currentGameData.日期[0])}- ${SafeGetValue(currentGameData.时间[0])}- ${SafeGetValue(currentGameData.星期[0])} ${SafeGetValue(currentGameData.天气[0])}`;
-
+// 添加更深层的保护
+const timeString = `${SafeGetValue(currentGameData?.user_character?.current_location?.[0])}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期?.[0])}-${SafeGetValue(currentGameData?.时间?.[0])}-${SafeGetValue(currentGameData?.星期?.[0])} ${SafeGetValue(currentGameData?.天气?.[0])}`;
     // 确保我们有可以修改的消息，并且时间信息不为空
     if (aiMessage && aiMessage.content && timeString.trim() !== '') {
         // 将时间标签附加到消息的末尾
@@ -29258,8 +29271,7 @@ document.getElementById('set-favorability-speed-btn')?.addEventListener('click',
             
             // 更新显示
             updateFavorabilitySpeedDisplay();
-            
-            alert(`已保存：好感度变速设置为 ${speed}倍`);
+ 
         } else {
             alert('请输入有效的正数');
         }
