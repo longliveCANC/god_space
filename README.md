@@ -37,8 +37,10 @@
 
 <img width="291" height="629" alt="image" src="https://github.com/user-attachments/assets/4b21988c-adba-4522-b8be-929fffdec5e5" />
 这里可以重roll、继续或者自定义并发送qr。
+
 <img width="900" height="735" alt="image" src="https://github.com/user-attachments/assets/66c20ed5-b53a-4341-98b9-5b558dd5eb26" />
 RP是自选检定。
+
 令小盒是待发送指令。
 
 <img width="992" height="707" alt="image" src="https://github.com/user-attachments/assets/3fe36644-2564-4680-9fe6-c6ee0e100691" />
@@ -50,14 +52,18 @@ RP是自选检定。
 识小球很重要。
 
 npc如果有好感度，就会在名字右边出现好感度进度条。好感度不会在界面中具体显示，被隐藏了，算是为了美观。要修改好感度，只能在三个点那里点进去编辑，找到好感度去修改。
+
 <img width="1014" height="751" alt="image" src="https://github.com/user-attachments/assets/309be908-6ad2-465f-9342-30442ddb2cc3" />
 <img width="205" height="406" alt="image" src="https://github.com/user-attachments/assets/a4e59ff8-d690-492e-86b7-295dd3865492" />
 这些功能从上到下分别的含义：
 
 <img width="731" height="574" alt="image" src="https://github.com/user-attachments/assets/f94cde61-7cc2-41cf-a439-9f4030599c65" />
-编辑：全部编辑，点击确定后，指令会被放入令小盒子。开启防删除后可以不再编辑，开启绿灯后这个条目会变成绿灯，根据这个条目的名字触发。探测的楼层默认是调试器中的这个配置，也可以在设置中单独配置。<img width="532" height="200" alt="image" src="https://github.com/user-attachments/assets/bb02cf5a-97af-4669-92ae-c8cb97316ce2" />
+
+编辑：全部编辑，点击确定后，指令会被放入令小盒子。开启防删除后可以不再编辑，开启绿灯后这个条目会变成绿灯，根据这个条目的名字触发。探测的楼层默认是调试器中的这个配置，也可以在设置中单独配置。
+<img width="532" height="200" alt="image" src="https://github.com/user-attachments/assets/bb02cf5a-97af-4669-92ae-c8cb97316ce2" />
 
 <img width="712" height="540" alt="image" src="https://github.com/user-attachments/assets/a771752c-8140-49b5-90db-210813039253" />
+
 让AI重构：如图，可以快捷发送提示词让AI去重构，只是相当于一个qr而已。如：浓缩指令就是：`<request:请将路径（global_set.npc.不死川实弥的第二世记忆）的冗余内容进行浓缩，提炼其核心内容。在完成正文输出后，在updatememory块中先delete'global_set.npc.不死川实弥的第二世记忆'，再memory('global_set.npc', '不死川实弥的第二世记忆'...的浓缩后内容>`，这个常用于关键记忆太多的时候。
 
 <img width="927" height="701" alt="image" src="https://github.com/user-attachments/assets/62b5a2ef-264f-4e04-9704-a909f06826d4" />
@@ -85,29 +91,50 @@ npc如果有好感度，就会在名字右边出现好感度进度条。好感�
 
 #### 各个mod:
 真实mod
+
 会在开头加上一段真实世界引擎的cot思考，文风可能会更真实、更好，多出token 2000
+
 困难 mod
+
 难度会指数级上升，哈基米会给你各种找茬，以及强大的敌对小队。多出token 800
+
 资源条
+
 会有资源条固定每轮消耗，在能小球中显示资源条和相关信息。多出token 700
+
 求生本能
+
 在开启资源条的情况下，当你的资源告急，AI会主动驱使你求生。多出token二三十吧一个小功能
+
 称号系统
+
 在剧情中，如果达成什么成就（AI自己编的），会解锁对应成就（AI自己编的），可以在ui界面的自己人名的上面管理称号的穿戴。多出token 150
+
 人外增强
+
 在开启造物的情况下再开启此mod，开启后，造物的人外感将大大增强。开启此mod后，只会在造物没有初始化且在不在安全区的时候占用2000 token，平时不占用任何token。
+
 强调时间
+
 小总结会发送标题，每一轮正文代码会在最后印上剧情内部的时间地点戳。
+
 特殊日期
+
 AI在备忘录记录了节日、生日等特殊日期的时候，当那一天抵达，代码会通知AI那一天来临了。
+
 回合战斗
+
 开启后，当你进入战斗的时候，你会进入一个回合制战斗界面。
+
 分阶段好感
+
 当npc有好感度的时候，AI会给那个npc生成分阶段好感度。原理是：代码检测哪个npc有好感度但是还没有分阶段描述的时候，就会在下一轮给AI派发生成分阶段的任务。你可以在这个npc档案刚生成，还没有生成分阶段好感度的时候，用括号控制这个npc的好感度倾向。你可以在识小球设置这个分阶段文本是否显示。
 
 ### 设置界面
 左上角是游戏成就，正文不生效。
+
  <img width="850" height="531" alt="image" src="https://github.com/user-attachments/assets/a2d2c520-c53d-4528-9eb9-e1ea1e14c8d7" />
+ 
 在模组重置这里可以局内调整mod。如果你的正文生成的很多还有小剧场导致流式生成的卡卡的，可以切成非流。
 
 <img width="855" height="445" alt="image" src="https://github.com/user-attachments/assets/37776739-6f3a-439d-9b00-686e9d16f9e4" />
@@ -119,12 +146,16 @@ AI在备忘录记录了节日、生日等特殊日期的时候，当那一天抵
 ### 核心调试器
 <img width="545" height="155" alt="image" src="https://github.com/user-attachments/assets/5bc081fb-e842-41c6-a612-98d9e50b35a0" />
 比较重要的是这个摘要的设置。
+
 这个参数的意思是：只显示最近3楼的原本AI消息
+
 当AI消息达到30楼的时候，将AI消息进行一次大总结
+
 当大总结的数量达到20个的时候（也就是有600个AI消息，1200高度的楼层），将全部大总结再次浓缩为一个大总结。这个超级大浓缩作者亲测过了不太好用啊，哈基米有点脑力跟不上了，有时候不会大总结或者只总结最近的。为了保护存档，可以把这个设置调高一点，或者自己会的话就自己去手动大总结。这个的机制是，抵达了这个数量之后，代码会清空前面所有的大总结，只保留这一个。想自己手操的话可以在discord @assa 。
 
 
 <img width="748" height="263" alt="image" src="https://github.com/user-attachments/assets/367f0f8c-8c93-4497-8a0c-273e7282ddd9" />
+
 整合重构可以获取所有聊天记录的所有变量重新执行。重新处理是重新处理上一楼AI消息的变量。手动执行是执行输入框内的变量指令。
 
 ## 2.开局界面
