@@ -1,7 +1,57 @@
-# 界面说明
-## 1.聊天主界面
-
+## 1.界面说明和展示
+### 聊天主界面
+以下示例使用的模式是：无世界观 私聊通讯关 背景图开 简单npc档案
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a127304c-738f-402e-b048-f71099d1d6cd" />
+
+#### 顶栏
+左上角的`坛小球`：在接收到论坛消息时会闪烁。打开后会显示最近一次收到的论坛信息。当数据格式错误时无法正确显示。
+之后的`总小球`：当你的任务进度抵达到100后，会发送提示词让AI生成任务总结，生成后的总结将会在此处显示。
+ 额外说明：当你完成任务的时候，AI会使用delete('world_set.npc','all')类似指令来清空所有的世界人物和世界信息以及所有的地图信息。这是一个特殊指令，它会清空任务、将任务进度强制设置为100来触发任务总结，并检测小总结数量，如果小总结大于20就会启动提前大总结。
+ 如果你想要保留某个npc，请在识小球的编辑那里打开该条目的防删除。地图请在地图界面的某个地图详情右上角的竖着的三个点打开防删除。
+之后的`阅小球`：打开后，以阅读模式查看你的所有聊天记录。支持单独收藏、命名标题、编辑。
+当你打开了私聊通讯或者使用诸天群聊模式，会有`聊小球`：顾名思义，是你的聊天界面。
+
+右边的第一个按钮是快捷全屏
+第二个是设置界面
+第三个是刷新界面数据
+第四个点击可以查看这一回合更新的特殊变量信息。
+
+#### 中间
+消息本体区域。电脑右键、手机长按可以唤出菜单。<img width="215" height="315" alt="image" src="https://github.com/user-attachments/assets/5ad71ceb-7327-42ff-b559-64d6ace9069b" />
+
+
+#### 底部
+选项区长按可以放在
+
+#### 右侧
+待施工，先说重要的，综小球里面是大小总结，都可以编辑删除重命名，但是因为总结的一些特殊机制，编辑和重命名会将那个总结提前到最前面，需要注意。
+
+识小球很重要。
+
+npc如果有好感度，就会在名字右边出现好感度进度条。好感度不会在界面中具体显示，被隐藏了，算是为了美观。要修改好感度，只能在三个点那里点进去编辑，找到好感度去修改。
+<img width="1014" height="751" alt="image" src="https://github.com/user-attachments/assets/309be908-6ad2-465f-9342-30442ddb2cc3" />
+<img width="205" height="406" alt="image" src="https://github.com/user-attachments/assets/a4e59ff8-d690-492e-86b7-295dd3865492" />
+这些功能从上到下分别的含义：
+
+<img width="731" height="574" alt="image" src="https://github.com/user-attachments/assets/f94cde61-7cc2-41cf-a439-9f4030599c65" />
+编辑：全部编辑，点击确定后，指令会被放入令小盒子。开启防删除后可以不再编辑，开启绿灯后这个条目会变成绿灯，根据这个条目的名字触发。探测的楼层默认是调试器中的这个配置，也可以在设置中单独配置。<img width="532" height="200" alt="image" src="https://github.com/user-attachments/assets/bb02cf5a-97af-4669-92ae-c8cb97316ce2" />
+
+<img width="712" height="540" alt="image" src="https://github.com/user-attachments/assets/a771752c-8140-49b5-90db-210813039253" />
+让AI重构：如图，可以快捷发送提示词让AI去重构，只是相当于一个qr而已。如：浓缩指令就是：`<request:请将路径（global_set.npc.不死川实弥的第二世记忆）的冗余内容进行浓缩，提炼其核心内容。在完成正文输出后，在updatememory块中先delete'global_set.npc.不死川实弥的第二世记忆'，再memory('global_set.npc', '不死川实弥的第二世记忆'...的浓缩后内容>`，这个常用于关键记忆太多的时候。
+
+<img width="927" height="701" alt="image" src="https://github.com/user-attachments/assets/62b5a2ef-264f-4e04-9704-a909f06826d4" />
+<img width="859" height="381" alt="image" src="https://github.com/user-attachments/assets/3f38d7df-af95-426e-b45c-effce4493b35" />
+添加立绘：无论你有没有开npc立绘，你都可以使用这个功能。使用后，会在令小盒中存储指令，发送后才生效。
+可以在底部的npc标签那里看到立绘，立绘会自动用洪水填充算法去除白色背景，效果如下：
+<img width="421" height="737" alt="image" src="https://github.com/user-attachments/assets/960ed76c-5687-4b4a-bbf8-8771039cfc91" />
+
+
+### 开局界面和mod说明
+
+### 设置界面
+
+### 核心调试器
+
 
 
 ## 2.开局界面
