@@ -24693,7 +24693,6 @@ async function showRollResultCard(rollData) {
         return;
     }
 
-    
             await updateVariablesWith(old_variables => {
             return {
                 ...old_variables,
@@ -24703,7 +24702,7 @@ async function showRollResultCard(rollData) {
 checkMemoryData = rollData;
        const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
     if(!isRollCardEnabled){
-        
+     
     return;
     }
  
@@ -27971,7 +27970,7 @@ for (const entry of worldInfoForProcessing) {
       const messageVars = await TavernHelper.getVariables({ type: 'chat' });
 if (messageVars && messageVars.检定记忆) {
     currentRollData = messageVars.检定记忆;
-                     console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
+    console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
                 }else{
                      console.log("messageVars.checkMemory不存在？");
                 }
@@ -37371,7 +37370,7 @@ function initAutoSetNpcFilter() {
     
     // 从 localStorage 读取设置，默认为 true
     const savedValue = localStorage.getItem('autoSetNpcFilter');
-    checkbox.checked = savedValue === null ? true : savedValue === 'true';
+checkbox.checked = savedValue === null ? false : savedValue === 'true';
     
     // 监听变化并保存到 localStorage
     checkbox.addEventListener('change', function() {
