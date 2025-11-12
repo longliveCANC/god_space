@@ -30837,21 +30837,21 @@ if (wearableItems && typeof wearableItems === 'object' && wearableItems !== null
     return bonuses;
 }
 
-
- /**
- * 显示美化后的称号管理面板
- * @param {object} assaData - 包含 global_set 的 assaData 对象
- */
-function showTitleManager(assaData) {
-   const allTitles = assaData?.global_set?.称号|| {};
- 
-    // 定义一个 Key 到中文标签的映射，让显示更友好
-    const keyToLabelMap = {
+let allTitles = assaSettingsData?.global_set?.称号|| {};
+     const keyToLabelMap = {
         '达成条件': '达成条件',
         '描述': '描述',
         '外观效果': '外观效果'
         // 你可以在这里添加更多你想显示的 key 的中文映射
     };
+ /**
+ * 显示美化后的称号管理面板
+ * @param {object} assaData - 包含 global_set 的 assaData 对象
+ */
+function showTitleManager(assaData) {
+allTitles = assaData?.global_set?.称号|| {};
+    // 定义一个 Key 到中文标签的映射，让显示更友好
+
 
     let modalContent = '<div class="title-manager-list">';
     modalContent += '<h3>称号管理</h3><p class="modal-subtitle">点击称号条目可展开/收起详情</p>';
@@ -30888,7 +30888,13 @@ function showTitleManager(assaData) {
     const messageEl = document.getElementById('shop-modal-message');
 
     if (messageEl) {
+          
         messageEl.innerHTML = modalContent;
+    }
+}
+    const messageEl = document.getElementById('shop-modal-message');
+
+    if (messageEl) {
 
         // 使用更智能的事件委托来处理所有交互
         messageEl.addEventListener('click', function(event) {
@@ -30959,7 +30965,6 @@ function showTitleManager(assaData) {
             }
         });
     }
-}
  // ==========================================================
 // ========== 完整替换 populateCharacterPage 函数 ==========
 // ==========================================================
