@@ -1,6 +1,7 @@
 ## 1.界面说明和展示
-### 聊天主界面
-以下示例使用的模式是：无世界观 私聊通讯关 背景图开 简单npc档案
+### 主界面
+以下示例使用的模式是：无世界观 私聊通讯关 背景图开 简单npc档案 自定义选项区（无tag）
+设置-显示设置：字体是通用仿宋 段落行间距1.8 界面字体大小23px 消息背景透明开启 全屏模式开 界面主题切换
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a127304c-738f-402e-b048-f71099d1d6cd" />
 
 #### 顶栏
@@ -18,13 +19,22 @@
 
 #### 中间
 消息本体区域。电脑右键、手机长按可以唤出菜单。<img width="215" height="315" alt="image" src="https://github.com/user-attachments/assets/5ad71ceb-7327-42ff-b559-64d6ace9069b" />
-
+复制功能在手机上用不了。
 
 #### 底部
-选项区长按可以放在
+选项区长按可以放在令小盒中。
+
+<img width="291" height="629" alt="image" src="https://github.com/user-attachments/assets/4b21988c-adba-4522-b8be-929fffdec5e5" />
+这里可以重roll、继续或者自定义并发送qr。
+<img width="900" height="735" alt="image" src="https://github.com/user-attachments/assets/66c20ed5-b53a-4341-98b9-5b558dd5eb26" />
+RP是自选检定。
+令小盒是待发送指令。
+
+<img width="992" height="707" alt="image" src="https://github.com/user-attachments/assets/3fe36644-2564-4680-9fe6-c6ee0e100691" />
+输入框上面是npc事件。可能会有平行事件的效果。
 
 #### 右侧
-待施工，先说重要的，综小球里面是大小总结，都可以编辑删除重命名，但是因为总结的一些特殊机制，编辑和重命名会将那个总结提前到最前面，需要注意。
+先说重要的，综小球里面是大小总结，都可以编辑删除重命名，但是因为总结的一些特殊机制，编辑和重命名会将那个总结提前到最前面，需要注意。
 
 识小球很重要。
 
@@ -44,17 +54,47 @@ npc如果有好感度，就会在名字右边出现好感度进度条。好感�
 添加立绘：无论你有没有开npc立绘，你都可以使用这个功能。使用后，会在令小盒中存储指令，发送后才生效。
 可以在底部的npc标签那里看到立绘，立绘会自动用洪水填充算法去除白色背景，效果如下：
 <img width="421" height="737" alt="image" src="https://github.com/user-attachments/assets/960ed76c-5687-4b4a-bbf8-8771039cfc91" />
+自己的素材在设置-素材工坊上传。
 
+<img width="838" height="642" alt="image" src="https://github.com/user-attachments/assets/c0f03fb2-caf2-4f35-b6a7-1622b4e5487e" />
+好感度表现：当你开启了分阶段好感后，当一个npc有好感度，那么AI会生成分阶段好感。你可以自由编辑，编辑后，指令依旧会放入令小盒。
+
+能小球是你的个人信息界面，你的名字是可以点的，名字上面是你的称号，如果你开启了称号系统，那么你可以在那里管理你的称号。
+<img width="958" height="756" alt="image" src="https://github.com/user-attachments/assets/1754cdb4-e260-4a33-8fa3-2abc44e40c83" />
+
+你的装备加成、传奇属性加成、状态加成会用括号在你的属性右侧显示。点击装备栏可以进行装备的穿脱。你的背包的所有东西都可以穿上脱下。
+
+你可以在术小球主动使用你的技能或投入你的意志力。
+你的意志力如何恢复？你的行为符合你的美德时，回满；符合恶德时，意志力+1.
 
 ### 开局界面和mod说明
 
+
 ### 设置界面
+左上角是游戏成就，正文不生效。
+ <img width="850" height="531" alt="image" src="https://github.com/user-attachments/assets/a2d2c520-c53d-4528-9eb9-e1ea1e14c8d7" />
+在模组重置这里可以局内调整mod。如果你的正文生成的很多还有小剧场导致流式生成的卡卡的，可以切成非流。
+
+<img width="855" height="445" alt="image" src="https://github.com/user-attachments/assets/37776739-6f3a-439d-9b00-686e9d16f9e4" />
+这些顾名思义。好感度变速很好用，比如设置成2的话，好感度的上升和下降的速度就会减半。设置成999可以达到锁定好感度的功能，可以用于想和npc停滞在某个分阶段好感的时候。
+
+系统更新检查这里，需要注意的是，强制更新世界书可能不会保存你的自定义词条。
+
 
 ### 核心调试器
+<img width="545" height="155" alt="image" src="https://github.com/user-attachments/assets/5bc081fb-e842-41c6-a612-98d9e50b35a0" />
+比较重要的是这个摘要的设置。
+这个参数的意思是：只显示最近3楼的原本AI消息
+当AI消息达到30楼的时候，将AI消息进行一次大总结
+当大总结的数量达到20个的时候（也就是有600个AI消息，1200高度的楼层），将全部大总结再次浓缩为一个大总结。这个超级大浓缩作者亲测过了不太好用啊，哈基米有点脑力跟不上了，有时候不会大总结或者只总结最近的。为了保护存档，可以把这个设置调高一点，或者自己会的话就自己去手动大总结。这个的机制是，抵达了这个数量之后，代码会清空前面所有的大总结，只保留这一个。想自己手操的话可以在discord @assa 。
 
 
+<img width="748" height="263" alt="image" src="https://github.com/user-attachments/assets/367f0f8c-8c93-4497-8a0c-273e7282ddd9" />
+整合重构可以获取所有聊天记录的所有变量重新执行。重新处理是重新处理上一楼AI消息的变量。手动执行是执行输入框内的变量指令。
 
 ## 2.开局界面
+
+
 # memory变量系统说明文档
 
 ## 1. 系统概述
