@@ -17,7 +17,7 @@
 - 全屏模式: 开
 - 界面主题切换
 
-![主界面示例](https://github.com/user-attachments/assets/a127304c-738f-402e-b048-f71099d1d6cd)
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/2930cd3b-313e-4916-8988-07965bc5c55a" />
 
 ### 1.1 顶栏
 
@@ -73,9 +73,7 @@
 
 **令小盒:** 待发送指令
 
-![NPC事件](https://github.com/user-attachments/assets/3fe36644-2564-4680-9fe6-c6ee0e100691)
-
-输入框上面是NPC事件。可能会有平行事件的效果。
+输入框上面是NPC事件。可能会有平行事件的效果，不过更多的是显示npc当前的状态和心理。
 
 ### 1.4 右侧
 
