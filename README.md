@@ -1,4 +1,10 @@
- 
+# 界面说明
+## 1.聊天主界面
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a127304c-738f-402e-b048-f71099d1d6cd" />
+
+
+## 2.开局界面
 # memory变量系统说明文档
 
 ## 1. 系统概述
