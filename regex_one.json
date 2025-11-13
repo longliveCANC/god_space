@@ -3013,6 +3013,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .assistant-message .highlighted-quote {
+
     color: var(--text-secondary-color);
     text-shadow: 0 0 8px var(--glow-color);
     padding: 0 4px;
@@ -27551,8 +27552,8 @@ if (success) {
 
 async function autoSetNpcFilters() {
     // 检查是否启用了自动设置功能
-    const autoSetEnabled = localStorage.getItem('autoSetNpcFilter');
-    if (autoSetEnabled === 'false') {
+    const autoSetEnabled = String(localStorage.getItem('autoSetNpcFilter'));
+    if (autoSetEnabled !== 'true') {
         console.log('⏭️ 自动设置NPC为绿灯功能已禁用');
         return;
     }
@@ -28150,8 +28151,15 @@ showRollResultCard(currentRollData);
     rollCardShownThisTurn = true; // 标记已显示，防止重复
 
 }
- 
-                aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
+ if(is_simple_stream === 'true'){
+    //  aiResponseBubble.innerHTML = fullText;
+    aiResponseBubble.innerHTML = fullText.replace(/\n/g, '<br>');
+                
+ }else{
+         aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
+                
+ }
+                // aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
                 
             };
 
@@ -30359,6 +30367,7 @@ let lasttoken = 0;
 let summarys = null;
 let ISNEWMAP = "false";
 let isEmphasizeTime = "false";
+let is_simple_stream = "false";
 
     let worldBookState = {
         currentTab: 'settings', // 默认显示设定
@@ -34234,7 +34243,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
- 
+is_simple_stream =  String(chatdata.is_simple_stream||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
