@@ -28502,13 +28502,10 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
 // 在保存历史之前，检查是否需要添加时间标记
 if (isEmphasizeTime === 'true' && currentGameData) {
     
-const SafeGetValue = (value) => {
-    if (value === null || value === undefined) return '';
-    return String(value);
-};
+
 
 // 添加更深层的保护
-const timeString = `${SafeGetValue(currentGameData?.user_character?.current_location?.[0])}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期?.[0])}-${SafeGetValue(currentGameData?.时间?.[0])}-${SafeGetValue(currentGameData?.星期?.[0])} ${SafeGetValue(currentGameData?.天气?.[0])}`;
+const timeString = `${SafeGetValue(currentGameData?.user_character?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
     // 确保我们有可以修改的消息，并且时间信息不为空
     if (aiMessage && aiMessage.content && timeString.trim() !== '') {
         // 将时间标签附加到消息的末尾
