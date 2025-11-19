@@ -61,8 +61,7 @@
             justify-content: center;
             align-items: center;
             min-height:90vh;
-             max-height:800px;
-             max-width:600px;
+           
             backdrop-filter: blur(2px);
         }
  .status-container {
@@ -6589,8 +6588,11 @@ opacity: 0.6;
 }
 
 .top-controls {
-    position: absolute;
-    top: -250px;
+    position: fixed;
+
+    top: 50px;
+    left:0px;
+    right:0px;
     width: 100%;
     padding: 0 20px;
     display: flex;
@@ -6852,7 +6854,7 @@ opacity: 0.6;
     opacity: 0;
     pointer-events: none; /* 隐藏时不可交互 */
     transform: translateY(120%);
-  max-height: 70vh; /* 设置一个最大高度，比如屏幕高度的70% */
+  max-height: 60vh; /* 设置一个最大高度，比如屏幕高度的70% */
     overflow-y: auto;   /* 当内容垂直溢出时，自动显示滚动条 */
     /* --- 魔法指令结束 --- */
 }
@@ -6869,26 +6871,45 @@ opacity: 0.6;
   border-radius: 10px;
 }
 /* --- --- */
+.creator-attitude-group,
+.mod-sidebar.right {
+    /* 1. 使用 position: fixed/absolute 并设置好初始定位 */
+    position: fixed; /* 推荐使用 fixed */
+    z-index: 100;
 
+    /* 2. 隐藏元素但不脱离文档流 (这样它就不会影响 body 高度) */
+    opacity: 0;
+    pointer-events: none; /* 隐藏时，阻止鼠标事件，使其无法点击 */
+    
+    /* 3. 设置初始的平移位置 (例如，滑出/滑入效果) */
+    /* 注意：您需要为每个元素设置正确的 'bottom' 或 'top' 值，使其在隐藏时也在正常位置附近 */
+    transform: translateY(100px); /* 初始位置：向下偏移 100px */
+    
+    /* 4. 定义过渡效果 */
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+/* 针对特定元素设定其位置（在初始状态下也要设置） */
 .creator-attitude-group {
     left: 20px;
-    bottom: -11%; /* 定位基准为左下角 */
+    bottom: 20px; /* 设定一个正常的 bottom 值 */
 }
 
 .mod-sidebar.right {
-    right: 20px;  /* 定位基准为右下角 */
-    bottom: -11%; /* 维持弹出后的位置感 */
+    right: 20px;
+    bottom: 20px; /* 设定一个正常的 bottom 值 */
 }
 
- 
-/* --- 新增：侧边栏可见状态 --- */
+
+/* -------------------- 可见状态 -------------------- */
 .creator-attitude-group.is-visible,
-.mod-sidebar.is-visible {
-    opacity: 1;
-    pointer-events: auto; /* 可见时恢复交互 */
-    transform: translateY(0);
+.mod-sidebar.right.is-visible {
+    opacity: 1; /* 变得可见 */
+    pointer-events: auto; /* 恢复交互 */
+    transform: translateY(0); /* 恢复到正常位置 */
+    
+    /* ❗ 移除 display: block/none 相关的代码 */
 }
-
 
 .mod-tab {
     text-orientation: mixed;
@@ -7303,77 +7324,145 @@ opacity: 0.6;
 }
 
 #page-2 .header { display: none; }
-
-/* --- 可折叠的顶部和底部HUD --- */
+ /* =========================================
+   1. 核心容器：HUD 位置设定
+   ========================================= */
 .hud {
-    position: absolute;
+    position: fixed;
     left: 50%;
-    transform: translateX(-50%);
     width: 95%;
     max-width: 600px;
     z-index: 100;
-    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    /* 关键：父容器不设 transform 位移，确保它永远在原来的位置 */
+    transform: translateX(-50%); 
+    /* 让高度变化时不影响布局流，不需要 padding */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
- /* 2. HUD 上浮调整 */
+
+/* --- 顶部 HUD 定位 --- */
 .top-hud {
-    top: 14%; /* 从紧贴顶部改为有10px间距 */
-    transform: translate(-50%, -120%); /* 初始位置移得更远一些，保证完全隐藏 */
-   padding-bottom: 25px;
-}
-.top-hud.visible {
-    transform: translate(-50%, 0);
+    top: 10px; /* 距离顶部的距离 */
 }
 
+/* --- 底部 HUD 定位 --- */
 .bottom-hud {
-    bottom: 1%; /* 从紧贴底部改为有10px间距 */
-    transform: translate(-50%, 100%); /* 同理，初始位置更远 */
-    padding-top: 25px;
-}
-.bottom-hud.visible {
-    transform: translate(-50%, 0);
+    bottom: 10px; /* 距离底部的距离 */
 }
 
+/* =========================================
+   2. 内容区域：负责折叠/展开动画
+   ========================================= */
 .hud-content {
+    width: 100%;
     background: var(--container-bg-color);
-    border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: clamp(0.8rem, 2vw, 1.2rem); /* 响应式内边距 */
     box-shadow: 0 0 15px var(--glow-color);
     backdrop-filter: blur(5px);
+    box-sizing: border-box;
+    overflow: hidden; /* 必须：裁剪内容 */
+    
+    /* 动画核心属性 */
+    transition: 
+        max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.4s ease,
+        padding 0.4s ease,
+        border-width 0.4s ease;
 }
 
+/* --- 展开状态 (Visible) --- */
+.hud.visible .hud-content {
+    max-height: 80vh; /* 给一个足够大的高度让内容显示 */
+    opacity: 1;
+    padding: clamp(0.8rem, 2vw, 1.2rem);
+    border: 1px solid var(--border-color);
+}
+
+/* --- 折叠状态 (默认 / Hidden) --- */
+/* 注意：我们针对 .hud 没有 .visible 类时的情况 */
+.hud:not(.visible) .hud-content {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    border-width: 0; /* 隐藏边框，防止留下一条线 */
+}
+
+
+/* =========================================
+   3. 切换按钮 (Toggle)：永远可见
+   ========================================= */
 .hud-toggle {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    position: absolute; /* 绝对定位，相对于 .hud */
     width: 60px;
     height: 25px;
     background: var(--container-bg-color);
     border: 1px solid var(--border-color);
     color: var(--primary-color);
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    z-index: -1;
+    z-index: 101; /* 比 content 高 */
+    left: 50%;
+    transform: translateX(-50%); /* 水平居中 */
+    transition: all 0.3s ease;
 }
+
 .hud-toggle:hover {
     box-shadow: 0 0 10px var(--glow-color);
     color: var(--secondary-color);
 }
+
+/* --- 顶部 Toggle 位置 --- */
+/* 逻辑：顶部面板折叠时，按钮应该在内容区域的“下方”挂着 */
 .top-hud .hud-toggle {
-    bottom: 0;
+    bottom: -25px; /* 挂在 .hud 容器的最下面 */
     border-radius: 0 0 10px 10px;
-    /* 2. 让箭头向下 */
-    transform: translateX(-50%) translateY(100%);
+    border-top: none; /* 贴合处不需要边框 */
 }
+
+/* --- 底部 Toggle 位置 --- */
+/* 逻辑：底部面板折叠时，按钮应该在内容区域的“上方”挂着 */
 .bottom-hud .hud-toggle {
-    top: 0;
+    top: -25px; /* 挂在 .hud 容器的最上面 */
     border-radius: 10px 10px 0 0;
-    /* 2. 让箭头向上 */
-    transform: translateX(-50%) translateY(-100%);
+    border-bottom: none; /* 贴合处不需要边框 */
 }
+
+
+/* =========================================
+   4. 箭头图标与动画
+   ========================================= */
+.hud-toggle::before,
+.hud-toggle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 2px;
+    background-color: currentColor;
+    border-radius: 1px;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- 顶部 HUD 箭头逻辑 --- */
+/* 默认（隐藏）：需要指示“向下打开”，箭头呈 V 字形 */
+.top-hud:not(.visible) .hud-toggle::before { transform: translate(calc(-50% - 5px), -50%) rotate(45deg); }
+.top-hud:not(.visible) .hud-toggle::after  { transform: translate(calc(-50% + 5px), -50%) rotate(-45deg); }
+
+/* 展开后：需要指示“向上收起”，箭头呈 ^ 字形 */
+.top-hud.visible .hud-toggle::before { transform: translate(calc(-50% - 5px), -50%) rotate(-45deg); }
+.top-hud.visible .hud-toggle::after  { transform: translate(calc(-50% + 5px), -50%) rotate(45deg); }
+
+
+/* --- 底部 HUD 箭头逻辑 --- */
+/* 默认（隐藏）：需要指示“向上打开”，箭头呈 ^ 字形 */
+.bottom-hud:not(.visible) .hud-toggle::before { transform: translate(calc(-50% - 5px), -50%) rotate(-45deg); }
+.bottom-hud:not(.visible) .hud-toggle::after  { transform: translate(calc(-50% + 5px), -50%) rotate(45deg); }
+
+/* 展开后：需要指示“向下收起”，箭头呈 V 字形 */
+.bottom-hud.visible .hud-toggle::before { transform: translate(calc(-50% - 5px), -50%) rotate(45deg); }
+.bottom-hud.visible .hud-toggle::after  { transform: translate(calc(-50% + 5px), -50%) rotate(-45deg); }
+ 
 .points-tracker { display: flex; align-items: center; justify-content: space-around; gap: 1rem; flex-wrap: wrap; }
 #points-display-container { display: flex; align-items: center; gap: 0.8rem; }
 #points-ring-container { position: relative; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
@@ -7719,87 +7808,6 @@ opacity: 0.6;
 }
     
 
-
-/* --- 2. 优美的HUD箭头 --- */
-/* 首先，移除旧的文本箭头，给hud-toggle设置相对定位 */
-.hud-toggle {
-    position: absolute;
-    left: 50%;
-    width: 60px;
-    height: 25px;
-    background: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    border-top-color: transparent; /* 去掉和hud-content重合的边框 */
-    border-bottom-color: transparent;
-    color: var(--primary-color);
-    cursor: pointer;
-    z-index: 99; /* 提高层级 */
-    transition: all 0.3s ease;
-    transform: translateX(-50%); /* 移除Y轴位移 */
-}
-/* 移除旧的transform，防止冲突 */
-.top-hud .hud-toggle { bottom: 0; transform: translateX(-50%) translateY(100%);  border-radius: 0 0 10px 10px; border-top-color: var(--border-color);}
-.bottom-hud .hud-toggle { top: 0; transform: translateX(-50%) translateY(-100%); border-radius: 10px 10px 0 0; border-bottom-color: var(--border-color);}
-
-/* 用伪元素创造新的、可变形的箭头 */
-.hud-toggle::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 14px;
-    height: 2px;
-    background-color: currentColor;
-    border-radius: 1px;
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.top-hud .hud-toggle::before { /* 默认朝上（关闭状态） */
-    transform: translate(calc(-50% - 5px), -50%) rotate(-45deg);
-}
-.top-hud .hud-toggle::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 14px;
-    height: 2px;
-    background-color: currentColor;
-    border-radius: 1px;
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-    transform: translate(calc(-50% + 5px), -50%) rotate(45deg);
-}
-
-.bottom-hud .hud-toggle::before { /* 默认朝下（关闭状态） */
-    transform: translate(calc(-50% - 5px), -50%) rotate(45deg);
-}
-.bottom-hud .hud-toggle::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 14px;
-    height: 2px;
-    background-color: currentColor;
-    border-radius: 1px;
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-    transform: translate(calc(-50% + 5px), -50%) rotate(-45deg);
-}
-
-/* HUD展开时，箭头旋转打开 */
-.top-hud.visible .hud-toggle::before {
-    transform: translate(calc(-50% - 5px), -50%) rotate(45deg);
-}
-.top-hud.visible .hud-toggle::after {
-    transform: translate(calc(-50% + 5px), -50%) rotate(-45deg);
-}
-
-.bottom-hud.visible .hud-toggle::before {
-    transform: translate(calc(-50% - 5px), -50%) rotate(-45deg);
-}
-.bottom-hud.visible .hud-toggle::after {
-    transform: translate(calc(-50% + 5px), -50%) rotate(45deg);
-}
 
  
 /* 快照管理面板的样式 */
@@ -11775,7 +11783,7 @@ pointer-events: auto;
     <div class="top-controls">
         <button id="back-button" class="top-button" style="display: none;">返回</button>
         <button id="restore-btn" class="top-button">恢复上一次对话</button>
-         <button id="settings-btn-init" title="设置" style=" pointer-events: auto;transform: scale(1.5);">
+         <button id="settings-btn-init" title="设置" style=" pointer-events: auto;transform: scale(1.5);background: transparent;">
     ⚙
 </button>
     </div>
@@ -13819,7 +13827,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.12';
+let current_game_version = '3.2.13';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -17133,12 +17141,83 @@ async function initializeCurrentGameData() {
     }
 }
 async function runInitializationMagic() {// 加上 async
-    /**
- * 妈妈的星辰碰撞检测魔法
- * @param {object} rect1 - 新星辰的边界 { x, y, width, height }
- * @param {array} existingRects - 已存在星辰的边界数组
- * @returns {boolean} - 如果碰撞则返回 true，否则返回 false
- */
+ 
+
+ const worldbookName = '小蝌蚪找妈妈-同层版'; // 目标世界书名称
+    const maxRetries = 5; // 最大重试次数
+    let isWorldbookFound = false;
+
+    toastr.info(`正在初始化... 开始搜寻世界书「${worldbookName}」`);
+
+    // --- 第一部分：循环检测世界书是否存在 (最多 5 秒) ---
+    for (let i = 0; i < maxRetries; i++) {
+        const allBooks = TavernHelper.getWorldbookNames(); // 获取当前所有世界书列表
+        
+        if (allBooks.includes(worldbookName)) {
+            isWorldbookFound = true;
+            console.log(`[检测成功] 在第 ${i + 1} 次尝试中发现了世界书: ${worldbookName}`);
+            break; // 找到了，跳出循环
+        }
+
+        // 如果还没找到，且不是最后一次尝试
+        if (i < maxRetries - 1) {
+            console.log(`[检测未就绪] 未找到世界书，1秒后重试... (${i + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待 1 秒
+        }
+    }
+
+    // --- 第二部分：根据检测结果决定是否继续 ---
+    if (!isWorldbookFound) {
+        toastr.error(`初始化失败：在 ${maxRetries} 秒内未检测到世界书「${worldbookName}」。`, '请检查是否已导入该世界书。');
+        console.error(`[放弃] 超过最大重试次数，停止初始化。`);
+        return; // 停止执行后续代码
+    }
+
+    // --- 第三部分：世界书存在，执行绑定检查逻辑 (你提供的逻辑) ---
+    toastr.success(`已确认世界书存在，正在检查绑定状态...`);
+    
+    try {
+        const bindings = await TavernHelper.getCharWorldbookNames('current');
+
+        // 检查当前绑定是否正确
+        if (bindings && bindings.primary === worldbookName) {
+            toastr.success(`当前角色已和「${worldbookName}」完美绑定。`);
+            console.log(`守护咒语确认：与「${worldbookName}」的链接正确无误。`);
+        } else {
+            // 绑定不匹配，且我们已知世界书存在，直接尝试自动绑定
+            const currentPrimary = (bindings && bindings.primary) ? bindings.primary : '无/其他';
+            toastr.warning(`绑定不匹配 (当前: ${currentPrimary})，正在自动修正...`);
+            console.warn(`需要修正绑定：期望「${worldbookName}」，当前「${currentPrimary}」。`);
+
+            try {
+                // 构建新的绑定对象
+                const newBindings = bindings || { primary: null, additional: [] };
+                newBindings.primary = worldbookName;
+
+                // 执行重绑定 API
+                await TavernHelper.rebindCharWorldbooks('current', newBindings);
+                
+                // 等待一下让后端反应
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // 二次验证
+                const verifyBindings = await TavernHelper.getCharWorldbookNames('current');
+                if (verifyBindings && verifyBindings.primary === worldbookName) {
+                    toastr.success(`自动绑定成功！已链接至「${worldbookName}」。`);
+                    console.log(`自动绑定成功。`);
+                } else {
+                    toastr.error(`自动绑定似乎未生效，请手动检查设置。`);
+                }
+            } catch (bindError) {
+                toastr.error(`自动绑定过程发生错误。`);
+                console.error('自动绑定异常:', bindError);
+            }
+        }
+    } catch (error) {
+        toastr.error('读取角色绑定信息时出错。');
+        console.error('执行绑定检查时发生错误:', error);
+    }
+  
 function isColliding(rect1, existingRects) {
     for (const rect2 of existingRects) {
         // AABB 碰撞检测算法
@@ -22432,7 +22511,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
             // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
@@ -29014,7 +29093,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+          find_regex: "/<(variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
             // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
@@ -29229,9 +29308,9 @@ modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数
         }
         
         // 退出全屏时恢复样式
-        mainWrapper.style.minHeight = '90vh';
-        bottombtn.style.bottom = '1%';
-        topbtn.style.top = '14%';
+        mainWrapper.style.minHeight = '80vh';
+          bottombtn.style.bottom = '100px';
+        topbtn.style.top = '100px';
         fullscreenButton2.textContent = '进入全屏';
     }
 });
@@ -29250,7 +29329,7 @@ fullscreenButton.addEventListener('click', () => {
         });
 
         mainWrapper.style.minHeight = '100vh';
-        bottombtn.style.bottom = '5%';
+     bottombtn.style.bottom = '5%';
         topbtn.style.top = '17%';
 
         // ✨看，按钮变身了！✨
@@ -29265,8 +29344,8 @@ fullscreenButton.addEventListener('click', () => {
         }
 
         mainWrapper.style.minHeight = '80vh';
-        bottombtn.style.bottom = '1%';
-        topbtn.style.top = '14%';
+       bottombtn.style.bottom = '100px';
+        topbtn.style.top = '100px';
 
         // ✨它又变回来了！✨
         // 变成了“展开”的模样，随时准备下一次出发
