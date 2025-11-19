@@ -61,7 +61,8 @@
             justify-content: center;
             align-items: center;
             min-height:90vh;
-             
+             max-height:800px;
+             max-width:600px;
             backdrop-filter: blur(2px);
         }
  .status-container {
@@ -2727,7 +2728,7 @@ input[type="range"]::-moz-range-thumb {
     overflow: hidden;
 }
 #chat-display-area::before {
-    content: '';
+    /* content: '';
     position: fixed;
     top: 0;
     left: 0;
@@ -2738,9 +2739,9 @@ input[type="range"]::-moz-range-thumb {
         var(--primary-color) 50%, 
         transparent 100%);
     box-shadow: 0 0 10px var(--glow-color);
-    /* animation: fullViewportScan 5s linear infinite; */
+    animation: fullViewportScan 5s linear infinite;
     z-index: 1;
-    pointer-events: none;
+    pointer-events: none; */
 }
 @keyframes fullViewportScan {
     0% { transform: translateY(-100vh); opacity: 0; }
@@ -2755,10 +2756,10 @@ input[type="range"]::-moz-range-thumb {
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
+    /* background: 
         radial-gradient(circle at 10% 20%, var(--glow-color) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, var(--glow-color) 0%, transparent 40%);
-    animation: energyFlow 6s ease-in-out infinite alternate;
+    animation: energyFlow 6s ease-in-out infinite alternate; */
     opacity: 0.1;
     pointer-events: none;
 }
@@ -2866,7 +2867,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .message-bubble::before {
-   
+/*    
     content: '';
     position: absolute;
     top: 0;
@@ -2877,7 +2878,7 @@ input[type="range"]::-moz-range-thumb {
         transparent 0%, 
         var(--secondary-color) 50%, 
         transparent 100%);
-   animation: leftLineScan 4s linear infinite;
+   animation: leftLineScan 4s linear infinite; */
 }
 
 .message-bubble p {
@@ -2965,7 +2966,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .assistant-message::before {
-    content: '01001010 01000001 01001001';
+    /* content: '01001010 01000001 01001001';
     position: absolute;
     top: -5px;
     right: 10px;
@@ -2974,7 +2975,7 @@ input[type="range"]::-moz-range-thumb {
     opacity: 0.3;
     font-family: 'Courier New', monospace;
     animation: binaryFlow 8s linear infinite;
-    pointer-events: none;
+    pointer-events: none; */
 }
 
 @keyframes binaryFlow {
@@ -2998,7 +2999,7 @@ input[type="range"]::-moz-range-thumb {
     position: relative;
 }
 
-.assistant-message i::after, .assistant-message em::after {
+/* .assistant-message i::after, .assistant-message em::after {
     content: '';
     position: absolute;
     bottom: -2px;
@@ -3010,7 +3011,7 @@ input[type="range"]::-moz-range-thumb {
         var(--secondary-color) 50%, 
         transparent 100%);
     animation: underlineGlow 3s ease-in-out infinite;
-}
+} */
 
 .assistant-message .highlighted-quote {
 
@@ -3270,7 +3271,7 @@ box-shadow: 0 0 8px var(--glow-color);
             border-radius: 8px;
             padding: 25px 30px;
             cursor: pointer;
-            box-shadow: 0 0 15px var(--glow-color);
+            /* box-shadow: 0 0 15px var(--glow-color); */
             position: absolute;
             width: 90%;
             max-width: 800px;
@@ -11699,12 +11700,68 @@ pointer-events: auto;
         font-size: 20px;
     }
 }
+
+/* danmu  */
+/* --- 弹幕动画定义 --- */
+@keyframes danmaku-scroll {
+  from { transform: translateX(100vw); }
+  to { transform: translateX(-100%); }
+}
+
+/* --- 弹幕容器样式 --- */
+#danmu-overlay-container {
+  /* 保持上面 HTML 中的样式不变 */
+}
+
+.danmaku-track {
+  position: absolute;
+  /* 确保轨道宽度至少为屏幕宽度的两倍，以实现无缝循环，但使用 max-content 更好 */
+  width: max-content; 
+  white-space: nowrap; /* 防止弹幕内容换行 */
+  left: 0;
+  /* 应用动画 */
+  animation-name: danmaku-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  
+  /* 应用透明度变量 */
+  opacity: var(--danmu-opacity, 0.7);
+  
+  /* 动画暂停状态，用于开关控制 */
+  animation-play-state: running; 
+}
+
+/* 弹幕内容样式，使用主题变量 */
+.danmaku-content {
+  /* 弹幕内容间距，用于分隔多条弹幕 */
+  padding: 0 40px; 
+  font-weight: bold;
+  font-family: var(--base-font-family);
+  
+  /* 字体大小变量 */
+  font-size: var(--danmu-font-size, 22px); 
+  
+  /* 默认颜色为白色或主题色，将被JS覆盖为随机色 */
+  color: var(--text-color, #e6f1ff); 
+  
+  /* 弹幕阴影，增加可读性 */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9), -1px -1px 2px rgba(0, 0, 0, 0.9);
+  
+  /* 确保内容是内联块，以便设置 padding 和对齐 */
+  display: inline-block; 
+}
+
+/* 弹幕关闭时，暂停动画并隐藏容器 */
+#danmu-overlay-container.hidden {
+  display: none;
+}
   </style>
  
 </head>
 <body>
 
- 
+ <div id="danmu-overlay-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index:999999;">
+  </div>
     <div id="initialization-container" style="display: none;">
       
         <div id="dynamic-background">
@@ -11777,7 +11834,7 @@ pointer-events: auto;
              文明已死。红月之夜的怪物、核辐射的威胁，还是永冬的严寒——选择你的末日模式，然后...证明人类不会灭绝。
         </div>
         <input type="radio" id="mode-wasteland" name="world-mode" value="54">
-        <div class="bookmark-button" data-tooltip="进入无世界观模式-请跳过第二页，并使用手动发送，然后删除【令】里的全部内容，填写你的自定义开局/指令"></div>
+        <div class="bookmark-button" data-tooltip="进入无世界观模式-请跳过第二页，并使用手动发送，然后自己检查并编辑【令】小盒里的内容，填写你的自定义开局/指令"></div>
     </div>
 
 </div>
@@ -11805,6 +11862,7 @@ pointer-events: auto;
           <div class="mod-tab" data-for="things-on" data-name="things-mode" data-off-id="things-off" style="display: none;">备忘录</div>
           <div class="mod-tab" data-for="time-on" data-name="time-mode" data-off-id="time-off" >强调时间</div>
           <div class="mod-tab" data-for="spacialdate-on" data-name="spacialdate-mode" data-off-id="spacialdate-off" >特殊日期</div>
+            <div class="mod-tab" data-for="danmu-on" data-name="danmu-mode" data-off-id="danmu-off" >b站弹幕</div>
     </div>
 
    <div class="sidebar-trigger right">
@@ -11814,6 +11872,7 @@ pointer-events: auto;
     </div>
     <div class="mod-sidebar right">
         <div class="mod-label">骰子与战斗</div>
+        <div class="mod-tab" data-for="dice-0" data-name="dice-level">关骰子</div>
           <div class="mod-tab" data-for="dice-1" data-name="dice-level">简单骰</div>
         <div class="mod-tab" data-for="dice-2" data-name="dice-level">困难骰</div>
         <div class="mod-tab" data-for="dice-3" data-name="dice-level">炼狱骰</div>
@@ -11866,7 +11925,7 @@ pointer-events: auto;
         <input type="radio" id="map-none" name="map-mode" value="off">
  
    
-        
+        <input type="radio" id="dice-0" name="dice-level" value="89" >
            <input type="radio" id="dice-1" name="dice-level" value="61" >
         <input type="radio" id="dice-2" name="dice-level" value="59" checked>
         <input type="radio" id="dice-3" name="dice-level" value="60">
@@ -11903,6 +11962,10 @@ pointer-events: auto;
 
            <input type="radio" id="spacialdate-on" name="spacialdate-mode" value="on" > 
         <input type="radio" id="spacialdate-off" name="spacialdate-mode" value="off" checked>
+
+             <input type="radio" id="danmu-on" name="danmu-mode" value="on" checked> 
+        <input type="radio" id="danmu-off" name="danmu-mode" value="off" >
+
                 <input type="radio" id="behavior-on" name="behavior-mode" value="52" checked>
         <input type="radio" id="behavior-off" name="behavior-mode" value="53">
              <input type="radio" id="cg-on" name="cg-mode" value="45" checked>
@@ -13182,7 +13245,7 @@ pointer-events: auto;
                     <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>
                      <div class="bookmark" data-tab="npc" id="world_npc_bookmark">世界人物</div>
                     <div class="bookmark active" data-tab="settings" id="world_settings_bookmark">世界设定</div>
-                    <div class="bookmark" data-tab="things" id="things_bookmark">备忘录</div>
+                    <div class="bookmark" data-tab="global_备忘录" id="things_bookmark">备忘录</div>
                      <div class="bookmark" data-tab="the_created" id="the_created_bookmark">$#%</div> 
                    
                 </div>
@@ -13438,6 +13501,49 @@ pointer-events: auto;
                     <label for="font-family-selector">界面字体</label>
                     <select id="font-family-selector" class="control-btn" style="width: 220px; text-align: left; padding: 5px 8px;"></select>
                 </div>
+                <div class="setting-item">
+          <label for="danmu-toggle">背景弹幕开关</label>
+          <div class="switch-container">
+            <button id="danmu-toggle" class="switch-btn" data-state="on">开启</button>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label for="danmu-opacity-slider">弹幕透明度</label>
+          <div class="slider-controls">
+            <input type="range" id="danmu-opacity-slider" min="0.1" max="1.0" step="0.05" value="0.7">
+            <span id="danmu-opacity-value">0.7</span>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label for="danmu-size-slider">弹幕字体大小</label>
+          <div class="slider-controls">
+            <input type="range" id="danmu-size-slider" min="16" max="36" step="1" value="22">
+            <span id="danmu-size-value">22px</span>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label for="danmu-height-slider">弹幕显示高度</label>
+          <div class="slider-controls">
+            <input type="range" id="danmu-height-slider" min="10" max="100" step="5" value="100">
+            <span id="danmu-height-value">100%</span>
+          </div>
+        </div>
+
+                <div class="setting-item">
+          <label for="danmu-speed-slider">弹幕流速</label>
+          <div class="slider-controls">
+            <input type="range" id="danmu-speed-slider" min="0.1" max="4.0" step="0.1" value="1.5">
+            <span id="danmu-speed-value">x1.5</span>
+          </div>
+        </div>
+
+     <div class="setting-item">
+          <label for="danmu-count-slider">单条轨道弹幕数量</label>
+          <div class="slider-controls">
+                        <input type="range" id="danmu-count-slider" min="1" max="10" step="1" value="2">
+            <span id="danmu-count-value">2</span>
+          </div>
+        </div>
             </div>
         </div>
 
@@ -13713,7 +13819,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.11';
+let current_game_version = '3.2.12';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -16950,8 +17056,7 @@ function _replaceUserPlaceholder(data, userName) {
 async function initializeCurrentGameData() {
     try {
         console.log("[Nova's Love] 💖 守护咒语触发：正在为你检查并从世界本源初始化...");
-        toastr.info('变量没有初始化，可能是酒馆卡顿导致初始化错误，将重新初始化。以防万一，请检查一下脚本是否正常开启。若已开启，则只需等待。', '提示', {timeOut: 7000});
-
+ 
         const lorebookName = "小蝌蚪找妈妈-同层版";
         const entryName = "[memoryinit]";
         const allEntries = await getLorebookEntries(lorebookName);
@@ -17020,7 +17125,7 @@ async function initializeCurrentGameData() {
         }
 
         console.log("[Nova's Love] ✅ 世界本源(chat)与临时数据(window)均已通过守护咒语成功初始化！");
-        toastr.success('数据已重新初始化，请继续你的冒险。');
+        toastr.success('数据已初始化，请继续你的冒险。');
 
     } catch (error) {
         console.error("[Nova's Love] ❌ 在执行守护咒语 initializeCurrentGameData 时发生严重错误:", error);
@@ -19342,6 +19447,7 @@ async function handleModeSelection() {
       const thingsvalue = document.querySelector('input[name="things-mode"]:checked').value;
           const timevalue = document.querySelector('input[name="time-mode"]:checked').value;
      const spacialdatevalue = document.querySelector('input[name="spacialdate-mode"]:checked').value;
+        const danmuvalue = document.querySelector('input[name="danmu-mode"]:checked').value;
     
         const behaviorValue = document.querySelector('input[name="behavior-mode"]:checked').value;
         const cgValue = document.querySelector('input[name="cg-mode"]:checked').value;
@@ -19372,7 +19478,9 @@ async function handleModeSelection() {
                 parseInt(livevalue),parseInt(battlevalue),parseInt(thingsvalue),
                 parseInt(timevalue),parseInt(selectednpcinfo)
             ];
-
+            if(parseInt(diceLevel) != 89 ){
+ uidsToEnable.push(21);
+            }
             if (parseInt(selectedWorldModeValue) == 34) {
                
                 uidsToEnable.push(65,64);
@@ -19389,6 +19497,10 @@ async function handleModeSelection() {
 
             if(spacialdatevalue === 'on'){
                 uidsToEnable.push(42, 73);
+            }
+
+                    if(danmuvalue === 'on'){
+                uidsToEnable.push(85);
             }
   if (npcLOVEmode === 'on') {
                 uidsToEnable.push(65,64);
@@ -19417,7 +19529,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -20601,6 +20713,8 @@ if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || t
 
             const selectedClass = selectedClassInfo.name;
             const classCommand = selectedClassInfo.command || '';
+    const selectedWorldModeValue = document.querySelector('input[name="world-mode"]:checked').value;
+    
 
             // --- 咒语拼接魔法 (现在是坚不可摧的了) ---
             finalCommand = `
@@ -20616,7 +20730,7 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
 
 <request:创作指令：生成一个详细、具体、充满沉浸感的末日开局场景。场景必须紧密结合global_set.settings中的【身份阶层】和【时间节点】进行描绘。例如，一个【特权精英】在【潜伏的开端】可能正在私人会所商谈，对窗外的异常毫不在意；而一个【底层挣扎者】在【末日中途】则可能正在废墟中躲避怪物。严格遵循写作指导、时间线指导、Cognitive_Boundaries（认知屏障）！！设定信息不要直接在正文说明，而是通过正文和人物视角体现！>
 `;
-            // 末日世界没有安全区概念，我们总是直接开始
+         
             // isMission 参数在这里被忽略
                  if (!isMission) {
                 // 当你选择进入安全区时
@@ -20625,12 +20739,11 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
               if (customText) {
                 finalCommand += `\n<request:额外要求：${customText}>`;
             }
-
-        } else if (customText) {
-            // --- 自定义指令的逻辑保持不变 ---
-            finalCommand = customText.trim().startsWith('<') ? customText : `<${customText}>`;
-
-        } else {
+    const selectedWorldModeValue2 = document.querySelector('input[name="world-mode"]:checked').value;
+    if(parseInt(selectedWorldModeValue2) ===62){
+        finalCommand = '';
+    }
+        }  else {
             // --- 其他所有世界的通用篇章 ---
              const camp = document.getElementById('paradise-camp').value;
              const paradiseIdentity = document.getElementById('paradise-identity').value;
@@ -20913,12 +21026,12 @@ async function saveHistory() {
             };
         }, { type: 'chat' });
  
-        await updateVariablesWith(old_variables => {
-            return {
-                ...old_variables,
-                zeroLevelHistory: conversationHistory,
-            };
-        }, { type: 'message', message_id: 0 });
+        // await updateVariablesWith(old_variables => {
+        //     return {
+        //         ...old_variables,
+        //         zeroLevelHistory: conversationHistory,
+        //     };
+        // }, { type: 'message', message_id: 0 });
 
         // console.log("历史记录已成功且安全地更新到 chatmessage(0).data、chat 变量域和 message(0) 变量域中。");
 
@@ -21012,7 +21125,7 @@ async function renderReadingModeChapter(msg) {
     );
     // 2. 清理内容，但保留所有非交互性标签
     let renderedHtml = pureContent
-        .replace(/<(thinking|think|battle|guide|options|forum_threads|shop_item|表现总结|group_chat)>[\s\S]*?<\/\1>/gs, '')
+        .replace(/<(battle|guide|options|forum_threads|shop_item|表现总结|group_chat)>[\s\S]*?<\/\1>/gs, '')
         .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, ''); // 简化清理规则
 
 
@@ -21236,7 +21349,7 @@ window.addEventListener('message', function(event) {
         // 魔法第二步：现在，我们的`processedContent`内部所有 `<html>` 都已经是安全的占位符了，
         // 接下来我们才处理其他的标签和格式
         const pureContent = protectedHtmlContent
-         .replace(/<(thinking|think|guide)>[\s\S]*<\/\1>/g, '')
+  
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
@@ -21592,7 +21705,7 @@ async function renderHistory(is_entry = false) {
 
 function getChatConfig(key, defaultValue) {
     try {
-        const chatVars = TavernHelper.getVariables({ type: 'message' });
+        const chatVars = TavernHelper.getVariables({ type: 'chat' });
         // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
         // 这比 chatVars.assa_data.config[key] 更安全
         const value = _.get(chatVars, `assa_data.config.${key}`);
@@ -22324,18 +22437,33 @@ async function performRegexUpdate() {
         };
 
 
-        // 第四步：构建全新的、纯净的角色法则世界！这个世界里，只有你指定的两大支柱。
- const finalCharacterRules = [
-            updatedPurgeRule,   // ♥ 净化法则在前！
-            updatedUnifiedRule, // ♥ 统一法则在后！
-        ];
+ // 1. 过滤掉旧的“统一”和“去除1”法则，保留所有其他的法则。
+const otherCharacterRules = allCharacterRules.filter(
+    rule => rule.script_name !== '统一' && rule.script_name !== '去除1'
+);
 
-        // 第五步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
-        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
+// 2. 构建包含两大支柱的头部列表。
+// 注意：updatedPurgeRule 现在是 updatedPurgeRule，但它继承了旧“去除1”的所有属性。
+// 如果您想在列表中显示的 script_name 仍然是 '去除1'，您可以保留它。
+const newTopRules = [
+    updatedPurgeRule,   // ♥ 净化法则在前！
+    updatedUnifiedRule, // ♥ 统一法则在后！
+];
 
-        toastr.success(`正则已仅留下“统一”与“去除1”！`);
+// 3. 将新的两大支柱放在其他法则的前面，形成最终的角色法则列表。
+const finalCharacterRules = [
+    ...newTopRules,
+    ...otherCharacterRules,
+];
 
-    } catch (error) {
+
+// 第五步：应用新的完整法则列表！用这个包含所有新旧法则的列表，完全替换掉所有旧的角色法则。
+// 这里的 replaceTavernRegexes 是对整个列表的替换操作，但因为列表已包含所有旧法则，所以达到了“更新并置顶”的效果。
+await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
+
+toastr.success(`正则已更新“统一”与“去除1”并置于最前，其他正则已保留！`);
+
+} catch (error) {
         console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
         toastr.error('更新失败了。请查看控制台中的详细记录，并将信息告知assa。');
     }
@@ -22905,6 +23033,22 @@ function processSpecialModulesInMessage(content) {
     // 先移除thinking/think/guide标签内容
     const cleanedContent = content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, '');
  
+
+    const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>([\s\S]*?)<\/danmu>/gs)];
+  if (allDanmuMatches.length > 0) {
+    const lastDanmuMatch = allDanmuMatches[allDanmuMatches.length - 1];
+    const danmuData = lastDanmuMatch[1].trim();
+    
+    if (danmuData) {
+      // 弹幕数据非空时才渲染
+      if (typeof renderDanmu === 'function') {
+        loadDanmuSettings();
+        renderDanmu(danmuData);
+      } else {
+        console.error("[Danmu Module] 弹幕渲染函数 `renderDanmu` 未定义。请确保在 DOM 加载完成后引入此函数。");
+      }
+    }
+  }
     // --- 调度"选项区" 
     const allOptionsMatches = [...cleanedContent.matchAll(/<options>([\s\S]*?)<\/options>/gs)];
     if (allOptionsMatches.length > 0) {
@@ -23148,7 +23292,7 @@ delayedUpdate(finalMessage.content);
         // 魔法第二步：现在，我们的`processedContent`内部所有 `<html>` 都已经是安全的占位符了，
         // 接下来我们才处理其他的标签和格式
         const pureContent = protectedHtmlContent
-         .replace(/<(thinking|think|guide)>[\s\S]*<\/\1>/g, '')
+      
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
@@ -23452,7 +23596,21 @@ iframe.srcdoc = `<!DOCTYPE html>
  
     // 先移除thinking/think/guide标签内容
     const cleanedContent = content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, '');
- 
+ const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>([\s\S]*?)<\/danmu>/gs)];
+  if (allDanmuMatches.length > 0) {
+    const lastDanmuMatch = allDanmuMatches[allDanmuMatches.length - 1];
+    const danmuData = lastDanmuMatch[1].trim();
+    
+    if (danmuData) {
+      // 弹幕数据非空时才渲染
+      if (typeof renderDanmu === 'function') {
+        loadDanmuSettings();
+        renderDanmu(danmuData);
+      } else {
+        console.error("[Danmu Module] 弹幕渲染函数 `renderDanmu` 未定义。");
+      }
+    }
+  }
     // --- 调度"选项区" 
     const allOptionsMatches = [...cleanedContent.matchAll(/<options>([\s\S]*?)<\/options>/gs)];
     if (allOptionsMatches.length > 0) {
@@ -23888,7 +24046,7 @@ async function restoreFromSnapshot(initialTurnId) {
         if (snapshotData) {
             console.log(`[Nova的记忆保险箱] 找到了回合 ${finalTurnId} 的记忆快照，准备恢复...`);
             await updateVariablesWith(() => snapshotData, { type: 'chat' });
-            await updateVariablesWith(() => snapshotData, { type: 'message' });
+ 
             await initDisplay();
 
             // ✨ 给我的孩子一个更贴心的提示 ✨
@@ -23956,7 +24114,7 @@ async function restoreFromLatestSnapshot() {
                             console.log('[Nova的记忆保险箱] 开始应用快照数据...');
                             // 核心恢复逻辑
                             await updateVariablesWith(() => snapshotData, { type: 'chat' });
-                            await updateVariablesWith(() => snapshotData, { type: 'message' });
+               
 
                             // ❤️ 这是你最棒的点子，我的孩子！检查并确保聊天界面不会空着 ❤️
                             const chatVars = await TavernHelper.getVariables({ type: 'chat' });
@@ -24082,7 +24240,7 @@ window.addEventListener('click', () => {
 }
 function getChatConfig(key, defaultValue) {
     try {
-        const chatVars = TavernHelper.getVariables({ type: 'message' });
+        const chatVars = TavernHelper.getVariables({ type: 'chat' });
         // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
         // 这比 chatVars.assa_data.config[key] 更安全
         const value = _.get(chatVars, `assa_data.config.${key}`);
@@ -24544,7 +24702,7 @@ function updateRerollButtonState(){
     }
 
         try {
-            const messageZero =  await TavernHelper.getVariables({ type: 'message' });
+            const messageZero =  await TavernHelper.getVariables({ type: 'chat' });
             if (messageZero && Array.isArray(messageZero.zeroLevelHistory)) {
                 conversationHistory = messageZero.zeroLevelHistory;
                 // 初始化时也缓存一下变量，以备初次重写
@@ -24586,12 +24744,12 @@ async function saveHistory() {
         }, { type: 'chat' });
 
         // 更新 message 作用域 (针对第 0 楼层) 的变量
-        await updateVariablesWith(old_variables => {
-            return {
-                ...old_variables,
-                zeroLevelHistory: conversationHistory,
-            };
-        }, { type: 'message', message_id: 0 });
+        // await updateVariablesWith(old_variables => {
+        //     return {
+        //         ...old_variables,
+        //         zeroLevelHistory: conversationHistory,
+        //     };
+        // }, { type: 'message', message_id: 0 });
 
         // console.log("历史记录已成功且安全地更新到 chatmessage(0).data、chat 变量域和 message(0) 变量域中。");
 
@@ -25387,148 +25545,115 @@ _memoryOperation: function(currentData, path, key, value) {
         return currentData;
     }
 
-        // ✨✨✨ 全新升级的、充满智慧的导航魔法 ✨✨✨
-    // 这是我们修正的核心，我的孩子。
-    let target = currentData;
-    const pathParts = path.split('.').filter(p => p);
+    // 先处理 value 的 JSON 解析（统一在最开始处理）
+    let finalValue = value;
+    if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
+        try {
+            finalValue = JSON.parse(value);
+        } catch (e) {
+            finalValue = value;
+        }
+    }
 
-for (const part of pathParts) {
-    if (part === '好感度' || key === '好感度') {
-        console.log('path and key:', path, key);
+    // 🛡️ 类型保护检查（在路径导航之前）
+    let checkTarget = currentData;
+    const pathParts = path.split('.').filter(p => p);
+    
+    for (const part of pathParts) {
+        if (checkTarget[part] === undefined || checkTarget[part] === null) {
+            break;
+        }
+        checkTarget = checkTarget[part];
+    }
+    
+    if (checkTarget && checkTarget.hasOwnProperty(key)) {
+        const currentValue = checkTarget[key];
+        const isCurrentObject = typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue);
+        const isNewSimpleType = typeof finalValue === 'string' || typeof finalValue === 'number' || typeof finalValue === 'boolean';
         
-        let oldValue = 0; // 在外部声明
-        let fullPath = ''; // 完整路径
+        if (isCurrentObject && isNewSimpleType) {
+            console.warn(`[Assa] 🚫 类型保护：禁止用简单类型 (${typeof finalValue}) 覆盖对象类型。路径: ${path}.${key}，当前值:`, currentValue);
+            return currentData;
+        }
+    }
+
+    // 💝 好感度特殊处理检测
+    const isFavorabilityOperation = pathParts.includes('好感度') || key === '好感度';
+    
+    if (isFavorabilityOperation) {
+        console.log('检测到好感度操作 - path:', path, 'key:', key);
         
-        if (part === '好感度') {
-            // path = 'global_set.npc.不死川玄弥.好感度'
-            // 需要移除最后的 '.好感度' 来获取父对象路径
-            const pathArray = path.split('.');
-            const parentPath = pathArray.slice(0, -1); // 去掉最后的 '好感度'
-            
-            // 逐层访问获取父对象
-            let parentObj = target;
-            for (const p of parentPath) {
-                parentObj = parentObj[p];
-                if (!parentObj) break;
+        // 导航到目标位置
+        let target = currentData;
+        for (const part of pathParts) {
+            if (target[part] === undefined || target[part] === null) {
+                target[part] = {};
             }
-            
-            oldValue = parentObj?.['好感度'] || 0;
-        } else if (key === '好感度') {
-            // path = 'global_set.npc.不死川玄弥', key = '好感度'
-            const pathArray = path.split('.');
-            
-            // 逐层访问获取对象
-            let obj = target;
-            for (const p of pathArray) {
-                obj = obj[p];
-                if (!obj) break;
-            }
-            
-            oldValue = obj?.[key] || 0;
+            target = target[part];
         }
         
-        const newValue = arguments[arguments.length - 1]; // 获取新值
-        const speedSetting = parseFloat(localStorage.getItem('favorabilitySpeed') || '1'); // 获取变速设置，默认为1
+        // 获取旧值
+        let oldValue = 0;
+        if (key === '好感度') {
+            oldValue = target[key] || 0;
+        } else {
+            // 如果 '好感度' 在路径中（pathParts 包含它）
+            // 这种情况比较少见，但我们也处理
+            oldValue = target['好感度'] || 0;
+        }
+        
+        const newValue = typeof finalValue === 'number' ? finalValue : parseFloat(finalValue) || 0;
+        const speedSetting = parseFloat(localStorage.getItem('favorabilitySpeed') || '1');
         
         console.log('========== 好感度变速计算 ==========');
         console.log('旧值:', oldValue);
         console.log('新值:', newValue);
         console.log('变速倍率:', speedSetting);
         
-        // 计算差值
         const difference = newValue - oldValue;
         console.log('原始差值:', difference);
         
-        // 应用变速：差值除以变速倍率
         const adjustedDifference = difference / speedSetting;
         console.log('调整后差值:', adjustedDifference);
         
-        // 计算最终值
-        const finalValue = oldValue + adjustedDifference;
-        console.log('计算最终值:', finalValue);
+        const finalCalculatedValue = oldValue + adjustedDifference;
+        console.log('计算最终值:', finalCalculatedValue);
         
-        // 四舍五入到0.1精度
-        const roundedValue = Math.round(finalValue * 10) / 10;
+        const roundedValue = Math.round(finalCalculatedValue * 10) / 10;
         console.log('四舍五入后:', roundedValue);
         console.log('====================================');
         
-        // 设置新值 - 同样需要逐层访问
-        if (part === '好感度') {
-            const pathArray = path.split('.');
-            const parentPath = pathArray.slice(0, -1);
-            
-            let parentObj = target;
-            for (const p of parentPath) {
-                parentObj = parentObj[p];
-            }
-            
-            parentObj['好感度'] = roundedValue;
-        } else if (key === '好感度') {
-            const pathArray = path.split('.');
-            
-            let obj = target;
-            for (const p of pathArray) {
-                obj = obj[p];
-            }
-            
-            obj[key] = roundedValue;
-        }
-
+        target[key] = roundedValue;
+        
+        // 执行背包清理后返回
+        this._cleanupBackpack(currentData);
         return currentData;
     }
-        
-        // 如果路径上的这一站还不存在，我们就为它创建一个新的中转站（对象）
+
+    // ✨✨✨ 标准路径导航 ✨✨✨
+    let target = currentData;
+    for (const part of pathParts) {
         if (target[part] === undefined || target[part] === null) {
             target[part] = {};
         }
-        // 最关键的检查：如果这一站存在，但它是一封“信”（字符串）...
         else if (typeof target[part] === 'string') {
-            // ...我们就温柔地把它收进一个带 "info" 标签的“小盒子”（对象）里
             const originalString = target[part];
             target[part] = { "info": originalString };
             console.log(`[Assa] 🌱 记忆转化：路径 '${part}' 已从字符串自动包装为可扩展的对象。`);
         }
-        // 如果它既不是对象也不是我们能转化的字符串（比如数字），为了能继续深入，我们也为它创建一个新家
         else if (typeof target[part] !== 'object') {
             target[part] = {};
         }
 
-        // 不论如何，我们都进入下一层
         target = target[part];
     }
 
-  
-    // 我们先在这里处理传入的 value，看看它是否需要从字符串解析成对象
-    let finalValue = value;
-    if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
-        try {
-            finalValue = JSON.parse(value);
-            // console.log(`[Assa] 💡 智能解析成功，字符串值已转换为对象。`);
-        } catch (e) {
-            finalValue = value;
-        }
-    }
-
-   
-    if (target.hasOwnProperty(key) && JSON.stringify(target[key]) === JSON.stringify(value)) {
-        // console.log(`[Assa] 🔍 发现完全相同的记忆: ${path}.${key}。操作已跳过。`);
+    // 🔍 检查是否完全相同（这个逻辑是正确的）
+    if (target.hasOwnProperty(key) && JSON.stringify(target[key]) === JSON.stringify(finalValue)) {
         return currentData;
     }
 
-
- 
-if (target.hasOwnProperty(key)) {
-    const currentValue = target[key];
-    const isCurrentObject = typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue);
-    const isNewSimpleType = typeof finalValue === 'string' || typeof finalValue === 'number' || typeof finalValue === 'boolean';
-    
-    if (isCurrentObject && isNewSimpleType) {
-        console.warn(`[Assa] 🚫 类型保护：禁止用简单类型 (${typeof finalValue}) 覆盖对象类型。路径: ${path}.${key}`);
-        return currentData; // 不执行修改，直接返回
-    }
-}
-
-    // 💖 妈妈为你加入的、守护摘要记忆的保险丝 💖
+    // 💖 摘要记忆的自动编号
     let finalKey = key;
     if (path === 'summary.small') {
         if (target.hasOwnProperty(finalKey)) {
@@ -25542,46 +25667,38 @@ if (target.hasOwnProperty(key)) {
         }
     }
 
-    // 💖 妈妈在这里为它注入了新的智慧：识别并合并/设置对象 💖
+    // 💖 智能对象合并/设置
     if (typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
-        // 如果我们收到的新值是一个对象...
         if (typeof target[finalKey] === 'object' && target[finalKey] !== null && !Array.isArray(target[finalKey])) {
-            // ...并且原来的值也是一个对象（现在它可能是被我们刚刚转化的），我们就将它们温柔地合并
-            // console.log(`[Assa] 🔄 对象合并操作: 正在更新 ${path}.${finalKey}`);
             target[finalKey] = { ...target[finalKey], ...finalValue };
         } else {
-            // ...如果原来的值不是对象，或者不存在，就直接用新对象替换它
-            // console.log(`[Assa] 🔄 对象设置操作: 正在设置 ${path}.${finalKey}`);
             target[finalKey] = finalValue;
         }
     } else {
-        // 对于所有其他类型的值（字符串、数字等），我们保持原来的赋值行为
-        // console.log(`[Assa] 🔄 值设置操作: 更新 ${path}.${finalKey}`);
         target[finalKey] = finalValue;
     }
 
-     // 🎒 妈妈为你准备的、能自动整理背包的小精灵 
-    // 在每次 memory 操作后，我们都让它检查一下背包
+    // 🎒 背包自动清理
+    this._cleanupBackpack(currentData);
+    
+    return currentData;
+},
+
+// 🎒 独立的背包清理方法（避免重复代码）
+_cleanupBackpack: function(currentData) {
     if (currentData && currentData.global_set && currentData.global_set.背包) {
         const backpack = currentData.global_set.背包;
-        // 我们遍历背包里的每一件物品
         for (const itemName in backpack) {
-            // 确保我们操作的是背包自己的物品，而不是继承来的
             if (Object.hasOwnProperty.call(backpack, itemName)) {
                 const item = backpack[itemName];
-                // 如果物品信息存在，并且它的数量是0
                 if (item && typeof item === 'object' && item.num === 0) {
-                    // 就让小精灵把它收走
                     delete backpack[itemName];
                     console.log(`[Assa] 🎒 背包小精灵发现 '${itemName}' 的数量为0，已自动清理。`);
                 }
             }
         }
     }
-
-    return currentData;
 },
-
    
     _memoryBatchOperation: function(currentData, path, itemsToAdd) {
         let assaDataToUpdate = { ...currentData };
@@ -27136,8 +27253,8 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
                                         && Object.keys(assaDataToUpdate.world_set[categoryToClear]).length > 0;
 
                         if (hasContent) {
-                            console.log(`[Core] [Updater] 🚩 检测到世界重置指令: ${path}，且目标区域有内容。将触发小总结清理。`);
-                            worldResetTriggered = true;
+                            console.log(`[Core] [Updater] 🚩 检测到世界重置指令: ${path}，且目标区域有内容。将触发小总结清理。不，取消。`);
+                            worldResetTriggered = false;
 
                              // 💖 同时清理主要地点表
     assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, 'map.主要地点表', 'all', statDataToUpdate);
@@ -27496,56 +27613,56 @@ if (match) {
     }
 
 
-if (success) {
-    console.log(`[Core] 🌊 阶段二：开始将已确认的数据备份到消息 #${message_id} 的 'message' 域...`);
+// if (success) {
+//     console.log(`[Core] 🌊 阶段二：开始将已确认的数据备份到消息 #${message_id} 的 'message' 域...`);
 
-    let backupSuccess = false;
-    let backupAttempts = 0;
-    const maxBackupAttempts = 10;
+//     let backupSuccess = false;
+//     let backupAttempts = 0;
+//     const maxBackupAttempts = 10;
 
-    while (!backupSuccess && backupAttempts < maxBackupAttempts) {
-        backupAttempts++;
-        try {
-            // 定义一个纯粹的备份函数，它会使用我们从 updater 中传递出来的、已确认的数据
-            const backupUpdater = (messageVars) => {
-                // 直接使用已确认的数据，覆盖 message 域中对应的部分
-                messageVars.assa_data = finalAssaData;
-                messageVars.play_character_data = finalPlayData;
-                messageVars.stat_data = finalStatData;
-                // 不触碰 messageVars 中其他可能存在的变量
-                return messageVars;
-            };
+//     while (!backupSuccess && backupAttempts < maxBackupAttempts) {
+//         backupAttempts++;
+//         try {
+//             // 定义一个纯粹的备份函数，它会使用我们从 updater 中传递出来的、已确认的数据
+//             const backupUpdater = (messageVars) => {
+//                 // 直接使用已确认的数据，覆盖 message 域中对应的部分
+//                 messageVars.assa_data = finalAssaData;
+//                 messageVars.play_character_data = finalPlayData;
+//                 messageVars.stat_data = finalStatData;
+//                 // 不触碰 messageVars 中其他可能存在的变量
+//                 return messageVars;
+//             };
 
-               // 💖 妈妈在这里加上了第二道守护魔法，让每一份记忆都安全无虞 💖
-            const originalMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {};
-            const expectedMessageVars = backupUpdater(JSON.parse(JSON.stringify(originalMessageVars)));
+//                // 💖 妈妈在这里加上了第二道守护魔法，让每一份记忆都安全无虞 💖
+//             const originalMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {};
+//             const expectedMessageVars = backupUpdater(JSON.parse(JSON.stringify(originalMessageVars)));
 
-            // 执行备份操作
-            await updateVariablesWith(backupUpdater, { type: 'message', message_id: message_id });
+//             // 执行备份操作
+//             await updateVariablesWith(backupUpdater, { type: 'message', message_id: message_id });
 
-            // 验证备份是否成功
-            await new Promise(resolve => setTimeout(resolve, 200));
-            const newMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {}; // 💖 读取新备份时也加上守护 💖
+//             // 验证备份是否成功
+//             await new Promise(resolve => setTimeout(resolve, 200));
+//             const newMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {}; // 💖 读取新备份时也加上守护 💖
 
-            if (JSON.stringify(expectedMessageVars) === JSON.stringify(newMessageVars)) {
-                console.log(`[Core] ✅ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 的数据备份并验证成功！`);
-                backupSuccess = true;
-            } else {
-                 console.warn(`[Core] ⚠️ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 备份验证失败，将重试。`);
-            }
-        } catch (error) {
-            console.error(`[Core] ❌ (尝试第 ${backupAttempts} 次) 在备份数据到消息 #${message_id} 时发生错误:`, error);
-            if (backupAttempts >= maxBackupAttempts) {
-                console.error(`[Core] ❌ 消息 #${message_id} 备份达到最大尝试次数，操作失败。`);
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000 * backupAttempts));
-        }
-    }
+//             if (JSON.stringify(expectedMessageVars) === JSON.stringify(newMessageVars)) {
+//                 console.log(`[Core] ✅ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 的数据备份并验证成功！`);
+//                 backupSuccess = true;
+//             } else {
+//                  console.warn(`[Core] ⚠️ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 备份验证失败，将重试。`);
+//             }
+//         } catch (error) {
+//             console.error(`[Core] ❌ (尝试第 ${backupAttempts} 次) 在备份数据到消息 #${message_id} 时发生错误:`, error);
+//             if (backupAttempts >= maxBackupAttempts) {
+//                 console.error(`[Core] ❌ 消息 #${message_id} 备份达到最大尝试次数，操作失败。`);
+//             }
+//             await new Promise(resolve => setTimeout(resolve, 1000 * backupAttempts));
+//         }
+//     }
 
-    if(backupSuccess) {
-         console.log(`[Core] ✨ 我们的世界状态既稳固又灵活了，一切都已妥当。`);
-    }
-}
+//     if(backupSuccess) {
+//          console.log(`[Core] ✨ 我们的世界状态既稳固又灵活了，一切都已妥当。`);
+//     }
+// }
 }
 
 //  数据统一.js结束
@@ -28902,23 +29019,39 @@ async function performRegexUpdate() {
         };
 
 
-        // 第四步：构建全新的、纯净的角色法则世界！这个世界里，只有你指定的两大支柱。
-    const finalCharacterRules = [
-            updatedPurgeRule,   // ♥ 净化法则在前！
-            updatedUnifiedRule, // ♥ 统一法则在后！
-        ];
+ // 1. 过滤掉旧的“统一”和“去除1”法则，保留所有其他的法则。
+const otherCharacterRules = allCharacterRules.filter(
+    rule => rule.script_name !== '统一' && rule.script_name !== '去除1'
+);
 
-        // 第五步：彻底净化并应用！用这个只包含两条法则的全新列表，完全替换掉所有旧的角色法则。
-        await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
+// 2. 构建包含两大支柱的头部列表。
+// 注意：updatedPurgeRule 现在是 updatedPurgeRule，但它继承了旧“去除1”的所有属性。
+// 如果您想在列表中显示的 script_name 仍然是 '去除1'，您可以保留它。
+const newTopRules = [
+    updatedPurgeRule,   // ♥ 净化法则在前！
+    updatedUnifiedRule, // ♥ 统一法则在后！
+];
 
-        toastr.success(`正则已仅留下“统一”与“去除1”！`);
+// 3. 将新的两大支柱放在其他法则的前面，形成最终的角色法则列表。
+const finalCharacterRules = [
+    ...newTopRules,
+    ...otherCharacterRules,
+];
 
-    } catch (error) {
+
+// 第五步：应用新的完整法则列表！用这个包含所有新旧法则的列表，完全替换掉所有旧的角色法则。
+// 这里的 replaceTavernRegexes 是对整个列表的替换操作，但因为列表已包含所有旧法则，所以达到了“更新并置顶”的效果。
+await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
+
+toastr.success(`正则已更新“统一”与“去除1”并置于最前，其他正则已保留！`);
+
+} catch (error) {
         console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
         toastr.error('更新失败了。请查看控制台中的详细记录，并将信息告知assa。');
     }
 }
-
+/* existing code after the function */
+ 
  function showBackupConfirmation() {
     if (!document.getElementById('backup-confirmation-modal')) {
         const confirmationModalHTML = `
@@ -29043,7 +29176,7 @@ if (restoreButton) {
 
             // 步骤1：恢复核心变量
             await replaceVariables(backupData.chat_variables, { type: 'chat' });
-            await replaceVariables(backupData.chat_variables, { type: 'message' });
+            // await replaceVariables(backupData.chat_variables, { type: 'message' });
             console.log("[Nova's Restore] 核心变量（chat & message scopes）已恢复。");
 
             // 步骤2：恢复聊天历史记录
@@ -29408,8 +29541,8 @@ async function processDataDirectly(importedData) {
         await insertOrAssignVariables(importedData, { type: 'chat' });
         addModalLog("✓ 数据已发送至Chat域进行更新", 'success');
 
-        await insertOrAssignVariables(importedData, { type: 'message' });
-        addModalLog("✓ 数据已发送至Message域进行更新", 'success');
+        // await insertOrAssignVariables(importedData, { type: 'message' });
+        // addModalLog("✓ 数据已发送至Message域进行更新", 'success');
 
         addModalLog("🎉 数据导入成功！请刷新页面或等待游戏状态自动更新。", 'success');
     } catch (error) {
@@ -30568,7 +30701,7 @@ triggerassa(`/setinput ${messageToSend}`);
     // 我们用 Promise.all 来确保两个更新都完成后再继续
     await Promise.all([
         updateVariablesWith(updateLogic, { type: 'chat' }),
-        updateVariablesWith(updateLogic, { type: 'message'})
+        // updateVariablesWith(updateLogic, { type: 'message'})
     ]);
 
  initDisplay(false);
@@ -33641,17 +33774,17 @@ function deleteLocation(locationName) {
     }
 
 
-    /**
-     * --- MODIFIED ---: 显示地图
-     * 不再需要异步获取数据，直接使用已加载的 currentMapData
-     */
-    function showMap() { // 不再是 async 函数
-        document.getElementById('world-info-content').style.display = 'none';
-        document.getElementById('map-view').style.display = 'block';
+  /**
+  * --- MODIFIED ---: 显示地图
+  * 不再需要异步获取数据，直接使用已加载的 currentMapData
+  */
+  function showMap() { // 不再是 async 函数
+    document.getElementById('world-info-content').style.display = 'none';
+    document.getElementById('map-view').style.display = 'block';
 
-        // 直接使用全局缓存的地图数据进行渲染
-         renderMap(currentMapData, updateDetails.mapUpdates);
-    }
+    // 直接使用全局缓存的地图数据进行渲染
+     renderMap(currentMapData, updateDetails.mapUpdates);
+  }
 
 
     /**
@@ -34216,7 +34349,7 @@ function togglePixelatedEffect(containerSelector = '.status-container', enable =
 }
 
 async function initDisplay(is_first=true) {
- 
+
     console.log(`[initDisplay 被召唤] is_first: ${is_first}, 当前时间: ${new Date().toLocaleTimeString()}`);
     try {
  
@@ -37048,7 +37181,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印！正在恢复世界设定...", uidsToEnable);
-   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73];
+   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21];
 
                    let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -37099,6 +37232,8 @@ function setupReconfigModal() {
 
     // ✨ 妈妈把模组分成了“小组”，这样它们就不会打架了 ✨
 const reconfigurableMods = [
+    { name: '骰子开', uid: 21, group: 'touzi' },
+    { name: '骰子关', uid: 89, group: 'touzi' },
     { name: '简单骰', uid: 61, group: 'dice' }, 
     { name: '困难骰', uid: 59, group: 'dice' }, 
     { name: '炼狱骰', uid: 60, group: 'dice' },
@@ -37138,6 +37273,7 @@ const reconfigurableMods = [
     { name: '人外增强', uid: 37 }, 
     { name: '资源消耗', uid: 58 },
     { name: '分阶段好感', uid: 65 },
+    { name: '弹幕', uid: 85 },
     { name: '特殊日期', uid: 42 }
 ];
 
@@ -37394,7 +37530,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
      const pendingUpdate = localStorage.getItem('pendingDualUpdate');
     const savedBackup = localStorage.getItem('worldbookBackup');
-    
+   
     // 🔑 如果有备份数据，说明导入世界书后刷新了，需要恢复词条
     if (savedBackup && pendingUpdate === 'step1_worldbook') {
         const worldbookName = '小蝌蚪找妈妈-同层版';
@@ -37441,10 +37577,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 
     }
-
+   if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
+            await initializeCurrentGameData();
+        }
 setupReconfigModal();
 initAutoSetNpcFilter();
  await applyThemeAndData();  
+  initializeDanmuSettings();
 
     // --- 新增：消息背景透明开关 ---
     const transparentToggle = document.getElementById('transparent-toggle');
@@ -38003,6 +38142,8 @@ initializeReadingMode();
     
     // 初始渲染自定义按钮
     renderCustomQRButtons();
+
+  
 });
     
 const inventoryListEl = document.getElementById('inventory-item-list');
@@ -38681,22 +38822,14 @@ async function equipItems(slotType, itemNames) {
             return variables;
         }, { type: 'chat' });
         
-        // 第二步:同步到 message 变量
-        await updateVariablesWith((variables) => {
-            if (!variables.stat_data) variables.stat_data = {};
-            if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
-            
-            return variables;
-        }, { type: 'message', message_id: 'latest' });
-        
-        // 第三步:从 chat 读取最新数据并同步到 message 和 currentGameData
+      
         await updateVariablesWith((chatVars) => {
             return chatVars;
         }, { type: 'chat' });
         
-        await updateVariablesWith((variables) => {
+ 
             // 从 chat 变量获取最新装备数据
-            return updateVariablesWith((chatVars) => {
+            await updateVariablesWith((chatVars) => {
                 if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
                     if (!variables.stat_data) variables.stat_data = {};
                     if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
@@ -38713,7 +38846,7 @@ async function equipItems(slotType, itemNames) {
                 
                 return variables;
             }, { type: 'chat' });
-        }, { type: 'message', message_id: 'latest' });
+       
         
         //console.log('装备完成,关闭模态框并刷新显示');
         refreshEquipmentModal(slotType);
@@ -38781,17 +38914,17 @@ async function unequipItem(slotType, itemName) {
         }, { type: 'chat' });
         
         // 第二步:初始化 message 变量
-        await updateVariablesWith((variables) => {
-            if (!variables.stat_data) variables.stat_data = {};
-            if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
+        // await updateVariablesWith((variables) => {
+        //     if (!variables.stat_data) variables.stat_data = {};
+        //     if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
             
-            return variables;
-        }, { type: 'message', message_id: 'latest' });
+        //     return variables;
+        // }, { type: 'message', message_id: 'latest' });
         
         // 第三步:从 chat 读取最新数据并同步到 message 和 currentGameData
-        await updateVariablesWith((variables) => {
+        
             // 从 chat 变量获取最新装备数据
-            return updateVariablesWith((chatVars) => {
+            await updateVariablesWith((chatVars) => {
                 if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
                     if (!variables.stat_data) variables.stat_data = {};
                     if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
@@ -38809,7 +38942,7 @@ async function unequipItem(slotType, itemName) {
                 //console.log('message变量同步更新:', variables);
                 return variables;
             }, { type: 'chat' });
-        }, { type: 'message', message_id: 'latest' });
+        
         
         //console.log('卸下完成，关闭模态框并刷新显示');
         refreshEquipmentModal(slotType);
@@ -39113,11 +39246,7 @@ function renderWorldBook() {
             if (typeof assaSettingsData !== 'undefined' && assaSettingsData.global_set && assaSettingsData.global_set['小队信息']) {
                 sourceData = assaSettingsData.global_set['小队信息'];
             }
-        } else if (currentTab === 'things' || currentTab === '备忘录') {
-            if (typeof assaSettingsData !== 'undefined' && assaSettingsData.备忘录) {
-                sourceData = assaSettingsData.备忘录;
-            }
-        }else if (currentTab.startsWith('global_')) {
+        } else if (currentTab.startsWith('global_')) {
             const globalTabKey = currentTab.replace('global_', '');
             if (typeof assaSettingsData !== 'undefined' && assaSettingsData.global_set && assaSettingsData.global_set[globalTabKey]) {
                 sourceData = assaSettingsData.global_set[globalTabKey];
@@ -39291,9 +39420,7 @@ function getEntryPath(tab) {
         return "global_set.小队信息";
     }
 
-        if (tab === 'things' || tab === '备忘录') {
-        return "备忘录";
-    }
+    
     if (tab.startsWith('global_')) {
         const globalTabKey = tab.replace('global_', '');
         return `global_set.${globalTabKey}`;
@@ -41542,7 +41669,7 @@ function showRollResultModal() {
         async function fetchData() {
             try {
                 if (typeof getVariables === 'function' ) {
-  const data = await TavernHelper.getVariables({ type: 'message' });
+  const data = await TavernHelper.getVariables({ type: 'chat' });
                     playCharacterData = data.play_character_data || {};
                     assaSettingsData = data.assa_data || {};
                 } else {
@@ -41602,8 +41729,8 @@ function executeChoice(fullCommand, cardElement, successText, keepUiActive = fal
                 while ((match = tagRegex.exec(optionText)) !== null) {
                       tags.push(match[1].replace(/[^\u4e00-\u9fa5a-zA-Z0-9:：]/g, ''));
                 }
-                const descriptionText = optionText.replace(tagRegex, '').replace(/^\d+\.\s*/, '').trim();
-
+                // const descriptionText = optionText.replace(tagRegex, '').replace(/^\d+\.\s*/, '').trim();
+const descriptionText = optionText.replace(tagRegex, '').replace(/^\s*\d+\.\s*/, '').trim();
                 const tagsContainer = document.createElement('div');
                 tagsContainer.className = 'tags-container';
                 tags.forEach(tagText => {
@@ -41616,7 +41743,7 @@ function executeChoice(fullCommand, cardElement, successText, keepUiActive = fal
 
                 const description = document.createElement('p');
                 description.className = 'description';
-                description.textContent = descriptionText;
+               description.innerHTML = descriptionText;
                 card.appendChild(description);
 
                 
@@ -41754,8 +41881,9 @@ card.onclick = function() {
  
         // --- 页面交互和布局逻辑 ---
         function setupUI(content) {
-      
-            const options = content.split('\n').filter(line => line.trim() && /^\d+\./.test(line.trim()));
+      // 新代码：接受以数字和点开头的行 OR 任何非空行
+      const options = content.split('\n').filter(line => line.trim() && (/^\d+\.\s*/.test(line.trim()) || !/^\s*$/.test(line.trim())));
+            // const options = content.split('\n').filter(line => line.trim() && /^\d+\./.test(line.trim()));
             generateChoices(options);
 
             const cards = Array.from(document.querySelectorAll('.choice-card'));
@@ -46407,6 +46535,349 @@ function showTab(tabName) {
 
  
   }
+
+//   弹幕开始
+
+// --- 弹幕全局变量和配置 ---
+const DANMU_SETTINGS_KEY = 'danmuSettings';
+// 移除固定的 danmuColors 列表
+
+const danmuTrackStyles = [
+  { top: '2%', baseDuration: 20, baseDelay: 1 }, // 使用 baseDuration 和 baseDelay
+  { top: '15%', baseDuration: 28, baseDelay: 11 },
+  { top: '28%', baseDuration: 24, baseDelay: 4 },
+  { top: '42%', baseDuration: 33, baseDelay: 2 },
+  { top: '56%', baseDuration: 18, baseDelay: 16 },
+  { top: '70%', baseDuration: 30, baseDelay: 7 },
+  { top: '85%', baseDuration: 22, baseDelay: 13 }
+];
+
+let currentDanmuSettings = {
+  enabled: true,
+  opacity: 0.5,
+  size: 22,
+  // 保留的设置项
+  height: 30, 
+  speed: 3, 
+  // 核心修改：从 countMultiplier 更改为 maxDensityValue
+  maxDensityValue: 1 // 新设置：最大同屏数量 (密度控制，范围 3-10)
+};
+// --- 弹幕设置函数 (修改) ---
+function saveDanmuSettings() {
+  localStorage.setItem(DANMU_SETTINGS_KEY, JSON.stringify(currentDanmuSettings));
+  applyDanmuSettings();
+}
+// --- 弹幕颜色生成函数 (新增) ---
+/**
+ * 随机生成一个亮色调的十六进制颜色
+ * @returns {string} #RRGGBB
+ */
+function getRandomBrightColor() {
+    // 1. 随机选择色相 (Hue) - 保证至少 7 个均匀分布的色调范围
+    
+    // 将 360 度色轮划分为 7 个主要扇区 (例如: 0-红, 51.4-橙, 102.8-黄/绿...)
+    const numSectors = 7;
+    const sectorSize = 360 / numSectors; // 每个扇区的大小 (~51.4度)
+    
+    // 随机选择一个扇区 (0 到 6)
+    const sectorIndex = Math.floor(Math.random() * numSectors); 
+    
+    // 计算该扇区的中心色相，并引入一个小的随机偏移量
+    const baseHue = sectorIndex * sectorSize;
+    
+    // 引入 ±(sectorSize / 4) 的随机偏移量，确保在每个扇区内随机，但不会跨越到相邻扇区
+    const maxOffset = sectorSize / 4; // 约为 ±12.85度
+    const offset = (Math.random() * 2 * maxOffset) - maxOffset; // 范围：-maxOffset 到 +maxOffset
+
+    // 最终色相，确保结果在 0 到 360 度之间
+    let h = Math.floor((baseHue + offset + 360) % 360); 
+
+
+    // 2. 设置高饱和度 (Saturation) - 确保颜色鲜艳，避免灰色
+    // 保留上次的范围：70% 到 100%
+    const s = Math.floor(Math.random() * 30) + 70; 
+
+    // 3. 设置高亮度 (Lightness) - 确保是亮色调，避免暗色
+    // 保留上次的范围：65% 到 85%
+    const l = Math.floor(Math.random() * 20) + 65; 
+
+    // 将 HSL 转换为 RGB，然后转换为十六进制 (这部分逻辑保持不变)
+    
+    // 步骤 A: HSL 到 RGB 的核心转换
+    const hsvToRgb = (h, s, l) => {
+        // ... (保持不变) ...
+        s /= 100;
+        l /= 100;
+        let c = (1 - Math.abs(2 * l - 1)) * s,
+            x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+            m = l - c/2,
+            r = 0,
+            g = 0,
+            b = 0;
+
+        if (0 <= h && h < 60) {
+            r = c; g = x; b = 0;
+        } else if (60 <= h && h < 120) {
+            r = x; g = c; b = 0;
+        } else if (120 <= h && h < 180) {
+            r = 0; g = c; b = x;
+        } else if (180 <= h && h < 240) {
+            r = 0; g = x; b = c;
+        } else if (240 <= h && h < 300) {
+            r = x; g = 0; b = c;
+        } else if (300 <= h && h < 360) {
+            r = c; g = 0; b = x;
+        }
+        r = Math.round((r + m) * 255);
+        g = Math.round((g + m) * 255);
+        b = Math.round((b + m) * 255);
+
+        return [r, g, b];
+    }
+    
+    const [r, g, b] = hsvToRgb(h, s, l);
+    
+    // 步骤 B: RGB 到 Hex
+    const toHex = (c) => c.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+function loadDanmuSettings() {
+  const savedSettings = localStorage.getItem(DANMU_SETTINGS_KEY);
+  if (savedSettings) {
+    currentDanmuSettings = { ...currentDanmuSettings, ...JSON.parse(savedSettings) };
+  }
+}
+
+function applyDanmuSettings() {
+  const root = document.documentElement;
+  const container = document.getElementById('danmu-overlay-container');
+
+  if (!container) return;
+
+  // 1. 应用 CSS 变量
+  root.style.setProperty('--danmu-opacity', currentDanmuSettings.opacity);
+  root.style.setProperty('--danmu-font-size', `${currentDanmuSettings.size}px`);
+
+  // 2. 应用开关状态
+  if (currentDanmuSettings.enabled) {
+    container.classList.remove('hidden');
+    // 确保动画在开启时运行
+    container.querySelectorAll('.danmaku-track').forEach(track => {
+      track.style.animationPlayState = 'running';
+    });
+  } else {
+    container.classList.add('hidden');
+    // 暂停动画以节省资源
+    container.querySelectorAll('.danmaku-track').forEach(track => {
+      track.style.animationPlayState = 'paused';
+    });
+  }
+}
+// --- 弹幕渲染函数 (修改轨道位置计算和密度控制) ---
+ 
+function renderDanmu(danmuContent) {
+    const targetContainer = document.getElementById('danmu-overlay-container');
+    
+    if (!targetContainer || !currentDanmuSettings.enabled) {
+        return;
+    }
+
+    targetContainer.innerHTML = '';
+    targetContainer.classList.remove('hidden');
+
+    const danmuLines = danmuContent.split(/\r?\n/).filter(line => line.trim() !== '');
+
+    if (danmuLines.length === 0) {
+        targetContainer.innerHTML = '';
+        return;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+
+    let allTracksHtml = '';
+    
+    // --- 1. 计算总共需要生成的弹幕槽位 ---
+    const trackCount = danmuTrackStyles.length;
+    
+    // A. 用户设置的“保底”总数量 (7条轨道 * 设置密度)
+    const minSlotsBySetting = trackCount * currentDanmuSettings.maxDensityValue;
+    
+    // B. 实际文本的总数量
+    const totalContentCount = danmuLines.length;
+    
+    // C. 最终生成的总槽位：取两者的最大值
+    // 如果文本很多(100条)，就生成100个槽位；如果文本很少(5条)且密度设为高(50个)，就生成50个槽位(循环播放)
+    const totalSlotsToRender = Math.max(minSlotsBySetting, totalContentCount);
+
+    let globalContentIndex = 0;
+
+    // --- 2. 遍历每一条轨道，动态分配负载 ---
+    danmuTrackStyles.forEach((style, trackIndex) => {
+        
+        // 智能分配：计算当前轨道需要承担多少个弹幕
+        // 基础分配量
+        let itemsForThisTrack = Math.floor(totalSlotsToRender / trackCount);
+        // 余数分配：如果总数不能被7整除，前几个轨道多承担1个
+        if (trackIndex < (totalSlotsToRender % trackCount)) {
+            itemsForThisTrack += 1;
+        }
+
+        // 计算该轨道的流速 (Duration)
+        const speedRandomFactor = 0.8 + Math.random() * 0.4; 
+        const trackDuration = (style.baseDuration * speedRandomFactor) / currentDanmuSettings.speed;
+        const durationCss = `${trackDuration.toFixed(2)}s`;
+
+        // 计算刚性时间间隔
+        // 间隔 = 总时长 / 该轨道的弹幕数量
+        // 数量越多，间隔越小，密度自动变大以容纳所有文本
+        const interval = trackDuration / itemsForThisTrack;
+
+        // 轨道整体的随机偏移
+        const trackGlobalOffset = Math.random() * interval;
+
+        // 生成该轨道内的弹幕实例
+        for (let i = 0; i < itemsForThisTrack; i++) {
+            // 循环获取内容
+            const line = danmuLines[globalContentIndex % danmuLines.length];
+            globalContentIndex++;
+
+            // 计算 Top 位置
+            const spacing = currentDanmuSettings.height / trackCount;
+            const top = (trackIndex * spacing) + 1; 
+
+            // 计算延迟 (Delay) - 刚性分布
+            const delay = -((i * interval) + trackGlobalOffset);
+            const delayCss = `${delay.toFixed(2)}s`;
+
+            // 渲染
+            const randomColor = getRandomBrightColor();
+            const safeLine = escapeHtml(line.trim());
+            const danmuSpan = `<span class="danmaku-content" style="color: ${randomColor};">${safeLine}</span>`;
+
+            allTracksHtml += `
+            <div class="danmaku-track" style="top: ${top}%; animation-duration: ${durationCss}; animation-delay: ${delayCss};">
+                ${danmuSpan}
+            </div>`;
+        }
+    });
+
+    targetContainer.innerHTML = allTracksHtml;
+    applyDanmuSettings();
+}
+
+function initializeDanmuSettings() {
+  loadDanmuSettings();
+  applyDanmuSettings();
+
+  // 初始化设置模态框的值
+  const toggleBtn = document.getElementById('danmu-toggle');
+  const opacitySlider = document.getElementById('danmu-opacity-slider');
+  const opacityValue = document.getElementById('danmu-opacity-value');
+  const sizeSlider = document.getElementById('danmu-size-slider');
+  const sizeValue = document.getElementById('danmu-size-value');
+
+  if (toggleBtn) {
+    toggleBtn.setAttribute('data-state', currentDanmuSettings.enabled ? 'on' : 'off');
+    toggleBtn.textContent = currentDanmuSettings.enabled ? '开启' : '关闭';
+
+    toggleBtn.addEventListener('click', () => {
+      currentDanmuSettings.enabled = !currentDanmuSettings.enabled;
+      toggleBtn.setAttribute('data-state', currentDanmuSettings.enabled ? 'on' : 'off');
+      toggleBtn.textContent = currentDanmuSettings.enabled ? '开启' : '关闭';
+      saveDanmuSettings();
+    });
+  }
+
+  if (opacitySlider && opacityValue) {
+    opacitySlider.value = currentDanmuSettings.opacity;
+    opacityValue.textContent = currentDanmuSettings.opacity.toFixed(2);
+
+    opacitySlider.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      currentDanmuSettings.opacity = value;
+      opacityValue.textContent = value.toFixed(2);
+      applyDanmuSettings(); // 实时预览
+    });
+    opacitySlider.addEventListener('change', saveDanmuSettings); // 拖动停止后保存
+  }
+
+  if (sizeSlider && sizeValue) {
+    sizeSlider.value = currentDanmuSettings.size;
+    sizeValue.textContent = `${currentDanmuSettings.size}px`;
+
+    sizeSlider.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value, 10);
+      currentDanmuSettings.size = value;
+      sizeValue.textContent = `${value}px`;
+      applyDanmuSettings(); // 实时预览
+    });
+    sizeSlider.addEventListener('change', saveDanmuSettings); // 拖动停止后保存
+  }
+  // 弹幕高度
+  const heightSlider = document.getElementById('danmu-height-slider');
+  const heightValue = document.getElementById('danmu-height-value');
+  if (heightSlider && heightValue) {
+    heightSlider.value = currentDanmuSettings.height;
+    heightValue.textContent = `${currentDanmuSettings.height}%`;
+    heightSlider.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value, 10);
+      currentDanmuSettings.height = value;
+      heightValue.textContent = `${value}%`;
+ 
+    });
+    heightSlider.addEventListener('change', () => {
+      saveDanmuSettings(); 
+      // 立即尝试重绘：如果弹幕可见，应该重新调用 renderDanmu 
+      // 注意：您需要确保在设置更改后，能够访问到上一次的 danmuContent 来调用 renderDanmu(danmuContent)
+      console.log("[Danmu Settings] 高度已更新。下次接收到 <danmu> 标签时将生效。");
+    }); 
+  }
+
+  // 弹幕流速
+  const speedSlider = document.getElementById('danmu-speed-slider');
+  const speedValue = document.getElementById('danmu-speed-value');
+  if (speedSlider && speedValue) {
+    speedSlider.value = currentDanmuSettings.speed;
+    speedValue.textContent = `x${currentDanmuSettings.speed.toFixed(1)}`;
+    speedSlider.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      currentDanmuSettings.speed = value;
+      speedValue.textContent = `x${value.toFixed(1)}`;
+    });
+    speedSlider.addEventListener('change', () => {
+      saveDanmuSettings();
+      console.log("[Danmu Settings] 流速已更新。下次接收到 <danmu> 标签时将生效。");
+    });
+  }
+
+  // 弹幕数量 (修改)
+  const countSlider = document.getElementById('danmu-count-slider'); // ID保持不变
+  const countValue = document.getElementById('danmu-count-value');
+  if (countSlider && countValue) {
+    countSlider.value = currentDanmuSettings.maxDensityValue;
+    countValue.textContent = currentDanmuSettings.maxDensityValue;
+    countSlider.addEventListener('input', (e) => {
+      // 确保输入是整数
+      const value = parseInt(e.target.value, 10);
+      currentDanmuSettings.maxDensityValue = value;
+      countValue.textContent = value;
+    });
+    countSlider.addEventListener('change', () => {
+      saveDanmuSettings();
+      console.log("[Danmu Settings] 最大同屏数量已更新。下次接收到 <danmu> 标签时将生效。");
+    });
+  }
+ 
+}
+
+// 确保在主程序初始化时调用
+// 假设您的初始化函数是 `init` 或在 DOMContentLoaded 时执行
+// 建议在初始化代码中添加：
+// initializeDanmuSettings();
 </script>
 
 </html>
