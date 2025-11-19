@@ -7343,12 +7343,12 @@ opacity: 0.6;
 
 /* --- 顶部 HUD 定位 --- */
 .top-hud {
-    top: 10px; /* 距离顶部的距离 */
+    top: 50px; /* 距离顶部的距离 */
 }
 
 /* --- 底部 HUD 定位 --- */
 .bottom-hud {
-    bottom: 10px; /* 距离底部的距离 */
+    bottom: 50px; /* 距离底部的距离 */
 }
 
 /* =========================================
@@ -17147,7 +17147,7 @@ async function runInitializationMagic() {// 加上 async
     const maxRetries = 5; // 最大重试次数
     let isWorldbookFound = false;
 
-    toastr.info(`正在初始化... 开始搜寻世界书「${worldbookName}」`);
+    // toastr.info(`正在初始化... 开始搜寻世界书「${worldbookName}」`);
 
     // --- 第一部分：循环检测世界书是否存在 (最多 5 秒) ---
     for (let i = 0; i < maxRetries; i++) {
@@ -17174,14 +17174,14 @@ async function runInitializationMagic() {// 加上 async
     }
 
     // --- 第三部分：世界书存在，执行绑定检查逻辑 (你提供的逻辑) ---
-    toastr.success(`已确认世界书存在，正在检查绑定状态...`);
+    //toastr.success(`已确认世界书存在，正在检查绑定状态...`);
     
     try {
         const bindings = await TavernHelper.getCharWorldbookNames('current');
 
         // 检查当前绑定是否正确
         if (bindings && bindings.primary === worldbookName) {
-            toastr.success(`当前角色已和「${worldbookName}」完美绑定。`);
+           // toastr.success(`当前角色已和「${worldbookName}」完美绑定。`);
             console.log(`守护咒语确认：与「${worldbookName}」的链接正确无误。`);
         } else {
             // 绑定不匹配，且我们已知世界书存在，直接尝试自动绑定
@@ -17203,7 +17203,7 @@ async function runInitializationMagic() {// 加上 async
                 // 二次验证
                 const verifyBindings = await TavernHelper.getCharWorldbookNames('current');
                 if (verifyBindings && verifyBindings.primary === worldbookName) {
-                    toastr.success(`自动绑定成功！已链接至「${worldbookName}」。`);
+                   // toastr.success(`自动绑定成功！已链接至「${worldbookName}」。`);
                     console.log(`自动绑定成功。`);
                 } else {
                     toastr.error(`自动绑定似乎未生效，请手动检查设置。`);
