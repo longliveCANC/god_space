@@ -22124,7 +22124,7 @@ let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
             const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
             
             // 3. 生成占位符
-            const placeholder = `MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}`;
+           const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
             msgPlaceholders[placeholder] = renderedMsgHtml;
             msgPlaceholderIndex++;
             return placeholder;
@@ -24775,7 +24775,7 @@ let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
             const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
             
             // 3. 生成占位符
-            const placeholder = `MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}`;
+           const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
             msgPlaceholders[placeholder] = renderedMsgHtml;
             msgPlaceholderIndex++;
             return placeholder;
@@ -24912,7 +24912,7 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
         let finalHtml = styledParagraphs.join('');
 // ✨【新增：替换 <msg> 占位符】✨
         for (const placeholder in msgPlaceholders) {
-            // 注意：这里替换时不需要再进行转义，因为 msgPlaceholders 里的内容已经是最终的 HTML 结构。
+     
             finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
         }
         for (const placeholder in groupChatPlaceholders) {
