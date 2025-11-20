@@ -10,6 +10,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+SC:wght@300;400&display=swap');
 
         :root {
+            --modal-content-bg: none; /* 默认透明 */
             --primary-color: #00faff;
             --secondary-color: #7affff;
    --base-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* 默认字体 */
@@ -424,8 +425,9 @@
 
         .modal-content {
             backdrop-filter:blur(5px);
-            /* background: linear-gradient(135deg, var(--container-bg-color),  var(--background-color)); */
-            border: 2px solid var(--primary-color);
+                background: none;
+                background: var(--modal-content-bg); /* <-- 使用新的变量控制背景 */
+             border: 2px solid var(--primary-color);
             border-radius: 12px;
             padding: 25px;
             max-height: 95%;
@@ -435,7 +437,7 @@
             animation: modalSlideIn 0.3s ease-out;
               overflow-y: auto;
         }
-
+ 
         @keyframes modalSlideIn {
             from {
                 transform: scale(0.8) translateY(-50px);
@@ -10319,7 +10321,7 @@ input:checked + .slider:before {
 }
 
 #reading-mode-content iframe {
-    min-height: 800px; /* 设置一个合理的最小高度 */
+    min-height: 100px; /* 设置一个合理的最小高度 */
     transition: height 0.3s ease-in-out; /* 高度变化时有平滑过渡效果 */
  
 }
@@ -11762,6 +11764,200 @@ pointer-events: auto;
 /* 弹幕关闭时，暂停动画并隐藏容器 */
 #danmu-overlay-container.hidden {
   display: none;
+}
+
+/* 私聊 */
+/* =========================================
+   特殊消息通用容器
+   ========================================= */
+.special-message {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin: 4px 0;
+    font-size: 0.95em;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: default;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.special-message:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 图标通用样式 */
+.special-msg-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    margin-right: 12px;
+    flex-shrink: 0;
+    font-size: 1.2em;
+}
+
+.special-msg-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0; /* 防止文本溢出 */
+}
+
+.special-msg-title {
+    font-weight: bold;
+    font-size: 1em;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.special-msg-subtitle {
+    font-size: 0.8em;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* =========================================
+   1. 语音消息 (Voice) - 科技感声波
+   ========================================= */
+.voice-message {
+    /* background: linear-gradient(135deg, rgba(0, 250, 255, 0.1), rgba(0, 250, 255, 0.05)); */
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer; /* 暗示可点击 */
+}
+
+.voice-wave {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 16px;
+}
+
+.voice-bar {
+    width: 3px;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+    animation: voice-wave-anim 1.2s infinite ease-in-out;
+}
+
+/* 让声波看起来是随机跳动的 */
+.voice-bar:nth-child(1) { height: 60%; animation-delay: 0s; }
+.voice-bar:nth-child(2) { height: 100%; animation-delay: 0.1s; }
+.voice-bar:nth-child(3) { height: 50%; animation-delay: 0.2s; }
+.voice-bar:nth-child(4) { height: 80%; animation-delay: 0.3s; }
+
+@keyframes voice-wave-anim {
+    0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+    50% { transform: scaleY(1); opacity: 1; }
+}
+
+/* =========================================
+   2. 转账消息 (Transfer) - 醒目的橙红色
+   ========================================= */
+.transfer-message {
+    background: linear-gradient(135deg, #ff9a44, #fc6076); /* 橙红渐变 */
+    color: white;
+    border: none;
+}
+
+.transfer-message .special-msg-icon {
+    background: rgba(255, 255, 255, 0.25);
+    font-size: 1.4em;
+}
+
+.transfer-amount {
+    font-size: 1.1em;
+    font-weight: 800;
+    font-family: monospace; /* 数字等宽更好看 */
+}
+
+/* =========================================
+   3. 图片/视频占位 (Image) - 现代卡片
+   ========================================= */
+.image-message {
+    background: var(--container-bg-color);
+    border: 1px dashed var(--text-secondary-color);
+    color: var(--text-secondary-color);
+}
+
+/* =========================================
+   4. 音乐消息 (Music) - 模拟播放器 UI
+   ========================================= */
+/* 音乐卡片样式 */
+.music-message {
+    background: linear-gradient(135deg, #2b2b2b, #1a1a1a);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #eaeaea;
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+    overflow: hidden;
+    min-width: 250px;
+}
+.music-message:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+.music-disc {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #000 30%, #333 31%, #111 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    margin-right: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+/* 旋转动画类 */
+.music-disc.playing { animation: spin 3s linear infinite; border-color: var(--primary-color); }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.music-info { flex-grow: 1; overflow: hidden; }
+.music-title { font-size: 0.95em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color); }
+.music-artist { font-size: 0.8em; color: var(--text-secondary-color); }
+.music-status { font-size: 0.75em; color: var(--primary-color); margin-top: 2px; display: none; }
+
+/* 播放/暂停图标 */
+.music-btn-icon { font-size: 1.2em; margin-left: 10px; color: var(--primary-color); }
+
+.group-chat-separator {
+    /* 居中 */
+    text-align: center; 
+    
+    /* 背景颜色: 使用一个与背景色相关的颜色，并略微透明化，使其不至于太突兀 */
+    background-color: var(--container-bg-color); /* 使用容器背景色，它本身就是半透明的 */
+    
+    /* 文字颜色: 使用主文本颜色或次要文本颜色，确保可读性 */
+    color: var(--text-color);
+    
+    /* 额外的美化: 增加内边距和圆角 */
+    padding: 8px 15px; /* 上下8px，左右15px 的内边距 */
+    margin: 15px 0; /* 上下15px的外边距，将分隔符与其他内容隔开 */
+    border-radius: 5px; /* 略微的圆角 */
+    
+    /* 可选: 增加一个细小的边框或发光效果 */
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 5px var(--glow-color); 
+    
+    /* 字体设置 */
+    font-family: var(--base-font-family);
+    font-size: 1.1em; /* 略微加大字体 */
+    font-weight: bold; /* 加粗 */
 }
   </style>
  
@@ -13506,6 +13702,12 @@ pointer-events: auto;
                         <button id="transparent-toggle" class="switch-btn" data-state="off">关闭</button>
                     </div>
                 </div>
+<div class="setting-item">
+    <label for="modal-background-toggle">模态框实色背景</label>
+    <div class="switch-container">
+        <button id="modal-background-toggle" class="switch-btn" data-state="off">关闭</button> 
+    </div>
+</div>
                 <div class="setting-item">
                     <label for="font-family-selector">界面字体</label>
                     <select id="font-family-selector" class="control-btn" style="width: 220px; text-align: left; padding: 5px 8px;"></select>
@@ -13828,7 +14030,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.15';
+let current_game_version = '3.2.16';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -21254,22 +21456,69 @@ async function renderReadingModeChapter(msg) {
         placeholderIndex++;
         return placeholder;
     });
+// ✨【新增：私聊 <msg> 占位符机制初始化】✨
+    const msgPlaceholders = {}; 
+    let msgPlaceholderIndex = 0;
+const groupChatPlaceholders = {}; 
+    let groupChatPlaceholderIndex = 0;
+    // 2. 清理内容，但保留所有非交互性标签
+    // 步骤 2.1：解析 <msg> 标签并替换为占位符
+    let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
+        const userNickname = currentGameData?.user_character?.nick_name || '你';
+        
+        // 将消息内容渲染成 HTML（使用外部的辅助函数）
+        const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
+        
+        // 生成占位符
+        const placeholder = `MSGREADINGPLACEHOLDER${msgPlaceholderIndex}`;
+        msgPlaceholders[placeholder] = renderedMsgHtml;
+        msgPlaceholderIndex++;
+        return placeholder;
+    });
+const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
+let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
+    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
+    
+    // 逐行解析消息
+    if (typeof chatContent === 'string') {
+        const lines = chatContent.trim().split('\n');
+        for (const line of lines) {
+            const cleanedLine = line.trim();
+            if (!cleanedLine || cleanedLine.startsWith('summary|')) {
+                continue; 
+            }
+            const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
+            if (messageMatch) {
+                const sender = messageMatch[1].trim();
+                const content = messageMatch[2].trim();
+                // ⚠️ 使用外部的 renderGroupChatToHtml 函数
+                groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+            }
+        }
+    }
 
+    // 3. 生成占位符
+    const placeholder = `GROUPCHATREADINGPLACEHOLDER${groupChatPlaceholderIndex}`;
+    groupChatPlaceholders[placeholder] = groupChatHtml;
+    groupChatPlaceholderIndex++;
+    return placeholder;
+});
+
+
+  // 步骤 2.3：清理其他不相关标签 (使用 contentWithGroupChatPlaceholder)
+  let renderedHtml = contentWithGroupChatPlaceholder // !!! 使用最新的 string// !!! 使用新的 contentWithMsgPlaceholder
+        .replace(/<(battle|guide|options|forum_threads|shop_item|表现总结)>[\s\S]*?<\/\1>/gs, '')
+        .replace(/<group_chat\b[^>]*>(?:(?!<group_chat\b)[\s\S])*?<\/group_chat>/gs, '');
         // 3. 应用酒馆正则，深度固定为-1
-     const pureContent= formatAsTavernRegexedString(
-         protectedHtmlContent,
+  // 3. 应用酒馆正则，深度固定为-1
+    const pureContent = formatAsTavernRegexedString(
+        renderedHtml, // !!! 对清理后的内容应用正则
         'ai_output',
         'display',
         { depth: -1 }
     );
-    // 2. 清理内容，但保留所有非交互性标签
-    let renderedHtml = pureContent
-        .replace(/<(battle|guide|options|forum_threads|shop_item|表现总结|group_chat)>[\s\S]*?<\/\1>/gs, '')
-        .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, '').replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
-            const userNickname = currentGameData?.user_character?.nick_name || '你';
-            return renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
-        });
-
+    renderedHtml = pureContent; // 重新赋值给 renderedHtml
 
 
     // 4. 对处理后可能产生的新HTML块进行二次抽离
@@ -21311,6 +21560,15 @@ async function renderReadingModeChapter(msg) {
     });
 
     let finalHtml = styledParagraphs.join('');
+    // ✨【新增：替换 <msg> 占位符】✨
+    for (const placeholder in msgPlaceholders) {
+        // 在 finalHtml 中替换占位符
+        finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
+    }
+    for (const placeholder in groupChatPlaceholders) {
+    // 替换群聊 HTML
+    finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), groupChatPlaceholders[placeholder]);
+    }
     for (const placeholder in specialBlocks) {
         const cleanBlock = specialBlocks[placeholder]
             .replace(/NOVA_LQ/g, '“').replace(/NOVA_RQ/g, '”')
@@ -21457,64 +21715,891 @@ window.addEventListener('message', function(event) {
     return bubble.innerHTML;
 }
 
-
-function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
+ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
     const isSent = sender === userNickname;
     
     // 基础 CSS 类
     const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
     const bubbleClass = 'group-chat-message-bubble';
     
-    // 渲染消息内容 (处理特殊消息，如表情包)
-    let contentHtml = content.trim()
-        // 处理特殊消息格式 (如 [表情包名称], [zz-金额元], [yy-语音内容], [music-歌名$歌手], [img-内容描述])
-        .replace(/\[([^\]]+)\]/g, (match, specialContent) => {
-            if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[specialContent]) {
-                // 表情包
-                return `<img src="${memeImageMap[specialContent]}" alt="${specialContent}" class="meme-image" style="max-width: 120px; max-height: 120px; vertical-align: middle; margin: 4px;" />`;
-            }
-            if (specialContent.startsWith('yy-')) {
-                // 语音
-                return `<div class="special-message voice-message">[语音] ${specialContent.substring(3).trim()}</div>`;
-            }
-            if (specialContent.startsWith('music-')) {
-                // 音乐
-                const parts = specialContent.substring(6).split('$');
-                return `<div class="special-message music-message">[音乐] ${parts[0] || ''} - ${parts[1] || ''}</div>`;
-            }
-            if (specialContent.startsWith('img-')) {
-                // 图片/视频
-                return `<div class="special-message image-message">[图片/视频] ${specialContent.substring(4).trim()}</div>`;
-            }
-            if (specialContent.startsWith('zz-')) {
-                // 转账
-                return `<div class="special-message transfer-message">[转账] ${specialContent.substring(3).trim()}元</div>`;
-            }
-            return match; // 不匹配任何特殊格式则保留原样
-        })
-        // 简单 Markdown 粗体/斜体
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        // 换行符转换为 <br>
-        .replace(/\n/g, '<br>');
+    // 预处理内容
+    let processedContent = content.trim();
+    let isSpecial = false; 
+    let isMusic = false; // 标记是否为音乐
 
-    // 注意：我们将整个消息块包装在一个 <p> 标签中，以确保它不会与外部的 <p> 标签冲突
-    return `
+    // ------------------------------------------------------
+    // 特殊消息解析逻辑
+    // ------------------------------------------------------
+
+    // 1. 表情包 [name]
+    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
+            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+        }
+        return match;
+    });
+
+    // 2. 语音 [yy-内容]
+    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
+        const text = processedContent.substring(4, processedContent.length - 1).trim();
+        const duration = Math.floor(Math.random() * 13) + 2; 
+        processedContent = `
+            <div class="special-message voice-message" title="点击播放(模拟)">
+                <div class="special-msg-icon">
+                    <div class="voice-wave">
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                    </div>
+                </div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">语音消息</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    else if (processedContent.match(/^\[music-[\s\S]*\]$/)) {
+        // 提取括号内的内容
+        let raw = processedContent.substring(7, processedContent.length - 1);
+        
+        // ⚠️ 核心修复：去除所有换行符，防止 JS 语法错误
+        raw = raw.replace(/[\r\n]/g, '').trim();
+
+        const parts = raw.split('$');
+        // ⚠️ 核心修复：去除首尾空格
+        const song = (parts[0] || '未知歌曲').trim();
+        const artist = (parts[1] || '未知歌手').trim();
+        
+        // 获取样式变量
+        const style = getComputedStyle(document.documentElement);
+        const primaryColor = style.getPropertyValue('--primary-color') || '#00faff';
+        const textColor = style.getPropertyValue('--text-color') || '#e6f1ff';
+        const textSecColor = style.getPropertyValue('--text-secondary-color') || '#a8c0e1';
+        const containerBg = style.getPropertyValue('--container-bg-color') || 'rgba(10, 25, 47, 0.75)';
+        const borderColor = style.getPropertyValue('--border-color') || 'rgba(0, 250, 255, 0.3)';
+        const fontFamily = style.getPropertyValue('--base-font-family') || 'sans-serif';
+        // 构建 HTML 字符串
+        const musicPlayerHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>
+            <style>
+                * { box-sizing: border-box; }
+                body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: ${fontFamily}; }
+                
+                :root {
+                    --primary-color: ${primaryColor};
+                    --text-color: ${textColor};
+                    --text-secondary-color: ${textSecColor};
+                    --container-bg-color: ${containerBg};
+                    --border-color: ${borderColor};
+                }
+
+                .music-card {
+                    width: 100%;
+                    background-color: var(--container-bg-color);
+                    border-radius: 10px;
+                    overflow: hidden;
+                    border: 1px solid var(--border-color);
+                    color: var(--text-color);
+                    backdrop-filter: blur(5px);
+                    user-select: none;
+                }
+
+                .card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 16px;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .track-info { display: flex; align-items: center; gap: 5px; overflow: hidden; }
+                
+                .track-icon {
+                    height: 24px; width: 24px;
+                    color: var(--primary-color);
+                    flex-shrink: 0;
+                }
+
+                .track-details { margin-left: 12px; overflow: hidden; }
+
+                .track-title {
+                    font-size: 1.1rem; font-weight: 600; color: var(--text-color);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+                }
+
+                .track-artist {
+                    font-size: 0.85rem; color: var(--text-secondary-color);
+                    display: block; margin-top: 3px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+
+                .card-icons { display: flex; align-items: center; flex-shrink: 0; }
+                .icon-star { height: 20px; width: 20px; color: var(--text-secondary-color); margin-left: 10px; cursor: pointer; }
+                .icon-star:hover { color: var(--primary-color); }
+
+                .progress-container {
+                    position: relative; margin: 16px 16px 8px 16px;
+                    height: 4px; background-color: rgba(255,255,255,0.2);
+                    border-radius: 2px; overflow: hidden;
+                }
+
+                .progress-bar {
+                    position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+                    background-color: var(--primary-color); border-radius: 2px;
+                    transition: width 0.1s linear;
+                }
+
+                .progress-time {
+                    display: flex; justify-content: space-between; padding: 0 16px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                }
+
+                .play-control { display: flex; justify-content: center; padding-bottom: 10px; }
+
+                .play-btn {
+                    width: 40px; height: 40px; border-radius: 50%;
+                    background: var(--primary-color);
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    margin-top: 5px;
+                    color: #000;
+                }
+                .play-btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+                .play-btn svg { width: 20px; height: 20px; fill: currentColor; stroke: none;}
+                
+                .pause-icon-shape { width: 14px; height: 16px; display: flex; justify-content: space-between; }
+                .pause-bar { width: 4px; height: 100%; background-color: currentColor; border-radius: 2px;}
+
+                .ShowInfo {
+                    text-align: center; margin: 0 10px 10px 10px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                    display: none;
+                }
+            </style>
+        </head>
+       <body>
+            <div class="music-card">
+                <div class="card-header">
+                    <div class="track-info">
+                        <svg class="track-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <div class="track-details">
+                            <span class="track-title">${song}</span>
+                            <span class="track-artist">${artist}</span>
+                        </div>
+                    </div>
+                    <div class="card-icons">
+                        <svg class="icon-star" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                </div>
+                <div class="progress-container"><div class="progress-bar"></div></div>
+                <div class="progress-time"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
+                <div class="play-control">
+                    <div class="play-btn" id="playButton">
+                        <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                        <div class="pause-icon" style="display:none;">
+                             <div class="pause-icon-shape"><div class="pause-bar"></div><div class="pause-bar"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ShowInfo"></div>
+            </div>
+            <script>
+                var Music_Audio = new Audio();
+                var Music_NowPlayName = "";
+                // ⚠️ 因为上面已经去除了换行符，这里注入就是安全的
+                var musicname = "${song}";
+                var singer = "${artist}"; 
+                var playButton = document.getElementById('playButton');
+                var playIcon = playButton.querySelector('.play-icon');
+                var pauseIcon = playButton.querySelector('.pause-icon');
+                var progress = document.querySelector(".progress-bar");
+                var currentTimeSpan = document.getElementById("currentTime");
+                var ShowInfo = document.querySelector('.ShowInfo');
+
+                function checkAudioAvailability(url) {
+                   return new Promise(function(resolve) {
+                       var tester = new Audio();
+                       function cleanup() { tester.src = ''; }
+                       tester.preload = 'metadata';
+                       tester.src = url;
+                       tester.onloadedmetadata = function() { cleanup(); resolve(true); };
+                       tester.onerror = function() { cleanup(); resolve(false); };
+                       setTimeout(function() { cleanup(); resolve(false); }, 3000);
+                   });
+                }
+
+                function Http_Get(url) {
+                    return new Promise(function(resolve) {
+                        $.ajax({
+                            url: url, method: 'GET', timeout: 10000,
+                            success: function(data) { resolve(data); },
+                            error: function(e) { console.error(e); resolve(null); }
+                        });
+                    });
+                }
+
+                // ✨【关键修改点 2：优化 QQ 音乐搜索逻辑】✨
+                // 1. 增加了 singer 参数
+                async function QQ_MusicGetUrl(name, singer) {
+                    try {
+                        // ⚠️ 删除了 replace(/\s/g, "")，避免破坏英文歌名
+                        var query = name;
+                        if (singer && singer !== '未知歌手') {
+                            query += " " + singer;
+                        }
+                        console.log("QQ Search: " + query);
+                        
+                        var result = await Http_Get("https://api.vkeys.cn/v2/music/tencent?word=" + encodeURIComponent(query));
+                        if (!result || !result.data || !result.data.length) return;
+                        
+                        for (var i = 0; i < result.data.length; i++) {
+                             var data = result.data[i];
+                             if (data.id && !data.song.match(/live/gi)) {
+                                 var r = await Http_Get("https://api.vkeys.cn/v2/music/tencent?id=" + data.id);
+                                 if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                     return { url: r.data.url, song: data.song, singer: data.singer, source: "QQ音乐" };
+                                 }
+                             }
+                        }
+                    } catch(e) { console.warn(e); }
+                    return null;
+                }
+
+                // ✨【关键修改点 3：优化网易云搜索逻辑】✨
+                async function WY_MusicGetUrl(name, singer) {
+                     // ⚠️ 删除了 replace(/\s/g, "")
+                     var url = "https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(name);
+                     if (singer && singer !== '未知歌手') url += "-" + encodeURIComponent(singer);
+                     
+                     var result = await Http_Get(url);
+                     if (!result) return;
+                     
+                     for (var i = 0; i < result.data.length; i++) {
+                         var data = result.data[i];
+                         if (data.id) {
+                             var r = await Http_Get("https://api.vkeys.cn/v2/music/netease?id=" + data.id);
+                             if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                 return { url: r.data.url, song: data.song, singer: data.singer, source: "网易云" };
+                             }
+                         }
+                     }
+                }
+async function MusicPlay() {
+    var music = musicname;
+    if (music == Music_NowPlayName && !Music_Audio.paused) return;
+
+    Music_NowPlayName = music;
+    playIcon.style.display = 'none'; 
     
+    var result;
+    var searchWithSinger = (singer && singer !== '未知歌手'); // 检查是否有有效歌手信息
+
+    // 1. 优先使用 歌名+歌手 搜索（QQ/网易云）
+    if (searchWithSinger) {
+        // 尝试 网易云 (歌名-歌手)
+        result = await WY_MusicGetUrl(music, singer); 
+        // 尝试 QQ 音乐 (歌名 歌手)
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music, singer); 
+        }
+    }
+    
+    // 2. 如果带歌手搜索失败，回退到 只搜索歌名
+    if (!result || !result.url) {
+        console.warn("使用歌手搜索失败，回退到只搜索歌名。");
+        // 只搜歌名（网易云）
+        result = await WY_MusicGetUrl(music);
+        // 只搜歌名（QQ）
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music);
+        }
+    }
+    
+    if (!result || !result.url) {
+        ShowInfo.textContent = "搜索歌曲失败";
+        ShowInfo.style.display = "block";
+        playIcon.style.display = 'block';
+        return;
+    }
+
+    ShowInfo.textContent = "正在播放: " + result.source + " - " + result.song;
+    ShowInfo.style.display = "block";
+    
+    try {
+        Music_Audio.src = result.url;
+        await Music_Audio.play();
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+    } catch (e) {
+        console.error(e);
+        playIcon.style.display = 'block';
+    }
+}
+                playButton.addEventListener('click', function() {
+                    if (Music_Audio.paused) {
+                        if (Music_Audio.src) { Music_Audio.play(); playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; }
+                        else { MusicPlay(); }
+                    } else {
+                        Music_Audio.pause();
+                        playIcon.style.display = 'block';
+                        pauseIcon.style.display = 'none';
+                    }
+                });
+
+                Music_Audio.addEventListener("timeupdate", function() {
+                    var percent = (Music_Audio.currentTime / Music_Audio.duration) * 100 || 0;
+                    progress.style.width = percent + "%";
+                    
+                    function formatTime(s) {
+                        var m = Math.floor(s / 60) || 0;
+                        var sec = Math.floor(s % 60) || 0;
+                        return m + ":" + sec.toString().padStart(2, '0');
+                    };
+                    currentTimeSpan.textContent = formatTime(Music_Audio.currentTime);
+                    document.getElementById("duration").textContent = formatTime(Music_Audio.duration);
+                });
+                
+                Music_Audio.addEventListener("ended", function() {
+                     playIcon.style.display = 'block';
+                     pauseIcon.style.display = 'none';
+                });
+            <\/script>
+        </body>
+        </html>`;
+        
+        const safeDataUri = "data:text/html;charset=utf-8," + encodeURIComponent(musicPlayerHtml);
+        processedContent = `<iframe src="${safeDataUri}" style="width: 100%; height: 180px; border: none; overflow: hidden;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>`;
+        isMusic = true; 
+        isSpecial = true;
+    }
+
+    // 4. 转账 [zz-金额]
+    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(4, processedContent.length - 1);
+        const amount = raw.replace(/[^0-9.]/g, '');
+        
+        // 判断逻辑：如果是发给“我”的（userNickname），则显示“向你转账”
+        // 如果“我”是发送者，则显示“向 [接收者] 转账”
+        let displayText = "";
+        if (receiver === userNickname) {
+            displayText = "向你转账";
+        } else {
+            displayText = `向 ${receiver} 转账`;
+        }
+
+        processedContent = `
+            <div class="special-message transfer-message">
+                <div class="special-msg-icon">💰</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-subtitle">${displayText}</div>
+                    <div class="transfer-amount">¥ ${amount}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 5. 图片/视频 [img-描述]
+    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
+        const desc = processedContent.substring(5, processedContent.length - 1).trim();
+        processedContent = `
+            <div class="special-message image-message">
+                <div class="special-msg-icon">🖼️</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">发送了图片</div>
+                    <div class="special-msg-subtitle">${desc}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+    else {
+        // 普通文本
+        processedContent = processedContent
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ------------------------------------------------------
+    // 最终组装
+    // ------------------------------------------------------
+    
+    // 音乐组件：去掉气泡背景，让卡片独立显示
+    if (isMusic) {
+        return `
+        <div class="private-chat-wrapper" style="width:100%; max-width: 340px;">
+            <div class="${itemClass}" data-user-id="${sender}">
+                <div class="group-chat-avatar-placeholder"></div>
+                 <div class="group-chat-message-content" style="width:100%;">
+                    <div class="group-chat-user-id">${sender}</div>
+                    ${processedContent}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // 普通/特殊气泡
+    return `
 <div class="private-chat-wrapper">
     <div class="${itemClass}" data-user-id="${sender}">
         <div class="group-chat-avatar-placeholder"></div>
         <div class="group-chat-message-content">
             <div class="group-chat-user-id">${sender}</div>
-            <div class="${bubbleClass}">
-                ${contentHtml}
+            <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+                ${processedContent}
             </div>
         </div>
     </div>
 </div>`;
 }
+   
+function renderGroupChatToHtml(sender, content, userNickname) {
+    const isSent = sender === userNickname;
+    
+    // 基础 CSS 类
+    const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
+    const bubbleClass = 'group-chat-message-bubble';
+    
+    // 预处理内容
+    let processedContent = content.trim();
+    let isSpecial = false; 
+    let isMusic = false; // 标记是否为音乐
 
-    async function createMessageBubble(msg, mode = 'chat') { 
+    // ------------------------------------------------------
+    // 特殊消息解析逻辑 (与 renderPrivateMsgToHtml 保持一致)
+    // ------------------------------------------------------
+
+    // 1. 表情包 [name]
+    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+        // 注意：这里使用全局的 memeImageMap (或 memeResourceManager?.finalSrcMap)，请根据您的实际全局变量名进行调整
+        // 这里沿用您提供的代码中的 memeImageMap 变量
+        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
+            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+        }
+        return match;
+    });
+
+    // 2. 语音 [yy-内容]
+    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
+        const text = processedContent.substring(4, processedContent.length - 1).trim();
+        const duration = Math.floor(Math.random() * 13) + 2; 
+        processedContent = `
+            <div class="special-message voice-message" title="点击播放(模拟)">
+                <div class="special-msg-icon">
+                    <div class="voice-wave">
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                    </div>
+                </div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">语音消息</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 3. 音乐 [music-歌名$歌手]
+    else if (processedContent.startsWith('[music-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(7, processedContent.length - 1);
+        const parts = raw.split('$');
+        const song = parts[0] || '未知歌曲';
+        const artist = parts[1] || '未知歌手';
+        
+        // 获取当前系统的 CSS 变量值，以便注入到 iframe 中
+        const style = getComputedStyle(document.documentElement);
+        const primaryColor = style.getPropertyValue('--primary-color') || '#00faff';
+        const textColor = style.getPropertyValue('--text-color') || '#e6f1ff';
+        const textSecColor = style.getPropertyValue('--text-secondary-color') || '#a8c0e1';
+        const containerBg = style.getPropertyValue('--container-bg-color') || 'rgba(10, 25, 47, 0.75)';
+        const borderColor = style.getPropertyValue('--border-color') || 'rgba(0, 250, 255, 0.3)';
+        const fontFamily = style.getPropertyValue('--base-font-family') || 'sans-serif';
+
+         // 构建 HTML 字符串
+        const musicPlayerHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>
+            <style>
+                * { box-sizing: border-box; }
+                body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: ${fontFamily}; }
+                
+                :root {
+                    --primary-color: ${primaryColor};
+                    --text-color: ${textColor};
+                    --text-secondary-color: ${textSecColor};
+                    --container-bg-color: ${containerBg};
+                    --border-color: ${borderColor};
+                }
+
+                .music-card {
+                    width: 100%;
+                    background-color: var(--container-bg-color);
+                    border-radius: 10px;
+                    overflow: hidden;
+                    border: 1px solid var(--border-color);
+                    color: var(--text-color);
+                    backdrop-filter: blur(5px);
+                    user-select: none;
+                }
+
+                .card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 16px;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .track-info { display: flex; align-items: center; gap: 5px; overflow: hidden; }
+                
+                .track-icon {
+                    height: 24px; width: 24px;
+                    color: var(--primary-color);
+                    flex-shrink: 0;
+                }
+
+                .track-details { margin-left: 12px; overflow: hidden; }
+
+                .track-title {
+                    font-size: 1.1rem; font-weight: 600; color: var(--text-color);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+                }
+
+                .track-artist {
+                    font-size: 0.85rem; color: var(--text-secondary-color);
+                    display: block; margin-top: 3px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+
+                .card-icons { display: flex; align-items: center; flex-shrink: 0; }
+                .icon-star { height: 20px; width: 20px; color: var(--text-secondary-color); margin-left: 10px; cursor: pointer; }
+                .icon-star:hover { color: var(--primary-color); }
+
+                .progress-container {
+                    position: relative; margin: 16px 16px 8px 16px;
+                    height: 4px; background-color: rgba(255,255,255,0.2);
+                    border-radius: 2px; overflow: hidden;
+                }
+
+                .progress-bar {
+                    position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+                    background-color: var(--primary-color); border-radius: 2px;
+                    transition: width 0.1s linear;
+                }
+
+                .progress-time {
+                    display: flex; justify-content: space-between; padding: 0 16px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                }
+
+                .play-control { display: flex; justify-content: center; padding-bottom: 10px; }
+
+                .play-btn {
+                    width: 40px; height: 40px; border-radius: 50%;
+                    background: var(--primary-color);
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    margin-top: 5px;
+                    color: #000;
+                }
+                .play-btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+                .play-btn svg { width: 20px; height: 20px; fill: currentColor; stroke: none;}
+                
+                .pause-icon-shape { width: 14px; height: 16px; display: flex; justify-content: space-between; }
+                .pause-bar { width: 4px; height: 100%; background-color: currentColor; border-radius: 2px;}
+
+                .ShowInfo {
+                    text-align: center; margin: 0 10px 10px 10px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="music-card">
+                <div class="card-header">
+                    <div class="track-info">
+                        <svg class="track-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <div class="track-details">
+                            <span class="track-title">${song}</span>
+                            <span class="track-artist">${artist}</span>
+                        </div>
+                    </div>
+                    <div class="card-icons">
+                        <svg class="icon-star" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                </div>
+                <div class="progress-container"><div class="progress-bar"></div></div>
+                <div class="progress-time"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
+                <div class="play-control">
+                    <div class="play-btn" id="playButton">
+                        <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                        <div class="pause-icon" style="display:none;">
+                             <div class="pause-icon-shape"><div class="pause-bar"></div><div class="pause-bar"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ShowInfo"></div>
+            </div>
+            <script>
+                var Music_Audio = new Audio();
+                var Music_NowPlayName = "";
+                var musicname = "${song}";
+                var singer = "${artist}";
+                var playButton = document.getElementById('playButton');
+                var playIcon = playButton.querySelector('.play-icon');
+                var pauseIcon = playButton.querySelector('.pause-icon');
+                var progress = document.querySelector(".progress-bar");
+                var currentTimeSpan = document.getElementById("currentTime");
+                var ShowInfo = document.querySelector('.ShowInfo');
+
+                function checkAudioAvailability(url) {
+                   return new Promise(function(resolve) {
+                       var tester = new Audio();
+                       function cleanup() { tester.src = ''; }
+                       tester.preload = 'metadata';
+                       tester.src = url;
+                       tester.onloadedmetadata = function() { cleanup(); resolve(true); };
+                       tester.onerror = function() { cleanup(); resolve(false); };
+                       setTimeout(function() { cleanup(); resolve(false); }, 3000);
+                   });
+                }
+
+                function Http_Get(url) {
+                    return new Promise(function(resolve) {
+                        $.ajax({
+                            url: url, method: 'GET', timeout: 10000,
+                            success: function(data) { resolve(data); },
+                            error: function(e) { console.error(e); resolve(null); }
+                        });
+                    });
+                }
+
+                async function QQ_MusicGetUrl(name) {
+                    try {
+                        name = name.replace(/\\s/g, "");
+                        var result = await Http_Get("https://api.vkeys.cn/v2/music/tencent?word=" + name);
+                        if (!result || !result.data || !result.data.length) return;
+                        
+                        for (var i = 0; i < result.data.length; i++) {
+                             var data = result.data[i];
+                             if (data.id && !data.song.match(/live/gi)) {
+                                 var r = await Http_Get("https://api.vkeys.cn/v2/music/tencent?id=" + data.id);
+                                 if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                     return { url: r.data.url, song: data.song, singer: data.singer, source: "QQ音乐" };
+                                 }
+                             }
+                        }
+                    } catch(e) { console.warn(e); }
+                    return null;
+                }
+
+                async function WY_MusicGetUrl(name, singer) {
+                     name = name.replace(/\\s/g, "");
+                     var url = "https://api.vkeys.cn/v2/music/netease?word=" + name;
+                     if (singer) url += "-" + singer;
+                     var result = await Http_Get(url);
+                     if (!result) return;
+                     
+                     for (var i = 0; i < result.data.length; i++) {
+                         var data = result.data[i];
+                         if (data.id) {
+                             var r = await Http_Get("https://api.vkeys.cn/v2/music/netease?id=" + data.id);
+                             if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                 return { url: r.data.url, song: data.song, singer: data.singer, source: "网易云" };
+                             }
+                         }
+                     }
+                }
+
+                async function MusicPlay() {
+    var music = musicname;
+    if (music == Music_NowPlayName && !Music_Audio.paused) return;
+
+    Music_NowPlayName = music;
+    playIcon.style.display = 'none'; 
+    
+    var result;
+    var searchWithSinger = (singer && singer !== '未知歌手'); // 检查是否有有效歌手信息
+
+    // 1. 优先使用 歌名+歌手 搜索（QQ/网易云）
+    if (searchWithSinger) {
+        // 尝试 网易云 (歌名-歌手)
+        result = await WY_MusicGetUrl(music, singer); 
+        // 尝试 QQ 音乐 (歌名 歌手)
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music, singer); 
+        }
+    }
+    
+    // 2. 如果带歌手搜索失败，回退到 只搜索歌名
+    if (!result || !result.url) {
+        console.warn("使用歌手搜索失败，回退到只搜索歌名。");
+        // 只搜歌名（网易云）
+        result = await WY_MusicGetUrl(music);
+        // 只搜歌名（QQ）
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music);
+        }
+    }
+    
+    if (!result || !result.url) {
+        ShowInfo.textContent = "搜索歌曲失败";
+        ShowInfo.style.display = "block";
+        playIcon.style.display = 'block';
+        return;
+    }
+
+    ShowInfo.textContent = "正在播放: " + result.source + " - " + result.song;
+    ShowInfo.style.display = "block";
+    
+    try {
+        Music_Audio.src = result.url;
+        await Music_Audio.play();
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+    } catch (e) {
+        console.error(e);
+        playIcon.style.display = 'block';
+    }
+}
+
+                playButton.addEventListener('click', function() {
+                    if (Music_Audio.paused) {
+                        if (Music_Audio.src) { Music_Audio.play(); playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; }
+                        else { MusicPlay(); }
+                    } else {
+                        Music_Audio.pause();
+                        playIcon.style.display = 'block';
+                        pauseIcon.style.display = 'none';
+                    }
+                });
+
+                Music_Audio.addEventListener("timeupdate", function() {
+                    var percent = (Music_Audio.currentTime / Music_Audio.duration) * 100 || 0;
+                    progress.style.width = percent + "%";
+                    
+                    function formatTime(s) {
+                        var m = Math.floor(s / 60) || 0;
+                        var sec = Math.floor(s % 60) || 0;
+                        return m + ":" + sec.toString().padStart(2, '0');
+                    };
+                    currentTimeSpan.textContent = formatTime(Music_Audio.currentTime);
+                    document.getElementById("duration").textContent = formatTime(Music_Audio.duration);
+                });
+                
+                Music_Audio.addEventListener("ended", function() {
+                     playIcon.style.display = 'block';
+                     pauseIcon.style.display = 'none';
+                });
+            <\/script>
+        </body>
+        </html>`;
+        
+        // 【关键修正】：使用 encodeURIComponent 生成 Data URI
+        const safeDataUri = "data:text/html;charset=utf-8," + encodeURIComponent(musicPlayerHtml);
+        
+        processedContent = `<iframe src="${safeDataUri}" style="width: 100%; height: 180px; border: none; overflow: hidden;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>`;
+        isMusic = true; 
+        isSpecial = true;
+    }
+
+    // 4. 转账 [zz-金额]
+    // ⚠️ 注意：群聊中没有明确的接收者，我们只显示 '发起转账'
+    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(4, processedContent.length - 1);
+        const amount = raw.replace(/[^0-9.]/g, '');
+        
+        // 群聊中，只显示 '发起转账'
+        const displayText = "发起转账";
+
+        processedContent = `
+            <div class="special-message transfer-message">
+                <div class="special-msg-icon">💰</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-subtitle">${displayText}</div>
+                    <div class="transfer-amount">¥ ${amount}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 5. 图片/视频 [img-描述]
+    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
+        const desc = processedContent.substring(5, processedContent.length - 1).trim();
+        processedContent = `
+            <div class="special-message image-message">
+                <div class="special-msg-icon">🖼️</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">发送了图片</div>
+                    <div class="special-msg-subtitle">${desc}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+    else {
+        // 6. 普通文本
+        // ⚠️ 群聊模式下需要处理 @提及
+        processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
+             return `<span class="group-chat-mention">@${p1}</span>`;
+        });
+        
+        // 处理 Markdown 格式
+        processedContent = processedContent
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ------------------------------------------------------
+    // 最终组装
+    // ------------------------------------------------------
+    
+    // 音乐组件：去掉气泡背景，让卡片独立显示
+    if (isMusic) {
+        return `
+        <div class="group-chat-wrapper" style="width:100%; max-width: 340px;">
+            <div class="${itemClass}" data-user-id="${sender}">
+                <div class="group-chat-avatar-placeholder"></div>
+                 <div class="group-chat-message-content" style="width:100%;">
+                    <div class="group-chat-user-id">${sender}</div>
+                    ${processedContent}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // 普通/特殊气泡
+    return `
+    <div class="group-chat-wrapper">
+        <div class="${itemClass}" data-user-id="${sender}">
+            <div class="group-chat-avatar-placeholder"></div>
+            <div class="group-chat-message-content">
+                <div class="group-chat-user-id">${sender}</div>
+                <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+                    ${processedContent}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+ async function createMessageBubble(msg, mode = 'chat') { 
 
     let content = msg.content;
    
@@ -21546,7 +22631,8 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
 
 const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML 
         let msgPlaceholderIndex = 0; // 新增：<msg> 占位符索引
-
+const groupChatPlaceholders = {}; // 用于存储 <group_chat> 标签生成的 HTML 
+let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
         // 步骤 2.1：首先解析 <msg> 标签并替换为占位符
         let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
             const userNickname = currentGameData?.user_character?.nick_name || '你';
@@ -21561,8 +22647,44 @@ const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML
             return placeholder;
         });
         
-        const pureContent = contentWithMsgPlaceholder // !!! 使用新的 contentWithMsgPlaceholder
-  
+// ✨ 步骤 2.2：解析 <group_chat> 标签并替换为占位符
+const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
+let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
+    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
+    
+    // 逐行解析消息
+    if (typeof chatContent === 'string') {
+        const lines = chatContent.trim().split('\n');
+        for (const line of lines) {
+            const cleanedLine = line.trim();
+            
+            // 忽略空的行、summary行
+            if (!cleanedLine || cleanedLine.startsWith('summary|')) {
+                continue; 
+            }
+
+            // 匹配 发送人|消息内容
+            const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
+            if (messageMatch) {
+                const sender = messageMatch[1].trim();
+                const content = messageMatch[2].trim();
+                
+                // ⚠️ 使用前面提供的 renderGroupChatToHtml 函数
+                groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+            }
+        }
+    }
+
+    // 3. 生成占位符
+    const placeholder = `GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}`;
+    groupChatPlaceholders[placeholder] = groupChatHtml;
+    groupChatPlaceholderIndex++;
+    return placeholder;
+});
+
+// ⚠️ 修正：现在我们应该使用 contentWithGroupChatPlaceholder
+  const pureContent = contentWithGroupChatPlaceholder // !!! 使用新的 contentWithGroupChatPlaceholder
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
@@ -21570,8 +22692,8 @@ const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
-        .replace(/<group_chat>(?:(?!<group_chat>)[\s\S])*?<\/group_chat>/gs, '')
-        .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, '');
+      
+        .replace(/<group_chat\b[^>]*>(?:(?!<group_chat\b)[\s\S])*?<\/group_chat>/gs, '');
    
      const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
         // 魔法第三步：我们应用酒馆正则和深度规则
@@ -21659,6 +22781,10 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
             // 注意：这里替换时不需要再进行转义，因为 msgPlaceholders 里的内容已经是最终的 HTML 结构。
             finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
         }
+        for (const placeholder in groupChatPlaceholders) {
+      // 替换群聊 HTML
+      finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), groupChatPlaceholders[placeholder]);
+    }
         // 最后，将我们保护好的 <details> 结构原封不动地替换回去
           for (const placeholder in specialBlocks) {
             const cleanBlock = specialBlocks[placeholder].replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
@@ -23309,7 +24435,7 @@ function processSpecialModulesInMessage(content) {
     }
 
     // --- 群聊 ---
-    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat>([\s\S]*?)<\/group_chat>/gs)];
+    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat([\s\S]*?)<\/group_chat>/gs)];
     if (allGroupChatMatches.length > 0) {
         const chatOrb = document.getElementById('group-chat-orb-button');
         if (chatOrb) {
@@ -23481,11 +24607,8 @@ initDisplay();
 // 调用时传入 content
 delayedUpdate(finalMessage.content);
 }
-
 /**
- * @param {object} message - 包含 user_id, content, timestamp (可选), target_id (可选) 的私聊消息对象。
- * @param {string} userNickname - 当前用户的昵称。
- * @returns {string} - 渲染后的私聊气泡 HTML 字符串。
+ * 渲染单个 <msg> 块的内容为美化的 HTML 气泡。
  */
 function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
     const isSent = sender === userNickname;
@@ -23494,55 +24617,874 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
     const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
     const bubbleClass = 'group-chat-message-bubble';
     
-    // 渲染消息内容 (处理特殊消息，如表情包)
-    let contentHtml = content.trim()
-        // 处理特殊消息格式 (如 [表情包名称], [zz-金额元], [yy-语音内容], [music-歌名$歌手], [img-内容描述])
-        .replace(/\[([^\]]+)\]/g, (match, specialContent) => {
-            if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[specialContent]) {
-                // 表情包
-                return `<img src="${memeImageMap[specialContent]}" alt="${specialContent}" class="meme-image" style="max-width: 120px; max-height: 120px; vertical-align: middle; margin: 4px;" />`;
-            }
-            if (specialContent.startsWith('yy-')) {
-                // 语音
-                return `<div class="special-message voice-message">[语音] ${specialContent.substring(3).trim()}</div>`;
-            }
-            if (specialContent.startsWith('music-')) {
-                // 音乐
-                const parts = specialContent.substring(6).split('$');
-                return `<div class="special-message music-message">[音乐] ${parts[0] || ''} - ${parts[1] || ''}</div>`;
-            }
-            if (specialContent.startsWith('img-')) {
-                // 图片/视频
-                return `<div class="special-message image-message">[图片/视频] ${specialContent.substring(4).trim()}</div>`;
-            }
-            if (specialContent.startsWith('zz-')) {
-                // 转账
-                return `<div class="special-message transfer-message">[转账] ${specialContent.substring(3).trim()}元</div>`;
-            }
-            return match; // 不匹配任何特殊格式则保留原样
-        })
-        // 简单 Markdown 粗体/斜体
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        // 换行符转换为 <br>
-        .replace(/\n/g, '<br>');
+    // 预处理内容
+    let processedContent = content.trim();
+    let isSpecial = false; 
+    let isMusic = false; // 标记是否为音乐
 
-    // 注意：我们将整个消息块包装在一个 <p> 标签中，以确保它不会与外部的 <p> 标签冲突
+    // ------------------------------------------------------
+    // 特殊消息解析逻辑
+    // ------------------------------------------------------
+
+    // 1. 表情包 [name]
+    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
+            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+        }
+        return match;
+    });
+
+    // 2. 语音 [yy-内容]
+    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
+        const text = processedContent.substring(4, processedContent.length - 1).trim();
+        const duration = Math.floor(Math.random() * 13) + 2; 
+        processedContent = `
+            <div class="special-message voice-message" title="点击播放(模拟)">
+                <div class="special-msg-icon">
+                    <div class="voice-wave">
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                    </div>
+                </div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">语音消息</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 3. 音乐 [music-歌名$歌手]
+    else if (processedContent.startsWith('[music-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(7, processedContent.length - 1);
+        const parts = raw.split('$');
+        const song = parts[0] || '未知歌曲';
+        const artist = parts[1] || '未知歌手';
+        
+        // 获取当前系统的 CSS 变量值，以便注入到 iframe 中
+        const style = getComputedStyle(document.documentElement);
+        const primaryColor = style.getPropertyValue('--primary-color') || '#00faff';
+        const textColor = style.getPropertyValue('--text-color') || '#e6f1ff';
+        const textSecColor = style.getPropertyValue('--text-secondary-color') || '#a8c0e1';
+        const containerBg = style.getPropertyValue('--container-bg-color') || 'rgba(10, 25, 47, 0.75)';
+        const borderColor = style.getPropertyValue('--border-color') || 'rgba(0, 250, 255, 0.3)';
+        const fontFamily = style.getPropertyValue('--base-font-family') || 'sans-serif';
+
+        // 构建 HTML 字符串
+        const musicPlayerHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>
+            <style>
+                * { box-sizing: border-box; }
+                body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: ${fontFamily}; }
+                
+                :root {
+                    --primary-color: ${primaryColor};
+                    --text-color: ${textColor};
+                    --text-secondary-color: ${textSecColor};
+                    --container-bg-color: ${containerBg};
+                    --border-color: ${borderColor};
+                }
+
+                .music-card {
+                    width: 100%;
+                    background-color: var(--container-bg-color);
+                    border-radius: 10px;
+                    overflow: hidden;
+                    border: 1px solid var(--border-color);
+                    color: var(--text-color);
+                    backdrop-filter: blur(5px);
+                    user-select: none;
+                }
+
+                .card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 16px;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .track-info { display: flex; align-items: center; gap: 5px; overflow: hidden; }
+                
+                .track-icon {
+                    height: 24px; width: 24px;
+                    color: var(--primary-color);
+                    flex-shrink: 0;
+                }
+
+                .track-details { margin-left: 12px; overflow: hidden; }
+
+                .track-title {
+                    font-size: 1.1rem; font-weight: 600; color: var(--text-color);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+                }
+
+                .track-artist {
+                    font-size: 0.85rem; color: var(--text-secondary-color);
+                    display: block; margin-top: 3px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+
+                .card-icons { display: flex; align-items: center; flex-shrink: 0; }
+                .icon-star { height: 20px; width: 20px; color: var(--text-secondary-color); margin-left: 10px; cursor: pointer; }
+                .icon-star:hover { color: var(--primary-color); }
+
+                .progress-container {
+                    position: relative; margin: 16px 16px 8px 16px;
+                    height: 4px; background-color: rgba(255,255,255,0.2);
+                    border-radius: 2px; overflow: hidden;
+                }
+
+                .progress-bar {
+                    position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+                    background-color: var(--primary-color); border-radius: 2px;
+                    transition: width 0.1s linear;
+                }
+
+                .progress-time {
+                    display: flex; justify-content: space-between; padding: 0 16px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                }
+
+                .play-control { display: flex; justify-content: center; padding-bottom: 10px; }
+
+                .play-btn {
+                    width: 40px; height: 40px; border-radius: 50%;
+                    background: var(--primary-color);
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    margin-top: 5px;
+                    color: #000;
+                }
+                .play-btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+                .play-btn svg { width: 20px; height: 20px; fill: currentColor; stroke: none;}
+                
+                .pause-icon-shape { width: 14px; height: 16px; display: flex; justify-content: space-between; }
+                .pause-bar { width: 4px; height: 100%; background-color: currentColor; border-radius: 2px;}
+
+                .ShowInfo {
+                    text-align: center; margin: 0 10px 10px 10px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="music-card">
+                <div class="card-header">
+                    <div class="track-info">
+                        <svg class="track-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <div class="track-details">
+                            <span class="track-title">${song}</span>
+                            <span class="track-artist">${artist}</span>
+                        </div>
+                    </div>
+                    <div class="card-icons">
+                        <svg class="icon-star" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                </div>
+                <div class="progress-container"><div class="progress-bar"></div></div>
+                <div class="progress-time"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
+                <div class="play-control">
+                    <div class="play-btn" id="playButton">
+                        <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                        <div class="pause-icon" style="display:none;">
+                             <div class="pause-icon-shape"><div class="pause-bar"></div><div class="pause-bar"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ShowInfo"></div>
+            </div>
+            <script>
+                var Music_Audio = new Audio();
+                var Music_NowPlayName = "";
+                var musicname = "${song}";
+                var singer = "${artist}";
+                var playButton = document.getElementById('playButton');
+                var playIcon = playButton.querySelector('.play-icon');
+                var pauseIcon = playButton.querySelector('.pause-icon');
+                var progress = document.querySelector(".progress-bar");
+                var currentTimeSpan = document.getElementById("currentTime");
+                var ShowInfo = document.querySelector('.ShowInfo');
+
+                function checkAudioAvailability(url) {
+                   return new Promise(function(resolve) {
+                       var tester = new Audio();
+                       function cleanup() { tester.src = ''; }
+                       tester.preload = 'metadata';
+                       tester.src = url;
+                       tester.onloadedmetadata = function() { cleanup(); resolve(true); };
+                       tester.onerror = function() { cleanup(); resolve(false); };
+                       setTimeout(function() { cleanup(); resolve(false); }, 3000);
+                   });
+                }
+
+                function Http_Get(url) {
+                    return new Promise(function(resolve) {
+                        $.ajax({
+                            url: url, method: 'GET', timeout: 10000,
+                            success: function(data) { resolve(data); },
+                            error: function(e) { console.error(e); resolve(null); }
+                        });
+                    });
+                }
+
+                async function QQ_MusicGetUrl(name) {
+                    try {
+                        name = name.replace(/\\s/g, "");
+                        var result = await Http_Get("https://api.vkeys.cn/v2/music/tencent?word=" + name);
+                        if (!result || !result.data || !result.data.length) return;
+                        
+                        for (var i = 0; i < result.data.length; i++) {
+                             var data = result.data[i];
+                             if (data.id && !data.song.match(/live/gi)) {
+                                 var r = await Http_Get("https://api.vkeys.cn/v2/music/tencent?id=" + data.id);
+                                 if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                     return { url: r.data.url, song: data.song, singer: data.singer, source: "QQ音乐" };
+                                 }
+                             }
+                        }
+                    } catch(e) { console.warn(e); }
+                    return null;
+                }
+
+                async function WY_MusicGetUrl(name, singer) {
+                     name = name.replace(/\\s/g, "");
+                     var url = "https://api.vkeys.cn/v2/music/netease?word=" + name;
+                     if (singer) url += "-" + singer;
+                     var result = await Http_Get(url);
+                     if (!result) return;
+                     
+                     for (var i = 0; i < result.data.length; i++) {
+                         var data = result.data[i];
+                         if (data.id) {
+                             var r = await Http_Get("https://api.vkeys.cn/v2/music/netease?id=" + data.id);
+                             if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                 return { url: r.data.url, song: data.song, singer: data.singer, source: "网易云" };
+                             }
+                         }
+                     }
+                }
+
+                async function MusicPlay() {
+    var music = musicname;
+    if (music == Music_NowPlayName && !Music_Audio.paused) return;
+
+    Music_NowPlayName = music;
+    playIcon.style.display = 'none'; 
+    
+    var result;
+    var searchWithSinger = (singer && singer !== '未知歌手'); // 检查是否有有效歌手信息
+
+    // 1. 优先使用 歌名+歌手 搜索（QQ/网易云）
+    if (searchWithSinger) {
+        // 尝试 网易云 (歌名-歌手)
+        result = await WY_MusicGetUrl(music, singer); 
+        // 尝试 QQ 音乐 (歌名 歌手)
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music, singer); 
+        }
+    }
+    
+    // 2. 如果带歌手搜索失败，回退到 只搜索歌名
+    if (!result || !result.url) {
+        console.warn("使用歌手搜索失败，回退到只搜索歌名。");
+        // 只搜歌名（网易云）
+        result = await WY_MusicGetUrl(music);
+        // 只搜歌名（QQ）
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music);
+        }
+    }
+    
+    if (!result || !result.url) {
+        ShowInfo.textContent = "搜索歌曲失败";
+        ShowInfo.style.display = "block";
+        playIcon.style.display = 'block';
+        return;
+    }
+
+    ShowInfo.textContent = "正在播放: " + result.source + " - " + result.song;
+    ShowInfo.style.display = "block";
+    
+    try {
+        Music_Audio.src = result.url;
+        await Music_Audio.play();
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+    } catch (e) {
+        console.error(e);
+        playIcon.style.display = 'block';
+    }
+}
+
+                playButton.addEventListener('click', function() {
+                    if (Music_Audio.paused) {
+                        if (Music_Audio.src) { Music_Audio.play(); playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; }
+                        else { MusicPlay(); }
+                    } else {
+                        Music_Audio.pause();
+                        playIcon.style.display = 'block';
+                        pauseIcon.style.display = 'none';
+                    }
+                });
+
+                Music_Audio.addEventListener("timeupdate", function() {
+                    var percent = (Music_Audio.currentTime / Music_Audio.duration) * 100 || 0;
+                    progress.style.width = percent + "%";
+                    
+                    function formatTime(s) {
+                        var m = Math.floor(s / 60) || 0;
+                        var sec = Math.floor(s % 60) || 0;
+                        return m + ":" + sec.toString().padStart(2, '0');
+                    };
+                    currentTimeSpan.textContent = formatTime(Music_Audio.currentTime);
+                    document.getElementById("duration").textContent = formatTime(Music_Audio.duration);
+                });
+                
+                Music_Audio.addEventListener("ended", function() {
+                     playIcon.style.display = 'block';
+                     pauseIcon.style.display = 'none';
+                });
+            <\/script>
+        </body>
+        </html>`;
+        
+        // 【关键修正】：使用 encodeURIComponent 生成 Data URI，彻底避免引号冲突
+        const safeDataUri = "data:text/html;charset=utf-8," + encodeURIComponent(musicPlayerHtml);
+        
+        processedContent = `<iframe src="${safeDataUri}" style="width: 100%; height: 180px; border: none; overflow: hidden;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>`;
+        isMusic = true; 
+        isSpecial = true;
+    }
+
+    // 4. 转账 [zz-金额]
+    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(4, processedContent.length - 1);
+        const amount = raw.replace(/[^0-9.]/g, '');
+        
+        // 判断逻辑：如果是发给“我”的（userNickname），则显示“向你转账”
+        // 如果“我”是发送者，则显示“向 [接收者] 转账”
+        let displayText = "";
+        if (receiver === userNickname) {
+            displayText = "向你转账";
+        } else {
+            displayText = `向 ${receiver} 转账`;
+        }
+
+        processedContent = `
+            <div class="special-message transfer-message">
+                <div class="special-msg-icon">💰</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-subtitle">${displayText}</div>
+                    <div class="transfer-amount">¥ ${amount}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 5. 图片/视频 [img-描述]
+    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
+        const desc = processedContent.substring(5, processedContent.length - 1).trim();
+        processedContent = `
+            <div class="special-message image-message">
+                <div class="special-msg-icon">🖼️</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">发送了图片</div>
+                    <div class="special-msg-subtitle">${desc}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+    else {
+        // 普通文本
+        processedContent = processedContent
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ------------------------------------------------------
+    // 最终组装
+    // ------------------------------------------------------
+    
+    // 音乐组件：去掉气泡背景，让卡片独立显示
+    if (isMusic) {
+        return `
+        <div class="private-chat-wrapper" style="width:100%; max-width: 340px;">
+            <div class="${itemClass}" data-user-id="${sender}">
+                <div class="group-chat-avatar-placeholder"></div>
+                 <div class="group-chat-message-content" style="width:100%;">
+                    <div class="group-chat-user-id">${sender}</div>
+                    ${processedContent}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // 普通/特殊气泡
     return `
 <div class="private-chat-wrapper">
     <div class="${itemClass}" data-user-id="${sender}">
         <div class="group-chat-avatar-placeholder"></div>
         <div class="group-chat-message-content">
             <div class="group-chat-user-id">${sender}</div>
-            <div class="${bubbleClass}">
-                ${contentHtml}
+            <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+                ${processedContent}
             </div>
         </div>
     </div>
 </div>`;
 }
+ 
 
-    async function createMessageBubble(msg, mode = 'chat') { 
+function renderGroupChatToHtml(sender, content, userNickname) {
+    const isSent = sender === userNickname;
+    
+    // 基础 CSS 类
+    const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
+    const bubbleClass = 'group-chat-message-bubble';
+    
+    // 预处理内容
+    let processedContent = content.trim();
+    let isSpecial = false; 
+    let isMusic = false; // 标记是否为音乐
+
+    // ------------------------------------------------------
+    // 特殊消息解析逻辑 (与 renderPrivateMsgToHtml 保持一致)
+    // ------------------------------------------------------
+
+    // 1. 表情包 [name]
+    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+        // 注意：这里使用全局的 memeImageMap (或 memeResourceManager?.finalSrcMap)，请根据您的实际全局变量名进行调整
+        // 这里沿用您提供的代码中的 memeImageMap 变量
+        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
+            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+        }
+        return match;
+    });
+
+    // 2. 语音 [yy-内容]
+    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
+        const text = processedContent.substring(4, processedContent.length - 1).trim();
+        const duration = Math.floor(Math.random() * 13) + 2; 
+        processedContent = `
+            <div class="special-message voice-message" title="点击播放(模拟)">
+                <div class="special-msg-icon">
+                    <div class="voice-wave">
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                    </div>
+                </div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">语音消息</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 3. 音乐 [music-歌名$歌手]
+    else if (processedContent.startsWith('[music-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(7, processedContent.length - 1);
+        const parts = raw.split('$');
+        const song = parts[0] || '未知歌曲';
+        const artist = parts[1] || '未知歌手';
+        
+        // 获取当前系统的 CSS 变量值，以便注入到 iframe 中
+        const style = getComputedStyle(document.documentElement);
+        const primaryColor = style.getPropertyValue('--primary-color') || '#00faff';
+        const textColor = style.getPropertyValue('--text-color') || '#e6f1ff';
+        const textSecColor = style.getPropertyValue('--text-secondary-color') || '#a8c0e1';
+        const containerBg = style.getPropertyValue('--container-bg-color') || 'rgba(10, 25, 47, 0.75)';
+        const borderColor = style.getPropertyValue('--border-color') || 'rgba(0, 250, 255, 0.3)';
+        const fontFamily = style.getPropertyValue('--base-font-family') || 'sans-serif';
+
+         // 构建 HTML 字符串
+        const musicPlayerHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>
+            <style>
+                * { box-sizing: border-box; }
+                body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: ${fontFamily}; }
+                
+                :root {
+                    --primary-color: ${primaryColor};
+                    --text-color: ${textColor};
+                    --text-secondary-color: ${textSecColor};
+                    --container-bg-color: ${containerBg};
+                    --border-color: ${borderColor};
+                }
+
+                .music-card {
+                    width: 100%;
+                    background-color: var(--container-bg-color);
+                    border-radius: 10px;
+                    overflow: hidden;
+                    border: 1px solid var(--border-color);
+                    color: var(--text-color);
+                    backdrop-filter: blur(5px);
+                    user-select: none;
+                }
+
+                .card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 16px;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .track-info { display: flex; align-items: center; gap: 5px; overflow: hidden; }
+                
+                .track-icon {
+                    height: 24px; width: 24px;
+                    color: var(--primary-color);
+                    flex-shrink: 0;
+                }
+
+                .track-details { margin-left: 12px; overflow: hidden; }
+
+                .track-title {
+                    font-size: 1.1rem; font-weight: 600; color: var(--text-color);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+                }
+
+                .track-artist {
+                    font-size: 0.85rem; color: var(--text-secondary-color);
+                    display: block; margin-top: 3px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+
+                .card-icons { display: flex; align-items: center; flex-shrink: 0; }
+                .icon-star { height: 20px; width: 20px; color: var(--text-secondary-color); margin-left: 10px; cursor: pointer; }
+                .icon-star:hover { color: var(--primary-color); }
+
+                .progress-container {
+                    position: relative; margin: 16px 16px 8px 16px;
+                    height: 4px; background-color: rgba(255,255,255,0.2);
+                    border-radius: 2px; overflow: hidden;
+                }
+
+                .progress-bar {
+                    position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+                    background-color: var(--primary-color); border-radius: 2px;
+                    transition: width 0.1s linear;
+                }
+
+                .progress-time {
+                    display: flex; justify-content: space-between; padding: 0 16px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                }
+
+                .play-control { display: flex; justify-content: center; padding-bottom: 10px; }
+
+                .play-btn {
+                    width: 40px; height: 40px; border-radius: 50%;
+                    background: var(--primary-color);
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    margin-top: 5px;
+                    color: #000;
+                }
+                .play-btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+                .play-btn svg { width: 20px; height: 20px; fill: currentColor; stroke: none;}
+                
+                .pause-icon-shape { width: 14px; height: 16px; display: flex; justify-content: space-between; }
+                .pause-bar { width: 4px; height: 100%; background-color: currentColor; border-radius: 2px;}
+
+                .ShowInfo {
+                    text-align: center; margin: 0 10px 10px 10px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="music-card">
+                <div class="card-header">
+                    <div class="track-info">
+                        <svg class="track-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <div class="track-details">
+                            <span class="track-title">${song}</span>
+                            <span class="track-artist">${artist}</span>
+                        </div>
+                    </div>
+                    <div class="card-icons">
+                        <svg class="icon-star" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                </div>
+                <div class="progress-container"><div class="progress-bar"></div></div>
+                <div class="progress-time"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
+                <div class="play-control">
+                    <div class="play-btn" id="playButton">
+                        <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                        <div class="pause-icon" style="display:none;">
+                             <div class="pause-icon-shape"><div class="pause-bar"></div><div class="pause-bar"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ShowInfo"></div>
+            </div>
+            <script>
+                var Music_Audio = new Audio();
+                var Music_NowPlayName = "";
+                var musicname = "${song}";
+                var singer = "${artist}";
+                var playButton = document.getElementById('playButton');
+                var playIcon = playButton.querySelector('.play-icon');
+                var pauseIcon = playButton.querySelector('.pause-icon');
+                var progress = document.querySelector(".progress-bar");
+                var currentTimeSpan = document.getElementById("currentTime");
+                var ShowInfo = document.querySelector('.ShowInfo');
+
+                function checkAudioAvailability(url) {
+                   return new Promise(function(resolve) {
+                       var tester = new Audio();
+                       function cleanup() { tester.src = ''; }
+                       tester.preload = 'metadata';
+                       tester.src = url;
+                       tester.onloadedmetadata = function() { cleanup(); resolve(true); };
+                       tester.onerror = function() { cleanup(); resolve(false); };
+                       setTimeout(function() { cleanup(); resolve(false); }, 3000);
+                   });
+                }
+
+                function Http_Get(url) {
+                    return new Promise(function(resolve) {
+                        $.ajax({
+                            url: url, method: 'GET', timeout: 10000,
+                            success: function(data) { resolve(data); },
+                            error: function(e) { console.error(e); resolve(null); }
+                        });
+                    });
+                }
+
+                async function QQ_MusicGetUrl(name) {
+                    try {
+                        name = name.replace(/\\s/g, "");
+                        var result = await Http_Get("https://api.vkeys.cn/v2/music/tencent?word=" + name);
+                        if (!result || !result.data || !result.data.length) return;
+                        
+                        for (var i = 0; i < result.data.length; i++) {
+                             var data = result.data[i];
+                             if (data.id && !data.song.match(/live/gi)) {
+                                 var r = await Http_Get("https://api.vkeys.cn/v2/music/tencent?id=" + data.id);
+                                 if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                     return { url: r.data.url, song: data.song, singer: data.singer, source: "QQ音乐" };
+                                 }
+                             }
+                        }
+                    } catch(e) { console.warn(e); }
+                    return null;
+                }
+
+                async function WY_MusicGetUrl(name, singer) {
+                     name = name.replace(/\\s/g, "");
+                     var url = "https://api.vkeys.cn/v2/music/netease?word=" + name;
+                     if (singer) url += "-" + singer;
+                     var result = await Http_Get(url);
+                     if (!result) return;
+                     
+                     for (var i = 0; i < result.data.length; i++) {
+                         var data = result.data[i];
+                         if (data.id) {
+                             var r = await Http_Get("https://api.vkeys.cn/v2/music/netease?id=" + data.id);
+                             if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                 return { url: r.data.url, song: data.song, singer: data.singer, source: "网易云" };
+                             }
+                         }
+                     }
+                }
+
+                async function MusicPlay() {
+    var music = musicname;
+    if (music == Music_NowPlayName && !Music_Audio.paused) return;
+
+    Music_NowPlayName = music;
+    playIcon.style.display = 'none'; 
+    
+    var result;
+    var searchWithSinger = (singer && singer !== '未知歌手'); // 检查是否有有效歌手信息
+
+    // 1. 优先使用 歌名+歌手 搜索（QQ/网易云）
+    if (searchWithSinger) {
+        // 尝试 网易云 (歌名-歌手)
+        result = await WY_MusicGetUrl(music, singer); 
+        // 尝试 QQ 音乐 (歌名 歌手)
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music, singer); 
+        }
+    }
+    
+    // 2. 如果带歌手搜索失败，回退到 只搜索歌名
+    if (!result || !result.url) {
+        console.warn("使用歌手搜索失败，回退到只搜索歌名。");
+        // 只搜歌名（网易云）
+        result = await WY_MusicGetUrl(music);
+        // 只搜歌名（QQ）
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music);
+        }
+    }
+    
+    if (!result || !result.url) {
+        ShowInfo.textContent = "搜索歌曲失败";
+        ShowInfo.style.display = "block";
+        playIcon.style.display = 'block';
+        return;
+    }
+
+    ShowInfo.textContent = "正在播放: " + result.source + " - " + result.song;
+    ShowInfo.style.display = "block";
+    
+    try {
+        Music_Audio.src = result.url;
+        await Music_Audio.play();
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+    } catch (e) {
+        console.error(e);
+        playIcon.style.display = 'block';
+    }
+}
+
+                playButton.addEventListener('click', function() {
+                    if (Music_Audio.paused) {
+                        if (Music_Audio.src) { Music_Audio.play(); playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; }
+                        else { MusicPlay(); }
+                    } else {
+                        Music_Audio.pause();
+                        playIcon.style.display = 'block';
+                        pauseIcon.style.display = 'none';
+                    }
+                });
+
+                Music_Audio.addEventListener("timeupdate", function() {
+                    var percent = (Music_Audio.currentTime / Music_Audio.duration) * 100 || 0;
+                    progress.style.width = percent + "%";
+                    
+                    function formatTime(s) {
+                        var m = Math.floor(s / 60) || 0;
+                        var sec = Math.floor(s % 60) || 0;
+                        return m + ":" + sec.toString().padStart(2, '0');
+                    };
+                    currentTimeSpan.textContent = formatTime(Music_Audio.currentTime);
+                    document.getElementById("duration").textContent = formatTime(Music_Audio.duration);
+                });
+                
+                Music_Audio.addEventListener("ended", function() {
+                     playIcon.style.display = 'block';
+                     pauseIcon.style.display = 'none';
+                });
+            <\/script>
+        </body>
+        </html>`;
+        
+        // 【关键修正】：使用 encodeURIComponent 生成 Data URI
+        const safeDataUri = "data:text/html;charset=utf-8," + encodeURIComponent(musicPlayerHtml);
+        
+        processedContent = `<iframe src="${safeDataUri}" style="width: 100%; height: 180px; border: none; overflow: hidden;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>`;
+        isMusic = true; 
+        isSpecial = true;
+    }
+
+    // 4. 转账 [zz-金额]
+    // ⚠️ 注意：群聊中没有明确的接收者，我们只显示 '发起转账'
+    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(4, processedContent.length - 1);
+        const amount = raw.replace(/[^0-9.]/g, '');
+        
+        // 群聊中，只显示 '发起转账'
+        const displayText = "发起转账";
+
+        processedContent = `
+            <div class="special-message transfer-message">
+                <div class="special-msg-icon">💰</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-subtitle">${displayText}</div>
+                    <div class="transfer-amount">¥ ${amount}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 5. 图片/视频 [img-描述]
+    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
+        const desc = processedContent.substring(5, processedContent.length - 1).trim();
+        processedContent = `
+            <div class="special-message image-message">
+                <div class="special-msg-icon">🖼️</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">发送了图片</div>
+                    <div class="special-msg-subtitle">${desc}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+    else {
+        // 6. 普通文本
+        // ⚠️ 群聊模式下需要处理 @提及
+        processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
+             return `<span class="group-chat-mention">@${p1}</span>`;
+        });
+        
+        // 处理 Markdown 格式
+        processedContent = processedContent
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ------------------------------------------------------
+    // 最终组装
+    // ------------------------------------------------------
+    
+    // 音乐组件：去掉气泡背景，让卡片独立显示
+    if (isMusic) {
+        return `
+        <div class="group-chat-wrapper" style="width:100%; max-width: 340px;">
+            <div class="${itemClass}" data-user-id="${sender}">
+                <div class="group-chat-avatar-placeholder"></div>
+                 <div class="group-chat-message-content" style="width:100%;">
+                    <div class="group-chat-user-id">${sender}</div>
+                    ${processedContent}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // 普通/特殊气泡
+    return `
+    <div class="group-chat-wrapper">
+        <div class="${itemClass}" data-user-id="${sender}">
+            <div class="group-chat-avatar-placeholder"></div>
+            <div class="group-chat-message-content">
+                <div class="group-chat-user-id">${sender}</div>
+                <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+                    ${processedContent}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+async function createMessageBubble(msg, mode = 'chat') { 
 
     let content = msg.content;
    
@@ -23574,7 +25516,8 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
 
 const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML 
         let msgPlaceholderIndex = 0; // 新增：<msg> 占位符索引
-
+const groupChatPlaceholders = {}; // 用于存储 <group_chat> 标签生成的 HTML 
+let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
         // 步骤 2.1：首先解析 <msg> 标签并替换为占位符
         let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
             const userNickname = currentGameData?.user_character?.nick_name || '你';
@@ -23589,8 +25532,44 @@ const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML
             return placeholder;
         });
         
-        const pureContent = contentWithMsgPlaceholder // !!! 使用新的 contentWithMsgPlaceholder
-  
+// ✨ 步骤 2.2：解析 <group_chat> 标签并替换为占位符
+const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
+let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
+    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
+    
+    // 逐行解析消息
+    if (typeof chatContent === 'string') {
+        const lines = chatContent.trim().split('\n');
+        for (const line of lines) {
+            const cleanedLine = line.trim();
+            
+            // 忽略空的行、summary行
+            if (!cleanedLine || cleanedLine.startsWith('summary|')) {
+                continue; 
+            }
+
+            // 匹配 发送人|消息内容
+            const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
+            if (messageMatch) {
+                const sender = messageMatch[1].trim();
+                const content = messageMatch[2].trim();
+                
+                // ⚠️ 使用前面提供的 renderGroupChatToHtml 函数
+                groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+            }
+        }
+    }
+
+    // 3. 生成占位符
+    const placeholder = `GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}`;
+    groupChatPlaceholders[placeholder] = groupChatHtml;
+    groupChatPlaceholderIndex++;
+    return placeholder;
+});
+
+// ⚠️ 修正：现在我们应该使用 contentWithGroupChatPlaceholder
+  const pureContent = contentWithGroupChatPlaceholder // !!! 使用新的 contentWithGroupChatPlaceholder
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
@@ -23598,8 +25577,8 @@ const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
-        .replace(/<group_chat>(?:(?!<group_chat>)[\s\S])*?<\/group_chat>/gs, '')
-        .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, '');
+      
+        .replace(/<group_chat\b[^>]*>(?:(?!<group_chat\b)[\s\S])*?<\/group_chat>/gs, '');
    
      const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
         // 魔法第三步：我们应用酒馆正则和深度规则
@@ -23687,6 +25666,10 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
             // 注意：这里替换时不需要再进行转义，因为 msgPlaceholders 里的内容已经是最终的 HTML 结构。
             finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
         }
+        for (const placeholder in groupChatPlaceholders) {
+      // 替换群聊 HTML
+      finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), groupChatPlaceholders[placeholder]);
+    }
         // 最后，将我们保护好的 <details> 结构原封不动地替换回去
           for (const placeholder in specialBlocks) {
             const cleanBlock = specialBlocks[placeholder].replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
@@ -23956,7 +25939,7 @@ iframe.srcdoc = `<!DOCTYPE html>
     }
 
     // --- 群聊 ---
-    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat>([\s\S]*?)<\/group_chat>/gs)];
+    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat([\s\S]*?)<\/group_chat>/gs)];
     if (allGroupChatMatches.length > 0) {
         const chatOrb = document.getElementById('group-chat-orb-button');
         if (chatOrb) {
@@ -28431,32 +30414,42 @@ if (messageVars && messageVars.检定记忆) {
                 // 3. 遍历我们限定好的历史范围
    for (const message of historyToSearch) {
     if (message && message.content) {
-        const groupChatRegex = /<group_chat>([\s\S]*?)<\/group_chat>/g;
-                        let match;
+        // 匹配新的 <group_chat name="...">...</group_chat> 格式
+        const groupChatRegex = /<group_chat\s+name="[^"]*">([\s\S]*?)<\/group_chat>/g; 
+        let match;
 
-                        // 在单条消息内容中循环查找所有 <group_chat> 标签
-                        while ((match = groupChatRegex.exec(message.content)) !== null) {
-                         try {
-    const jsonString = match[1];
-    if (!jsonString || jsonString.trim() === '') {
-        console.warn("[Nova's Group Chat Extractor] 空的 JSON 字符串，跳过");
-        continue;
-    }
-    const chatObject = JSON.parse(jsonString);
-    if (chatObject && typeof chatObject === 'object' && chatObject.chat_summary) {
-        summaries.push(chatObject.chat_summary);
-    }
-} catch (e) {
-                                console.warn("[Nova's Group Chat Extractor] 解析群聊JSON失败，已跳过此部分:", match[1], e);
-                            }
+        // 在单条消息内容中循环查找所有 <group_chat> 标签
+        while ((match = groupChatRegex.exec(message.content)) !== null) {
+            try {
+                const chatContent = match[1]; // 捕获 <group_chat> 标签内部的所有文本
+                if (!chatContent || chatContent.trim() === '') {
+                    console.warn("[Nova's Group Chat Extractor] 空的群聊内容，跳过");
+                    continue;
+                }
+
+                // 逐行查找 summary| 标记
+                const lines = chatContent.trim().split('\n');
+                for (const line of lines) {
+                    const summaryMatch = line.trim().match(/^summary\|([\s\S]*)/);
+                    if (summaryMatch) {
+                        const chatSummary = summaryMatch[1].trim();
+                        if (chatSummary) {
+                            summaries.push(chatSummary);
                         }
                     }
                 }
+            } catch (e) {
+                // 即使失败，也只记录警告，继续查找下一个 <group_chat>
+                console.warn("[Nova's Group Chat Extractor] 解析群聊内容失败，已跳过此部分:", match[0], e);
+            }
+        }
+    }
+}
 
                   if (summaries.length > 0) {
-                    // 根据你的新想法：跳过最近的 hideLatestCount 条摘要，然后从剩余部分里取最新的最多 20 条。
+                    // 根据你的新想法：跳过最近的 hideLatestCount 条摘要，然后从剩余部分里取最新的最多 30 条。
                     const summariesToSkip = hideLatestCount;
-                    const summariesToTake = 40;
+                    const summariesToTake = 30;
 
                     // 1. 我们先从所有摘要的列表中，默默地将最后面的 "summariesToSkip" 条放在一边。
                     const summariesWithoutRecent = summaries.slice(0, -summariesToSkip);
@@ -43175,7 +45168,7 @@ const resourceReadyGuard = async () => {
 
     groupChatExists = false;
     const recentHistory = conversationHistory.slice(-10);
-    if (recentHistory.some(msg => /<group_chat>/.test(msg.content))) {
+    if (recentHistory.some(msg => /<group_chat/.test(msg.content))) {
         groupChatExists = true;
     }
 
@@ -43624,61 +45617,466 @@ const renderSidebar = () => {
         contentArea.querySelectorAll('.group-chat-message-bubble').forEach(bubble => bubble.addEventListener('contextmenu', handleReply));
     };
 /* === 用下面这个完整函数，替换你旧的 createMessageElement 函数 === */
+ 
 const createMessageElement = (msg, userNickname) => {
     const isSent = msg.user_id === userNickname;
     const alignClass = isSent ? 'sent' : 'received';
+    
+    // 基础 CSS 类
+    const bubbleClass = 'group-chat-message-bubble';
+    
+    // 预处理内容
+    let processedContent = (msg.content || '').trim();
+    let isSpecial = false; 
+    let isMusic = false; 
+
+    // ------------------------------------------------------
+    // 消息内容解析（从 renderPrivateMsgToHtml 移植）
+    // ------------------------------------------------------
+
+    // 1. 表情包 [name]
+    // 注意：这里先做一次替换，让表情包变成图片 HTML
+    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+        // 使用您在 renderChatWindowUI 中引用的 memeResourceManager
+        const memeSrc = memeResourceManager?.finalSrcMap[inner];
+        if (memeSrc) {
+            return `<img src="${memeSrc}" alt="${inner}" class="group-chat-meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+        }
+        return match;
+    });
+    
+    // 2. 语音 [yy-内容]
+    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
+        const text = processedContent.substring(4, processedContent.length - 1).trim();
+        const duration = Math.floor(Math.random() * 13) + 2; 
+        processedContent = `
+            <div class="special-message voice-message" title="点击播放(模拟)">
+                <div class="special-msg-icon">
+                    <div class="voice-wave">
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                        <div class="voice-bar"></div>
+                    </div>
+                </div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">语音消息</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 3. 音乐 [music-歌名$歌手]
+    else if (processedContent.match(/^\[music-[\s\S]*\]$/)) {
+        let raw = processedContent.substring(7, processedContent.length - 1);
+        raw = raw.replace(/[\r\n]/g, '').trim(); // 清洗换行符和空格
+
+        const parts = raw.split('$');
+        const song = (parts[0] || '未知歌曲').trim();
+        const artist = (parts[1] || '未知歌手').trim();
+        
+        // 获取当前系统的 CSS 变量值
+        const style = getComputedStyle(document.documentElement);
+        const primaryColor = style.getPropertyValue('--primary-color') || '#00faff';
+        const textColor = style.getPropertyValue('--text-color') || '#e6f1ff';
+        const textSecColor = style.getPropertyValue('--text-secondary-color') || '#a8c0e1';
+        const containerBg = style.getPropertyValue('--container-bg-color') || 'rgba(10, 25, 47, 0.75)';
+        const borderColor = style.getPropertyValue('--border-color') || 'rgba(0, 250, 255, 0.3)';
+        const fontFamily = style.getPropertyValue('--base-font-family') || 'sans-serif';
+
+                 // 构建 HTML 字符串
+        const musicPlayerHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>
+            <style>
+                * { box-sizing: border-box; }
+                body { margin: 0; padding: 0; background: transparent; overflow: hidden; font-family: ${fontFamily}; }
+                
+                :root {
+                    --primary-color: ${primaryColor};
+                    --text-color: ${textColor};
+                    --text-secondary-color: ${textSecColor};
+                    --container-bg-color: ${containerBg};
+                    --border-color: ${borderColor};
+                }
+
+                .music-card {
+                    width: 100%;
+                    background-color: var(--container-bg-color);
+                    border-radius: 10px;
+                    overflow: hidden;
+                    border: 1px solid var(--border-color);
+                    color: var(--text-color);
+                    backdrop-filter: blur(5px);
+                    user-select: none;
+                }
+
+                .card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 16px;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .track-info { display: flex; align-items: center; gap: 5px; overflow: hidden; }
+                
+                .track-icon {
+                    height: 24px; width: 24px;
+                    color: var(--primary-color);
+                    flex-shrink: 0;
+                }
+
+                .track-details { margin-left: 12px; overflow: hidden; }
+
+                .track-title {
+                    font-size: 1.1rem; font-weight: 600; color: var(--text-color);
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+                }
+
+                .track-artist {
+                    font-size: 0.85rem; color: var(--text-secondary-color);
+                    display: block; margin-top: 3px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                }
+
+                .card-icons { display: flex; align-items: center; flex-shrink: 0; }
+                .icon-star { height: 20px; width: 20px; color: var(--text-secondary-color); margin-left: 10px; cursor: pointer; }
+                .icon-star:hover { color: var(--primary-color); }
+
+                .progress-container {
+                    position: relative; margin: 16px 16px 8px 16px;
+                    height: 4px; background-color: rgba(255,255,255,0.2);
+                    border-radius: 2px; overflow: hidden;
+                }
+
+                .progress-bar {
+                    position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+                    background-color: var(--primary-color); border-radius: 2px;
+                    transition: width 0.1s linear;
+                }
+
+                .progress-time {
+                    display: flex; justify-content: space-between; padding: 0 16px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                }
+
+                .play-control { display: flex; justify-content: center; padding-bottom: 10px; }
+
+                .play-btn {
+                    width: 40px; height: 40px; border-radius: 50%;
+                    background: var(--primary-color);
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    margin-top: 5px;
+                    color: #000;
+                }
+                .play-btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+                .play-btn svg { width: 20px; height: 20px; fill: currentColor; stroke: none;}
+                
+                .pause-icon-shape { width: 14px; height: 16px; display: flex; justify-content: space-between; }
+                .pause-bar { width: 4px; height: 100%; background-color: currentColor; border-radius: 2px;}
+
+                .ShowInfo {
+                    text-align: center; margin: 0 10px 10px 10px;
+                    font-size: 0.75rem; color: var(--text-secondary-color);
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="music-card">
+                <div class="card-header">
+                    <div class="track-info">
+                        <svg class="track-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <div class="track-details">
+                            <span class="track-title">${song}</span>
+                            <span class="track-artist">${artist}</span>
+                        </div>
+                    </div>
+                    <div class="card-icons">
+                        <svg class="icon-star" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                </div>
+                <div class="progress-container"><div class="progress-bar"></div></div>
+                <div class="progress-time"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
+                <div class="play-control">
+                    <div class="play-btn" id="playButton">
+                        <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                        <div class="pause-icon" style="display:none;">
+                             <div class="pause-icon-shape"><div class="pause-bar"></div><div class="pause-bar"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ShowInfo"></div>
+            </div>
+            <script>
+                var Music_Audio = new Audio();
+                var Music_NowPlayName = "";
+                var musicname = "${song}";
+                var singer = "${artist}";
+                var playButton = document.getElementById('playButton');
+                var playIcon = playButton.querySelector('.play-icon');
+                var pauseIcon = playButton.querySelector('.pause-icon');
+                var progress = document.querySelector(".progress-bar");
+                var currentTimeSpan = document.getElementById("currentTime");
+                var ShowInfo = document.querySelector('.ShowInfo');
+
+                function checkAudioAvailability(url) {
+                   return new Promise(function(resolve) {
+                       var tester = new Audio();
+                       function cleanup() { tester.src = ''; }
+                       tester.preload = 'metadata';
+                       tester.src = url;
+                       tester.onloadedmetadata = function() { cleanup(); resolve(true); };
+                       tester.onerror = function() { cleanup(); resolve(false); };
+                       setTimeout(function() { cleanup(); resolve(false); }, 3000);
+                   });
+                }
+
+                function Http_Get(url) {
+                    return new Promise(function(resolve) {
+                        $.ajax({
+                            url: url, method: 'GET', timeout: 10000,
+                            success: function(data) { resolve(data); },
+                            error: function(e) { console.error(e); resolve(null); }
+                        });
+                    });
+                }
+
+                async function QQ_MusicGetUrl(name) {
+                    try {
+                        name = name.replace(/\\s/g, "");
+                        var result = await Http_Get("https://api.vkeys.cn/v2/music/tencent?word=" + name);
+                        if (!result || !result.data || !result.data.length) return;
+                        
+                        for (var i = 0; i < result.data.length; i++) {
+                             var data = result.data[i];
+                             if (data.id && !data.song.match(/live/gi)) {
+                                 var r = await Http_Get("https://api.vkeys.cn/v2/music/tencent?id=" + data.id);
+                                 if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                     return { url: r.data.url, song: data.song, singer: data.singer, source: "QQ音乐" };
+                                 }
+                             }
+                        }
+                    } catch(e) { console.warn(e); }
+                    return null;
+                }
+
+                async function WY_MusicGetUrl(name, singer) {
+                     name = name.replace(/\\s/g, "");
+                     var url = "https://api.vkeys.cn/v2/music/netease?word=" + name;
+                     if (singer) url += "-" + singer;
+                     var result = await Http_Get(url);
+                     if (!result) return;
+                     
+                     for (var i = 0; i < result.data.length; i++) {
+                         var data = result.data[i];
+                         if (data.id) {
+                             var r = await Http_Get("https://api.vkeys.cn/v2/music/netease?id=" + data.id);
+                             if (r && r.data && r.data.url && await checkAudioAvailability(r.data.url)) {
+                                 return { url: r.data.url, song: data.song, singer: data.singer, source: "网易云" };
+                             }
+                         }
+                     }
+                }
+
+                async function MusicPlay() {
+    var music = musicname;
+    if (music == Music_NowPlayName && !Music_Audio.paused) return;
+
+    Music_NowPlayName = music;
+    playIcon.style.display = 'none'; 
+    
+    var result;
+    var searchWithSinger = (singer && singer !== '未知歌手'); // 检查是否有有效歌手信息
+
+    // 1. 优先使用 歌名+歌手 搜索（QQ/网易云）
+    if (searchWithSinger) {
+        // 尝试 网易云 (歌名-歌手)
+        result = await WY_MusicGetUrl(music, singer); 
+        // 尝试 QQ 音乐 (歌名 歌手)
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music, singer); 
+        }
+    }
+    
+    // 2. 如果带歌手搜索失败，回退到 只搜索歌名
+    if (!result || !result.url) {
+        console.warn("使用歌手搜索失败，回退到只搜索歌名。");
+        // 只搜歌名（网易云）
+        result = await WY_MusicGetUrl(music);
+        // 只搜歌名（QQ）
+        if (!result || !result.url) {
+            result = await QQ_MusicGetUrl(music);
+        }
+    }
+    
+    if (!result || !result.url) {
+        ShowInfo.textContent = "搜索歌曲失败";
+        ShowInfo.style.display = "block";
+        playIcon.style.display = 'block';
+        return;
+    }
+
+    ShowInfo.textContent = "正在播放: " + result.source + " - " + result.song;
+    ShowInfo.style.display = "block";
+    
+    try {
+        Music_Audio.src = result.url;
+        await Music_Audio.play();
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+    } catch (e) {
+        console.error(e);
+        playIcon.style.display = 'block';
+    }
+}
+
+                playButton.addEventListener('click', function() {
+                    if (Music_Audio.paused) {
+                        if (Music_Audio.src) { Music_Audio.play(); playIcon.style.display = 'none'; pauseIcon.style.display = 'block'; }
+                        else { MusicPlay(); }
+                    } else {
+                        Music_Audio.pause();
+                        playIcon.style.display = 'block';
+                        pauseIcon.style.display = 'none';
+                    }
+                });
+
+                Music_Audio.addEventListener("timeupdate", function() {
+                    var percent = (Music_Audio.currentTime / Music_Audio.duration) * 100 || 0;
+                    progress.style.width = percent + "%";
+                    
+                    function formatTime(s) {
+                        var m = Math.floor(s / 60) || 0;
+                        var sec = Math.floor(s % 60) || 0;
+                        return m + ":" + sec.toString().padStart(2, '0');
+                    };
+                    currentTimeSpan.textContent = formatTime(Music_Audio.currentTime);
+                    document.getElementById("duration").textContent = formatTime(Music_Audio.duration);
+                });
+                
+                Music_Audio.addEventListener("ended", function() {
+                     playIcon.style.display = 'block';
+                     pauseIcon.style.display = 'none';
+                });
+            <\/script>
+        </body>
+        </html>`;
+        
+        const safeDataUri = "data:text/html;charset=utf-8," + encodeURIComponent(musicPlayerHtml);
+        
+        processedContent = `<iframe src="${safeDataUri}" style="width: 100%; height: 180px; border: none; overflow: hidden;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>`;
+        isMusic = true; 
+        isSpecial = true;
+    }
+
+    // 4. 转账 [zz-金额]
+    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
+        const raw = processedContent.substring(4, processedContent.length - 1);
+        const amount = raw.replace(/[^0-9.]/g, '');
+        
+        // 群聊模式下，转账目标应该是接收者，但我们没有 receiver 信息。
+        // 为了兼容，这里显示一个通用信息。
+        const displayText = isSent ? "发起转账" : `向 ${msg.user_id} 转账`; // 只能用发起者
+        // 如果是群聊，可以简化为 '转账消息'
+
+        processedContent = `
+            <div class="special-message transfer-message">
+                <div class="special-msg-icon">💰</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-subtitle">${displayText}</div>
+                    <div class="transfer-amount">¥ ${amount}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+
+    // 5. 图片/视频 [img-描述]
+    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
+        const desc = processedContent.substring(5, processedContent.length - 1).trim();
+        processedContent = `
+            <div class="special-message image-message">
+                <div class="special-msg-icon">🖼️</div>
+                <div class="special-msg-content">
+                    <div class="special-msg-title">发送了图片</div>
+                    <div class="special-msg-subtitle">${desc}</div>
+                </div>
+            </div>`;
+        isSpecial = true;
+    }
+    else {
+        // 6. 普通文本
+        // 处理提及
+        processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
+            return `<span class="group-chat-mention">@${p1}</span>`;
+        });
+
+        // 处理 Markdown 格式
+        processedContent = processedContent
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ------------------------------------------------------
+    // 最终组装
+    // ------------------------------------------------------
+
     const div = document.createElement('div');
     div.className = `group-chat-message-item ${alignClass}`;
     div.dataset.userId = msg.user_id;
 
-    // ✨【关键魔法】✨ 同时兼容'reply_to'和'replyTo'两种格式！
+    // 回复逻辑（保持不变）
     const replyInfo = msg.reply_to || msg.replyTo;
     let replyHtml = '';
     if (replyInfo && replyInfo.user_id && replyInfo.content) {
-        // 使用 .replace(/<[^>]*>/g, '') 清理一下内容，防止HTML注入
         const cleanContent = replyInfo.content.replace(/<[^>]*>/g, '');
         replyHtml = `<div class="group-chat-reply-quote"><b>${replyInfo.user_id}:</b> ${cleanContent}</div>`;
     }
 
-     let contentHtml = msg.content.replace(/@(\S+)/g, (match, p1) => {
-        return `<span class="group-chat-mention">@${p1}</span>`;
-    });
- 
-    //【关键修正】恢复我们之前的表情包解析逻辑！
-    const memeRegex = /\[([^\]]+)\]/g;
-    const pureTextContent = contentHtml.replace(memeRegex, '').trim();
-    let memesHtml = '';
-    let memeMatch;
-
-    // 必须使用一个新的正则表达式实例，防止 lastIndex 问题
-    const memeRegexForExec = /\[([^\]]+)\]/g;
-    while ((memeMatch = memeRegexForExec.exec(msg.content || '')) !== null) {
-        const memeName = memeMatch[1];
-        // 使用你全局的 memeResourceManager 来查找表情图片！
-        const memeSrc = memeResourceManager?.finalSrcMap[memeName];
-        if (memeSrc) {
-            memesHtml += `<img src="${memeSrc}" alt="[${memeName}]" title="[${memeName}]" class="group-chat-meme-image">`;
-        }
+    // 音乐组件：去掉气泡背景，让卡片独立显示
+    if (isMusic) {
+        div.style.width = '100%';
+        div.style.maxWidth = '340px'; // 限制最大宽度，美观
+        div.innerHTML = `
+            <div class="group-chat-avatar-placeholder"></div>
+             <div class="group-chat-message-content" style="width:100%;">
+                <div class="group-chat-user-id">${msg.user_id}</div>
+                ${replyHtml}
+                ${processedContent}
+            </div>`;
+        return div;
     }
 
+    // 普通/特殊气泡（使用上面解析出的 processedContent）
     div.innerHTML = `
-        <div class="group-chat-user-id">${msg.user_id}</div>
-        ${replyHtml}
-        ${pureTextContent ? `<div class="group-chat-message-bubble">${pureTextContent}</div>` : ''}
-        ${memesHtml}`;
+        <div class="group-chat-avatar-placeholder"></div>
+        <div class="group-chat-message-content">
+            <div class="group-chat-user-id">${msg.user_id}</div>
+            ${replyHtml}
+            <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+                ${processedContent}
+            </div>
+        </div>`;
 
     return div;
 };
-    // ====================================================================
-    // V10: 聊天模式渲染分发
-    // ====================================================================
 const renderGroupChat = async () => {
     // 这部分保持不变
-    groupChatHistoryIndices = conversationHistory.map((msg, idx) => {
-        const groupChatRegex = /<group_chat>[\s\S]*?<\/group_chat>/;
+groupChatHistoryIndices = conversationHistory.map((msg, idx) => {
+ 
+        const groupChatRegex = /<group_chat\s+name="[^"]*">[\s\S]*?<\/group_chat>/; 
+ 
         return groupChatRegex.test(msg.content) ? idx : -1;
     }).filter(idx => idx !== -1);
-
     // 如果一条群聊记录都没有，就直接显示提示并结束，这是对的
     if (groupChatHistoryIndices.length === 0) {
         // ✨ 妈妈的爱心加固 ✨：确保这里的提示能正确显示
@@ -43846,7 +46244,7 @@ const loadAndRenderChatContent_Group = (historyIndex, mode) => {
                 // 增加一个额外的保护，防止 messageData 或 content 本身就是 undefined
                 throw new Error(`History entry at index ${historyIndex} is invalid or has no content.`);
             }
-            const chatMatches = [...messageData.content.matchAll(/<group_chat>((?:(?!<group_chat>)[\s\S])*?)<\/group_chat>/gs)];
+           const chatMatches = [...messageData.content.matchAll(/<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs)];
             let allMessagesInHistory = [];
             let groupName = currentGameData.group_name || '诸天聊天群';
 
@@ -43856,27 +46254,37 @@ const loadAndRenderChatContent_Group = (historyIndex, mode) => {
                 resolve(false);
                 return;
             }
-
-            for (const match of chatMatches) {
-                const jsonString = match[1];
-
-                // ✨ 妈妈加的爱心守护 ✨
-                // 在处理之前，我们先检查一下jsonString是不是真的有内容
-                if (typeof jsonString !== 'string') {
-                    // 如果jsonString不是一个字符串(比如是undefined), 我们就跳过这个空的匹配，不让它引起麻烦
-                    console.warn(`Skipping an invalid or empty match in history index ${historyIndex}.`);
-                    continue;
+for (const match of chatMatches) {
+                const groupNameFromTag = match[1]; // 捕获 name="..." 中的群名 (match[1])
+                const chatContent = match[2];     // 捕获 <group_chat> 内部的所有文本 (match[2])
+                
+                if (groupNameFromTag) {
+                    groupName = groupNameFromTag; // 更新群名
                 }
 
-                const chatJson = tolerantJsonParse(jsonString);
+                // 逐行解析消息
+                if (typeof chatContent === 'string') {
+                    const lines = chatContent.trim().split('\n');
+                    for (const line of lines) {
+                        const cleanedLine = line.trim();
+                        
+                        // 忽略空的行、summary行、或者其他标签行
+                        if (!cleanedLine || cleanedLine.startsWith('summary|')) {
+                            continue; 
+                        }
 
-                if (chatJson && chatJson.messages && Array.isArray(chatJson.messages)) {
-                    allMessagesInHistory = allMessagesInHistory.concat(chatJson.messages);
-                    if (chatJson.group_name) groupName = chatJson.group_name;
-                } else if (chatJson === null) {
-                    console.error(`NOVA ERROR: Automatic JSON repair failed at history index ${historyIndex}.`, {
-                        faultyJsonString: jsonString,
-                    });
+                        // 匹配 发送人|消息内容
+                        const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
+                        if (messageMatch) {
+                            const user_id = messageMatch[1].trim();
+                            const content = messageMatch[2].trim();
+                            
+                            // 暂时不支持回复，这里直接推送消息
+                            allMessagesInHistory.push({ user_id, content });
+                        } else {
+                            console.warn(`[Nova Group Chat] Skipping malformed line (no '|' delimiter): ${cleanedLine}`);
+                        }
+                    }
                 }
             }
 
@@ -43895,6 +46303,8 @@ const loadAndRenderChatContent_Group = (historyIndex, mode) => {
         }
     });
 };
+
+
 const renderPrivateChat = (contactId, mode) => {
         const chatData = privateChatStore[contactId] || { messages: [] };
         const messagesToShow = chatData.messages;
@@ -43970,16 +46380,30 @@ const handleSendMessage = () => {
     let newChatBlockString = '';
     const lastHistoryItem = conversationHistory[conversationHistory.length - 1];
 
-    if (activeChat.type === 'group') {
-        // 创建一个只包含这条新消息的 group_chat 片段
-        const chatFragment = { messages: [localMessageBase] };
-        newChatBlockString = `\n<group_chat>${JSON.stringify(chatFragment, null, 2)}<` + `/group_chat>`;
-        if (lastHistoryItem) {
-             lastHistoryItem.content += newChatBlockString;
-            saveHistory(); 
-        }
-        triggerassa(`/setinput <${userName}同时在聊天群进行了以下操作：在群聊中发送消息：[ ${fullMessageForAI} ] end>\n`);
+   if (activeChat.type === 'group') {
+    // 1. 构建新的消息行（新格式：发送人|消息内容）
+    let newMessageLine = `${userNickname}|${messageText}`;
 
+    // 2. 如果存在回复，我们将其添加到 fullMessageForAI，但**不改变**newMessageLine
+    if (replyTarget) {
+      // 仅用于 AI 输入，以便 AI 知道回复了谁
+      fullMessageForAI = `回复 @${replyTarget.user_id}(${replyTarget.content}): ${messageText}`;
+      // ⚠️ 注意：由于您的新格式没有定义回复的结构，我们只能让回复信息保留在本地渲染，
+      //      在 history 中，我们只存储原始消息内容。
+    }
+
+    // 3. 构造新的群聊块 (使用新的非 JSON 格式)
+    // 注意：为了简化，这里每发一条新消息，就创建一个新的 <group_chat> 块。
+    const currentGroupName = currentGameData.group_name || '诸天聊天群';
+    newChatBlockString = `\n<group_chat name="${currentGroupName}">\n${newMessageLine}\n</group_chat>`;
+    
+    if (lastHistoryItem) {
+      lastHistoryItem.content += newChatBlockString;
+      saveHistory(); 
+    }
+    
+    // 4. 触发 AI
+    triggerassa(`/setinput <${userName}同时在聊天群进行了以下操作：在群聊中发送消息：[ ${newMessageLine} ] end>\n`);
     } else if (activeChat.type === 'private') {
       const targetId = activeChat.id;
     if (!privateChatStore[targetId]) privateChatStore[targetId] = { messages: [] };
@@ -44065,7 +46489,7 @@ const handleSendMessage = () => {
       const newSenders = new Set();
       privateChatMatches.forEach(match => {
         const authorId = match[1].trim(); // 发送人
-        // 只有当发信人不是我们自己时，才算作新消息提醒
+    
         if (authorId !== userNickname) {
           newSenders.add(authorId);
         }
@@ -47192,12 +49616,53 @@ function initializeDanmuSettings() {
     });
   }
  
-}
+}  
 
-// 确保在主程序初始化时调用
-// 假设您的初始化函数是 `init` 或在 DOMContentLoaded 时执行
-// 建议在初始化代码中添加：
-// initializeDanmuSettings();
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButton = document.getElementById('modal-background-toggle');
+    const ROOT = document.documentElement; // 获取 :root 元素 (<html>)
+    const STORAGE_KEY = 'modalBackgroundEnabled'; 
+    
+    // 渐变背景的值 (使用您提供的 CSS 渐变)
+    const GRADIENT_BG_VALUE = 'linear-gradient(135deg, var(--container-bg-color), var(--background-color))';
+    // 透明背景的值
+    const NONE_BG_VALUE = 'none';
+
+    if (!toggleButton) return; 
+
+    function applyModalBackground(isEnabled) {
+        const value = isEnabled ? GRADIENT_BG_VALUE : NONE_BG_VALUE;
+        
+        // 1. 设置 CSS 变量
+        ROOT.style.setProperty('--modal-content-bg', value);
+
+        // 2. 更新按钮状态
+        if (isEnabled) {
+            toggleButton.setAttribute('data-state', 'on');
+            toggleButton.textContent = '开启';
+        } else {
+            toggleButton.setAttribute('data-state', 'off');
+            toggleButton.textContent = '关闭';
+        }
+        
+        // 3. 保存状态
+        localStorage.setItem(STORAGE_KEY, isEnabled);
+    }
+
+    // 1. 初始加载状态
+    // 从 localStorage 读取状态，默认是 false (关闭/透明)
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    const initialState = savedState === null ? false : (savedState === 'true');
+    applyModalBackground(initialState);
+    
+    // 2. 按钮点击事件
+    toggleButton.addEventListener('click', function() {
+        const currentState = this.getAttribute('data-state') === 'on';
+        const newState = !currentState;
+        
+        applyModalBackground(newState);
+    });
+});
 </script>
 
 </html>
