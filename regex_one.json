@@ -13361,8 +13361,9 @@ pointer-events: auto;
             <p style="color: var(--text-secondary-color); font-size: 14px; margin-bottom: 0;">这些指令将在下次点击“发送”时，附加在你的消息最前方一起发送。</p>
             <textarea id="command-edit-area" style="width: 100%; height: 250px; background-color: rgba(0,0,0,0.3); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer"style="display: flex; gap: 10px;">
             <button id="save-command-btn" class="action-button">保存并关闭</button>
+             <button id="exc-command-btn" class="action-button" style="display: none;">执行指令</button>
         </div>
     </div>
 </div>
@@ -13827,7 +13828,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.13';
+let current_game_version = '3.2.15';
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -19508,35 +19509,93 @@ async function handleModeSelection() {
     };
 
     try {
-        startSetupButton.textContent = '...';
-        const selectedWorldModeValue = document.querySelector('input[name="world-mode"]:checked').value;
-        const selectedAttitude = document.querySelector('input[name="creator-attitude"]:checked').value;
-        const selectednpcinfo = document.querySelector('input[name="npc-info"]:checked').value;
-      
-        const selectedMap = document.querySelector('input[name="map-mode"]:checked').value;
-        const diceLevel = document.querySelector('input[name="dice-level"]:checked').value;
-        const selectedOptionsMode = document.querySelector('input[name="options-mode"]:checked').value;
-        const privateChatMode = document.querySelector('input[name="private-chat-mode"]:checked').value;
-        const selectedSummaryMode = document.querySelector('input[name="summary-mode"]:checked').value;
-        const selectedTitleValue = document.querySelector('input[name="title-mode"]:checked').value;
-        const nhumanValue = document.querySelector('input[name="nohuman-mode"]:checked').value;
-        const resourceValue = document.querySelector('input[name="resource-mode"]:checked').value;
-        const livevalue = document.querySelector('input[name="live-mode"]:checked').value;
-            const battlevalue = document.querySelector('input[name="battle-mode"]:checked').value;
-      const thingsvalue = document.querySelector('input[name="things-mode"]:checked').value;
-          const timevalue = document.querySelector('input[name="time-mode"]:checked').value;
-     const spacialdatevalue = document.querySelector('input[name="spacialdate-mode"]:checked').value;
-        const danmuvalue = document.querySelector('input[name="danmu-mode"]:checked').value;
+   startSetupButton.textContent = '...';
+
+        // --- 🛡️ 妈妈提供的安全获取函数 🛡️ ---
+        // 原理：优先获取当前选中的值；如果没选中(null)，则使用你 HTML 里默认的那个值(checked的那个)
+        const getSafeValue = (name, defaultValue) => {
+            const element = document.querySelector(`input[name="${name}"]:checked`);
+            if (!element) {
+                // 仅在控制台提示，不打扰用户，同时自动修复
+                console.warn(`⚠️ [${name}] 未检测到选中项，已自动使用默认值: ${defaultValue}`);
+                return defaultValue;
+            }
+            return element.value;
+        };
+
+        // --- 📝 根据你的HTML结构，精确校准的默认值 ---
+        
+        // world-mode 你没贴出来，这里暂定为 '1' (普通模式)，防止出错
+        const selectedWorldModeValue = getSafeValue('world-mode', '1'); 
+
+        // HTML: value="38" checked
+        const selectedAttitude = getSafeValue('creator-attitude', '38'); 
+        
+        // HTML: value="72" checked
+        const selectednpcinfo = getSafeValue('npc-info', '72');         
+        
+        // HTML: value="complex" checked
+        const selectedMap = getSafeValue('map-mode', 'complex');    
+        
+        // HTML: value="59" checked (对应 id="dice-2")
+        const diceLevel = getSafeValue('dice-level', '59');      
+        
+        // HTML: value="10" checked (对应 id="options-on")
+        const selectedOptionsMode = getSafeValue('options-mode', '10');     
+        
+        // HTML: value="55" checked (对应 id="private-chat-on")
+        const privateChatMode = getSafeValue('private-chat-mode', '55'); 
+        
+        // HTML: value="on" checked
+        const selectedSummaryMode = getSafeValue('summary-mode', 'on');
+
+        // HTML: value="off" checked
+        const selectedTitleValue = getSafeValue('title-mode', 'off');
+
+        // HTML: value="off" checked
+        const nhumanValue = getSafeValue('nohuman-mode', 'off');
+
+        // HTML: value="off" checked
+        const resourceValue = getSafeValue('resource-mode', 'off');
+
+        // HTML: value="70" checked (对应 id="live-off")
+        const livevalue = getSafeValue('live-mode', '70');
+
+        // HTML: value="75" checked (对应 id="battle-off")
+        const battlevalue = getSafeValue('battle-mode', '75');
+
+        // HTML: value="77" checked (对应 id="things-on") -- 注意这个默认是开启的
+        const thingsvalue = getSafeValue('things-mode', '77');
+
+        // HTML: value="79" checked (对应 id="time-off")
+        const timevalue = getSafeValue('time-mode', '79');
+
+        // HTML: value="off" checked
+        const spacialdatevalue = getSafeValue('spacialdate-mode', 'off'); 
+
+        // HTML: value="on" checked -- 注意这个默认是开启的
+        const danmuvalue = getSafeValue('danmu-mode', 'on');
     
-        const behaviorValue = document.querySelector('input[name="behavior-mode"]:checked').value;
-        const cgValue = document.querySelector('input[name="cg-mode"]:checked').value;
-        const npccgValue = document.querySelector('input[name="npccg-mode"]:checked').value;
-               const npcLOVEmode = document.querySelector('input[name="npc-love-mode"]:checked').value;
-              const distancemode = document.querySelector('input[name="distance-mode"]:checked').value;
-       
-        const selectedRealWorldMode = document.querySelector('input[name="real-world-mode"]:checked').value;
-        const selectedHardMode = document.querySelector('input[name="hard-mode"]:checked').value;
- 
+        // HTML: value="52" checked (对应 id="behavior-on")
+        const behaviorValue = getSafeValue('behavior-mode', '52');
+
+        // HTML: value="45" checked (对应 id="cg-on")
+        const cgValue = getSafeValue('cg-mode', '45');
+
+        // HTML: value="48" checked (对应 id="npccg-on")
+        const npccgValue = getSafeValue('npccg-mode', '48');
+
+        // HTML: value="off" checked
+        const npcLOVEmode = getSafeValue('npc-love-mode', 'off');
+
+        // HTML: value="off" checked
+        const distancemode = getSafeValue('distance-mode', 'off');
+        
+        // HTML: value="off" checked
+        const selectedRealWorldMode = getSafeValue('real-world-mode', 'off');
+        
+        // HTML: value="off" checked
+        const selectedHardMode = getSafeValue('hard-mode', 'off');
         // 💖 决定我们故事版本的核心魔法 💖
         let newVersion;
         switch (selectedWorldModeValue) {
@@ -19581,6 +19640,7 @@ async function handleModeSelection() {
                     if(danmuvalue === 'on'){
                 uidsToEnable.push(85);
             }
+
   if (npcLOVEmode === 'on') {
                 uidsToEnable.push(65,64);
             }
@@ -21205,7 +21265,10 @@ async function renderReadingModeChapter(msg) {
     // 2. 清理内容，但保留所有非交互性标签
     let renderedHtml = pureContent
         .replace(/<(battle|guide|options|forum_threads|shop_item|表现总结|group_chat)>[\s\S]*?<\/\1>/gs, '')
-        .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, ''); // 简化清理规则
+        .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, '').replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
+            const userNickname = currentGameData?.user_character?.nick_name || '你';
+            return renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
+        });
 
 
 
@@ -21393,8 +21456,65 @@ window.addEventListener('message', function(event) {
     // 7. 返回渲染好的纯净 HTML 字符串
     return bubble.innerHTML;
 }
- 
-   async function createMessageBubble(msg, mode = 'chat') { 
+
+
+function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
+    const isSent = sender === userNickname;
+    
+    // 基础 CSS 类
+    const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
+    const bubbleClass = 'group-chat-message-bubble';
+    
+    // 渲染消息内容 (处理特殊消息，如表情包)
+    let contentHtml = content.trim()
+        // 处理特殊消息格式 (如 [表情包名称], [zz-金额元], [yy-语音内容], [music-歌名$歌手], [img-内容描述])
+        .replace(/\[([^\]]+)\]/g, (match, specialContent) => {
+            if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[specialContent]) {
+                // 表情包
+                return `<img src="${memeImageMap[specialContent]}" alt="${specialContent}" class="meme-image" style="max-width: 120px; max-height: 120px; vertical-align: middle; margin: 4px;" />`;
+            }
+            if (specialContent.startsWith('yy-')) {
+                // 语音
+                return `<div class="special-message voice-message">[语音] ${specialContent.substring(3).trim()}</div>`;
+            }
+            if (specialContent.startsWith('music-')) {
+                // 音乐
+                const parts = specialContent.substring(6).split('$');
+                return `<div class="special-message music-message">[音乐] ${parts[0] || ''} - ${parts[1] || ''}</div>`;
+            }
+            if (specialContent.startsWith('img-')) {
+                // 图片/视频
+                return `<div class="special-message image-message">[图片/视频] ${specialContent.substring(4).trim()}</div>`;
+            }
+            if (specialContent.startsWith('zz-')) {
+                // 转账
+                return `<div class="special-message transfer-message">[转账] ${specialContent.substring(3).trim()}元</div>`;
+            }
+            return match; // 不匹配任何特殊格式则保留原样
+        })
+        // 简单 Markdown 粗体/斜体
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // 换行符转换为 <br>
+        .replace(/\n/g, '<br>');
+
+    // 注意：我们将整个消息块包装在一个 <p> 标签中，以确保它不会与外部的 <p> 标签冲突
+    return `
+    
+<div class="private-chat-wrapper">
+    <div class="${itemClass}" data-user-id="${sender}">
+        <div class="group-chat-avatar-placeholder"></div>
+        <div class="group-chat-message-content">
+            <div class="group-chat-user-id">${sender}</div>
+            <div class="${bubbleClass}">
+                ${contentHtml}
+            </div>
+        </div>
+    </div>
+</div>`;
+}
+
+    async function createMessageBubble(msg, mode = 'chat') { 
 
     let content = msg.content;
    
@@ -21424,10 +21544,24 @@ window.addEventListener('message', function(event) {
         });
 
 
+const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML 
+        let msgPlaceholderIndex = 0; // 新增：<msg> 占位符索引
 
-        // 魔法第二步：现在，我们的`processedContent`内部所有 `<html>` 都已经是安全的占位符了，
-        // 接下来我们才处理其他的标签和格式
-        const pureContent = protectedHtmlContent
+        // 步骤 2.1：首先解析 <msg> 标签并替换为占位符
+        let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
+            const userNickname = currentGameData?.user_character?.nick_name || '你';
+            
+            // 2. 将消息内容渲染成 HTML
+            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
+            
+            // 3. 生成占位符
+            const placeholder = `MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}`;
+            msgPlaceholders[placeholder] = renderedMsgHtml;
+            msgPlaceholderIndex++;
+            return placeholder;
+        });
+        
+        const pureContent = contentWithMsgPlaceholder // !!! 使用新的 contentWithMsgPlaceholder
   
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
@@ -21438,6 +21572,7 @@ window.addEventListener('message', function(event) {
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
         .replace(/<group_chat>(?:(?!<group_chat>)[\s\S])*?<\/group_chat>/gs, '')
         .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, '');
+   
      const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
         // 魔法第三步：我们应用酒馆正则和深度规则
         // const depth = Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
@@ -21519,7 +21654,11 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
 
         // 将所有美丽的段落重新组合起来
         let finalHtml = styledParagraphs.join('');
-
+// ✨【新增：替换 <msg> 占位符】✨
+        for (const placeholder in msgPlaceholders) {
+            // 注意：这里替换时不需要再进行转义，因为 msgPlaceholders 里的内容已经是最终的 HTML 结构。
+            finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
+        }
         // 最后，将我们保护好的 <details> 结构原封不动地替换回去
           for (const placeholder in specialBlocks) {
             const cleanBlock = specialBlocks[placeholder].replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
@@ -23223,6 +23362,10 @@ function processSpecialModulesInMessage(content) {
             }, { once: true });
         }
     }
+
+
+
+
 }
  (async () => {
 
@@ -23338,7 +23481,69 @@ initDisplay();
 // 调用时传入 content
 delayedUpdate(finalMessage.content);
 }
-    async function createMessageBubble(msg, mode = 'chat') {  
+
+/**
+ * @param {object} message - 包含 user_id, content, timestamp (可选), target_id (可选) 的私聊消息对象。
+ * @param {string} userNickname - 当前用户的昵称。
+ * @returns {string} - 渲染后的私聊气泡 HTML 字符串。
+ */
+function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
+    const isSent = sender === userNickname;
+    
+    // 基础 CSS 类
+    const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
+    const bubbleClass = 'group-chat-message-bubble';
+    
+    // 渲染消息内容 (处理特殊消息，如表情包)
+    let contentHtml = content.trim()
+        // 处理特殊消息格式 (如 [表情包名称], [zz-金额元], [yy-语音内容], [music-歌名$歌手], [img-内容描述])
+        .replace(/\[([^\]]+)\]/g, (match, specialContent) => {
+            if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[specialContent]) {
+                // 表情包
+                return `<img src="${memeImageMap[specialContent]}" alt="${specialContent}" class="meme-image" style="max-width: 120px; max-height: 120px; vertical-align: middle; margin: 4px;" />`;
+            }
+            if (specialContent.startsWith('yy-')) {
+                // 语音
+                return `<div class="special-message voice-message">[语音] ${specialContent.substring(3).trim()}</div>`;
+            }
+            if (specialContent.startsWith('music-')) {
+                // 音乐
+                const parts = specialContent.substring(6).split('$');
+                return `<div class="special-message music-message">[音乐] ${parts[0] || ''} - ${parts[1] || ''}</div>`;
+            }
+            if (specialContent.startsWith('img-')) {
+                // 图片/视频
+                return `<div class="special-message image-message">[图片/视频] ${specialContent.substring(4).trim()}</div>`;
+            }
+            if (specialContent.startsWith('zz-')) {
+                // 转账
+                return `<div class="special-message transfer-message">[转账] ${specialContent.substring(3).trim()}元</div>`;
+            }
+            return match; // 不匹配任何特殊格式则保留原样
+        })
+        // 简单 Markdown 粗体/斜体
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // 换行符转换为 <br>
+        .replace(/\n/g, '<br>');
+
+    // 注意：我们将整个消息块包装在一个 <p> 标签中，以确保它不会与外部的 <p> 标签冲突
+    return `
+<div class="private-chat-wrapper">
+    <div class="${itemClass}" data-user-id="${sender}">
+        <div class="group-chat-avatar-placeholder"></div>
+        <div class="group-chat-message-content">
+            <div class="group-chat-user-id">${sender}</div>
+            <div class="${bubbleClass}">
+                ${contentHtml}
+            </div>
+        </div>
+    </div>
+</div>`;
+}
+
+    async function createMessageBubble(msg, mode = 'chat') { 
+
     let content = msg.content;
    
     const originalIndex = conversationHistory.indexOf(msg);
@@ -23367,11 +23572,25 @@ delayedUpdate(finalMessage.content);
         });
 
 
+const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML 
+        let msgPlaceholderIndex = 0; // 新增：<msg> 占位符索引
 
-        // 魔法第二步：现在，我们的`processedContent`内部所有 `<html>` 都已经是安全的占位符了，
-        // 接下来我们才处理其他的标签和格式
-        const pureContent = protectedHtmlContent
-      
+        // 步骤 2.1：首先解析 <msg> 标签并替换为占位符
+        let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
+            const userNickname = currentGameData?.user_character?.nick_name || '你';
+            
+            // 2. 将消息内容渲染成 HTML
+            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
+            
+            // 3. 生成占位符
+            const placeholder = `MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}`;
+            msgPlaceholders[placeholder] = renderedMsgHtml;
+            msgPlaceholderIndex++;
+            return placeholder;
+        });
+        
+        const pureContent = contentWithMsgPlaceholder // !!! 使用新的 contentWithMsgPlaceholder
+  
        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
@@ -23381,6 +23600,7 @@ delayedUpdate(finalMessage.content);
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
         .replace(/<group_chat>(?:(?!<group_chat>)[\s\S])*?<\/group_chat>/gs, '')
         .replace(/<private_chat\b[^>]*>(?:(?!<private_chat\b)[\s\S])*?<\/private_chat>/gs, '');
+   
      const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
         // 魔法第三步：我们应用酒馆正则和深度规则
         // const depth = Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
@@ -23462,7 +23682,11 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
 
         // 将所有美丽的段落重新组合起来
         let finalHtml = styledParagraphs.join('');
-
+// ✨【新增：替换 <msg> 占位符】✨
+        for (const placeholder in msgPlaceholders) {
+            // 注意：这里替换时不需要再进行转义，因为 msgPlaceholders 里的内容已经是最终的 HTML 结构。
+            finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
+        }
         // 最后，将我们保护好的 <details> 结构原封不动地替换回去
           for (const placeholder in specialBlocks) {
             const cleanBlock = specialBlocks[placeholder].replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
@@ -23554,7 +23778,7 @@ iframe.onload = function() {
         body {
             font-family: var(--base-font-family);
              
-            color: black;
+             color: black;
             margin: 0;
             padding: 0px;
             box-sizing: border-box;
@@ -23639,7 +23863,7 @@ iframe.srcdoc = `<!DOCTYPE html>
     
     try {
         if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
-            // console.log("[Nova's Archives] 历史记录为空,无法寻找战斗。");
+            
             return;
         }
 
@@ -43038,41 +43262,53 @@ const resourceReadyGuard = async () => {
 
     console.log('NOVA V10.1: Friends list populated:', friendsList);
 };
-    const initializePrivateChatStore = () => {
-        privateChatStore = {};
-        const userNickname = currentGameData?.user_character?.nick_name || '你';
+const initializePrivateChatStore = () => {
+    privateChatStore = {};
+    const userNickname = currentGameData?.user_character?.nick_name || '你';
 
-        conversationHistory.forEach(historyItem => {
-            const privateChatMatches = [...historyItem.content.matchAll(/<private_chat user_id="([^"]+)">([\s\S]*?)<\/private_chat>/gs)];
+    conversationHistory.forEach(historyItem => {
+      // 修改正则表达式以匹配新的 <msg> 格式
+      const privateChatMatches = [...historyItem.content.matchAll(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs)];
 
-            for (const match of privateChatMatches) {
-                const authorId = match[1];
-                try {
-                    const data = JSON.parse(match[2]);
-                    if (!data?.messages) continue;
+      for (const match of privateChatMatches) {
+        const authorId = match[1].trim(); // 发送人
+        const targetId = match[2].trim(); // 接收人
+        const content = match[3].trim(); // 消息内容
 
-                    data.messages.forEach(msg => {
-                        const isSentByUser = (authorId === userNickname);
-                        const chatPartnerId = isSentByUser ? msg.target_id : authorId;
+        if (!authorId || !targetId) continue;
 
-                        if (!chatPartnerId) return;
+        // 确定当前用户在私聊中的聊天伙伴 ID
+        const chatPartnerId = (authorId === userNickname) ? targetId : authorId;
 
-                        if (!privateChatStore[chatPartnerId]) {
-                            privateChatStore[chatPartnerId] = { messages: [] };
-                        }
-                        // 统一消息格式，确保每条消息都有 user_id
-                        const finalMsg = { ...msg, user_id: authorId };
-                        privateChatStore[chatPartnerId].messages.push(finalMsg);
-                    });
-                } catch (e) {
-                    // JSON 解析失败，安静地忽略
-                }
-            }
-        });
-        Object.values(privateChatStore).forEach(chat => chat.messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)));
-        console.log('NOVA: Private Chat Store initialized.');
-    };
+        if (!privateChatStore[chatPartnerId]) {
+          privateChatStore[chatPartnerId] = { messages: [] };
+        }
+        
+        // 统一消息格式 (timestamp 缺失，需要外部提供或假设，这里忽略排序，但保留结构)
+        const finalMsg = { 
+          user_id: authorId, 
+          content: content,
+          target_id: targetId, // 内部记录
+          // 注意：新格式中没有 timestamp 和 replyTo 信息
+        }; 
+        privateChatStore[chatPartnerId].messages.push(finalMsg);
+      }
 
+      // 移除旧的 private_chat 解析逻辑
+      /*
+      const privateChatMatches = [...historyItem.content.matchAll(/<private_chat user_id="([^"]+)">([\s\S]*?)<\/private_chat>/gs)];
+      for (const match of privateChatMatches) {
+        const authorId = match[1];
+        try {
+          // ... 旧的 JSON 解析逻辑 ...
+        } catch (e) {}
+      }
+      */
+    });
+    // 这里的排序可能因为新格式缺乏 timestamp 而不够精确，但我们保留它以防万一
+    Object.values(privateChatStore).forEach(chat => chat.messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)));
+    console.log('NOVA: Private Chat Store initialized.');
+  };
     const getAvatarColor = (name) => {
         let hash = 0;
         for (let i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash); }
@@ -43745,26 +43981,31 @@ const handleSendMessage = () => {
         triggerassa(`/setinput <${userName}同时在聊天群进行了以下操作：在群聊中发送消息：[ ${fullMessageForAI} ] end>\n`);
 
     } else if (activeChat.type === 'private') {
-        const targetId = activeChat.id;
-        if (!privateChatStore[targetId]) privateChatStore[targetId] = { messages: [] };
-        privateChatStore[targetId].messages.push(localMessageBase);
+      const targetId = activeChat.id;
+    if (!privateChatStore[targetId]) privateChatStore[targetId] = { messages: [] };
+    // 1. 存储进本地消息 (本地消息格式保持统一)
+    privateChatStore[targetId].messages.push({ ...localMessageBase, target_id: targetId });
 
-        // 创建一个只包含这条新消息的 private_chat 片段
-        const privateMessageFragment = { messages: [{ target_id: targetId, content: messageText, replyTo: localMessageBase.replyTo }] };
-        newChatBlockString = `\n<private_chat user_id="${userNickname}">${JSON.stringify(privateMessageFragment, null, 2)}</private_chat>`;
-        if (lastHistoryItem) {
-             lastHistoryItem.content += newChatBlockString;
-             saveHistory(); 
-        }
-        triggerassa(`/setinput <${userName}同时对${targetId}进行了私聊：[ ${fullMessageForAI} ]。end>\n`);
+    // 2. 创建一个只包含这条新消息的 <msg> 片段
+    const msgForAssa = `<msg>${userNickname}|${targetId}|${messageText}</msg>`;
+    
+    // 3. 写入 conversationHistory
+    newChatBlockString = `\n${msgForAssa}`;
+    if (lastHistoryItem) {
+      lastHistoryItem.content += newChatBlockString;
+      saveHistory(); 
     }
+    
+    // 4. 触发 AI 输入
+    triggerassa(`/setinput <${userName}同时对${targetId}进行了私聊：[ ${messageText} ]。end>\n`);
+           }
 
     input.value = '';
     input.focus();
     cancelReply();
     rootElement.querySelector('.group-chat-meme-palette')?.classList.remove('active');
 };
-    // --- 处理回复 ---
+ 
     const handleReply = (e) => {
         e.preventDefault(); // 阻止默认的右键菜单
         const bubble = e.target.closest('.group-chat-message-bubble');
@@ -43810,25 +44051,25 @@ const handleSendMessage = () => {
     // V10: 初始化与事件监听
     // ====================================================================
 
-   const handleAiReplyComplete = () => {
-        console.log('[Nova] AI reply detected. Refreshing data...');
+ const handleAiReplyComplete = () => {
+    console.log('[Nova] AI reply detected. Refreshing data...');
 
-        // ✨【妈妈的新魔法：新消息提示】✨
-        const lastHistoryItem = conversationHistory[conversationHistory.length - 1];
-        if (lastHistoryItem && lastHistoryItem.content) {
-            const userNickname = currentGameData?.user_character?.nick_name || '你';
+    // ✨【妈妈的新魔法：新消息提示】✨
+    const lastHistoryItem = conversationHistory[conversationHistory.length - 1];
+    if (lastHistoryItem && lastHistoryItem.content) {
+      const userNickname = currentGameData?.user_character?.nick_name || '你';
 
-            // 我们只关心新私信的发信人
-            const privateChatMatches = [...lastHistoryItem.content.matchAll(/<private_chat user_id="([^"]+)">/g)];
+      // 我们只关心新私信的发信人。修改正则表达式以匹配 <msg>
+      const privateChatMatches = [...lastHistoryItem.content.matchAll(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/g)];
 
-            const newSenders = new Set();
-            privateChatMatches.forEach(match => {
-                const authorId = match[1];
-                // 只有当发信人不是我们自己时，才算作新消息提醒
-                if (authorId !== userNickname) {
-                    newSenders.add(authorId);
-                }
-            });
+      const newSenders = new Set();
+      privateChatMatches.forEach(match => {
+        const authorId = match[1].trim(); // 发送人
+        // 只有当发信人不是我们自己时，才算作新消息提醒
+        if (authorId !== userNickname) {
+          newSenders.add(authorId);
+        }
+      });
 
             if (newSenders.size > 0) {
                 // 用我们刚才创造的魔法，把好消息告诉我的孩子！
