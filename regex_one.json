@@ -27182,22 +27182,46 @@ _memoryOperation: function(currentData, path, key, value) {
     }
 
     // ✨✨✨ 标准路径导航 ✨✨✨
-    let target = currentData;
-    for (const part of pathParts) {
-        if (target[part] === undefined || target[part] === null) {
-            target[part] = {};
-        }
-        else if (typeof target[part] === 'string') {
-            const originalString = target[part];
-            target[part] = { "info": originalString };
-            console.log(`[Assa] 🌱 记忆转化：路径 '${part}' 已从字符串自动包装为可扩展的对象。`);
-        }
-        else if (typeof target[part] !== 'object') {
-            target[part] = {};
-        }
-
-        target = target[part];
+   let target = currentData;
+  for (const part of pathParts) {
+    if (target[part] === undefined || target[part] === null) {
+      target[part] = {};
     }
+    else if (typeof target[part] === 'string') {
+      const originalString = target[part];
+      target[part] = { "info": originalString };
+      console.log(`[Assa] 🌱 记忆转化：路径 '${part}' 已从字符串自动包装为可扩展的对象。`);
+    }
+    else if (typeof target[part] !== 'object' && !Array.isArray(target[part])) {
+      target[part] = {};
+    }
+
+    target = target[part];
+  }
+
+  // ⚛️ 数组索引解析
+  const arrayMatch = key.match(/^(.+)\[(\d+)\]$/);
+  if (arrayMatch) {
+    const baseKey = arrayMatch[1];
+    const index = parseInt(arrayMatch[2], 10);
+    
+    if (target[baseKey] === undefined || target[baseKey] === null) {
+      target[baseKey] = []; // 目标不存在则创建数组
+    }
+    
+    if (Array.isArray(target[baseKey])) {
+      // 直接设置数组元素的值
+      if (JSON.stringify(target[baseKey][index]) === JSON.stringify(finalValue)) {
+        return currentData; // 如果值相同，则直接返回
+      }
+      target[baseKey][index] = finalValue;
+      
+      // 🎒 背包自动清理
+      this._cleanupBackpack(currentData);
+      
+      return currentData; // 完成数组设置并返回
+    }
+  }
 
     // 🔍 检查是否完全相同（这个逻辑是正确的）
     if (target.hasOwnProperty(key) && JSON.stringify(target[key]) === JSON.stringify(finalValue)) {
@@ -29005,7 +29029,22 @@ if (match) {
                 // 条件是：大总结的数量必须比“升旗时”要多，证明新的一轮已经开始
                 if (bigSummaryKeys.length > (parseInt(config.counters.big_length_on_flag, 10) || 0)) {
                     console.log(`[Core] [Updater] 💖 旧任务结算：Small摘要清理条件满足，正在清空...`);
-                    summary.small = {}; // 安全地清空 small
+                    const smallKeys = Object.keys(summary.small);
+            
+            // 检查 small summary 中是否有数据
+            if (smallKeys.length > 0) {
+         
+                const latestKey = smallKeys[smallKeys.length - 1];
+                
+                // 重新赋值 summary.small，只保留最新的那一条记录
+                summary.small = { [latestKey]: summary.small[latestKey] };
+                
+                console.log(`[Core] [Updater] ✅ 已保留最新一条摘要：Key 为 ${latestKey}`);
+            } else {
+                // 如果 small summary 为空，则保持为空
+                summary.small = {}; 
+                console.log(`[Core] [Updater] Small摘要已为空，无需操作。`);
+            }
                     config.flags.clean_small_flag = false; // 放下旗帜，旧任务完成！
                 }
             }
