@@ -16267,54 +16267,67 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
     // 1. 两参数且路径以'.事件'结尾：memory('global_set.npc.母亲.事件', '{...}')
     // 2. 三参数且第二个参数是'event'或'事件'：memory('world_set.npc.用户', 'event', '{...}')
     // 3. 三参数且路径以'.事件'结尾 + '当前状态'/'当前想法'：memory('global_set.npc.不死川玄弥.事件', '当前状态', '...')
-    commandPattern: /\bmemory\s*\(\s*['"]([^'"]+)['"]\s*,\s*(?:(['"](?:event|事件|当前状态|当前想法)['"])\s*,\s*)?['"]([^'"]*(?:\{[\s\S]*?\})?[^'"]*)['"]\s*\)/,
+    commandPattern: /\bmemory\s*\(\s*['"]([^'"]+)['"]\s*,\s*(?:(['"](?:event|事件|当前状态|当前想法|情绪基调)['"])\s*,\s*)?['"]([^'"]*(?:\{[\s\S]*?\})?[^'"]*)['"]\s*\)/,
     action: (matches) => {
-        const pathOrObjectName = matches[1];
-        const middleParam = matches[2]; // 可能是 undefined、"'event'"、"'事件'"、"'当前状态'" 或 "'当前想法'"
-        const content = matches[3]; // JSON或普通文本
+    const pathOrObjectName = matches[1];
+    const middleParam = matches[2]; // 可能是 undefined、"'event'"、"'事件'"、"'当前状态'" 等
+    const content = matches[3]; // JSON或普通文本
+
+    // 1. 检查中间参数是否是事件相关键
+    const isEventKey = middleParam && (
+        middleParam.includes('event') ||
+        middleParam.includes('事件') ||
+        middleParam.includes('当前状态') ||
+        middleParam.includes('当前想法') ||
+        middleParam.includes('情绪基调') // 👈 确保这里有情绪基调
+    );
+
+    // 2. 检查路径是否以 .事件 结尾
+    const isEventPath = pathOrObjectName.endsWith('.事件');
+
+    // 如果既不是事件路径，又没有事件相关的中间键，则不匹配
+    if (!isEventPath && !isEventKey) {
+        return;
+    }
+
+    let displayName;
+    let eventData;
+    
+    // 如果是三参数格式，且路径以.事件结尾（如：memory('...事件', '情绪基调', '...')）
+    if (isEventPath && middleParam) {
+        // 三参数格式：memory('global_set.npc.不死川玄弥.事件', '当前状态', '...')
+        const pathParts = pathOrObjectName.split('.');
+        displayName = pathParts[pathParts.length - 2]; // 取'不死川玄弥'
         
-        // 只有以下情况才执行：
-        // 1. 路径以'.事件'结尾（两参数格式）
-        // 2. 中间参数是'event'或'事件'（三参数格式）
-        // 3. 路径以'.事件'结尾且中间参数是'当前状态'或'当前想法'（三参数格式）
-        const isEventPath = pathOrObjectName.endsWith('.事件');
-        const isEventMiddle = middleParam && (middleParam.includes('event') || middleParam.includes('事件'));
-        const isStateMiddle = middleParam && (middleParam.includes('当前状态') || middleParam.includes('当前想法'));
+        // 构造事件对象
+        const stateKey = middleParam.replace(/['"]/g, ''); // 移除引号
+        // 注意：这里需要对 content 进行转义，以确保 JSON 格式正确，特别是 content 包含引号时。
+        // 最安全的方式是先用 JSON.stringify 包装 content，然后移除外层引号。
+        const safeContent = JSON.stringify(content).slice(1, -1);
+        eventData = `{ "${stateKey}": "${safeContent}" }`;
+
+    } else if (isEventPath && !middleParam) {
+        // 两参数格式：memory('global_set.npc.母亲.事件', '{...}')
+        const pathParts = pathOrObjectName.split('.');
+        displayName = pathParts[pathParts.length - 2]; // 取'母亲'
+        eventData = content;
         
-        if (!isEventPath && !isEventMiddle) {
-            return; // 不匹配，直接返回
-        }
-        
-        // 如果有中间参数但不是event/事件/当前状态/当前想法，且路径不以.事件结尾，则不匹配
-        if (middleParam && !isEventMiddle && !isStateMiddle && !isEventPath) {
-            return;
-        }
-        
-        let displayName;
-        let eventData;
-        
-        if (isEventPath && isStateMiddle) {
-            // 三参数格式：memory('global_set.npc.不死川玄弥.事件', '当前状态', '...')
-            const pathParts = pathOrObjectName.split('.');
-            displayName = pathParts[pathParts.length - 2]; // 取'不死川玄弥'
-            
-            // 构造事件对象
-            const stateKey = middleParam.replace(/['"]/g, ''); // 移除引号
-            eventData = `{ "${stateKey}": "${content}" }`;
-        } else if (isEventPath && !middleParam) {
-            // 两参数格式：memory('global_set.npc.母亲.事件', '{...}')
-            const pathParts = pathOrObjectName.split('.');
-            displayName = pathParts[pathParts.length - 2]; // 取'母亲'
-            eventData = content;
-        } else {
-            // 三参数格式：memory('world_set.npc.用户', 'event', '{...}')
-            const nameParts = pathOrObjectName.split('.');
-            displayName = nameParts[nameParts.length - 1]; // 取'用户'
-            eventData = content;
-        }
-        
+    } else if (!isEventPath && isEventKey) {
+        // 三参数格式：memory('world_set.npc.用户', 'event', '{...}') 或 memory('path', 'event', '{...}')
+        const nameParts = pathOrObjectName.split('.');
+        displayName = nameParts[nameParts.length - 1]; // 取路径的最后一部分作为名字
+        eventData = content;
+    } else {
+        return; // 不符合预期情况
+    }
+
+    // 确保 eventData 至少是能被 displayEventTag 尝试解析的 JSON 字符串
+    if (eventData) {
         displayEventTag(displayName, eventData);
     }
+}
+        
+   
 },
     // ========== ✨妈妈将“生命波动”放在了最前面，确保它被优先感知✨ ==========
     {
@@ -16433,7 +16446,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         }
         existingTag.remove();
     }
-
+const motions = mergedEventData['情绪基调'] || '';
     const status = mergedEventData['当前状态'] || '（状态未知）';
     const thought = mergedEventData['当前想法'] || '（内心一片沉寂）';
     const firstChar = displayName.charAt(0) || '◆';
@@ -16456,7 +16469,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
             <img class="tooltip-cg-image" alt="角色立绘">
         </div>
         <div class="tooltip-orb">${firstChar}</div>
-        <div class="tooltip-status">${status}</div>
+        <div class="tooltip-status">${status}<br>${motions}</div>
         <div class="tooltip-divider"></div>
         <div class="tooltip-thought">${thought}</div>
     `;
@@ -29799,6 +29812,11 @@ const recentAiMessages = conversationHistory.filter(m => m && m.role === 'assist
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
                 content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户行动结束，user input end。\n【禁止重复输出任何历史内容，而是基于此用户输入开始新的情节，违则扣除五万美金】\n\n\n 在输出正文之前，以下信息/要求还需要注意："
             });
+    await TavernHelper.insertOrAssignVariables(
+            { 玩家输入: userText },
+            { type: 'chat' }
+        );
+           
         } else {
             promptsForAI = recentAiMessages;
         }
