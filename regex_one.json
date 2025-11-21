@@ -21452,7 +21452,7 @@ async function loadPreviousMessages() {
     // 我们需要倒序创建，这样才能正确地插入到顶部
     for (let i = messagesToPrepend.length - 1; i >= 0; i--) {
         const msg = messagesToPrepend[i];
-        const bubble = await createMessageBubble(msg,'chat');
+        const bubble = await createMessageBubble(msg,'chat',true);
         chatDisplayArea.insertBefore(bubble, chatDisplayArea.firstChild);
     }
 
@@ -21742,8 +21742,7 @@ window.addEventListener('message', function(event) {
     // 7. 返回渲染好的纯净 HTML 字符串
     return bubble.innerHTML;
 }
-
-function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
+function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_render = false) {
     const isSent = sender === userNickname;
     
     // 基础 CSS 类
@@ -21761,18 +21760,17 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
     let isAutoPlayBgm = false;
     
   
-        // 检查是否是 bgm 指令
-        if (sender === 'bgm') {
+        // 检查是否是 bgm 指令并且不是通过render进来的
+        if (sender === 'bgm' && !is_from_render) {
             console.log('这里有bgm！');
             isAutoPlayBgm = true; // 标记为自动播放
- 
  
         }
  
     // ------------------------------------------------------
     // 特殊消息解析逻辑
     // ------------------------------------------------------
-
+if(!isAutoPlayBgm){
     // 1. 表情包 [name]
     processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
         if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
@@ -21780,7 +21778,7 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
         }
         return match;
     });
-
+}
     // 2. 语音 [yy-内容]
     if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
         const text = processedContent.substring(4, processedContent.length - 1).trim();
@@ -21803,8 +21801,14 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
         isSpecial = true;
     }
 
-else if (processedContent.match(/^\[music-[\s\S]*\]$/)) {
-        let raw = processedContent.substring(7, processedContent.length - 1);
+else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isAutoPlayBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
+     let raw = '';
+    if(processedContent.match(/^\[music-[\s\S]*\]$/)){
+raw = processedContent.substring(7, processedContent.length - 1);
+    }else{
+raw = processedContent.substring(1, processedContent.length - 1);
+    }
+       
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim();
@@ -21928,7 +21932,7 @@ if (isAutoPlayBgm) {
     </div>
 </div>`;
 }
-   
+  
 function renderGroupChatToHtml(sender, content, userNickname) {
     const isSent = sender === userNickname;
     
@@ -22095,7 +22099,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     </div>`;
 }
 
- async function createMessageBubble(msg, mode = 'chat') { 
+ async function createMessageBubble(msg, mode = 'chat',is_from_render = false) { 
 
     let content = msg.content;
    
@@ -22134,7 +22138,7 @@ let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
             const userNickname = currentGameData?.user_character?.nick_name || '你';
             
             // 2. 将消息内容渲染成 HTML
-            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
+            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname,is_from_render);
             
             // 3. 生成占位符
            const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
@@ -22528,7 +22532,7 @@ async function renderHistory(is_entry = false) {
 
     // 复用你的循环逻辑来渲染初始消息
     for (const msg of messagesToDisplay) {
-         const bubble = await createMessageBubble(msg); // ❤️ 调用我们强大的气泡创造者
+         const bubble = await createMessageBubble(msg,"chat",true); // ❤️ 调用我们强大的气泡创造者
          chatDisplayArea.appendChild(bubble);
     }
 
@@ -24389,7 +24393,7 @@ delayedUpdate(finalMessage.content);
  * 负责所有音乐卡片的播放控制、搜索、淡入淡出及 UI 同步
  */
  
-function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
+function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_render = false) {
     const isSent = sender === userNickname;
     
     // 基础 CSS 类
@@ -24402,26 +24406,22 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
     let isMusic = false;
 
     // ------------------------------------------------------
- 
+    // 0. 预先处理 BGM 特殊格式: <msg>bgm|game|[music-...]</msg>
     // ------------------------------------------------------
     let isAutoPlayBgm = false;
     
-    // 检测是否包含 <msg> 标签包裹
   
-   
-        
-        // 检查是否是 bgm 指令
-        if (sender === 'bgm') {
+        // 检查是否是 bgm 指令并且不是通过render进来的
+        if (sender === 'bgm' && !is_from_render) {
             console.log('这里有bgm！');
             isAutoPlayBgm = true; // 标记为自动播放
- 
  
         }
  
     // ------------------------------------------------------
     // 特殊消息解析逻辑
     // ------------------------------------------------------
-
+if(!isAutoPlayBgm){
     // 1. 表情包 [name]
     processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
         if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
@@ -24429,7 +24429,7 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
         }
         return match;
     });
-
+}
     // 2. 语音 [yy-内容]
     if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
         const text = processedContent.substring(4, processedContent.length - 1).trim();
@@ -24452,8 +24452,14 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname) {
         isSpecial = true;
     }
 
-else if (processedContent.match(/^\[music-[\s\S]*\]$/)) {
-        let raw = processedContent.substring(7, processedContent.length - 1);
+else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isAutoPlayBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
+     let raw = '';
+    if(processedContent.match(/^\[music-[\s\S]*\]$/)){
+raw = processedContent.substring(7, processedContent.length - 1);
+    }else{
+raw = processedContent.substring(1, processedContent.length - 1);
+    }
+       
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim();
@@ -24577,7 +24583,7 @@ if (isAutoPlayBgm) {
     </div>
 </div>`;
 }
-   
+  
 
 function renderGroupChatToHtml(sender, content, userNickname) {
     const isSent = sender === userNickname;
@@ -24746,7 +24752,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     </div>`;
 }
 
-async function createMessageBubble(msg, mode = 'chat') { 
+async function createMessageBubble(msg, mode = 'chat',is_from_render = false) { 
 
     let content = msg.content;
    
@@ -24785,7 +24791,7 @@ let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
             const userNickname = currentGameData?.user_character?.nick_name || '你';
             
             // 2. 将消息内容渲染成 HTML
-            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
+            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname,is_from_render);
             
             // 3. 生成占位符
            const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
@@ -25413,7 +25419,7 @@ async function renderHistory(is_entry = false) {
 
     // 复用你的循环逻辑来渲染初始消息
     for (const msg of messagesToDisplay) {
-         const bubble = await createMessageBubble(msg); // ❤️ 调用我们强大的气泡创造者
+         const bubble = await createMessageBubble(msg,"chat",true); // ❤️ 调用我们强大的气泡创造者
          chatDisplayArea.appendChild(bubble);
     }
 
