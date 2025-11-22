@@ -13566,8 +13566,11 @@ pointer-events: auto;
             <textarea id="command-edit-area" style="width: 100%; height: 250px; background-color: rgba(0,0,0,0.3); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
         </div>
         <div class="modal-footer"style="display: flex; gap: 10px;">
-            <button id="save-command-btn" class="action-button">保存并关闭</button>
-             <button id="exc-command-btn" class="action-button" style="display: none;">执行指令</button>
+            <button id="save-command-btn" class="action-button" style="display: none;">保存并关闭</button>
+             <button id="exc-command-btn" class="action-button">立刻执行</button>
+             <button id="exc-last-command-btn" class="action-button" style="display: none;">重新处理上一次AI消息</button>
+             <button id="refactor-command-btn" class="action-button" style="display: none;">全部重构</button>
+             
         </div>
     </div>
 </div>
@@ -29276,6 +29279,28 @@ if (match) {
 
 //  数据统一.js结束
 
+
+//调试器的代码
+
+    document.getElementById('exc-command-btn').addEventListener('click', async() => {
+        const newCommands = document.getElementById('command-edit-area').value;
+     await processUpdateMemoryCommands(newCommands,-1);
+     await initDisplay();
+     showNovaAlert("已处理");
+    });
+
+        document.getElementById('exc-last-command-btn').addEventListener('click', async() => {
+     
+    //  await processUpdateMemoryCommands(newCommands,-1);
+     showNovaAlert("已处理");
+    });
+
+            document.getElementById('refactor-command-btn').addEventListener('click', async() => {
+     
+    //  await processUpdateMemoryCommands(newCommands,-1);
+     showNovaAlert("已处理");
+    });
+
 async function autoSetNpcFilters() {
     // 检查是否启用了自动设置功能
     const autoSetEnabled = String(localStorage.getItem('autoSetNpcFilter'));
@@ -35391,6 +35416,11 @@ function deleteLocation(locationName) {
      * @param {string} modalId - 弹窗的ID
      */
     function hideModal(modalId) {
+        if(modalId ==='command-modal'){
+             const newCommands = document.getElementById('command-edit-area').value;
+        assaCommandQueue = newCommands; // 保存编辑后的指令到全局变量
+        localStorage.setItem('assaCommandQueue', assaCommandQueue); // 同步到本地存储
+        }
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.classList.remove('active');
@@ -39494,9 +39524,7 @@ document.addEventListener('click', (event) => {
 });
 
     document.getElementById('save-command-btn').addEventListener('click', () => {
-        const newCommands = document.getElementById('command-edit-area').value;
-        assaCommandQueue = newCommands; // 保存编辑后的指令到全局变量
-        localStorage.setItem('assaCommandQueue', assaCommandQueue); // 同步到本地存储
+       
         hideModal('command-modal');
     });
 
