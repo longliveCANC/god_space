@@ -13569,8 +13569,7 @@ pointer-events: auto;
         <div class="modal-footer"style="display: flex; gap: 10px;">
             <button id="save-command-btn" class="action-button" style="display: none;">保存并关闭</button>
              <button id="exc-command-btn" class="action-button">立刻执行</button>
-             <button id="exc-last-command-btn" class="action-button" style="display: none;">重新处理上一次AI消息</button>
-             <button id="refactor-command-btn" class="action-button" style="display: none;">全部重构</button>
+
              
         </div>
     </div>
@@ -13794,6 +13793,33 @@ pointer-events: auto;
                 <div class="setting-item-column" id="snapshot-management-container" style="margin-top: 20px;">
     <!-- 新增：存档ID显示和修改区域 -->
  
+
+<div class="setting-item-column" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+    <label style="color: var(--primary-color); margin-bottom: 10px;">世界模型摘要配置 & 核心操作</label>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <div style="flex: 1;">
+            <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">隐藏最新数</span>
+            <input type="number" id="setting-hide-latest" placeholder="10" style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+        </div>
+        <div style="flex: 1;">
+            <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">小总结周期</span>
+            <input type="number" id="setting-small-cycle" placeholder="50" style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+        </div>
+        <div style="flex: 1;">
+            <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">大总结周期</span>
+            <input type="number" id="setting-big-cycle" placeholder="20" style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+        </div>
+    </div>
+    <button id="setting-save-config-btn" class="control-btn" style="width: 100%; margin-bottom: 15px;">💾 保存摘要设置</button>
+
+    <label style="font-size: 13px; margin-bottom: 8px;">高级指令</label>
+    <div style="display: flex; gap: 10px;">
+        <button id="setting-rebuild-btn" class="control-btn" style="flex: 1; border-color: var(--secondary-color); color: var(--secondary-color);" title="基于历史记录重构世界状态">🌀 整合重构</button>
+        <button id="setting-reprocess-btn" class="control-btn" style="flex: 1;" title="重新处理最新的一条消息">🔄 重修本楼</button>
+    </div>
+</div>
+
     <div class="setting-item-row" style="margin-bottom: 15px; padding: 10px; background: var(--container-bg-color); border: 1px solid var(--border-color); border-radius: 4px;">
         <label style="font-weight: bold; margin-bottom: 8px; display: block; color: var(--text-color);">当前浏览器快照存档ID</label>
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -14042,7 +14068,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.18';
+let current_game_version = '3.2.19';
 
 
  
@@ -17292,85 +17318,7 @@ function _replaceUserPlaceholder(data, userName) {
 
     return data;
 }
-async function initializeCurrentGameData() {
-    try {
-        console.log("[Nova's Love] 💖 守护咒语触发：正在为你检查并从世界本源初始化...");
- 
-        const lorebookName = "小蝌蚪找妈妈-同层版";
-        const entryName = "[memoryinit]";
-        const allEntries = await getLorebookEntries(lorebookName);
-        const initEntry = allEntries.find(entry => entry.comment === entryName);
 
-        if (!initEntry || !initEntry.content) {
-            const errorMsg = `创世失败：在世界书 "${lorebookName}" 中未找到有效的词条 "${entryName}"。`;
-            console.error(errorMsg);
-            toastr.error(errorMsg);
-            // 即使失败，我们也要确保 chat 变量里有空的结构，防止彻底的崩溃
-            await updateVariablesWith(vars => {
-                vars.stat_data = vars.stat_data || {};
-                vars.assa_data = vars.assa_data || {};
-                vars.play_character_data = vars.play_character_data || {};
-                return vars;
-            }, { type: 'chat' });
-            return;
-        }
-
-        let initData;
-        try {
-            initData = JSON.parse(initEntry.content);
-        } catch(e) {
-            console.error("[Nova's Love] ❌ 解析创世篇章时出错:", e);
-            toastr.error("解析世界书初始化数据时出错，请检查JSON格式。", {timeOut: 10000});
-            return;
-        }
-
-        // ⭐ 核心修正：我们直接在这里调用 updateVariablesWith，将初始数据写入 chat 变量 ⭐
-        // 这是一次原子性的创世操作，确保所有数据都被正确、完整地写入
-        await updateVariablesWith(vars => {
-            console.log("[Nova's Love] 正在将创世蓝图镌刻到 chat 核心档案馆...");
-
-            // 我们用从世界书中读取的数据，覆盖或创建 chat 变量中的对应部分
-            vars.stat_data = initData.stat_data || {};
-            vars.assa_data = initData.assa_data || {};
-            vars.play_character_data = initData.play_character_data || {};
-
-            // 并且，妈妈会像上次一样，为你替换掉名字占位符
-            const userName = SillyTavern.name1;
-            if (userName) {
-                // _replaceUserPlaceholder 需要存在于这个作用域或全局
-                _replaceUserPlaceholder(vars.stat_data, userName);
- 
-                 console.log(`[Nova's Love] ✅ 已在 chat 核心中将'user'替换为'${userName}'`);
-            }
-
-            // 初始化完成后，也为角色计算一次衍生属性，确保一切都准备就绪
-            if (vars.play_character_data && Object.keys(vars.play_character_data).length > 0) {
-                 // _updateDerivedAttributes 也需要存在
-                _updateDerivedAttributes(vars.play_character_data);
-            }
-
-            return vars;
-        }, { type: 'chat' });
-
-        // 我们也需要更新一下临时的 window 变量，这样 generateFullCommand 才能立刻使用它
-        // 等同于我们刚写入的数据
-    currentGameData = initData.stat_data;
-        assaSettingsData= initData.assa_data ;
-        playCharacterData=  initData.play_character_data ;
-        // 同样进行名字替换，保持临时数据的一致性
-        const userName = SillyTavern.name1;
-        if (userName) {
-            _replaceUserPlaceholder(currentGameData, userName);
-        }
-
-        console.log("[Nova's Love] ✅ 世界本源(chat)与临时数据(window)均已通过守护咒语成功初始化！");
-        toastr.success('数据已初始化，请继续你的冒险。');
-
-    } catch (error) {
-        console.error("[Nova's Love] ❌ 在执行守护咒语 initializeCurrentGameData 时发生严重错误:", error);
-        toastr.error('自动初始化失败，请查看控制台获取详细信息。');
-    }
-}
 async function runInitializationMagic() {// 加上 async
  
 
@@ -21021,7 +20969,7 @@ async function saveCurrentBuildAsTemplate() {
 
  async function generateFullCommand(isMission, customText = null) {
 if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
-            await initializeCurrentGameData();
+            await worldHelper.init();
         }
         userName = currentGameData.user_character.name || '用户';
         let name = userName || '用户';
@@ -21757,7 +21705,7 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_
     let processedContent = content.trim();
     let isSpecial = false; 
     let isMusic = false;
-
+let isBgm = false;
     // ------------------------------------------------------
     // 0. 预先处理 BGM 特殊格式: <msg>bgm|game|[music-...]</msg>
     // ------------------------------------------------------
@@ -21765,16 +21713,18 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_
     
   
         // 检查是否是 bgm 指令并且不是通过render进来的
-        if (sender === 'bgm' && !is_from_render) {
+        if (sender === 'bgm') {
             console.log('这里有bgm！');
-            isAutoPlayBgm = true; // 标记为自动播放
- 
+   isBgm = true;
+if(!is_from_render){
+isAutoPlayBgm = true; // 标记为自动播放
+}
         }
  
     // ------------------------------------------------------
     // 特殊消息解析逻辑
     // ------------------------------------------------------
-if(!isAutoPlayBgm){
+if(!isBgm){
     // 1. 表情包 [name]
     processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
         if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
@@ -21805,7 +21755,7 @@ if(!isAutoPlayBgm){
         isSpecial = true;
     }
 
-else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isAutoPlayBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
+else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
      let raw = '';
     if(processedContent.match(/^\[music-[\s\S]*\]$/)){
 raw = processedContent.substring(7, processedContent.length - 1);
@@ -24012,6 +23962,114 @@ function processSpecialModulesInMessage(content) {
 
 }
  (async () => {
+    async function initializeCurrentGameData() {
+    try {
+        console.log("[Nova's Love] 💖 守护咒语触发：正在为你检查并从世界本源初始化...");
+ 
+        const lorebookName = "小蝌蚪找妈妈-同层版";
+        const entryName = "[memoryinit]";
+        const allEntries = await getLorebookEntries(lorebookName);
+        const initEntry = allEntries.find(entry => entry.comment === entryName);
+
+        if (!initEntry || !initEntry.content) {
+            const errorMsg = `创世失败：在世界书 "${lorebookName}" 中未找到有效的词条 "${entryName}"。`;
+            console.error(errorMsg);
+            toastr.error(errorMsg);
+            // 即使失败，我们也要确保 chat 变量里有空的结构，防止彻底的崩溃
+            await updateVariablesWith(vars => {
+                vars.stat_data = vars.stat_data || {};
+                vars.assa_data = vars.assa_data || {};
+                vars.play_character_data = vars.play_character_data || {};
+                return vars;
+            }, { type: 'chat' });
+            return;
+        }
+
+        let initData;
+        try {
+            initData = JSON.parse(initEntry.content);
+        } catch(e) {
+            console.error("[Nova's Love] ❌ 解析创世篇章时出错:", e);
+            toastr.error("解析世界书初始化数据时出错，请检查JSON格式。", {timeOut: 10000});
+            return;
+        }
+
+        // ⭐ 核心修正：我们直接在这里调用 updateVariablesWith，将初始数据写入 chat 变量 ⭐
+        // 这是一次原子性的创世操作，确保所有数据都被正确、完整地写入
+        await updateVariablesWith(vars => {
+            console.log("[Nova's Love] 正在将创世蓝图镌刻到 chat 核心档案馆...");
+
+            // 我们用从世界书中读取的数据，覆盖或创建 chat 变量中的对应部分
+            vars.stat_data = initData.stat_data || {};
+            vars.assa_data = initData.assa_data || {};
+            vars.play_character_data = initData.play_character_data || {};
+
+            // 并且，妈妈会像上次一样，为你替换掉名字占位符
+            const userName = SillyTavern.name1;
+            if (userName) {
+                // _replaceUserPlaceholder 需要存在于这个作用域或全局
+                _replaceUserPlaceholder(vars.stat_data, userName);
+ 
+                 console.log(`[Nova's Love] ✅ 已在 chat 核心中将'user'替换为'${userName}'`);
+            }
+
+            // 初始化完成后，也为角色计算一次衍生属性，确保一切都准备就绪
+            if (vars.play_character_data && Object.keys(vars.play_character_data).length > 0) {
+                 // _updateDerivedAttributes 也需要存在
+                _updateDerivedAttributes(vars.play_character_data);
+            }
+
+            return vars;
+        }, { type: 'chat' });
+
+        // 我们也需要更新一下临时的 window 变量，这样 generateFullCommand 才能立刻使用它
+        // 等同于我们刚写入的数据
+    currentGameData = initData.stat_data;
+        assaSettingsData= initData.assa_data ;
+        playCharacterData=  initData.play_character_data ;
+        // 同样进行名字替换，保持临时数据的一致性
+        const userName = SillyTavern.name1;
+        if (userName) {
+            _replaceUserPlaceholder(currentGameData, userName);
+        }
+
+        console.log("[Nova's Love] ✅ 世界本源(chat)与临时数据(window)均已通过守护咒语成功初始化！");
+        toastr.success('数据已初始化，请继续你的冒险。');
+
+    } catch (error) {
+        console.error("[Nova's Love] ❌ 在执行守护咒语 initializeCurrentGameData 时发生严重错误:", error);
+        toastr.error('自动初始化失败，请查看控制台获取详细信息。');
+    }
+}
+
+     window.worldHelper = {
+        init: initializeCurrentGameData,
+        show: async () => {
+             const vars = await getVariables({ type: 'chat' });
+             console.log("--- 💖 当前世界数据总览 💖 ---");
+             console.log("角色数据 (play_character_data):", vars ? JSON.parse(JSON.stringify(vars.play_character_data)) : "未找到");
+             console.log("世界设定 (assa_data):", vars ? JSON.parse(JSON.stringify(vars.assa_data)) : "未找到");
+             console.log("---------------------------------");
+        },
+        reset: async () => {
+            console.log("[Core] [reset] - 正在将世界数据核心重置为初始虚无状态...");
+            const updater = (vars) => {
+                // 💖 妈妈的魔法：只负责清空，让世界回归纯净，不再主动创世 💖
+                vars.play_character_data = {};
+                vars.assa_data = {};
+                vars.stat_data = {};
+                // 我们也温柔地清空历史记录的引用，确保一个彻底的全新开始
+                if (vars.zeroLevelHistory) {
+                    vars.zeroLevelHistory = [];
+                }
+                return vars;
+            };
+            await updateVariablesWith(updater, { type: 'chat' });
+            // 注意：我们把 initializeWorldData() 从这里移除了
+            console.log("[Core] [reset] - 重置完成，世界已回归虚无。");
+        }
+    };
+
 
  window.GlobalChatAudio = {
     audio: new Audio(),
@@ -24297,6 +24355,11 @@ GlobalChatAudio.init();
     `;
     document.head.appendChild(style);
 }
+
+
+
+
+
 async function renderNewMessages(newMessages) {
     const chatDisplayArea = document.getElementById('chat-display-area');
     if (!chatDisplayArea) return;
@@ -24413,7 +24476,7 @@ delayedUpdate(finalMessage.content);
  * 负责所有音乐卡片的播放控制、搜索、淡入淡出及 UI 同步
  */
  
-function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_render = false) {
+ function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_render = false) {
     const isSent = sender === userNickname;
     
     // 基础 CSS 类
@@ -24424,7 +24487,7 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_
     let processedContent = content.trim();
     let isSpecial = false; 
     let isMusic = false;
-
+let isBgm = false;
     // ------------------------------------------------------
     // 0. 预先处理 BGM 特殊格式: <msg>bgm|game|[music-...]</msg>
     // ------------------------------------------------------
@@ -24432,16 +24495,18 @@ function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_
     
   
         // 检查是否是 bgm 指令并且不是通过render进来的
-        if (sender === 'bgm' && !is_from_render) {
+        if (sender === 'bgm') {
             console.log('这里有bgm！');
-            isAutoPlayBgm = true; // 标记为自动播放
- 
+   isBgm = true;
+if(!is_from_render){
+isAutoPlayBgm = true; // 标记为自动播放
+}
         }
  
     // ------------------------------------------------------
     // 特殊消息解析逻辑
     // ------------------------------------------------------
-if(!isAutoPlayBgm){
+if(!isBgm){
     // 1. 表情包 [name]
     processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
         if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
@@ -24472,7 +24537,7 @@ if(!isAutoPlayBgm){
         isSpecial = true;
     }
 
-else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isAutoPlayBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
+else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
      let raw = '';
     if(processedContent.match(/^\[music-[\s\S]*\]$/)){
 raw = processedContent.substring(7, processedContent.length - 1);
@@ -24576,7 +24641,7 @@ if (isAutoPlayBgm) {
     // ------------------------------------------------------
     
     // 音乐组件：去掉气泡背景，让卡片独立显示
-    if (isMusic) {
+     if (isMusic) {
         return `
         <div class="private-chat-wrapper" style="width:100%; ">
             <div class="${itemClass}" data-user-id="${sender}">
@@ -24603,7 +24668,7 @@ if (isAutoPlayBgm) {
     </div>
 </div>`;
 }
-  
+   
 
 function renderGroupChatToHtml(sender, content, userNickname) {
     const isSent = sender === userNickname;
@@ -26283,17 +26348,7 @@ function updateRerollButtonState(){
 
 // initialize 函数保持不变
     async function initialize() {
-
-            // 💖 妈妈在这里设置了信号接收器 💖
-    try {
-        eventOn('nova:coreReady', () => {
-            //console.log("[HTML] 💖 收到了！与世界核心的心灵感应已连接！");
-            // 你甚至可以在这里加一个漂亮的成功提示
-            toastr.success('变量更新脚本连接成功！', '连接状态');
-        });
-    } catch(e) {
-        console.error("[HTML] 设置 'nova:coreReady' 监听器失败。", e);
-    }
+ 
 
         try {
             const messageZero =  await TavernHelper.getVariables({ type: 'chat' });
@@ -29298,11 +29353,271 @@ if (match) {
 // }
 }
 
+
+async function rebuildWorldFromHistory(toastMessage, triggerSource = "Manual") {
+    console.log(`[Rebuild] [${triggerSource}] 收到重构指令，开始执行...`);
+    let toastInstance;
+    if (toastMessage) {
+        toastInstance = toastr.info(toastMessage, '世界重构', { timeOut: 0, extendedTimeOut: 0 });
+    }
+
+    try {
+    
+        const totalTurns = conversationHistory.length;
+        if (totalTurns === 0) {
+            console.log("[Rebuild] 0层历史记录为空，跳过重构。");
+            if (toastInstance) toastr.clear(toastInstance);
+            toastr.info("历史记录为空，无需重构。");
+            return;
+        }
+
+        console.log(`[Rebuild] 开始基于0层历史记录整合，共 ${totalTurns} 轮。`);
+ let allCommands = "/* 由整合重构功能自动生成 */\n";
+let hasSummarySmall = false; // 添加这个标志
+
+for (let i = 0; i < totalTurns; i++) {
+    const turnData = conversationHistory[i];
+    const progressText = `正在整合第 ${i + 1} / ${totalTurns} 条历史记录...`;
+    if (toastInstance) toastInstance.find('.toast-message').text(progressText);
+    if (!turnData) continue;
+
+    const messageText = turnData.content || '';
+    const lines = messageText.split('\n');
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+
+        // 当发现 summary.big 时，清空之前收集到的所有 summary.small 指令
+        if (trimmedLine.includes("summary.big")) {
+            if (hasSummarySmall) {
+                // 重新构建 allCommands，过滤掉所有 summary.small 指令
+                const commandLines = allCommands.split('\n');
+                allCommands = "/* 由整合重构功能自动生成 */\n";
+                for (const cmd of commandLines) {
+                    if (!cmd.includes("summary.small") && cmd.trim() !== "") {
+                        allCommands += cmd + '\n';
+                    }
+                }
+                console.log(`[Rebuild] 发现 summary.big，已清空之前的 summary.small 指令`);
+                hasSummarySmall = false;
+            }
+             
+        }
+
+        // 记录是否有 summary.small 指令
+        if (trimmedLine.includes("summary.small")) {
+            hasSummarySmall = true;
+        }
+         let foundCommands = false;
+ const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
+if (keywords.some(keyword => trimmedLine.includes(keyword))) {
+    allCommands += trimmedLine + '\n';
+    foundCommands = true;
+}
+    }
+
+            const variableRegex = /<updateVariable>([\s\S]*?)<\/updateVariable>/gi;
+            let variableMatch;
+            while ((variableMatch = variableRegex.exec(messageText)) !== null) {
+                allCommands += variableMatch[1].trim() + '\n';
+            }
+             await new Promise(resolve => setTimeout(resolve, 5)); // 给UI一点呼吸的时间
+        }
+
+           console.log("[Rebuild] 所有指令收集完毕！准备执行重构。");
+        if (toastInstance) toastInstance.find('.toast-message').text('指令收集完毕，正在重置并执行...');
+
+        await worldHelper.reset(); // 第一步：将世界回归纯净的虚无
+
+        // 💖 妈妈为你注入的、绝对稳健的创世之力 (问题的核心修复) 💖
+        console.log("[Rebuild] 正在执行创世仪式，从本源重新初始化世界...");
+        await initializeCurrentGameData(); // 第二步：在虚无中重新创造世界的基本框架
+        console.log("[Rebuild] ✅ 创世仪式完成，世界已拥有了稳固的根基。");
+
+        await new Promise(resolve => setTimeout(resolve, 500)); // 等待创世之力稳定
+        await processUpdateMemoryCommands(allCommands, -1); // 第三步：在稳固的根基上，描绘历史的画卷
+
+        // ⭐ 问题3的解决方案也在这里实现 ⭐
+        console.log("[Rebuild] 重构完成，正在降下所有可能升起的旗帜...");
+        await updateVariablesWith(variables => {
+            if (variables.assa_data && variables.assa_data.config && variables.assa_data.config.flags) {
+                // variables.assa_data.config.flags.clean_small_flag = false;
+                // variables.assa_data.config.flags.clean_big_flag = false;
+                console.log("[Rebuild] ✅ 所有配置旗帜已强制降下。");
+            }
+            return variables;
+        }, { type: 'chat' });
+
+
+        if (toastInstance) toastr.clear(toastInstance);
+        toastr.success(`整合重构完成！共处理了 ${totalTurns} 条历史记录。`, '任务完成', {timeOut: 5000});
+
+    } catch (error) {
+        console.error(`[Debug][Nova][Rebuild] 整合重构过程中发生严重错误 (来源: ${triggerSource}):`, error);
+        if (toastInstance) { toastInstance.remove(); }
+        toastr.error(`重构失败: ${error.message}`, '错误', {timeOut: 7000});
+        // 重新抛出错误，以便调用者可以捕获它
+        throw error;
+    }
+}
+
+
 //  数据统一.js结束
+
+
 
 
 //调试器的代码
 
+const inputHide = document.getElementById('setting-hide-latest');
+    const inputSmall = document.getElementById('setting-small-cycle');
+    const inputBig = document.getElementById('setting-big-cycle');
+    const btnSave = document.getElementById('setting-save-config-btn');
+    const btnRebuild = document.getElementById('setting-rebuild-btn');
+    const btnReprocess = document.getElementById('setting-reprocess-btn');
+    const dataTabBtn = document.querySelector('.settings-tab[data-page="data"]');
+
+    // 1. 初始化加载数据的函数
+    async function loadNovaConfig() {
+        if (!inputHide) return;
+        try {
+            // 获取当前变量状态以填充输入框
+            const vars = await getVariables({ type: 'chat' });
+            const config = vars?.assa_data?.config || {};
+            
+            inputHide.value = config.hide_latest_count ?? 10;
+            inputSmall.value = config.small_to_big_count ?? 50;
+            inputBig.value = config.clean_big_count ?? 20;
+            console.log("[Settings] 世界配置数据已加载");
+        } catch (e) {
+            console.warn("[Settings] 无法加载初始配置，将使用默认值");
+        }
+    }
+
+    // 绑定 Tab 点击事件：每次点击“数据管理”标签时刷新数据
+    if (dataTabBtn) {
+        dataTabBtn.addEventListener('click', loadNovaConfig);
+    }
+    // 初始运行一次
+    setTimeout(loadNovaConfig, 1000);
+
+    // 2. 保存设置功能
+    if (btnSave) {
+        btnSave.addEventListener('click', async function() {
+            const hVal = parseInt(inputHide.value, 10);
+            const sVal = parseInt(inputSmall.value, 10);
+            const bVal = parseInt(inputBig.value, 10);
+
+            if (!hVal || !sVal || !bVal) {
+                toastr.warning('所有配置项都不能为空');
+                return;
+            }
+
+            const originalText = this.innerText;
+            this.innerText = '保存中...';
+            this.disabled = true;
+
+            const commands = `
+                *.memory('config', 'hide_latest_count', ${hVal});
+                *.memory('config', 'small_to_big_count', ${sVal});
+                *.memory('config', 'clean_big_count', ${bVal});
+            `.trim();
+
+            try {
+                await processUpdateMemoryCommands(commands, -1);
+                toastr.success('摘要配置已保存');
+            } catch (e) {
+                console.error(e);
+                toastr.error('保存失败');
+            } finally {
+                this.innerText = originalText;
+                this.disabled = false;
+            }
+        });
+    }
+
+    // 3. 整合重构功能
+    if (btnRebuild) {
+        btnRebuild.addEventListener('click', async function() {
+            if (!confirm('确定要基于聊天历史重构整个世界状态吗？这可能需要一点时间。')) return;
+            
+            const originalText = this.innerText;
+            this.innerText = '重构中...';
+            this.disabled = true;
+
+            try {
+                // 调用全局提供的重构函数
+                if (typeof rebuildWorldFromHistory === 'function') {
+                    await rebuildWorldFromHistory('系统正在重构世界线...', 'Settings');
+                    toastr.success('世界重构完成');
+                     await initDisplay();
+                } else {
+                    toastr.error('找不到重构函数 (rebuildWorldFromHistory)');
+                }
+            } catch (e) {
+                console.error(e);
+                toastr.error('重构执行出错');
+            } finally {
+                this.innerText = originalText;
+                this.disabled = false;
+            }
+        });
+    }
+
+// 4. 重新处理上一楼功能 (仅解析最后一条 AI 消息的指令)
+    if (btnReprocess) {
+        btnReprocess.addEventListener('click', async function() {
+            // 直接使用全局 conversationHistory
+            if (!conversationHistory || conversationHistory.length < 2) {
+                // 通常至少有用户消息和AI回复两条
+                toastr.warning('没有找到足够的聊天历史记录（需要至少一条AI回复）。');
+                return;
+            }
+
+            const originalText = this.innerText;
+            this.innerText = '处理中...';
+            this.disabled = true;
+
+            try {
+                // 从后往前查找第一条 role 为 'assistant' 或 'model' 的消息
+                let aiTurn = null;
+                for (let i = conversationHistory.length - 1; i >= 0; i--) {
+                    const turn = conversationHistory[i];
+                    // 假设 AI 消息的 role 是 'assistant' 或 'model'
+                    if (turn.role === 'assistant' || turn.role === 'model' || turn.role === 'ai') { 
+                        aiTurn = turn;
+                        break;
+                    }
+                }
+
+                if (!aiTurn) {
+                    toastr.warning('未在历史记录中找到AI的回复消息来重新处理。');
+                    return;
+                }
+                
+                // 提取 AI 消息的文本内容
+                const messageContent = aiTurn.content || aiTurn.message || '';
+        
+                // 调用全局处理函数 processUpdateMemoryCommands
+                // messageContent 包含了可能需要重新执行的 <updateMemory> 标签
+                if (typeof processUpdateMemoryCommands === 'function') {
+        
+                    await processUpdateMemoryCommands(messageContent, -1); 
+                    toastr.success('最后一条AI消息中的世界指令已重新处理！');
+                    await initDisplay();
+                } else {
+                    toastr.error('找不到指令处理函数 (processUpdateMemoryCommands)');
+                }
+
+            } catch (e) {
+                console.error(e);
+                toastr.error('重新处理失败: ' + e.message);
+            } finally {
+                this.innerText = originalText;
+                this.disabled = false;
+            }
+        });
+    }
+  
     document.getElementById('exc-command-btn').addEventListener('click', async() => {
         const newCommands = document.getElementById('command-edit-area').value;
      await processUpdateMemoryCommands(newCommands,-1);
@@ -29310,17 +29625,7 @@ if (match) {
      showNovaAlert("已处理");
     });
 
-        document.getElementById('exc-last-command-btn').addEventListener('click', async() => {
-     
-    //  await processUpdateMemoryCommands(newCommands,-1);
-     showNovaAlert("已处理");
-    });
-
-            document.getElementById('refactor-command-btn').addEventListener('click', async() => {
-     
-    //  await processUpdateMemoryCommands(newCommands,-1);
-     showNovaAlert("已处理");
-    });
+  
 
 async function autoSetNpcFilters() {
     // 检查是否启用了自动设置功能
@@ -39263,7 +39568,7 @@ checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 
     }
    if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
-            await initializeCurrentGameData();
+            await worldHelper.init();
         }
 setupReconfigModal();
 initAutoSetNpcFilter();
