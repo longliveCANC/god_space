@@ -14068,7 +14068,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.19';
+let current_game_version = '3.2.20';
 
 
  
@@ -30178,8 +30178,10 @@ const recentAiMessages = conversationHistory.filter(m => m && m.role === 'assist
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
                 content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户行动结束，user input end。\n【禁止重复输出任何历史内容，而是基于此用户输入开始新的情节，违则扣除五万美金】\n\n\n 在输出正文之前，以下信息/要求还需要注意："
             });
+             let userText_format = userText.replace(/<updateMemory>(?:(?!<updateMemory>)[\s\S])*?<\/updateMemory>/gs, '')
+
     await TavernHelper.insertOrAssignVariables(
-            { 玩家输入: userText },
+            { 玩家输入: userText_format },
             { type: 'chat' }
         );
            
@@ -30645,6 +30647,7 @@ const timeString = `${SafeGetValue(currentGameData?.user_character?.current_loca
         sendButton.disabled = false;
         sendButton.textContent = '→';
         document.getElementById('continue-button').disabled = false;
+        document.getElementById('continue-var-button').disabled = false;  
         updateRerollButtonState();
     }
 }
