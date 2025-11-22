@@ -12967,6 +12967,7 @@ pointer-events: auto;
         <br>
         <button id="reroll-button" class="popup-menu-button">重roll ⟲</button>
         <button id="continue-button" class="popup-menu-button">继续 ▶</button>
+        <button id="continue-var-button" class="popup-menu-button">继续[变量] ▶</button>
     </div>
 </div>
 
@@ -25782,6 +25783,7 @@ const menuBtn = document.getElementById('action-menu-btn');
 const popupMenu = document.getElementById('action-popup-menu');
  
 const continueBtn = document.getElementById('continue-button');
+const continuevarBtn = document.getElementById('continue-var-button');
 const stopGenerationButton = document.getElementById('stop-generation-btn');
 // 点击菜单按钮，切换菜单显示
 menuBtn.addEventListener('click', (event) => {
@@ -25796,7 +25798,10 @@ continueBtn.addEventListener('click', () => {
     handleSend({ isContinuation: true });
     popupMenu.classList.remove('active');
 });
-
+continuevarBtn.addEventListener('click', () => {
+    handleSend({ isContinuation: true,isContinuationVar: true });
+    popupMenu.classList.remove('active');
+});
 // 点击页面其他任何地方，关闭菜单
 window.addEventListener('click', () => {
     if (popupMenu.classList.contains('active')) {
@@ -29390,7 +29395,7 @@ async function handleSend(options = {}) {
     }
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
-    const { isReroll = false, isContinuation = false } = options;
+    const { isReroll = false, isContinuation = false,isContinuationVar = false } = options;
        let aiFullResponse;  
     let aiMessage;     
     let partialAiResponse = '';  
@@ -29473,9 +29478,17 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
             overlay.classList.remove('active'); // 解除遮罩
             return;
         }
-        userText = `Continue`;
+        if(isContinuationVar){
+  userText = `中断写作任务，按照最新要求执行`;
+        continuationText = `[中断写作任务，新任务：直接对以下正文进行memory的分析和完整更新，不输出任何正文: ${lastAiMessage.content}\n请从<variableAnalyze>开始。]`;
+        console.log("[Nova's Whisper] 正在请求重新生成变量...");
+      
+        }else{
+  userText = `Continue`;
         continuationText = `[续写：Continue the following message. Do not include ANY parts of the original message. DO NOT include ANY parts of thinking，立刻输出小说正文。Use capitalization and punctuation as if your reply is a part of the original message: ${lastAiMessage.content}]`;
         console.log("[Nova's Whisper] 正在请求延续上一段故事...");
+      
+        }
         
     } else if (!isReroll) {
       let scanFloorsToUse = hideLatestCount; // 默认值
@@ -29638,7 +29651,8 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
         sendButton.disabled = true;
          document.getElementById('reroll-button').disabled = true; // 💖 禁用菜单里的重开按钮
     document.getElementById('continue-button').disabled = true; // 💖 禁用菜单里的继续按钮
-        sendButton.textContent = '...';
+    document.getElementById('continue-var-button').disabled = true;   
+    sendButton.textContent = '...';
 
         const aiResponseBubble = document.createElement('div');
         aiResponseBubble.classList.add('message-bubble', 'assistant-message');
