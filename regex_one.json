@@ -22420,6 +22420,42 @@ if (autoPlayTrigger) {
     // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
 }
+function cleanupGlobalUIState() {
+    console.log("[Nova's Tidying Magic] 开始清理全局UI状态...");
+
+    // 1. 清理战斗相关的UI
+    const battlePromptOverlay = document.getElementById('battle-prompt-overlay');
+    if (battlePromptOverlay) {
+        battlePromptOverlay.style.display = 'none';
+        console.log(">> 战斗提示遮罩已隐藏。");
+    }
+  const dicePoolSelector = document.getElementById('dice-pool-selector');
+    if (dicePoolSelector) dicePoolSelector.style.display = 'none';
+
+    const itemSkillPanel = document.getElementById('item-skill-panel');
+    if (itemSkillPanel) itemSkillPanel.style.display = 'none';
+
+    console.log(">> 所有浮动面板已强制隐藏。");
+    const battleOverlay = document.getElementById('battle-overlay');
+    if (battleOverlay) {
+        battleOverlay.style.display = 'none';
+        console.log(">> 战斗主界面已隐藏。");
+    }
+
+ if (window.combatManager && typeof window.combatManager.cleanupEventListeners === 'function') {
+        window.combatManager.cleanupEventListeners();
+    }
+
+    // 然后再安全地销毁实例
+    if (window.combatManager) {
+        window.combatManager = null;
+        console.log(">> 旧的战斗实例已销毁。");
+    }
+
+    // （未来如果还有其他类似的全局覆盖UI，也可以在这里添加清理逻辑）
+
+    console.log("[Nova's Tidying Magic] 清理完成！");
+}
 
  async function renderHistory(is_entry = false) {
          cleanupGlobalUIState();
