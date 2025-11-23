@@ -14068,10 +14068,10 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.0';
+let current_game_version = '3.3.1';
 
 
- 
+
 
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -44990,16 +44990,22 @@ const resourceReadyGuard = async () => {
 
     // B2. 新增逻辑：探测 global_set.settings.群聊
     // 格式："群聊":{"${群聊名称1}": ... }
-    const settingsGroups = assaSettingsData?.global_set?.settings?.['群聊'];
-    if (settingsGroups && typeof settingsGroups === 'object') {
-        Object.keys(settingsGroups).forEach(groupName => {
-            // 如果这个群还没加过（避免和上面的默认群重复），就加上去
-            if (!addedGroupNames.has(groupName)) {
-                availableGroups.push({ id: groupName, name: groupName, type: 'group' });
-                addedGroupNames.add(groupName);
-            }
-        });
-    }
+const settingsGroups = assaSettingsData?.global_set?.settings?.['群聊'];
+if (settingsGroups && typeof settingsGroups === 'object') {
+    Object.keys(settingsGroups).forEach(groupName => {
+        // --- 🤖 新增的修改点 START ---
+        // 检查 groupName 是否以 "_" 开头，如果是，则跳过本次循环
+        if (groupName.startsWith('_')) {
+            return; 
+        }
+   
+        // 如果这个群还没加过（避免和上面的默认群重复），就加上去
+        if (!addedGroupNames.has(groupName)) {
+            availableGroups.push({ id: groupName, name: groupName, type: 'group' });
+            addedGroupNames.add(groupName);
+        }
+    });
+}
 
     console.log('[Nova] 通讯录更新完毕:Groups:', availableGroups, 'Friends:', friendsList);
 };
