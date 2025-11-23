@@ -30567,16 +30567,17 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
         }
 
         console.log('[Nova的记忆保险箱] 数据准备就绪，正在准备后台存储方案...');
-
+let snapshotData = {};
+let backupData = {};
         if(noBackup === "false"){
        const chatVars = await TavernHelper.getVariables({ type: 'chat' });
-        const snapshotData = JSON.parse(JSON.stringify(chatVars));
+       snapshotData = JSON.parse(JSON.stringify(chatVars));
         if (snapshotData.zeroLevelHistory) {
             delete snapshotData.zeroLevelHistory;
         }
 
         // 2. 准备备份数据 (Backup Data)
-        const backupData = {
+        backupData = {
             chat_variables: chatVars,
             timestamp: new Date().toISOString()
         };
