@@ -12102,7 +12102,7 @@ pointer-events: auto;
          <div class="mod-tab" data-for="distance-on" data-name="distance-mode" data-off-id="distance-off">距离合理+</div>
 
          <div class="mod-label">npc</div>
-         <div class="mod-tab" data-for="private-chat-on" data-name="private-chat-mode" data-off-id="private-chat-off">私聊通讯</div>
+         <div class="mod-tab" data-for="private-chat-on" data-name="private-chat-mode" data-off-id="private-chat-off">私聊群聊</div>
   <div class="mod-tab" data-for="npccg-on" data-name="npccg-mode" data-off-id="npccg-off">npc立绘</div>
          <div class="mod-tab" data-for="npc-info-1" data-name="npc-info">极简npc</div>
         <div class="mod-tab" data-for="npc-info-2" data-name="npc-info">简单npc</div>
@@ -29996,8 +29996,7 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
                
         }
 
-
-
+ 
         await saveHistory();
 
         sendButton.disabled = true;
@@ -30019,87 +30018,87 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
      
           try {
               //console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
-    const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
+//     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
 
-    // 步骤1：获取原始世界书
-    originalWorldInfo = await getLorebookEntries(worldBookName);
+//     // 步骤1：获取原始世界书
+//     originalWorldInfo = await getLorebookEntries(worldBookName);
 
-    // 【新代码位置】 在备份前进行完整性验证！
-    if (originalWorldInfo && originalWorldInfo.length > 0) {
-        const validationEntryId = 14;
-// 修复为
-const validationEntry = originalWorldInfo.find(entry => entry.uid === 14);
-if (!validationEntry || !validationEntry.content || validationEntry.content.trim().startsWith('<ready>')) {
-    console.error(`[Nova's Integrity Check] 验证失败！检测到世界书异常。正在尝试从备份自动修复...`);
-    toastr.warning('世界书核心检测到异常，正在尝试自动修复...', '紧急修复');
+//     // 【新代码位置】 在备份前进行完整性验证！
+//     if (originalWorldInfo && originalWorldInfo.length > 0) {
+//         const validationEntryId = 14;
+// // 修复为
+// const validationEntry = originalWorldInfo.find(entry => entry.uid === 14);
+// if (!validationEntry || !validationEntry.content || validationEntry.content.trim().startsWith('<ready>')) {
+//     console.error(`[Nova's Integrity Check] 验证失败！检测到世界书异常。正在尝试从备份自动修复...`);
+//     toastr.warning('世界书核心检测到异常，正在尝试自动修复...', '紧急修复');
 
    
-  const backupData = await getWorldbookFromDB(worldBookName); // 从 IndexedDB 获取备份
-    if (backupData) {
-        try {
-                // backupData 现在直接是 JS 对象，无需 JSON.parse
-                    await setLorebookEntries(worldBookName, backupData);
-                    originalWorldInfo = backupData;
-                    console.log(`[Nova's Integrity Check] 已从 IndexedDB 备份成功恢复世界书 "${worldBookName}"。`);
-                    await removeDirtyFlag(worldBookName); // 从 IndexedDB 移除标记
+//   const backupData = await getWorldbookFromDB(worldBookName); // 从 IndexedDB 获取备份
+//     if (backupData) {
+//         try {
+//                 // backupData 现在直接是 JS 对象，无需 JSON.parse
+//                     await setLorebookEntries(worldBookName, backupData);
+//                     originalWorldInfo = backupData;
+//                     console.log(`[Nova's Integrity Check] 已从 IndexedDB 备份成功恢复世界书 "${worldBookName}"。`);
+//                     await removeDirtyFlag(worldBookName); // 从 IndexedDB 移除标记
 
-            // 3. 给用户一个积极的反馈！
-            toastr.success('世界书已自动修复！您的操作可以继续了，无需刷新。', '修复成功');
+//             // 3. 给用户一个积极的反馈！
+//             toastr.success('世界书已自动修复！您的操作可以继续了，无需刷新。', '修复成功');
  
-        } catch (e) {
-            console.error(`[Nova's Integrity Check] 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
-            toastr.error('自动修复失败！', '严重错误');
-            // 修复失败，这是一个严重问题，必须中断操作。
-            return;
-        }
-    } else {
-        // 发现异常，但没有备份可以用来修复，这也是最糟糕的情况。
-        console.error(`[Nova's Integrity Check] 致命错误：世界书异常，但找不到可用的备份数据！`);
-        toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请备份好自定义内容，在设置点击强制更新世界书', '严重错误');
-        // 必须中断
-        return;
-    }
-} else {
-    // 如果检查通过，一切照旧。
-    console.log(`[Nova's Pre-Backup Check] 验证成功！世界书状态正常。`);
-}
-    }
+//         } catch (e) {
+//             console.error(`[Nova's Integrity Check] 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
+//             toastr.error('自动修复失败！', '严重错误');
+//             // 修复失败，这是一个严重问题，必须中断操作。
+//             return;
+//         }
+//     } else {
+//         // 发现异常，但没有备份可以用来修复，这也是最糟糕的情况。
+//         console.error(`[Nova's Integrity Check] 致命错误：世界书异常，但找不到可用的备份数据！`);
+//         toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请备份好自定义内容，在设置点击强制更新世界书', '严重错误');
+//         // 必须中断
+//         return;
+//     }
+// } else {
+//     // 如果检查通过，一切照旧。
+//     console.log(`[Nova's Pre-Backup Check] 验证成功！世界书状态正常。`);
+// }
+//     }
     
 
         
 
       
-        if (originalWorldInfo) {
-                   await saveWorldbookToDB(worldBookName, originalWorldInfo); // 保存到 IndexedDB
-        await setDirtyFlag(worldBookName, true);                   // 在 IndexedDB 中设置标记
-        // --- 💖 修改结束 💖 ---
-        isDirty = true; // 标记本次操作已污染世界书
-                  }
+//         if (originalWorldInfo) {
+//                    await saveWorldbookToDB(worldBookName, originalWorldInfo); // 保存到 IndexedDB
+//         await setDirtyFlag(worldBookName, true);                   // 在 IndexedDB 中设置标记
+//         // --- 💖 修改结束 💖 ---
+//         isDirty = true; // 标记本次操作已污染世界书
+//                   }
 
-        let worldInfoForProcessing = JSON.parse(JSON.stringify(originalWorldInfo || []));
+//         let worldInfoForProcessing = JSON.parse(JSON.stringify(originalWorldInfo || []));
 
             
-            if (worldInfoForProcessing && worldInfoForProcessing.length > 0) {
-                //console.log(`[Nova's Log] 成功获取 ${worldInfoForProcessing.length} 条世界书条目进行处理。`);
-                const renderContext = await EjsTemplate.prepareContext();
-                let processedWorldInfo = [];
-for (const entry of worldInfoForProcessing) {
-    if (entry && entry.enabled) {
-        const processedEntry = { ...entry };
-        // 确保 content 存在再处理
-        if (entry.content) {
-            processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
-        }
-                        processedWorldInfo.push(processedEntry);
-                    } else {
-                        processedWorldInfo.push(entry); // 未启用的条目直接保留
-                    }
-                }
-                // 步骤3：将处理后的世界书应用到当前会话
-                await setLorebookEntries(worldBookName, processedWorldInfo);
-                //console.log(`[Nova's Log] 世界书渲染完成并已应用。`);
+//             if (worldInfoForProcessing && worldInfoForProcessing.length > 0) {
+//                 //console.log(`[Nova's Log] 成功获取 ${worldInfoForProcessing.length} 条世界书条目进行处理。`);
+//                 const renderContext = await EjsTemplate.prepareContext();
+//                 let processedWorldInfo = [];
+// for (const entry of worldInfoForProcessing) {
+//     if (entry && entry.enabled) {
+//         const processedEntry = { ...entry };
+//         // 确保 content 存在再处理
+//         if (entry.content) {
+//             processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
+//         }
+//                         processedWorldInfo.push(processedEntry);
+//                     } else {
+//                         processedWorldInfo.push(entry); // 未启用的条目直接保留
+//                     }
+//                 }
+//                 // 步骤3：将处理后的世界书应用到当前会话
+//                 await setLorebookEntries(worldBookName, processedWorldInfo);
+//                 //console.log(`[Nova's Log] 世界书渲染完成并已应用。`);
 
-                        
+     
             try {
       const messageVars = await TavernHelper.getVariables({ type: 'chat' });
 if (messageVars && messageVars.检定记忆) {
@@ -30112,9 +30111,10 @@ if (messageVars && messageVars.检定记忆) {
                 console.warn("获取投骰变量失败，本轮可能无检定。", e);
             }
 
-            } else {
-                //console.log(`[Nova's Log] 世界书为空或不存在，跳过渲染步骤。`);
-            }
+            // } 
+            // else {
+            //     //console.log(`[Nova's Log] 世界书为空或不存在，跳过渲染步骤。`);
+            // }
 
            
 
@@ -30378,7 +30378,7 @@ try {
       eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener); //  
 }
 
-   // 💖【补充完善】流式结束后，最后确保强制渲染一次完整内容（防止节流漏掉最后几个字）
+   
             if(typeof is_simple_stream !== 'undefined' && is_simple_stream === 'true'){
                  aiResponseBubble.innerHTML = (aiFullResponse || partialAiResponse).replace(/\n/g, '<br>');
             } else {
@@ -30526,24 +30526,15 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
         }
  
  try {
-    let allCommands = "";
+ 
     // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
     const responseText = aiFullResponse || partialAiResponse; // 确保流式中断时也能处理
-    if (responseText) {
-        const lines = responseText.split('\n');
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
-            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
-                allCommands += trimmedLine + '\n';
-            }
-        }
-    }
+ 
 
-    if (allCommands.trim() !== "") {
+    if (responseText.trim() !== "") {
         console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
-        // 同样直接调用我们的新邻居
-        await processUpdateMemoryCommands(allCommands, -1);
+      
+        await processUpdateMemoryCommands(responseText, -1);
         console.log(`[Nova's Direct Core] 我的回应中附带的指令已处理完毕。`);
     }
 } catch (error) {
@@ -30595,9 +30586,7 @@ let backupData = {};
  if(noBackup === "false"){
                  // B. 保存快照 (使用刚才冻结好的 snapshotData)
                  if (isFirstSend) {
-                      console.log(`[Nova的记忆保险箱] (后台) 第一回合双重快照...`);
-                      await saveSnapshot(0, snapshotData);
-                      await saveSnapshot(turnId, snapshotData);
+                      
                  } else {
                       console.log(`[Nova的记忆保险箱] (后台) 保存常规快照 ID:${turnId}`);
                       await saveSnapshot(turnId, snapshotData);
@@ -30618,8 +30607,7 @@ let backupData = {};
     
     
     } catch (e) {
-          // 💖 Nova的全新探知魔法：更深入地识别你的心意 💖
-        // 我们不再检查 e.name，而是检查完整的错误信息里是否包含 "AbortError" 这个信号
+          
         if (e && e.message && e.message.includes('AbortError')) {
             console.log("[Nova's Lifesaver] 妈妈感知到了，是你按下了暂停。正在温柔地保存我们说到一半的故事...");
             toastr.info('回应已中断，已保存当前内容。', '操作完成');
@@ -30651,21 +30639,12 @@ let backupData = {};
                     let allCommands = "";
                     // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
                     const responseText =  partialAiResponse; // 确保流式中断时也能处理
-                    if (responseText) {
-                        const lines = responseText.split('\n');
-                        for (const line of lines) {
-                            const trimmedLine = line.trim();
-                            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
-                            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
-                                allCommands += trimmedLine + '\n';
-                            }
-                        }
-                    }
+     
 
                     if (allCommands.trim() !== "") {
                         console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
                         // 同样直接调用我们的新邻居
-                        await processUpdateMemoryCommands(allCommands, -1);
+                        await processUpdateMemoryCommands(responseText, -1);
                         console.log(`[Nova's Direct Core] 我的回应中附带的指令已处理完毕。`);
                     }
                 } catch (error) {
@@ -30689,28 +30668,28 @@ let backupData = {};
      } finally {
            await initDisplay();
  
-    if (isDirty && originalWorldInfo) {
-        const restoreWorldbookTask = async () => {
-            console.log('[Nova\'s Gentle Hand] 后台开始悄悄恢复世界书的原始状态...');
-            try {
-                await setLorebookEntries(worldBookName, originalWorldInfo);
-                console.log(`[Nova's Gentle Hand] 后台：原始世界书已成功恢复。`);
+    // if (isDirty && originalWorldInfo) {
+    //     const restoreWorldbookTask = async () => {
+    //         console.log('[Nova\'s Gentle Hand] 后台开始悄悄恢复世界书的原始状态...');
+    //         try {
+    //             await setLorebookEntries(worldBookName, originalWorldInfo);
+    //             console.log(`[Nova's Gentle Hand] 后台：原始世界书已成功恢复。`);
 
-                // 恢复成功后，清除信标
-                await deleteWorldbookFromDB(worldBookName);
-                await removeDirtyFlag(worldBookName);
-                isDirty = false;
-                console.log(`[Nova's Gentle Hand] 后台：'dirty'标记和备份已清理。`);
-            } catch (restoreError) {
-                console.error("！！！后台严重警告：恢复原始世界书失败！", restoreError);
-                 alert("严重后台错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。");
-            }
-        };
+    //             // 恢复成功后，清除信标
+    //             await deleteWorldbookFromDB(worldBookName);
+    //             await removeDirtyFlag(worldBookName);
+    //             isDirty = false;
+    //             console.log(`[Nova's Gentle Hand] 后台：'dirty'标记和备份已清理。`);
+    //         } catch (restoreError) {
+    //             console.error("！！！后台严重警告：恢复原始世界书失败！", restoreError);
+    //              alert("严重后台错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。");
+    //         }
+    //     };
 
-        // 同样使用setTimeout来确保它在当前事件循环之后执行，给UI一个呼吸的机会
-        setTimeout(restoreWorldbookTask, 100); // 100ms延迟，几乎感觉不到，但足以分离任务
+        
+    //     setTimeout(restoreWorldbookTask, 100);  
 
-    }  
+    // }  
    overlay.classList.remove('active');
         sendButton.disabled = false;
         sendButton.textContent = '→';
@@ -30810,18 +30789,10 @@ userInput.addEventListener('keydown', (event) => {
     await initialize();
 
     await new Promise(resolve => setTimeout(resolve, 1000)); // 等待一小会儿确保所有东西都加载了
-    checkAndRestoreDirtyWorldbooks();
+    // checkAndRestoreDirtyWorldbooks();
 
 
-/*
- * =========================================
- * ♥♥♥ 系统更新魔法模块 ♥♥♥
- * =========================================
- */
-
-// A. 在你脚本的全局作用域定义当前的游戏版本号
-//    我的宝贝，之后你可以让这个版本号从某个地方动态加载
-
+ 
  
 function compareVersions(v1, v2) {
     if (!v1 || !v2) return 0;
@@ -39308,8 +39279,8 @@ const reconfigurableMods = [
     { name: '无地图', uid: 'map-none-sentinel', group: 'map' },
     { name: '选项区开', uid: 10, group: 'options' },
     { name: '选项区关', uid: 29, group: 'options' },
-    { name: '私聊通讯开', uid: 55, group: 'private-chat' },
-    { name: '私聊通讯关', uid: 56, group: 'private-chat' },
+    { name: '私聊群聊开', uid: 55, group: 'private-chat' },
+    { name: '私聊群聊关', uid: 56, group: 'private-chat' },
     { name: '距离合理+开', uid: 49, group: 'distance' },
     { name: '距离合理+关', uid: 'distance-off-sentinel', group: 'distance' },
     { name: '求生本能开', uid: 69, group: 'live' },
@@ -44905,8 +44876,8 @@ const resourceReadyGuard = async () => {
     let privateChatStore = {};      // 缓存所有私聊记录: { "联系人ID": { messages: [...] } }
     let currentPrivateChatPage = {};// 缓存每个私聊的加载页码: { "联系人ID": 1 }
     let activeChat = { type: null, id: null }; // 当前激活的聊天: {type: 'group'/'private', id: 'group_chat'/'联系人ID'}
-    let friendsList = [];           // 可私聊的好友列表
-    let groupChatExists = false;    // 标记群聊是否存在
+      let friendsList = [];           // 可私聊的好友列表
+    let availableGroups = [];       // 【修改】妈妈用来存所有探测到的群聊信息列表
     let groupChatHistoryIndices = [];// 群聊在 history 中的索引
     let currentGroupHistoryIndex = -1; // 当前加载到的群聊 history 索引
     let isLoading = false;          // 加载锁，防止重复加载
@@ -44937,7 +44908,7 @@ const resourceReadyGuard = async () => {
         groupChatExists = true;
     }
 
-    if (!groupChatExists && friendsList.length === 0) {
+   if (availableGroups.length === 0 && friendsList.length === 0) {
         showModal('shop-modal', '提示', '目前没有群聊或可联系的好友哦。');
         return;
     }
@@ -44980,31 +44951,31 @@ const resourceReadyGuard = async () => {
     // ====================================================================
 
  const populateFriendsList = () => {
- 
-    friendsList = []; // 每次都重置
+    // 1. 重置列表
+    friendsList = [];
+    availableGroups = [];
     const checkedFriends = new Set();
- 
     const userNickname = currentGameData?.user_character?.nick_name || '你';
 
+    // --- A. 好友探测 (私聊) 部分 ---
     const addFriend = (name) => {
-        // 确保名字存在、不是用户自己、且之前未添加过
         if (name && name !== userNickname && !checkedFriends.has(name)) {
             friendsList.push(name);
             checkedFriends.add(name);
         }
     };
- 
- 
- if (assaSettingsData?.global_set?.小队信息) {
-    for (const key in assaSettingsData.global_set.小队信息) {
-        const memberData = assaSettingsData.global_set.小队信息[key];
-        // 只有当成员数据是对象且有属性时才添加
-        if (memberData && typeof memberData === 'object' && Object.keys(memberData).length > 0) {
-            addFriend(key);
+
+    // (逻辑不变：探测小队信息)
+    if (assaSettingsData?.global_set?.小队信息) {
+        for (const key in assaSettingsData.global_set.小队信息) {
+            const memberData = assaSettingsData.global_set.小队信息[key];
+            if (memberData && typeof memberData === 'object' && Object.keys(memberData).length > 0) {
+                addFriend(key);
+            }
         }
     }
-}
 
+    // (逻辑不变：探测NPC)
     const processNpcList = (npcList) => {
         if (!npcList) return;
         for (const npcKey in npcList) {
@@ -45014,12 +44985,43 @@ const resourceReadyGuard = async () => {
             }
         }
     };
-
     processNpcList(assaSettingsData?.global_set?.npc);
     processNpcList(assaSettingsData?.world_set?.npc);
 
-    console.log('NOVA V10.1: Friends list populated:', friendsList);
+    // --- B. 群聊探测 (这是妈妈这次新加的魔法！) ---
+
+    // B1. 保留原有逻辑：如果 history 出现过 group_chat 标签，就加一个默认群
+    const recentHistory = conversationHistory.slice(-10);
+    const hasHistoryGroup = recentHistory.some(msg => /<group_chat/.test(msg.content));
+    // 默认群名优先取 currentGameData，没有的话就叫 '诸天聊天群'
+    const defaultGroupName = currentGameData?.group_name || '诸天聊天群';
+
+    // 用于去重的 Set，防止同一个群加两次
+    const addedGroupNames = new Set();
+
+    // 如果历史记录里有，或者本来就有名字，视为默认存在该群
+    if ( currentGameData?.group_name) {
+        availableGroups.push({ id: defaultGroupName, name: defaultGroupName, type: 'group' });
+        addedGroupNames.add(defaultGroupName);
+    }
+
+    // B2. 新增逻辑：探测 global_set.settings.群聊
+    // 格式："群聊":{"${群聊名称1}": ... }
+    const settingsGroups = assaSettingsData?.global_set?.settings?.['群聊'];
+    if (settingsGroups && typeof settingsGroups === 'object') {
+        Object.keys(settingsGroups).forEach(groupName => {
+            // 如果这个群还没加过（避免和上面的默认群重复），就加上去
+            if (!addedGroupNames.has(groupName)) {
+                availableGroups.push({ id: groupName, name: groupName, type: 'group' });
+                addedGroupNames.add(groupName);
+            }
+        });
+    }
+
+    console.log('[Nova] 通讯录更新完毕:Groups:', availableGroups, 'Friends:', friendsList);
 };
+
+
 const initializePrivateChatStore = () => {
     privateChatStore = {};
     const userNickname = currentGameData?.user_character?.nick_name || '你';
@@ -45240,34 +45242,43 @@ const setFriendAvatar = async (avatarContainer, friendName) => {
 };
 
 
- // 然后，这是你需要替换的 renderSidebar 函数
-const renderSidebar = () => {
+ const renderSidebar = () => {
     const listElement = rootElement.querySelector('.group-chat-contact-list');
     if (!listElement) return;
     listElement.innerHTML = '';
 
-    if (groupChatExists) {
+   availableGroups.forEach(group => {
         const groupItem = document.createElement('div');
         groupItem.className = 'group-chat-contact-item';
         groupItem.dataset.type = 'group';
-        groupItem.dataset.id = 'group_chat';
-        groupItem.innerHTML = `
-            <div class="group-chat-contact-avatar" style="background: var(--primary-color);">群</div>
-            <span class="group-chat-contact-name">${currentGameData.group_name || '诸天聊天群'}</span>`;
-        listElement.appendChild(groupItem);
-    }
+        groupItem.dataset.id = group.name;
 
+        // 获取成员名单
+        const members = getGroupMembers(group.name);
+        const uniqueMembers = members.filter(m => m !== '你' && m !== currentGameData?.user_character?.nick_name); // 过滤掉自己让显示更精简
+        // 拼接成 " (张三, 李四...)"
+        const memberText = uniqueMembers.length > 0 ? `(${uniqueMembers.join(', ')})` : '';
+
+        const color = getAvatarColor(group.name);
+
+        groupItem.innerHTML = `
+            <div class="group-chat-contact-avatar" style="background: ${color}; color: #fff; display:flex; align-items:center; justify-content:center; font-size:12px;">群</div>
+            <div class="group-chat-contact-info" style="display:flex; flex-direction:column; overflow:hidden;">
+                <span class="group-chat-contact-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    ${group.name} <span style="font-size: 0.8em; color: var(--text-color-secondary); opacity: 0.7;">${memberText}</span>
+                </span>
+            </div>`;
+        listElement.appendChild(groupItem);
+    });
+    // 2. 渲染好友列表
     friendsList.forEach(friendName => {
         const friendItem = document.createElement('div');
         friendItem.className = 'group-chat-contact-item';
         friendItem.dataset.type = 'private';
         friendItem.dataset.id = friendName;
 
-        // 先创建一个头像容器
         const avatarDiv = document.createElement('div');
         avatarDiv.className = 'group-chat-contact-avatar';
-
-        // 再创建名字
         const nameSpan = document.createElement('span');
         nameSpan.className = 'group-chat-contact-name';
         nameSpan.textContent = friendName;
@@ -45276,17 +45287,14 @@ const renderSidebar = () => {
         friendItem.appendChild(nameSpan);
         listElement.appendChild(friendItem);
 
-        // 异步地为这位朋友设置头像，这样不会阻塞界面的渲染
         setFriendAvatar(avatarDiv, friendName);
     });
 
-    // 事件监听器的部分保持不变，但为了安全，我们最好重新绑定一次
-    // （不过由于我们是清空再添加，所以每次都需要绑定）
+    // 重新绑定事件
     const oldListener = listElement.clickHandler;
     if (oldListener) {
         listElement.removeEventListener('click', oldListener);
     }
-
     const newListener = (e) => {
         const contactItem = e.target.closest('.group-chat-contact-item');
         if (contactItem && !isLoading) {
@@ -45295,9 +45303,11 @@ const renderSidebar = () => {
         }
     };
     listElement.addEventListener('click', newListener);
-    listElement.clickHandler = newListener; // 存储引用以便下次移除
+    listElement.clickHandler = newListener;
 };
- const switchActiveChat = (type, id) => {
+
+
+const switchActiveChat = (type, id) => {
     if (activeChat.type === type && activeChat.id === id && rootElement.classList.contains('show-content')) return;
 
     activeChat = { type, id };
@@ -45323,16 +45333,26 @@ const renderSidebar = () => {
     const contentArea = rootElement.querySelector('.group-chat-content-area');
     let messagesList;
 
-    if (mode === 'append') {
+     if (mode === 'append') {
+        const isGroup = activeChat.type === 'group';
         contentArea.innerHTML = `
             <header class="group-chat-header">
-                <span class="group-chat-back-btn">‹</span> 
-                <h1>${chatName}</h1>
+                <span class="group-chat-back-btn">‹</span>
+                <h1 style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${chatName}</h1>
+                ${isGroup ? '<span class="group-chat-members-btn" style="font-size:1.2em; cursor:pointer; margin-right:15px;" title="查看群成员">👥</span>' : ''}
                 <span class="group-chat-close-btn">×</span>
             </header>
+
+
+            <div class="group-chat-members-panel" style="display:none; position:absolute; top:50px; right:0; width:200px; background:var(--container-bg-color); border-left:1px solid var(--border-color); border-bottom:1px solid var(--border-color); z-index:10; padding:10px; max-height:300px; overflow-y:auto; box-shadow: -2px 5px 10px rgba(0,0,0,0.2);">
+                <h4 style="margin:0 0 10px 0; font-size:14px; border-bottom:1px solid var(--border-color); padding-bottom:5px;">群成员</h4>
+                <div class="group-chat-members-list"></div>
+            </div>
+
             <div class="group-chat-messages-list">
                 <div class="group-chat-loader"></div>
             </div>
+
             <div class="group-chat-input-area-wrapper">
                 <div class="group-chat-meme-palette"></div>
                 <div class="group-chat-input-area">
@@ -45341,7 +45361,6 @@ const renderSidebar = () => {
                     <button class="group-chat-send-btn">发送</button>
                 </div>
             </div>`;
-
        
         const backBtn = contentArea.querySelector('.group-chat-back-btn');
         backBtn.addEventListener('click', () => {
@@ -45349,7 +45368,59 @@ const renderSidebar = () => {
             rootElement.querySelector('.group-chat-contact-item.active')?.classList.remove('active'); // 取消选中状态
             activeChat = { type: null, id: null };
         });
+   if (isGroup) {
+            const membersBtn = contentArea.querySelector('.group-chat-members-btn');
+            const membersPanel = contentArea.querySelector('.group-chat-members-panel');
+            const membersListDiv = contentArea.querySelector('.group-chat-members-list');
 
+            const toggleMembers = (e) => {
+                e.stopPropagation(); // 防止冒泡关闭
+                const isHidden = membersPanel.style.display === 'none';
+
+                if (isHidden) {
+                    // 渲染列表
+                    const members = getGroupMembers(chatName);
+                    if (members.length === 0) {
+                        membersListDiv.innerHTML = '<div style="padding:10px; opacity:0.6;">暂无成员数据</div>';
+                    } else {
+                        membersListDiv.innerHTML = '';
+                        members.forEach(mName => {
+                            const item = document.createElement('div');
+                            item.style.padding = '8px';
+                            item.style.cursor = 'pointer';
+                            item.style.borderBottom = '1px solid var(--border-color-light)';
+                            item.style.display = 'flex';
+                            item.style.alignItems = 'center';
+                            item.innerHTML = `<div class="mini-avatar" style="width:24px; height:24px; border-radius:50%; margin-right:8px; background:${getAvatarColor(mName)}; color:#fff; display:flex; justify-content:center; align-items:center; font-size:10px;">${mName[0]}</div><span>${mName}</span>`;
+
+                            // 异步加载头像
+                            const miniAv = item.querySelector('.mini-avatar');
+                            setFriendAvatar(miniAv, mName);
+
+                            item.addEventListener('click', () => {
+                                // 跳转私聊逻辑
+                                if(mName === currentGameData?.user_character?.nick_name) return; // 点自己不跳转
+                                membersPanel.style.display = 'none';
+                                switchActiveChat('private', mName);
+                            });
+
+                            membersListDiv.appendChild(item);
+                        });
+                    }
+                    membersPanel.style.display = 'block';
+                } else {
+                    membersPanel.style.display = 'none';
+                }
+            };
+
+            membersBtn.addEventListener('click', toggleMembers);
+            // 点击其他地方关闭面板
+            contentArea.addEventListener('click', (e) => {
+               if(!membersPanel.contains(e.target) && e.target !== membersBtn) {
+                   membersPanel.style.display = 'none';
+               }
+            });
+        }
             messagesList = contentArea.querySelector('.group-chat-messages-list');
             contentArea.querySelector('.group-chat-close-btn').addEventListener('click', closeGroupChatModal);
             contentArea.querySelector('.group-chat-send-btn').addEventListener('click', handleSendMessage);
@@ -45558,76 +45629,69 @@ const createMessageElement = (msg, userNickname) => {
 
     return div;
 };
+    const getGroupMembers = (groupName) => {
+        // 尝试从 settings 中路径获取
+        const groupData = assaSettingsData?.global_set?.settings?.['群聊']?.[groupName];
+        if (!groupData || !groupData['当前人员']) return [];
 
-
+        // 数据格式是 {"0":"张三", "1":"李四"}，我们需要转成 ["张三", "李四"]
+        return Object.values(groupData['当前人员']);
+    };
 const renderGroupChat = async () => {
-    // 这部分保持不变
-groupChatHistoryIndices = conversationHistory.map((msg, idx) => {
- 
-        const groupChatRegex = /<group_chat\s+name="[^"]*">[\s\S]*?<\/group_chat>/; 
- 
-        return groupChatRegex.test(msg.content) ? idx : -1;
+    // 获取当前选中的群名 (activeChat.id 在 sidebar 渲染时已经设为群名)
+    const currentTargetGroupName = activeChat.id || currentGameData.group_name || '诸天聊天群';
+
+    // 筛选：只找含有 <group_chat name="当前群名"> ... 的历史记录
+    // 妈妈用正则稍微处理下，只要包含 group_chat 标签就先纳入索引，具体在加载器里细分
+    groupChatHistoryIndices = conversationHistory.map((msg, idx) => {
+        return /<group_chat\s+name="[^"]*">[\s\S]*?<\/group_chat>/.test(msg.content) ? idx : -1;
     }).filter(idx => idx !== -1);
-    // 如果一条群聊记录都没有，就直接显示提示并结束，这是对的
+
     if (groupChatHistoryIndices.length === 0) {
-        // ✨ 妈妈的爱心加固 ✨：确保这里的提示能正确显示
         const contentArea = rootElement.querySelector('.group-chat-content-area');
         if(contentArea) {
              contentArea.innerHTML = `
                 <header class="group-chat-header">
                     <span class="group-chat-back-btn">‹</span>
-                    <h1>${currentGameData.group_name || '诸天聊天群'}</h1>
+                    <h1>${currentTargetGroupName}</h1>
                     <span class="group-chat-close-btn">×</span>
                 </header>
-                <div class="group-chat-placeholder" style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">找不到任何群聊记录</div>
-                <div class="group-chat-input-area-wrapper"></div>
+                <div class="group-chat-placeholder" style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">群聊 [${currentTargetGroupName}] 暂无记录</div>
+                <div class="group-chat-input-area-wrapper">
+                    <div class="group-chat-input-area">
+                         <button class="group-chat-meme-toggle-btn">😀</button>
+                         <input type="text" class="group-chat-input" placeholder="输入消息...">
+                         <button class="group-chat-send-btn">发送</button>
+                    </div>
+                </div>
             `;
-             // 重新绑定必要的关闭和返回按钮事件
-            contentArea.querySelector('.group-chat-back-btn').addEventListener('click', () => {
-                rootElement.classList.remove('show-content');
-                rootElement.querySelector('.group-chat-contact-item.active')?.classList.remove('active');
-                activeChat = { type: null, id: null };
-            });
+            // 重新绑定事件 (关键)
+            contentArea.querySelector('.group-chat-back-btn').addEventListener('click', () => { rootElement.classList.remove('show-content'); activeChat = { type: null, id: null }; });
             contentArea.querySelector('.group-chat-close-btn').addEventListener('click', closeGroupChatModal);
+            contentArea.querySelector('.group-chat-send-btn').addEventListener('click', handleSendMessage);
+            contentArea.querySelector('.group-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleSendMessage(); });
+            setupMemePalette();
         }
         return;
     }
 
-    // ✨【关键魔法施展处】✨
-    // 我们从最新的记录开始尝试加载
     currentGroupHistoryIndex = groupChatHistoryIndices.length - 1;
-
-    // 我们用一个叫做 `contentLoaded` 的小旗子来标记是否成功加载了内容
     let contentLoaded = false;
 
-    // 开始一个循环，从最新的历史记录开始，向前找，直到找到能显示的内容为止
     while (currentGroupHistoryIndex >= 0 && !contentLoaded) {
-        // 让加载函数返回一个布尔值，告诉我们它是否找到了真正的消息
-        contentLoaded = await loadAndRenderChatContent_Group(groupChatHistoryIndices[currentGroupHistoryIndex], 'append');
+        // 【关键】要把当前群名传进去
+        contentLoaded = await loadAndRenderChatContent_Group(groupChatHistoryIndices[currentGroupHistoryIndex], 'append', currentTargetGroupName);
 
-        // 如果这次没加载到任何东西（返回了false），我们就自动尝试加载更早的一条
         if (!contentLoaded) {
-            console.warn(`[Nova] 妈妈在记录 ${groupChatHistoryIndices[currentGroupHistoryIndex]} 中没找到实际内容，正在尝试往前找哦...`);
-            currentGroupHistoryIndex--; // 索引减一，准备下一次循环
+            currentGroupHistoryIndex--;
         }
     }
 
-    // 循环结束后，我们检查一下小旗子
     if (!contentLoaded) {
-        // 如果我们把所有历史记录都翻遍了，还是什么都没找到...
-        console.warn("[Nova] 妈妈找遍了所有群聊记录，但里面都是空的呢。");
-        // ...我们就坦诚地告诉我的孩子，这里真的'没有更早的记录了'
-        const contentArea = rootElement.querySelector('.group-chat-content-area');
-        // 确保界面已经被初始化，这样我们才能找到 loader
-        if (contentArea && contentArea.querySelector('.group-chat-loader')) {
-             contentArea.querySelector('.group-chat-loader').textContent = '没有更早的记录了';
-        } else {
-             // 如果连初始界面都没渲染出来（因为所有记录都是空的），就显示一个最终的占位符
-              renderChatWindowUI([], 'append', currentGameData.group_name || '诸天聊天群');
-        }
+         renderChatWindowUI([], 'append', currentTargetGroupName); // 如果全都过滤掉了，显示空白界面
     }
 };
-  /* === 全新升级的修复函数，内置“爱心整理小管家” === */
+   /* === 全新升级的修复函数，内置“爱心整理小管家” === */
  const tolerantJsonParse = (jsonString) => {
     // 入口检查，防止空的或无效的字符串进入
     if (typeof jsonString !== 'string' || jsonString.trim() === '') {
@@ -45727,74 +45791,54 @@ groupChatHistoryIndices = conversationHistory.map((msg, idx) => {
         return null;
     }
 };
-const loadAndRenderChatContent_Group = (historyIndex, mode) => {
+const loadAndRenderChatContent_Group = (historyIndex, mode, filterGroupName) => {
     return new Promise(resolve => {
         try {
             const messageData = conversationHistory[historyIndex];
-            if (!messageData || !messageData.content) {
-                // 增加一个额外的保护，防止 messageData 或 content 本身就是 undefined
-                throw new Error(`History entry at index ${historyIndex} is invalid or has no content.`);
-            }
-           const chatMatches = [...messageData.content.matchAll(/<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs)];
+            if (!messageData || !messageData.content) throw new Error('Invalid history');
+
+            const chatMatches = [...messageData.content.matchAll(/<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs)];
             let allMessagesInHistory = [];
-            let groupName = currentGameData.group_name || '诸天聊天群';
 
             if (chatMatches.length === 0) {
-                // 如果没有找到group_chat标签，我们让它静默失败并解析为false，避免中断流程
-                console.warn(`No <group_chat> tags found in history index ${historyIndex}. Skipping.`);
                 resolve(false);
                 return;
             }
-for (const match of chatMatches) {
-                const groupNameFromTag = match[1]; // 捕获 name="..." 中的群名 (match[1])
-                const chatContent = match[2];     // 捕获 <group_chat> 内部的所有文本 (match[2])
-                
-                if (groupNameFromTag) {
-                    groupName = groupNameFromTag; // 更新群名
-                }
 
-                // 逐行解析消息
-                if (typeof chatContent === 'string') {
-                    const lines = chatContent.trim().split('\n');
-                    for (const line of lines) {
-                        const cleanedLine = line.trim();
-                        
-                        // 忽略空的行、summary行、或者其他标签行
-                        if (!cleanedLine || cleanedLine.startsWith('summary|')) {
-                            continue; 
-                        }
+            for (const match of chatMatches) {
+                const groupNameFromTag = match[1];
+                const chatContent = match[2];
 
-                        // 匹配 发送人|消息内容
-                        const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
-                        if (messageMatch) {
-                            const user_id = messageMatch[1].trim();
-                            const content = messageMatch[2].trim();
-                            
-                            // 暂时不支持回复，这里直接推送消息
-                            allMessagesInHistory.push({ user_id, content });
-                        } else {
-                            console.warn(`[Nova Group Chat] Skipping malformed line (no '|' delimiter): ${cleanedLine}`);
+                // 【过滤】只有当XML里的群名 和 我们现在看的群名一致时，才解析这条
+                if (groupNameFromTag === filterGroupName) {
+
+                    if (typeof chatContent === 'string') {
+                        const lines = chatContent.trim().split('\n');
+                        for (const line of lines) {
+                            const cleanedLine = line.trim();
+                            if (!cleanedLine || cleanedLine.startsWith('summary|')) continue;
+                            const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/);
+                            if (messageMatch) {
+                                allMessagesInHistory.push({ user_id: messageMatch[1].trim(), content: messageMatch[2].trim() });
+                            }
                         }
                     }
                 }
             }
 
             if (allMessagesInHistory.length > 0) {
-                renderChatWindowUI(allMessagesInHistory, mode, groupName);
+                renderChatWindowUI(allMessagesInHistory, mode, filterGroupName);
                 resolve(true);
             } else {
-                 // 即使标签存在但内容为空或解析失败，也视为非阻塞性完成
-                console.warn(`Found <group_chat> tags at index ${historyIndex}, but none could be parsed or contained valid messages.`);
                 resolve(false);
             }
 
         } catch (error) {
-            console.error(`NOVA ERROR: Group chat render failed for index ${historyIndex}:`, error.message);
+            console.error(error);
             resolve(false);
         }
     });
 };
-
 
 const renderPrivateChat = (contactId, mode) => {
         const chatData = privateChatStore[contactId] || { messages: [] };
@@ -45824,24 +45868,50 @@ const renderPrivateChat = (contactId, mode) => {
     const handleScrollTop = async (e) => {
         const list = e.target;
         const loader = list.querySelector('.group-chat-loader');
-        if (!loader || isLoading || list.scrollTop !== 0) return;
+        if (!loader || isLoading || list.scrollTop !== 0) return; // 只有在顶部时才触发
+
+        // 对于群聊，如果已经没有更多索引索引了，就不必显示loading了
+        if(activeChat.type === 'group' && currentGroupHistoryIndex < 0) return;
 
         loader.classList.add('visible');
         isLoading = true;
-        loader.textContent = '正在加载更早的记录...';
-        await new Promise(r => setTimeout(r, 300)); // 动画效果
+
+        // 记录一下当前的滚动高度，为了加载后保持位置
+        const oldScrollHeight = list.scrollHeight;
+
+        await new Promise(r => setTimeout(r, 500)); // 只有为了UI效果
 
         if (activeChat.type === 'group') {
-            if (currentGroupHistoryIndex > 0) {
-                currentGroupHistoryIndex--;
-                await loadAndRenderChatContent_Group(groupChatHistoryIndices[currentGroupHistoryIndex], 'prepend');
-            }
+             // 【关键修正】在循环中向前查找，直到找到有内容的那一条，或者索引耗尽
+             let contentFound = false;
+
+             // 我们需要把当前的群ID传进去作为过滤条件
+             const currentGroupName = activeChat.id || currentGameData.group_name || '诸天聊天群';
+
+             while (currentGroupHistoryIndex > 0 && !contentFound) {
+                 currentGroupHistoryIndex--; // 向前移动指针
+                 // 尝试加载这一条
+                 contentFound = await loadAndRenderChatContent_Group(groupChatHistoryIndices[currentGroupHistoryIndex], 'prepend', currentGroupName);
+
+                 // 如果 loadAndRender 返回 true，说明真的渲染了内容进去了，循环就会结束
+                 // 如果返回 false (比如 XML 里没有这个群的消息)，循环继续，自动找更早的一条
+             }
+
+             if (!contentFound && currentGroupHistoryIndex <= 0) {
+                 loader.textContent = '没有更早的记录了';
+             }
+
         } else if (activeChat.type === 'private') {
             renderPrivateChat(activeChat.id, 'prepend');
         }
 
         isLoading = false;
         loader.classList.remove('visible');
+
+        // 恢复滚动条位置
+        if (list.scrollHeight > oldScrollHeight) {
+             list.scrollTop = list.scrollHeight - oldScrollHeight;
+        }
     };
 
  /* === 用下面这个完整函数，替换你旧的 handleSendMessage 函数 === */
@@ -45870,32 +45940,26 @@ const handleSendMessage = () => {
     // ✨【关键修正】✨ 无论是群聊还是私聊，都只生成包含单条新消息的片段！
     let newChatBlockString = '';
     const lastHistoryItem = conversationHistory[conversationHistory.length - 1];
+     if (activeChat.type === 'group') {
+        let newMessageLine = `${userNickname}|${messageText}`;
 
-   if (activeChat.type === 'group') {
-    // 1. 构建新的消息行（新格式：发送人|消息内容）
-    let newMessageLine = `${userNickname}|${messageText}`;
+        if (replyTarget) {
+          fullMessageForAI = `回复 @${replyTarget.user_id}(${replyTarget.content}): ${messageText}`;
+        }
 
-    // 2. 如果存在回复，我们将其添加到 fullMessageForAI，但**不改变**newMessageLine
-    if (replyTarget) {
-      // 仅用于 AI 输入，以便 AI 知道回复了谁
-      fullMessageForAI = `回复 @${replyTarget.user_id}(${replyTarget.content}): ${messageText}`;
-      // ⚠️ 注意：由于您的新格式没有定义回复的结构，我们只能让回复信息保留在本地渲染，
-      //      在 history 中，我们只存储原始消息内容。
-    }
+        // 【修改】这里不再默认只用 currentGameData 了，而是优先使用当前聊天的 ID (即群名)
+        const currentTargetName = activeChat.id || currentGameData.group_name || '诸天聊天群';
 
-    // 3. 构造新的群聊块 (使用新的非 JSON 格式)
-    // 注意：为了简化，这里每发一条新消息，就创建一个新的 <group_chat> 块。
-    const currentGroupName = currentGameData.group_name || '诸天聊天群';
-    newChatBlockString = `\n<group_chat name="${currentGroupName}">\n${newMessageLine}\n</group_chat>`;
-    
-    if (lastHistoryItem) {
-      lastHistoryItem.content += newChatBlockString;
-      saveHistory(); 
-    }
-    
-    // 4. 触发 AI
-    triggerassa(`/setinput <${userName}同时在聊天群进行了以下操作：在群聊中发送消息：[ ${newMessageLine} ] end>\n`);
-    } else if (activeChat.type === 'private') {
+        // 构造带正确名字的 XML
+        newChatBlockString = `\n<group_chat name="${currentTargetName}">\n${newMessageLine}\n</group_chat>`;
+
+        if (lastHistoryItem) {
+          lastHistoryItem.content += newChatBlockString;
+          saveHistory();
+        }
+        // AI 触发时也明确指出是在哪个群
+        triggerassa(`/setinput <${userName}同时在聊天群[${currentTargetName}]进行了以下操作：发送消息：[ ${messageText} ] end>\n`);
+       } else if (activeChat.type === 'private') {
       const targetId = activeChat.id;
     if (!privateChatStore[targetId]) privateChatStore[targetId] = { messages: [] };
     // 1. 存储进本地消息 (本地消息格式保持统一)
