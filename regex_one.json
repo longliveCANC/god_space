@@ -14068,7 +14068,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.21';
+let current_game_version = '3.3.0';
 
 
  
@@ -16804,8 +16804,8 @@ function handleUpdateNotifications(aiContent) {
     
     // 检查必需的规则是否触发
     if (!triggeredRules.has('summary-update')) {
-        showUpdateNotification('没有正常输出小总结，掉变量了请在左下角使用继续[变量]', 'danger');
-        showNovaAlert('没有正常输出小总结，可能掉变量更新了哦，右键编辑看看，掉了请在左下角使用继续[变量]', 'danger');
+        showUpdateNotification('没有正常输出小总结，掉变量了？请在左下角按情况使用重roll/继续/继续[变量]', 'danger');
+        showNovaAlert('没有正常输出小总结', 'danger');
     }
 }
 const themeConfig = {
@@ -29744,6 +29744,32 @@ function throttle(func, limit) {
     }
 }
 async function handleSend(options = {}) {
+
+    // 1. 检查 EjsTemplate 对象是否存在，以及 setFeatures 方法是否存在
+    if (typeof EjsTemplate === 'undefined' || typeof EjsTemplate.setFeatures !== 'function') {
+        // 如果 EjsTemplate 对象不存在，或者 setFeatures 方法不可用，则提示未安装
+        toastr.info('没有安装提示词模板。');
+        return; // 退出函数
+    }
+
+    // 2. 强制开启提示词模板
+    try {
+        /**
+         * 调用 setFeatures 方法，传入 { enabled: true } 对象，
+         * 确保提示词模板功能被开启。
+         */
+        EjsTemplate.setFeatures({ enabled: true });
+        
+        // 强制开启成功后，给出提示
+        console.info('提示词模板已强制开启。');
+
+    } catch (error) {
+        // 如果调用 setFeatures 时发生错误
+        toastr.error('强制开启提示词模板时发生错误。');
+        console.error('EjsTemplate setFeatures 失败:', error);
+        return;  
+    }
+ 
       if (!conversationHistory || !Array.isArray(conversationHistory)) {
         console.error('[Nova] conversationHistory 未正确初始化');
         toastr.error('对话历史未初始化，请刷新页面', '严重错误');
