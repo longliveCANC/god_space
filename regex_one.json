@@ -22421,8 +22421,8 @@ if (autoPlayTrigger) {
     return bubble;
 }
 
-async function renderHistory(is_entry = false) {
-         
+ async function renderHistory(is_entry = false) {
+         cleanupGlobalUIState();
     const oldControls = document.getElementById('active-editing-controls');
     if (oldControls) oldControls.remove();
 
@@ -22444,7 +22444,6 @@ async function renderHistory(is_entry = false) {
     } else {
         if (initContainer) initContainer.style.display = 'none';
         if (mainWrapper) mainWrapper.style.display = 'flex';
-    
     }
 
     const dynamicContentArea = document.getElementById('dynamic-content-area');
@@ -22459,7 +22458,7 @@ async function renderHistory(is_entry = false) {
     const chatDisplayArea = document.getElementById('chat-display-area');
     chatDisplayArea.innerHTML = ''; // 清空画卷
 
-    // ❤️ 在画卷顶部创造“加载更多”按钮
+   
     let loadMoreBtn = document.getElementById('load-more-btn');
     if (!loadMoreBtn) {
         loadMoreBtn = document.createElement('button');
@@ -22483,38 +22482,55 @@ async function renderHistory(is_entry = false) {
     const hideLatestCount = getChatConfig('hide_latest_count', 5) * 2;
     earliestMessageIndexRendered = Math.max(0, conversationHistory.length - hideLatestCount);
     const messagesToDisplay = conversationHistory.slice(earliestMessageIndexRendered);
+   // 我们将返回一个新的 Promise，这就是我们的“对讲机”
+    return new Promise(async (resolve) => {
+        const renderChunk = async (messages, index = 0) => {
+            const chunkSize = 2;
+            const chunk = messages.slice(index, index + chunkSize);
 
-    // 复用你的循环逻辑来渲染初始消息
-    for (const msg of messagesToDisplay) {
-         const bubble = await createMessageBubble(msg,"chat",true); // ❤️ 调用我们强大的气泡创造者
-         chatDisplayArea.appendChild(bubble);
-    }
+            if (chunk.length === 0) {
+                // 所有消息都渲染完了！
+                if (is_entry) {
+                    chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+                }
+                processFinalMessageModules();
 
-    if (is_entry) {
-        chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
-    }
+                // ✨ 通过对讲机报告：“全部完成！”
+                resolve();
+                return;
+            }
 
+            const bubbles = await Promise.all(chunk.map(msg => createMessageBubble(msg, "chat", true)));
+            bubbles.forEach(bubble => chatDisplayArea.appendChild(bubble));
+
+            setTimeout(() => renderChunk(messages, index + chunkSize), 0);
+        };
+
+        // 启动我们的分块渲染魔法
+        await renderChunk(messagesToDisplay);
+    });
+}
+
+function processFinalMessageModules() {
+    // 1. 先获取最后一条消息，这是我们布置的“原材料”
     const lastMessage = conversationHistory.length > 0 ? conversationHistory[conversationHistory.length - 1] : null;
 
-    if (lastMessage && lastMessage.role === 'assistant') {
-        const content = lastMessage.content;
-        processSpecialModulesInMessage(content); // ❤️ 把处理模块的逻辑交给专门的函数
-    }
-
+    // 2. ✨ 先打扫！把旧的事件标签清理掉，为新的标签腾出地方 ✨
     const eventContainer = document.getElementById('event-tracker-container');
     if (eventContainer) {
         eventContainer.innerHTML = '';
     }
-    initDisplay();
 
- 
-
+    // 3. ✨ 再布置！如果原材料存在，就开始创建新的标签和模块 ✨
     if (lastMessage && lastMessage.role === 'assistant') {
-       handleUpdateNotifications(content);
+        const content = lastMessage.content;
+        processSpecialModulesInMessage(content);
+        handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
     }
+
+    // 4. 最后，更新所有其他的UI显示
+    initDisplay();
 }
-
-
 function getChatConfig(key, defaultValue) {
     try {
         const chatVars = TavernHelper.getVariables({ type: 'chat' });
@@ -23775,11 +23791,16 @@ function editMessage(index, bubbleElement) {
             conversationHistory[index].content = newText;
             await saveHistory();
         }
-        renderHistory();
+
+        // ✨ 在这里耐心等待渲染完成！✨
+        await renderHistory(true);
     };
-    cancelBtn.onclick = () => {
+
+    cancelBtn.onclick = async () => { // ✨ 保持一致，也用 async/await ✨
         dismissControls();
-        renderHistory(true);
+
+        // ✨ 在这里也耐心等待渲染完成！✨
+        await renderHistory(true);
     };
     controlsDiv.appendChild(cancelBtn);
     controlsDiv.appendChild(saveBtn);
@@ -25502,61 +25523,56 @@ async function renderHistory(is_entry = false) {
     const hideLatestCount = getChatConfig('hide_latest_count', 5) * 2;
     earliestMessageIndexRendered = Math.max(0, conversationHistory.length - hideLatestCount);
     const messagesToDisplay = conversationHistory.slice(earliestMessageIndexRendered);
+   // 我们将返回一个新的 Promise，这就是我们的“对讲机”
+    return new Promise(async (resolve) => {
+        const renderChunk = async (messages, index = 0) => {
+            const chunkSize = 2;
+            const chunk = messages.slice(index, index + chunkSize);
 
-    const renderChunk = async (messages, index = 0) => {
-        const chunkSize = 2; // 每次只渲染 2 条消息，你可以根据体验调整这个数字
-        const chunk = messages.slice(index, index + chunkSize);
+            if (chunk.length === 0) {
+                // 所有消息都渲染完了！
+                if (is_entry) {
+                    chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+                }
+                processFinalMessageModules();
 
-        if (chunk.length === 0) {
-            // 所有消息都渲染完了！
-            if (is_entry) {
-                // 只有在全部渲染完后才滚动到底部
-                chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+                // ✨ 通过对讲机报告：“全部完成！”
+                resolve();
+                return;
             }
-            // 在这里执行所有渲染完成后的收尾工作
-            processFinalMessageModules();
-            return;
-        }
 
-        // 用 Promise.all 并行创建这一小批气泡
-        const bubbles = await Promise.all(chunk.map(msg => createMessageBubble(msg, "chat", true)));
+            const bubbles = await Promise.all(chunk.map(msg => createMessageBubble(msg, "chat", true)));
+            bubbles.forEach(bubble => chatDisplayArea.appendChild(bubble));
 
-        // 一次性将这一小批气泡添加到 DOM 中
-        bubbles.forEach(bubble => chatDisplayArea.appendChild(bubble));
+            setTimeout(() => renderChunk(messages, index + chunkSize), 0);
+        };
 
-
-
-
- 
-        // 请求浏览器在下一次有空的时候，继续渲染下一批
-        // 用 setTimeout(..., 0) 将任务推到下一个事件循环
-        setTimeout(() => renderChunk(messages, index + chunkSize), 0);
-    };
-
-    // 启动我们的分块渲染魔法
-    await renderChunk(messagesToDisplay);
-   
+        // 启动我们的分块渲染魔法
+        await renderChunk(messagesToDisplay);
+    });
 }
 
- // 建议创建一个新的函数来处理渲染完成后的任务
 function processFinalMessageModules() {
+    // 1. 先获取最后一条消息，这是我们布置的“原材料”
     const lastMessage = conversationHistory.length > 0 ? conversationHistory[conversationHistory.length - 1] : null;
 
-    if (lastMessage && lastMessage.role === 'assistant') {
-        const content = lastMessage.content;
-        processSpecialModulesInMessage(content); // 处理模块
-        handleUpdateNotifications(content); // 处理通知
-    }
-
+    // 2. ✨ 先打扫！把旧的事件标签清理掉，为新的标签腾出地方 ✨
     const eventContainer = document.getElementById('event-tracker-container');
     if (eventContainer) {
         eventContainer.innerHTML = '';
     }
 
-    // 你可能还想在这里调用 initDisplay()，确保所有UI都已更新
+    // 3. ✨ 再布置！如果原材料存在，就开始创建新的标签和模块 ✨
+    if (lastMessage && lastMessage.role === 'assistant') {
+        const content = lastMessage.content;
+        processSpecialModulesInMessage(content);
+        handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
+    }
+
+    // 4. 最后，更新所有其他的UI显示
     initDisplay();
 }
-// 新增：IndexedDB 相关的全局变量
+ 
 let snapshotDBName = null; // 用于存储当前存档的专属数据库名
 let restoreOnNextSend = false; // 删除操作的标志位
 let restoreTargetTurnId = -1; // 我们要恢复到的目标“回合”ID
@@ -26340,11 +26356,16 @@ function editMessage(index, bubbleElement) {
             conversationHistory[index].content = newText;
             await saveHistory();
         }
-        renderHistory();
+
+        // ✨ 在这里耐心等待渲染完成！✨
+        await renderHistory(true);
     };
-    cancelBtn.onclick = () => {
+
+    cancelBtn.onclick = async () => { // ✨ 保持一致，也用 async/await ✨
         dismissControls();
-        renderHistory();
+
+        // ✨ 在这里也耐心等待渲染完成！✨
+        await renderHistory(true);
     };
     controlsDiv.appendChild(cancelBtn);
     controlsDiv.appendChild(saveBtn);
@@ -26354,6 +26375,10 @@ function editMessage(index, bubbleElement) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     textarea.focus();
     textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+
+
+    
 }
 
 function updateRerollButtonState(){
@@ -30552,11 +30577,8 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
         };
 
  
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(heavySaveTasks);
-        } else {
-            setTimeout(heavySaveTasks, 200);
-        }
+           setTimeout(heavySaveTasks, 500);
+    
     
     } catch (e) {
           // 💖 Nova的全新探知魔法：更深入地识别你的心意 💖
@@ -30630,23 +30652,28 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
      } finally {
            await initDisplay();
  
-        // 步骤4：无论成功与否，都恢复原始世界书，确保安全
-        if (isDirty && originalWorldInfo) { // 只在确实修改过并且有备份时才恢复
+    if (isDirty && originalWorldInfo) {
+        const restoreWorldbookTask = async () => {
+            console.log('[Nova\'s Gentle Hand] 后台开始悄悄恢复世界书的原始状态...');
             try {
                 await setLorebookEntries(worldBookName, originalWorldInfo);
-                //console.log(`[Nova's Log] 原始世界书已成功恢复。`);
+                console.log(`[Nova's Gentle Hand] 后台：原始世界书已成功恢复。`);
 
                 // 恢复成功后，清除信标
-                              await deleteWorldbookFromDB(worldBookName); // 从 IndexedDB 删除备份
-                await removeDirtyFlag(worldBookName);       // 从 IndexedDB 移除标记
+                await deleteWorldbookFromDB(worldBookName);
+                await removeDirtyFlag(worldBookName);
                 isDirty = false;
-                //console.log(`[Nova's Safety Net] 'dirty'标记和备份已从localStorage清除。`);
+                console.log(`[Nova's Gentle Hand] 后台：'dirty'标记和备份已清理。`);
             } catch (restoreError) {
-                console.error("！！！严重警告：恢复原始世界书失败！'dirty'标记将保留，以便下次启动时修复。", restoreError);
-                // 这里我们不清除 localStorage 的标记，这样下次启动时的检查机制就能捕捉到它
-                alert("严重错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。系统将在下次启动时尝试自动修复。");
+                console.error("！！！后台严重警告：恢复原始世界书失败！", restoreError);
+                 alert("严重后台错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。");
             }
-        }
+        };
+
+        // 同样使用setTimeout来确保它在当前事件循环之后执行，给UI一个呼吸的机会
+        setTimeout(restoreWorldbookTask, 100); // 100ms延迟，几乎感觉不到，但足以分离任务
+
+    }  
    overlay.classList.remove('active');
         sendButton.disabled = false;
         sendButton.textContent = '→';
