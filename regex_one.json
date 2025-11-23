@@ -20923,7 +20923,7 @@ async function saveCurrentBuildAsTemplate() {
     }
 
  async function generateFullCommand(isMission, customText = null) {
-if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
+if (!currentGameData || !assaSettingsData ||!currentGameData.user_character ) {
             await worldHelper.init();
         }
         userName = currentGameData.user_character.name || '用户';
@@ -39709,9 +39709,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 
     }
-   if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
-            await worldHelper.init();
-        }
+
 setupReconfigModal();
 initAutoSetNpcFilter();
  await applyThemeAndData();  
@@ -40261,6 +40259,12 @@ initializeReadingMode();
       await initDisplay();
      checkForFutureEchoes(false);
     }, 2000);
+
+
+       if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
+            await worldHelper.init();
+             await initDisplay();
+        }
 
      const addQrButton = document.getElementById('add-qr-button');
     if (addQrButton) {
