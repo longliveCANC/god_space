@@ -23051,7 +23051,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
  async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
+    const uidsToBackup = [11, 30, 7 ];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
@@ -30824,7 +30824,7 @@ async function waitForWorldToSettle(worldName, timeout = 5000) {
 
  async function performWorldbookUpdate() {
     const worldbookName = '小蝌蚪找妈妈-同层版';
-    const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
+    const uidsToBackup = [11, 30, 7 ];
     const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
     try {
@@ -39553,7 +39553,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 🔑 如果有备份数据，说明导入世界书后刷新了，需要恢复词条
     if (savedBackup && pendingUpdate === 'step1_worldbook') {
         const worldbookName = '小蝌蚪找妈妈-同层版';
-        const uidsToBackup = [11, 30, 7, 63, 43, 35, 80, 32, 40];
+        const uidsToBackup = [11, 30, 7 ];
         
         toastr.info('检测到页面刷新，继续恢复词条...');
         
