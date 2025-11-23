@@ -14068,7 +14068,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.4';
+let current_game_version = '3.3.5';
 
  
 let storyChapters = [];
@@ -28101,7 +28101,45 @@ function _replaceUserPlaceholder(data, userName) {
 let backupLocks = new Set(); // 💖 这就是我们全局的、独一无二的“印记盒” 💖
  
 let processingQueue = [];
+const parseGenericArgs = (str) => {
+    if (!str) return [];
+    const args = [];
+    let currentArg = '';
+    let braceDepth = 0;   // { }
+    let bracketDepth = 0; // [ ]
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
 
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        const prevChar = i > 0 ? str[i - 1] : null;
+
+        if (char === "'" && prevChar !== '\\') inSingleQuote = !inSingleQuote;
+        else if (char === '"' && prevChar !== '\\') inDoubleQuote = !inDoubleQuote;
+        else if (char === '{' && !inSingleQuote && !inDoubleQuote) braceDepth++;
+        else if (char === '}' && !inSingleQuote && !inDoubleQuote) braceDepth--;
+        else if (char === '[' && !inSingleQuote && !inDoubleQuote) bracketDepth++;
+        else if (char === ']' && !inSingleQuote && !inDoubleQuote) bracketDepth--;
+
+        if (char === ',' && !inSingleQuote && !inDoubleQuote && braceDepth === 0 && bracketDepth === 0) {
+            args.push(currentArg.trim());
+            currentArg = '';
+        } else {
+            currentArg += char;
+        }
+    }
+    if (currentArg.trim()) args.push(currentArg.trim());
+    return args;
+};
+
+// 💖 辅助工具：温柔地剥去引号皮
+const unquote = (s) => {
+    if (!s) return s;
+    if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) {
+        return s.slice(1, -1);
+    }
+    return s;
+};
 const extractBalancedArgs = (str, startTrigger) => {
     const startIndex = str.indexOf(startTrigger);
     if (startIndex === -1) return null;
@@ -28234,13 +28272,36 @@ const originalStatData = statData ? JSON.parse(JSON.stringify(statData)) : null;
             operationsFound = true;
             try {
                 // 角色属性命令
-  let match = line.match(/\bset_attribute\s*\(\s*(['"])(.*?)\1\s*,\s*([^,)]+?)(?:\s*,\s*(['"]?)(.*?)\4)?\s*\)\s*;?/);
-if (match) {
-     const path = cleanPath(match[2]); // 💖 清理路径
-    // 如果有第三个参数（新值），使用它；否则使用第二个参数作为新值
-    const newValue = match[5] !== undefined ? match[5] : match[3];
-    _updatePlayerValue(playDataToUpdate, path, newValue);
-    continue;
+if (line.includes('set_attribute')) {
+    // 1. 精准提取括号内容
+    const attrParamsStr = extractBalancedArgs(line, 'set_attribute');
+
+    if (attrParamsStr) {
+        // 2. 智能拆分参数
+        const args = parseGenericArgs(attrParamsStr);
+
+        if (args.length >= 2) {
+            // 第一个参数是路径，一定要去掉引号
+            const path = cleanPath(unquote(args[0]));
+
+            // 获取值：如果有3个参数，第3个是新值；如果只有2个，第2个就是新值
+            // 这里处理逻辑和你原来的正则逻辑一致 newArgs[5] vs args[3]
+            let newValue;
+            if (args.length >= 3) {
+                // 对应原来的 (path, oldVal, newVal) 格式
+                newValue = unquote(args[2]);
+            } else {
+                // 对应原来的 (path, val) 格式
+                newValue = unquote(args[1]);
+            }
+
+            // 执行更新
+            _updatePlayerValue(playDataToUpdate, path, newValue);
+
+            // 处理完毕，继续下一条指令
+            continue;
+        }
+    }
 }
                  
                  // 💖 新增：状态数据命令 (V4 - “双轨智能”特工)
@@ -28999,34 +29060,44 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
                     continue;
                 }
                 // 世界设定 delete 命令
-               match = line.match(/\bdelete\s*\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*\)\s*;?/);
-                if (match) {
-               const path = cleanPath(match[1]); // 💖 清理路径
-    const key = (match[2]);
-  // 💖 妈妈为你在这里注入了新的智慧 💖
-                      // 💖 妈妈在这里为你注入了更周密的智慧 💖
-                    if (key === 'all' && (path === 'world_set.npc' || path === 'world_set.settings')) {
-                        // 在执行删除前，先检查将要被清空的路径里是否真的有内容
-                        const categoryToClear = path.split('.')[1]; // 这会得到 'npc' 或 'setting'
-                        const hasContent = assaDataToUpdate
-                                        && assaDataToUpdate.world_set
-                                        && assaDataToUpdate.world_set[categoryToClear]
-                                        && Object.keys(assaDataToUpdate.world_set[categoryToClear]).length > 0;
+ if (line.includes('delete') && !line.includes('deleteMapMemo')) {
+    // 注意：稍微防一下 deleteMapMemo，虽然通常它们拼写不同，但多一层保险更好
 
-                        if (hasContent) {
-                            console.log(`[Core] [Updater] 🚩 检测到世界重置指令: ${path}，且目标区域有内容。将触发小总结清理。不，取消。`);
-                            worldResetTriggered = false;
+    const deleteParamsStr = extractBalancedArgs(line, 'delete');
 
-                             // 💖 同时清理主要地点表
-    assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, 'map.主要地点表', 'all', statDataToUpdate);
-    console.log(`[Core] [Updater] 🗺️ 已同步清理主要地点表`);
-                        } else {
-                            console.log(`[Core] [Updater] ℹ️ 检测到世界重置指令: ${path}，但目标区域为空，将不会触发清理旗帜。`);
-                        }
-                    }
-                    assaDataToUpdate = await  AssaOps._deleteOperation(assaDataToUpdate, path, key,statDataToUpdate); // 注意：AssaOps._deleteOperation 需要设计为同步函数
-                    continue;
+    // 再加一层保险，确保不是误匹配到了 deleteMapMemo (虽然上面已经防了)
+    // 检查当前的 commandName 是否真的是独立的 'delete'，或者用正则简单辅助确认前缀
+    if (deleteParamsStr && /\bdelete\s*\(/.test(line)) {
+
+        const args = parseGenericArgs(deleteParamsStr);
+
+        if (args.length >= 2) {
+            const path = cleanPath(unquote(args[0]));
+            const key = unquote(args[1]);
+
+            // --- 这里直接放入你原来那段完美的“世界重置保护逻辑” ---
+
+            // 💖 世界重置检查逻辑 (完全保留你的原逻辑)
+            if (key === 'all' && (path === 'world_set.npc' || path === 'world_set.settings')) {
+                const categoryToClear = path.split('.')[1];
+                const hasContent = assaDataToUpdate && assaDataToUpdate.world_set
+                                && assaDataToUpdate.world_set[categoryToClear]
+                                && Object.keys(assaDataToUpdate.world_set[categoryToClear]).length > 0;
+
+                if (hasContent) {
+                     console.log(`[Core] [Updater] 🚩 检测到世界重置指令...`); // (保留原有的log)
+                     worldResetTriggered = false;
+                     // 同步清理主要地点表
+                     assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, 'map.主要地点表', 'all', statDataToUpdate);
                 }
+            }
+
+            // 执行核心删除操作
+            assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, path, key, statDataToUpdate);
+            continue;
+        }
+    }
+}
 
                          // --- 地图操作命令 (最终修正版 - 兼容所有格式和有无分号) ---
 
