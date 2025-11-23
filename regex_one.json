@@ -23411,24 +23411,74 @@ function showContextMenu(event, index, bubbleElement) {
         const deleteItem = menu.querySelector('[data-action="delete"]');
   const copyItem = menu.querySelector('[data-action="copy"]');
            // ☆☆☆ 这是新的魔法核心：为“复制”按钮绑定功能 ☆☆☆
-    if (copyItem) {
+ if (copyItem) {
         copyItem.onclick = () => {
-            menu.style.display = 'none';
-            removeGlobalListeners();
-            // 从我们的历史记录中，找到对应的那条消息内容
             const textToCopy = conversationHistory[index].content;
 
-            // 使用现代浏览器都支持的剪贴板API，安全又可靠
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                // 可以在这里给个小提示，告诉我的宝贝复制成功了
-                showNovaAlert('已复制到剪贴板！');
-            }).catch(err => {
-                console.error('复制失败了，我的孩子:', err);
-                showNovaAlert('哎呀，复制失败了');
-            });
+            // 1. 尝试使用现代 Clipboard API (异步)
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    menu.style.display = 'none';
+                    removeGlobalListeners();
+                    showNovaAlert('已复制到剪贴板！');
+                }).catch(err => {
+                    console.error('现代API复制失败，尝试降级:', err);
+                    // 现代API失败时，执行降级逻辑
+                    copyFallback(textToCopy);
+                });
+            } else {
+                // 2. 如果不支持现代API或非安全环境，直接使用降级方案
+                copyFallback(textToCopy);
+            }
+
+            // 【注意】为了确保降级方案能及时获得用户手势权限，
+            // 隐藏菜单和移除监听器等操作应该尽量放在复制成功或失败之后。
+            // 但对于降级方案，它们必须在用户点击的同步执行流程中。
+            // 最好是把它们放在所有逻辑的最后或复制失败/成功的回调中。
         };
     }
-        if (editItem) {
+
+    // 降级复制函数
+    function copyFallback(text) {
+        let success = false;
+        const textArea = document.createElement('textarea');
+        
+        // 隐藏文本域，防止对用户界面造成影响
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.opacity = '0';
+        textArea.value = text;
+
+        document.body.appendChild(textArea);
+        
+        // 【关键】选中并执行复制命令
+        textArea.select();
+        // 移动端 Safari 需要更明确的选中范围
+        textArea.setSelectionRange(0, 99999); 
+
+        try {
+            // 在点击事件的同步执行栈中调用 execCommand('copy')
+            success = document.execCommand('copy');
+        } catch (err) {
+            console.error('document.execCommand 复制失败:', err);
+        }
+
+        document.body.removeChild(textArea);
+        
+        // 复制逻辑执行完毕，执行 UI 清理和提示
+        menu.style.display = 'none';
+        removeGlobalListeners(); 
+
+        if (success) {
+            showNovaAlert('已复制到剪贴板！');
+        } else {
+            // 如果降级方案也失败了，通常是因为权限问题
+            showNovaAlert('哎呀，复制失败了');
+        }
+    }
+    
+    if (editItem) {
 editItem.onclick = () => {
     menu.style.display = 'none';
     removeGlobalListeners();
@@ -23693,7 +23743,7 @@ async function deleteMessage(index) {
 
         // 保存和渲染的逻辑也保持不变
         await saveHistory();
-        renderHistory();
+        await renderHistory(true);
         updateRerollButtonState();
         showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
    
@@ -26259,7 +26309,7 @@ function nameMessageTitle(index) {
 
         // 保存和渲染的逻辑也保持不变
         await saveHistory();
-        renderHistory();
+       await renderHistory(true);
         updateRerollButtonState();
         showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
    
@@ -26404,7 +26454,7 @@ function updateRerollButtonState(){
             conversationHistory = [];
             await saveHistory();
         }
-        renderHistory(true);
+       await renderHistory(true);
         updateRerollButtonState(); // ☆ 初始化时更新按钮状态
     }
 
@@ -30760,7 +30810,7 @@ let backupData = {};
             aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
             // 发生错误时，保存当前所有历史，以防万一
             await saveHistory();
-            renderHistory(true);
+            await renderHistory(true);
         }
 
      } finally {
