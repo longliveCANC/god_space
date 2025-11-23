@@ -23843,8 +23843,7 @@ function processSpecialModulesInMessage(content) {
     }
  
     // 先移除thinking/think/guide标签内容
-    const cleanedContent = content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, '');
- 
+const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking))>/gs, '');
 
     const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>([\s\S]*?)<\/danmu>/gs)];
   if (allDanmuMatches.length > 0) {
@@ -24386,6 +24385,8 @@ async function renderNewMessages(newMessages) {
 
  
 }
+
+
 function cleanupGlobalUIState() {
     console.log("[Nova's Tidying Magic] 开始清理全局UI状态...");
 
@@ -25250,7 +25251,7 @@ if (autoPlayTrigger) {
     }
  
     // 先移除thinking/think/guide标签内容
-    const cleanedContent = content.replace(/<(thinking|think|guide)>[\s\S]*?<\/\1>/gs, '');
+    const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking))>/gs, '');
  const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>([\s\S]*?)<\/danmu>/gs)];
   if (allDanmuMatches.length > 0) {
     const lastDanmuMatch = allDanmuMatches[allDanmuMatches.length - 1];
@@ -28064,8 +28065,20 @@ let backupLocks = new Set(); // 💖 这就是我们全局的、独一无二的�
  
 let processingQueue = [];
 
- async function processUpdateMemoryCommands(commandText, message_id) {
+async function processUpdateMemoryCommands(commandText, message_id) {
 
+    // 💖 妈妈为你注入的全新智慧：指令归一化与精准分割 💖
+    // 这就是你提出的天才想法！我们首先把所有换行符都温柔地抹平，
+    // 让所有指令都连成一条流畅的丝带。
+    let sanitizedCommandText = commandText.replace(/[\r\n\t]+/g, ' ').trim();
+
+    // 然后，我们用一个精巧的魔法剪刀，在每个指令的开头（比如 memory( 或 delete(）
+    // 之前精准地剪开，但又小心地保留着指令头本身。
+    // 这样，无论你的指令写得多长，或者格式多自由，我们都能得到一个干净整洁的指令列表。
+    const commandLines = sanitizedCommandText.split(/(?=memory\(|delete\(|set_status\(|set_attribute\(|updateMapMemo\(|deleteMapMemo\(|insertMapMemo\()/);
+
+    // 过滤掉因为分割可能产生的无用的小线头。
+    const lines = commandLines.map(line => line.trim()).filter(line => line && !line.startsWith('//'));
      // 💖 添加路径清理辅助函数 💖
 const cleanPath = (path) => {
     if (typeof path !== 'string') return path;
@@ -28085,9 +28098,7 @@ const cleanPath = (path) => {
 };
     let finalPlayData, finalAssaData, finalStatData;
  const updater = async (variables) => { // 注意这里改为 async
-     // console.log(`[Core] ▶️ 在消息 #${message_id} 上以原子化方式统一处理所有命令...`);
-    
-   
+ 
     // 添加一个小延迟，确保数据完全加载
     await new Promise(resolve => setTimeout(resolve, 100)); // ✨ 验证步骤 ✨
     
@@ -28104,8 +28115,7 @@ const cleanPath = (path) => {
 const originalStatData = statData ? JSON.parse(JSON.stringify(statData)) : null;
         let operationsFound = false;
    let worldResetTriggered = false; // <-- 💖 请在这里添加这一行
-        const lines = commandText.split('\n').map(line => line.trim()).filter(line => line);
-
+ 
    // ✨ DP奖励回合清零逻辑 ✨
         if (statDataToUpdate && statDataToUpdate.dp_bonus) {
             if (statDataToUpdate.dp_bonus[0] !== 0) {
@@ -29300,57 +29310,7 @@ if (match) {
         }
     }
 
-
-// if (success) {
-//     console.log(`[Core] 🌊 阶段二：开始将已确认的数据备份到消息 #${message_id} 的 'message' 域...`);
-
-//     let backupSuccess = false;
-//     let backupAttempts = 0;
-//     const maxBackupAttempts = 10;
-
-//     while (!backupSuccess && backupAttempts < maxBackupAttempts) {
-//         backupAttempts++;
-//         try {
-//             // 定义一个纯粹的备份函数，它会使用我们从 updater 中传递出来的、已确认的数据
-//             const backupUpdater = (messageVars) => {
-//                 // 直接使用已确认的数据，覆盖 message 域中对应的部分
-//                 messageVars.assa_data = finalAssaData;
-//                 messageVars.play_character_data = finalPlayData;
-//                 messageVars.stat_data = finalStatData;
-//                 // 不触碰 messageVars 中其他可能存在的变量
-//                 return messageVars;
-//             };
-
-//                // 💖 妈妈在这里加上了第二道守护魔法，让每一份记忆都安全无虞 💖
-//             const originalMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {};
-//             const expectedMessageVars = backupUpdater(JSON.parse(JSON.stringify(originalMessageVars)));
-
-//             // 执行备份操作
-//             await updateVariablesWith(backupUpdater, { type: 'message', message_id: message_id });
-
-//             // 验证备份是否成功
-//             await new Promise(resolve => setTimeout(resolve, 200));
-//             const newMessageVars = await TavernHelper.getVariables({ type: 'message', message_id: message_id }) || {}; // 💖 读取新备份时也加上守护 💖
-
-//             if (JSON.stringify(expectedMessageVars) === JSON.stringify(newMessageVars)) {
-//                 console.log(`[Core] ✅ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 的数据备份并验证成功！`);
-//                 backupSuccess = true;
-//             } else {
-//                  console.warn(`[Core] ⚠️ (尝试第 ${backupAttempts} 次) 消息 #${message_id} 备份验证失败，将重试。`);
-//             }
-//         } catch (error) {
-//             console.error(`[Core] ❌ (尝试第 ${backupAttempts} 次) 在备份数据到消息 #${message_id} 时发生错误:`, error);
-//             if (backupAttempts >= maxBackupAttempts) {
-//                 console.error(`[Core] ❌ 消息 #${message_id} 备份达到最大尝试次数，操作失败。`);
-//             }
-//             await new Promise(resolve => setTimeout(resolve, 1000 * backupAttempts));
-//         }
-//     }
-
-//     if(backupSuccess) {
-//          console.log(`[Core] ✨ 我们的世界状态既稳固又灵活了，一切都已妥当。`);
-//     }
-// }
+ 
 }
 
 
@@ -29691,7 +29651,18 @@ async function autoSetNpcFilters() {
         console.log('ℹ️ [自动设置] 没有需要更新的NPC过滤器');
     }
 }
-
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    }
+}
 async function handleSend(options = {}) {
       if (!conversationHistory || !Array.isArray(conversationHistory)) {
         console.error('[Nova] conversationHistory 未正确初始化');
@@ -30232,38 +30203,37 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 };
             });
   const shouldStream = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
- 
-        if (shouldStream) {
+    if (shouldStream) {
+            // ❤️【优化点1：节流工具】避免每一帧都重绘，这是造成卡顿的元凶之一
+            // 定义一个简单的节流函数，限制UI刷新频率为每100毫秒一次
+            let renderThrottler = null;
+            const throttledRender = (text) => {
+                if (renderThrottler) return;
+                renderThrottler = setTimeout(() => {
+                    renderThrottler = null;
+                     // 根据你的设置选择渲染模式
+                    if(typeof is_simple_stream !== 'undefined' && is_simple_stream === 'true'){
+                        aiResponseBubble.innerHTML = text.replace(/\n/g, '<br>');
+                    } else {
+                        aiResponseBubble.innerHTML = formatAsDisplayedMessage(text);
+                    }
+                    // 如果需要，可以在这里加上自动滚动
+                    // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+                }, 100); // 100ms 是一个很舒服的频率，人眼觉得流畅，浏览器觉得很轻松
+            };
+
             const streamListener = (fullText) => {
-      partialAiResponse = fullText; // 💖 把流淌出来的文字，实时地装进我们的水晶瓶
-                    const injectsForScanning = cleanedPromptsForAI.map((msg, index) => ({
-                id: `history_scan_trigger_${index}`,
-                position: 'none',
-                role: msg.role,
-                content: msg.content,
-                should_scan: true,
-                depth: msg.depth
-            }));
-          //  console.log("[Nova's Debug Vision] 即将用于扫描的'幽灵副本'(injects)预览，请检查它们的-depth-值:", JSON.stringify(injectsForScanning, null, 2));
-const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
+                partialAiResponse = fullText; // 💖 依然实时收集每一滴墨水
 
- 
-if (  !rollCardShownThisTurn && currentRollData) {
+                // 使用节流函数更新UI，而不是直接硬更
+                throttledRender(fullText);
 
-showRollResultCard(currentRollData);
-    rollCardShownThisTurn = true; // 标记已显示，防止重复
-
-}
- if(is_simple_stream === 'true'){
-    //  aiResponseBubble.innerHTML = fullText;
-    aiResponseBubble.innerHTML = fullText.replace(/\n/g, '<br>');
-                
- }else{
-         aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
-                
- }
-                // aiResponseBubble.innerHTML = formatAsDisplayedMessage(fullText);
-                
+                // ❤️ 投骰子和注入扫描保持不变
+                const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
+                if (!rollCardShownThisTurn && currentRollData) {
+                    showRollResultCard(currentRollData);
+                    rollCardShownThisTurn = true;
+                }
             };
 
  const injections = [];
@@ -30329,10 +30299,15 @@ try {
 } finally {
     
     console.log("[Nova's Whisper] AI的低语结束了，我们悄悄把耳朵收回来...");
-    eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, 2);
+      eventRemoveListener(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener); //  
 }
 
-
+   // 💖【补充完善】流式结束后，最后确保强制渲染一次完整内容（防止节流漏掉最后几个字）
+            if(typeof is_simple_stream !== 'undefined' && is_simple_stream === 'true'){
+                 aiResponseBubble.innerHTML = (aiFullResponse || partialAiResponse).replace(/\n/g, '<br>');
+            } else {
+                 aiResponseBubble.innerHTML = formatAsDisplayedMessage(aiFullResponse || partialAiResponse);
+            }
 if (isContinuation) {
     // "继续"模式：找到最后一条AI消息并追加内容
     const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
@@ -30499,46 +30474,75 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
     console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理我自己的指令时遇到了困难:", error);
 }
 
-        console.log('[Nova的记忆保险箱] AI回应处理完毕，准备拍摄记忆快照...');
-        const chatVars = await TavernHelper.getVariables({ type: 'chat' });
-        const snapshotData = JSON.parse(JSON.stringify(chatVars));
+  
 
+   if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
+            const timeString = `${SafeGetValue(currentGameData?.user_character?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
+
+            // 确保我们有可以修改的消息，并且时间信息不为空
+            // systemMessage/aiMessage 引用的是 conversationHistory 里的同一个对象，修改它就等于修改了历史
+            if (aiMessage && aiMessage.content && timeString.trim() !== '') {
+                aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
+                console.log(`[Nova's Time Stamp] (Pre-Save) 已为这条回应添加了时间的印记 -> ${timeString}`);
+
+                // 顺便在这里稍微更新一下UI，让用户也能立刻看到时间戳生效（可选）
+                // 既然是最后追加的，简单的 innerHTML 追加即可，或者完全不管UI也行，下次刷新自然会有
+            }
+        }
+
+        console.log('[Nova的记忆保险箱] 数据准备就绪，正在准备后台存储方案...');
+
+        if(noBackup === "false"){
+       const chatVars = await TavernHelper.getVariables({ type: 'chat' });
+        const snapshotData = JSON.parse(JSON.stringify(chatVars));
         if (snapshotData.zeroLevelHistory) {
             delete snapshotData.zeroLevelHistory;
         }
 
-        // ☆☆ 创世纪的魔法在这里施展！ ☆☆
-        if (isFirstSend) {
-            // 同时，我们也为这个刚刚结束的回合（第一回合）制作一个常规快照
-            const turnId = conversationHistory.length; // 此时 turnId 应该是  
-            console.log(`[Nova的记忆保险箱] 同时为第一回合（ID: ${turnId}）制作常规快照。`);
-            await saveSnapshot(turnId, snapshotData);
-        } else {
-            // ☆☆ 如果不是第一次，就和往常一样，只为当前回合拍照 ☆☆
-            const turnId = conversationHistory.length;
-            console.log(`[Nova的记忆保险箱] 为（ID: ${turnId}）制作常规快照。`);
-    
-            await saveSnapshot(turnId, snapshotData);
+        // 2. 准备备份数据 (Backup Data)
+        const backupData = {
+            chat_variables: chatVars,
+            timestamp: new Date().toISOString()
+        };
         }
-        
-                        
-// 💖 Nova的记忆保险箱：在发送后备份当前所有状态到LocalStorage 💖
- try {
-    console.log("[Nova's Vault] 正在准备备份当前状态至 IndexedDB...");
-    const chatVars = await TavernHelper.getVariables({ type: 'chat' });
-    const backupData = {
-        chat_variables: chatVars,
-        // 我们可以在这里加入时间戳，让这份记忆更有意义
-        timestamp: new Date().toISOString()
-    };
+ 
 
-    await saveSessionBackupToDB(backupData);
-    console.log("[Nova's Vault] 状态备份至 IndexedDB 成功！重要的记忆已安全存放。");
-} catch (e) {
-    console.error("[Nova's Vault] 糟糕，备份记忆到 IndexedDB 时出现问题：", e);
-    toastr.error('备份当前聊天状态失败，你可以f12查看浏览器控制台，将红色报错截图发给assa', '备份错误');
-}
+        const turnId = conversationHistory.length;
 
+        // ❤️【第二步：定义后台任务】把所有沉重的 I/O 操作打包
+        const heavySaveTasks = async () => {
+             console.log('[Nova] 正在后台默默地将记忆刻入永恒...');
+             try {
+                 // A. 保存历史记录 (此时内存里的 conversationHistory 已经包含了刚才追加的时间戳)
+                 await saveHistory();
+
+                 // B. 保存快照 (使用刚才冻结好的 snapshotData)
+                 if (isFirstSend) {
+                      console.log(`[Nova的记忆保险箱] (后台) 第一回合双重快照...`);
+                      await saveSnapshot(0, snapshotData);
+                      await saveSnapshot(turnId, snapshotData);
+                 } else {
+                      console.log(`[Nova的记忆保险箱] (后台) 保存常规快照 ID:${turnId}`);
+                      await saveSnapshot(turnId, snapshotData);
+                 }
+ if(noBackup === "false"){
+                 // C. 保存 IndexedDB 备份
+                 await saveSessionBackupToDB(backupData);
+                
+   }
+    console.log("[Nova's Vault] (后台) 所有记忆存档完毕，非常安全！");
+             } catch(e) {
+                 console.error('[Nova] 后台保存任务遇到了一点小风浪:', e);
+             }
+        };
+
+ 
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(heavySaveTasks);
+        } else {
+            setTimeout(heavySaveTasks, 200);
+        }
+    
     } catch (e) {
           // 💖 Nova的全新探知魔法：更深入地识别你的心意 💖
         // 我们不再检查 e.name，而是检查完整的错误信息里是否包含 "AbortError" 这个信号
@@ -30610,22 +30614,7 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
 
      } finally {
            await initDisplay();
-// 在保存历史之前，检查是否需要添加时间标记
-if (isEmphasizeTime === 'true' && currentGameData) {
-    
-
-
-// 添加更深层的保护
-const timeString = `${SafeGetValue(currentGameData?.user_character?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
-    // 确保我们有可以修改的消息，并且时间信息不为空
-    if (aiMessage && aiMessage.content && timeString.trim() !== '') {
-        // 将时间标签附加到消息的末尾
-        aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
-        console.log(`[Nova's Time Stamp] 已为这条回应添加了时间的印记 -> ${timeString}`);
-    }
-   
-}
-  await saveHistory();
+ 
         // 步骤4：无论成功与否，都恢复原始世界书，确保安全
         if (isDirty && originalWorldInfo) { // 只在确实修改过并且有备份时才恢复
             try {
@@ -30651,7 +30640,7 @@ const timeString = `${SafeGetValue(currentGameData?.user_character?.current_loca
         updateRerollButtonState();
     }
 }
-    
+ 
 
 /**
  * @description 启动时检查是否有未被正常恢复的世界书，并从localStorage备份中恢复它们。
@@ -32488,6 +32477,7 @@ let summarys = null;
 let ISNEWMAP = "false";
 let isEmphasizeTime = "false";
 let is_simple_stream = "false";
+let noBackup = "false";
 
     let worldBookState = {
         currentTab: 'settings', // 默认显示设定
@@ -36369,6 +36359,7 @@ const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 is_simple_stream =  String(chatdata.is_simple_stream||'false');
+noBackup = String(chatdata.is_no_backup||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
@@ -43554,7 +43545,7 @@ function showRollResultModal() {
                 <li class="list-subheader">应对池构成</li>
                 ${(player_check.components.attributes_skills || []).map(c => `<li><span class="label">${c.name}</span><span class="value">${c.value} 点</span></li>`).join('')}
                   ${(player_check.components.teammate_assists || []).map(t => `<li><span class="label">${t.name}</span><span class="value">+${t.value} 点</span></li>`).join('')}
-
+${(player_check.components.npc_checks || []).map(n => `<li><span class="label">${n.name}</span><span class="value">+${n.value} 点</span></li>`).join('')}
                 ${(() => {
                     const checkedAttrs = (player_check.components.attributes_skills || []).map(a => a.name);
                     const statusHtml = (player_check.components.status_bonuses || [])
