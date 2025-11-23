@@ -21504,7 +21504,7 @@ let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupCha
     }
     for (const placeholder in groupChatPlaceholders) {
     // 替换群聊 HTML
-    finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), groupChatPlaceholders[placeholder]);
+finalHtml = finalHtml.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), groupChatPlaceholders[placeholder]); // <-- 替换时需要转义
     }
     for (const placeholder in specialBlocks) {
         const cleanBlock = specialBlocks[placeholder]
@@ -22088,7 +22088,7 @@ let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupCha
     }
 
     // 3. 生成占位符
-    const placeholder = `GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}`;
+  const placeholder = `{{GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}}}`; // <-- 修改为花括号形式
     groupChatPlaceholders[placeholder] = groupChatHtml;
     groupChatPlaceholderIndex++;
     return placeholder;
@@ -22194,7 +22194,7 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
         }
         for (const placeholder in groupChatPlaceholders) {
       // 替换群聊 HTML
-      finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), groupChatPlaceholders[placeholder]);
+  finalHtml = finalHtml.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), groupChatPlaceholders[placeholder]); // <-- 替换时需要转义
     }
         // 最后，将我们保护好的 <details> 结构原封不动地替换回去
           for (const placeholder in specialBlocks) {
@@ -22377,6 +22377,8 @@ if (autoPlayTrigger) {
     // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
 }
+
+
 function cleanupGlobalUIState() {
     console.log("[Nova's Tidying Magic] 开始清理全局UI状态...");
 
@@ -24930,7 +24932,7 @@ let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupCha
     }
 
     // 3. 生成占位符
-    const placeholder = `GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}`;
+  const placeholder = `{{GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}}}`; // <-- 修改为花括号形式
     groupChatPlaceholders[placeholder] = groupChatHtml;
     groupChatPlaceholderIndex++;
     return placeholder;
@@ -25036,7 +25038,7 @@ const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
         }
         for (const placeholder in groupChatPlaceholders) {
       // 替换群聊 HTML
-      finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), groupChatPlaceholders[placeholder]);
+      finalHtml = finalHtml.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), groupChatPlaceholders[placeholder]); // <-- 替换时需要转义
     }
         // 最后，将我们保护好的 <details> 结构原封不动地替换回去
           for (const placeholder in specialBlocks) {
@@ -44993,8 +44995,7 @@ const resourceReadyGuard = async () => {
 const settingsGroups = assaSettingsData?.global_set?.settings?.['群聊'];
 if (settingsGroups && typeof settingsGroups === 'object') {
     Object.keys(settingsGroups).forEach(groupName => {
-        // --- 🤖 新增的修改点 START ---
-        // 检查 groupName 是否以 "_" 开头，如果是，则跳过本次循环
+        
         if (groupName.startsWith('_')) {
             return; 
         }
