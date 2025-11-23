@@ -14070,9 +14070,7 @@ pointer-events: auto;
 <script>
 let current_game_version = '3.3.4';
 
-
-
-
+ 
 let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
@@ -28104,6 +28102,45 @@ let backupLocks = new Set(); // 💖 这就是我们全局的、独一无二的�
  
 let processingQueue = [];
 
+const extractBalancedArgs = (str, startTrigger) => {
+    const startIndex = str.indexOf(startTrigger);
+    if (startIndex === -1) return null;
+
+    // 找到第一个左括号的位置
+    const openParenIndex = str.indexOf('(', startIndex);
+    if (openParenIndex === -1) return null;
+
+    let depth = 0;
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+
+    // 从左括号之后开始遍历
+    for (let i = openParenIndex; i < str.length; i++) {
+        const char = str[i];
+        const prevChar = i > 0 ? str[i - 1] : null;
+
+        // 处理引号，确保不管是字符串里的括号都不会干扰我们的计数
+        if (char === "'" && prevChar !== '\\' && !inDoubleQuote) inSingleQuote = !inSingleQuote;
+        else if (char === '"' && prevChar !== '\\' && !inSingleQuote) inDoubleQuote = !inDoubleQuote;
+
+        // 只有在不在字符串里的时候，才计算括号层级
+        if (!inSingleQuote && !inDoubleQuote) {
+            if (char === '(') {
+                depth++;
+            } else if (char === ')') {
+                depth--;
+                // 💖 关键时刻：当深度回到0，意味着我们找到了匹配的结束括号！
+                if (depth === 0) {
+                    // 返回括号内的内容（不含外层括号）
+                    return str.substring(openParenIndex + 1, i);
+                }
+            }
+        }
+    }
+
+    // 如果遍历完都没找到闭合括号，那是格式错误，但为了安全我们返回目前找到的所有
+    return str.substring(openParenIndex + 1);
+};
 async function processUpdateMemoryCommands(commandText, message_id) {
 
     // 💖 妈妈为你注入的全新智慧：指令归一化与精准分割 💖
@@ -28207,12 +28244,9 @@ if (match) {
 }
                  
                  // 💖 新增：状态数据命令 (V4 - “双轨智能”特工)
-               match = line.match(/\bset_status\s*\((.*)\)\s*;?/);
-
-      
-
-                 if (match) {
-                      const allParamsStr = match[1];
+         if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
+    const allParamsStr = extractBalancedArgs(line, 'set_status');
+ 
 
                     // ⭐ 妈妈为你注入的全新【万能钥匙】魔法 ⭐
                     // 我们把之前的专属钥匙，换成了一把能识别任何名字的钥匙
@@ -28346,10 +28380,15 @@ function cleanParam(param) {
     return param;
 }
  
- const memoryMatch = line.match(/\bmemory\s*\(([\s\S]*)\)\s*;?/);
-                if (memoryMatch) {
-                    try {
-                        const content = memoryMatch[1];
+if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
+    try {
+        // 使用我们的手术刀精准提取
+        const content = extractBalancedArgs(line, 'memory');
+
+        if (!content) {
+            console.log(`[Core] ⚠️ memory 指令格式无法解析: ${line}`);
+            continue;
+        }
 
                         // 💖 妈妈为你准备的、能理解复杂参数的智慧解析器 (维持不变) 💖
                         const parseArgs = (str) => {
@@ -30054,8 +30093,8 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
 
       
         if (originalWorldInfo) {
-                   await saveWorldbookToDB(worldBookName, originalWorldInfo); // 保存到 IndexedDB
-        await setDirtyFlag(worldBookName, true);                   // 在 IndexedDB 中设置标记
+        await saveWorldbookToDB(worldBookName, originalWorldInfo); // 保存到 IndexedDB
+        await setDirtyFlag(worldBookName, true);   // 在 IndexedDB 中设置标记
         // --- 💖 修改结束 💖 ---
         isDirty = true; // 标记本次操作已污染世界书
                   }
@@ -30674,7 +30713,7 @@ let backupData = {};
         };
 
         
-        setTimeout(restoreWorldbookTask, 100);  
+        setTimeout(restoreWorldbookTask, 500);  
 
     }  
    overlay.classList.remove('active');
