@@ -17352,50 +17352,7 @@ async function runInitializationMagic() {// 加上 async
         return; // 停止执行后续代码
     }
 
-    // --- 第三部分：世界书存在，执行绑定检查逻辑 (你提供的逻辑) ---
-    //toastr.success(`已确认世界书存在，正在检查绑定状态...`);
-    
-    try {
-        const bindings = await TavernHelper.getCharWorldbookNames('current');
-
-        // 检查当前绑定是否正确
-        if (bindings && bindings.primary === worldbookName) {
-           // toastr.success(`当前角色已和「${worldbookName}」完美绑定。`);
-            console.log(`守护咒语确认：与「${worldbookName}」的链接正确无误。`);
-        } else {
-            // 绑定不匹配，且我们已知世界书存在，直接尝试自动绑定
-            const currentPrimary = (bindings && bindings.primary) ? bindings.primary : '无/其他';
-            toastr.warning(`绑定不匹配 (当前: ${currentPrimary})，正在自动修正...`);
-            console.warn(`需要修正绑定：期望「${worldbookName}」，当前「${currentPrimary}」。`);
-
-            try {
-                // 构建新的绑定对象
-                const newBindings = bindings || { primary: null, additional: [] };
-                newBindings.primary = worldbookName;
-
-                // 执行重绑定 API
-                await TavernHelper.rebindCharWorldbooks('current', newBindings);
-                
-                // 等待一下让后端反应
-                await new Promise(resolve => setTimeout(resolve, 300));
-
-                // 二次验证
-                const verifyBindings = await TavernHelper.getCharWorldbookNames('current');
-                if (verifyBindings && verifyBindings.primary === worldbookName) {
-                   // toastr.success(`自动绑定成功！已链接至「${worldbookName}」。`);
-                    console.log(`自动绑定成功。`);
-                } else {
-                    toastr.error(`自动绑定似乎未生效，请手动检查设置。`);
-                }
-            } catch (bindError) {
-                toastr.error(`自动绑定过程发生错误。`);
-                console.error('自动绑定异常:', bindError);
-            }
-        }
-    } catch (error) {
-        toastr.error('读取角色绑定信息时出错。');
-        console.error('执行绑定检查时发生错误:', error);
-    }
+  
   
 function isColliding(rect1, existingRects) {
     for (const rect2 of existingRects) {
