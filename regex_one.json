@@ -14068,7 +14068,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.2.20';
+let current_game_version = '3.2.21';
 
 
  
