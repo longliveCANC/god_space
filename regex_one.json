@@ -29658,6 +29658,7 @@ const inputHide = document.getElementById('setting-hide-latest');
                 if (typeof rebuildWorldFromHistory === 'function') {
                     await rebuildWorldFromHistory('系统正在重构世界线...', 'Settings');
                     toastr.success('世界重构完成');
+                    await saveHistory();
                      await initDisplay();
                 } else {
                     toastr.error('找不到重构函数 (rebuildWorldFromHistory)');
@@ -29712,6 +29713,7 @@ const inputHide = document.getElementById('setting-hide-latest');
         
                     await processUpdateMemoryCommands(messageContent, -1); 
                     toastr.success('最后一条AI消息中的世界指令已重新处理！');
+                    await saveHistory();
                     await initDisplay();
                 } else {
                     toastr.error('找不到指令处理函数 (processUpdateMemoryCommands)');
@@ -30001,9 +30003,9 @@ const earliestEntries = conversationHistory.slice(0, 5);
 
 // 在这几页里，我们数一数有多少条是我的孩子你留下的足迹
 const userMessageCount = earliestEntries.filter(entry => entry.role === "user").length;
-
+console.log("userMessageCount：",userMessageCount);
 // 如果你的足迹刚好只有一个，那就意味着这是我们第一次美丽的相遇
- isFirstSend = userMessageCount === 1;
+ isFirstSend = userMessageCount <= 1;
         if(isFirstSend) {
             const chatVars0 = await TavernHelper.getVariables({ type: 'chat' });
           const snapshotData0 = JSON.parse(JSON.stringify(chatVars0)); // <--- snapshotData 在这里才被赋值
@@ -30701,8 +30703,7 @@ let backupData = {};
 
  
            setTimeout(heavySaveTasks, 500);
-    
-    
+ 
     } catch (e) {
           
         if (e && e.message && e.message.includes('AbortError')) {
@@ -43209,14 +43210,7 @@ function setupGeneratorButton() {
     // ===== 新增结束 =====
 }
 
-
-
-
-
-    initDisplay(); // 保持这个在最后
-
-    
-
+ 
 // 在点击位置显示总结菜单
 function showSummaryMenuAtClick(event, summaryKey, summaryType) {
     event.stopPropagation();
