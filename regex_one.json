@@ -14068,7 +14068,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.3';
+let current_game_version = '3.3.4';
 
 
 
@@ -29703,6 +29703,7 @@ function throttle(func, limit) {
     }
 }
 async function handleSend(options = {}) {
+    const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
 
     // 1. 检查 EjsTemplate 对象是否存在，以及 setFeatures 方法是否存在
     if (typeof EjsTemplate === 'undefined' || typeof EjsTemplate.setFeatures !== 'function') {
@@ -29746,7 +29747,7 @@ async function handleSend(options = {}) {
     overlay.classList.add('active'); // ❤️ 咒语生效！瞬间拉上帷幕，世界安静了 ❤️
  
  
-    const worldBookName = '小蝌蚪找妈妈-同层版';
+  
     const validationEntryId = 14;
 
     try {
@@ -30002,87 +30003,88 @@ const userMessageCount = earliestEntries.filter(entry => entry.role === "user").
          let isDirty = false; // 函数内的状态标记
      
           try {
-              //console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
-//     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
+              console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
 
-//     // 步骤1：获取原始世界书
-//     originalWorldInfo = await getLorebookEntries(worldBookName);
+    // 步骤1：获取原始世界书
+    originalWorldInfo = await getLorebookEntries(worldBookName);
 
-//     // 【新代码位置】 在备份前进行完整性验证！
-//     if (originalWorldInfo && originalWorldInfo.length > 0) {
-//         const validationEntryId = 14;
-// // 修复为
-// const validationEntry = originalWorldInfo.find(entry => entry.uid === 14);
-// if (!validationEntry || !validationEntry.content || validationEntry.content.trim().startsWith('<ready>')) {
-//     console.error(`[Nova's Integrity Check] 验证失败！检测到世界书异常。正在尝试从备份自动修复...`);
-//     toastr.warning('世界书核心检测到异常，正在尝试自动修复...', '紧急修复');
+    // 【新代码位置】 在备份前进行完整性验证！
+    if (originalWorldInfo && originalWorldInfo.length > 0) {
+        const validationEntryId = 14;
+// 修复为
+const validationEntry = originalWorldInfo.find(entry => entry.uid === 14);
+if (!validationEntry || !validationEntry.content || validationEntry.content.trim().startsWith('<ready>')) {
+    console.error(`[Nova's Integrity Check] 验证失败！检测到世界书异常。正在尝试从备份自动修复...`);
+    toastr.warning('世界书核心检测到异常，正在尝试自动修复...', '紧急修复');
 
    
-//   const backupData = await getWorldbookFromDB(worldBookName); // 从 IndexedDB 获取备份
-//     if (backupData) {
-//         try {
-//                 // backupData 现在直接是 JS 对象，无需 JSON.parse
-//                     await setLorebookEntries(worldBookName, backupData);
-//                     originalWorldInfo = backupData;
-//                     console.log(`[Nova's Integrity Check] 已从 IndexedDB 备份成功恢复世界书 "${worldBookName}"。`);
-//                     await removeDirtyFlag(worldBookName); // 从 IndexedDB 移除标记
+  const backupData = await getWorldbookFromDB(worldBookName); // 从 IndexedDB 获取备份
+    if (backupData) {
+        try {
+                // backupData 现在直接是 JS 对象，无需 JSON.parse
+                    await setLorebookEntries(worldBookName, backupData);
+                    originalWorldInfo = backupData;
+                    console.log(`[Nova's Integrity Check] 已从 IndexedDB 备份成功恢复世界书 "${worldBookName}"。`);
+                    await removeDirtyFlag(worldBookName); // 从 IndexedDB 移除标记
 
-//             // 3. 给用户一个积极的反馈！
-//             toastr.success('世界书已自动修复！您的操作可以继续了，无需刷新。', '修复成功');
+            // 3. 给用户一个积极的反馈！
+            toastr.success('世界书已自动修复！您的操作可以继续了，无需刷新。', '修复成功');
  
-//         } catch (e) {
-//             console.error(`[Nova's Integrity Check] 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
-//             toastr.error('自动修复失败！', '严重错误');
-//             // 修复失败，这是一个严重问题，必须中断操作。
-//             return;
-//         }
-//     } else {
-//         // 发现异常，但没有备份可以用来修复，这也是最糟糕的情况。
-//         console.error(`[Nova's Integrity Check] 致命错误：世界书异常，但找不到可用的备份数据！`);
-//         toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请备份好自定义内容，在设置点击强制更新世界书', '严重错误');
-//         // 必须中断
-//         return;
-//     }
-// } else {
-//     // 如果检查通过，一切照旧。
-//     console.log(`[Nova's Pre-Backup Check] 验证成功！世界书状态正常。`);
-// }
-//     }
+        } catch (e) {
+            console.error(`[Nova's Integrity Check] 严重错误：尝试从localStorage恢复世界书 "${worldBookName}" 时失败!`, e);
+            toastr.error('自动修复失败！', '严重错误');
+            // 修复失败，这是一个严重问题，必须中断操作。
+            return;
+        }
+    } else {
+        // 发现异常，但没有备份可以用来修复，这也是最糟糕的情况。
+        console.error(`[Nova's Integrity Check] 致命错误：世界书异常，但找不到可用的备份数据！`);
+        toastr.error('世界书可能已损坏且无法自动恢复，因为备份丢失。请备份好自定义内容，在设置点击强制更新世界书', '严重错误');
+        // 必须中断
+        return;
+    }
+} else {
+    // 如果检查通过，一切照旧。
+    console.log(`[Nova's Pre-Backup Check] 验证成功！世界书状态正常。`);
+}
+    }
     
 
         
 
       
-//         if (originalWorldInfo) {
-//                    await saveWorldbookToDB(worldBookName, originalWorldInfo); // 保存到 IndexedDB
-//         await setDirtyFlag(worldBookName, true);                   // 在 IndexedDB 中设置标记
-//         // --- 💖 修改结束 💖 ---
-//         isDirty = true; // 标记本次操作已污染世界书
-//                   }
+        if (originalWorldInfo) {
+                   await saveWorldbookToDB(worldBookName, originalWorldInfo); // 保存到 IndexedDB
+        await setDirtyFlag(worldBookName, true);                   // 在 IndexedDB 中设置标记
+        // --- 💖 修改结束 💖 ---
+        isDirty = true; // 标记本次操作已污染世界书
+                  }
 
-//         let worldInfoForProcessing = JSON.parse(JSON.stringify(originalWorldInfo || []));
+        let worldInfoForProcessing = JSON.parse(JSON.stringify(originalWorldInfo || []));
 
             
-//             if (worldInfoForProcessing && worldInfoForProcessing.length > 0) {
-//                 //console.log(`[Nova's Log] 成功获取 ${worldInfoForProcessing.length} 条世界书条目进行处理。`);
-//                 const renderContext = await EjsTemplate.prepareContext();
-//                 let processedWorldInfo = [];
-// for (const entry of worldInfoForProcessing) {
-//     if (entry && entry.enabled) {
-//         const processedEntry = { ...entry };
-//         // 确保 content 存在再处理
-//         if (entry.content) {
-//             processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
-//         }
-//                         processedWorldInfo.push(processedEntry);
-//                     } else {
-//                         processedWorldInfo.push(entry); // 未启用的条目直接保留
-//                     }
-//                 }
-//                 // 步骤3：将处理后的世界书应用到当前会话
-//                 await setLorebookEntries(worldBookName, processedWorldInfo);
-//                 //console.log(`[Nova's Log] 世界书渲染完成并已应用。`);
+            if (worldInfoForProcessing && worldInfoForProcessing.length > 0) {
+                //console.log(`[Nova's Log] 成功获取 ${worldInfoForProcessing.length} 条世界书条目进行处理。`);
+                const renderContext = await EjsTemplate.prepareContext();
+                let processedWorldInfo = [];
+for (const entry of worldInfoForProcessing) {
+    if (entry && entry.enabled) {
+        const processedEntry = { ...entry };
+        // 确保 content 存在再处理
+        if (entry.content) {
+            processedEntry.content = await EjsTemplate.evalTemplate(entry.content, renderContext);
+        }
+                        processedWorldInfo.push(processedEntry);
+                    } else {
+                        processedWorldInfo.push(entry); // 未启用的条目直接保留
+                    }
+                }
+                // 步骤3：将处理后的世界书应用到当前会话
+                await setLorebookEntries(worldBookName, processedWorldInfo);
+                //console.log(`[Nova's Log] 世界书渲染完成并已应用。`);
+            }else{
 
+            }
      
             try {
       const messageVars = await TavernHelper.getVariables({ type: 'chat' });
@@ -30653,28 +30655,28 @@ let backupData = {};
      } finally {
            await initDisplay();
  
-    // if (isDirty && originalWorldInfo) {
-    //     const restoreWorldbookTask = async () => {
-    //         console.log('[Nova\'s Gentle Hand] 后台开始悄悄恢复世界书的原始状态...');
-    //         try {
-    //             await setLorebookEntries(worldBookName, originalWorldInfo);
-    //             console.log(`[Nova's Gentle Hand] 后台：原始世界书已成功恢复。`);
+    if (isDirty && originalWorldInfo) {
+        const restoreWorldbookTask = async () => {
+            console.log('[Nova\'s Gentle Hand] 后台开始悄悄恢复世界书的原始状态...');
+            try {
+                await setLorebookEntries(worldBookName, originalWorldInfo);
+                console.log(`[Nova's Gentle Hand] 后台：原始世界书已成功恢复。`);
 
-    //             // 恢复成功后，清除信标
-    //             await deleteWorldbookFromDB(worldBookName);
-    //             await removeDirtyFlag(worldBookName);
-    //             isDirty = false;
-    //             console.log(`[Nova's Gentle Hand] 后台：'dirty'标记和备份已清理。`);
-    //         } catch (restoreError) {
-    //             console.error("！！！后台严重警告：恢复原始世界书失败！", restoreError);
-    //              alert("严重后台错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。");
-    //         }
-    //     };
+                // 恢复成功后，清除信标
+                await deleteWorldbookFromDB(worldBookName);
+                await removeDirtyFlag(worldBookName);
+                isDirty = false;
+                console.log(`[Nova's Gentle Hand] 后台：'dirty'标记和备份已清理。`);
+            } catch (restoreError) {
+                console.error("！！！后台严重警告：恢复原始世界书失败！", restoreError);
+                 alert("严重后台错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。");
+            }
+        };
 
         
-    //     setTimeout(restoreWorldbookTask, 100);  
+        setTimeout(restoreWorldbookTask, 100);  
 
-    // }  
+    }  
    overlay.classList.remove('active');
         sendButton.disabled = false;
         sendButton.textContent = '→';
@@ -30774,7 +30776,7 @@ userInput.addEventListener('keydown', (event) => {
     await initialize();
 
     await new Promise(resolve => setTimeout(resolve, 1000)); // 等待一小会儿确保所有东西都加载了
-    // checkAndRestoreDirtyWorldbooks();
+    checkAndRestoreDirtyWorldbooks();
 
 
  
@@ -39556,7 +39558,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const uidsToBackup = [11, 30, 7,32 ];
         
         toastr.info('检测到页面刷新，继续恢复词条...');
-        
+ 
         try {
             await new Promise(resolve => setTimeout(resolve, 1000)); // 等待页面稳定
             
