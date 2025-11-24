@@ -39059,7 +39059,7 @@ function setupReconfigModal() {
         { name: '轮回乐园', uid: 22 },
         { name: '无限恐怖', uid: 5 },
         { name: '快穿攻略', uid: 34 },
-        { name: '诸天群聊', uid: 41 },
+        { name: '诸天群聊', uid: 41 ,extraUid: '50'},
         { name: '末日', uid: 54 },
         { name: '无世界观', uid: 62 },
     ];
@@ -39113,14 +39113,14 @@ const reconfigurableMods = [
     { name: '特殊日期', uid: 42 }
 ];
 
-    function createWorldviewItems() {
+ function createWorldviewItems() {
         worldviewContainer.innerHTML = '';
         worldviewMods.forEach(mod => {
             const item = document.createElement('div');
             item.className = 'reconfig-mod-item';
             const radioId = `reconfig-world-${mod.uid}`;
             item.innerHTML = `
-                <input type="radio" id="${radioId}" name="worldview-selection" data-uid="${mod.uid}" data-name="${mod.name}">
+                <input type="radio" id="${radioId}" name="worldview-selection" data-uid="${mod.uid}" data-name="${mod.name}" ${mod.extraUid ? `data-extra-uid="${mod.extraUid}"` : ''}>
                 <label for="${radioId}">${mod.name}</label>
             `;
             worldviewContainer.appendChild(item);
@@ -39136,7 +39136,6 @@ const reconfigurableMods = [
             });
         });
     }
-
     function createModItems() {
         container.innerHTML = '';
         reconfigurableMods.forEach(mod => {
@@ -39253,7 +39252,7 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
         }
     }
 
-    async function applyNewSettings() {
+  async function applyNewSettings() {
         applyBtn.disabled = true;
         applyBtn.textContent = '应用中...';
 
@@ -39263,11 +39262,18 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
 
             const content = firstMessage.message;
             const match = content.match(/<世界书条目>(.*?)<\/世界书条目>/);
-            if (!match) { throw new Error("妈妈找不到<世界书条目>标签，无法保存。"); }
+            if (!match) { throw new Error("妈妈找不到<世界书条目>标签,无法保存。"); }
 
             const originalUids = new Set(match[1].split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
 
             const allWorldviewUids = new Set(worldviewMods.map(mod => mod.uid));
+            // 把世界观的 extraUid 也加入管理范围
+            worldviewMods.forEach(mod => {
+                if (mod.extraUid) {
+                    mod.extraUid.split(',').forEach(extra => allWorldviewUids.add(parseInt(extra, 10)));
+                }
+            });
+
             const allManageableUids = new Set();
             reconfigurableMods.forEach(mod => {
                  if(mod.uid !== 'map-none-sentinel' && mod.uid !== 'distance-off-sentinel' && mod.uid !== 'npccg-off-sentinel') {
@@ -39288,11 +39294,15 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             const selectedWorldview = worldviewContainer.querySelector('input[name="worldview-selection"]:checked');
             if (selectedWorldview) {
                 newUidsFromPanel.add(parseInt(selectedWorldview.dataset.uid, 10));
+                // 添加世界观的 extraUid
+                if (selectedWorldview.dataset.extraUid) {
+                    selectedWorldview.dataset.extraUid.split(',').forEach(extra => newUidsFromPanel.add(parseInt(extra, 10)));
+                }
             } else {
-                // 如果因为某种原因没有选上世界观，就从原来的UID里找一个，保证世界观不断档
+                // 如果因为某种原因没有选上世界观,就从原来的UID里找一个,保证世界观不断档
                 const oldWorldUid = [...originalUids].find(uid => allWorldviewUids.has(uid));
                 if (oldWorldUid) newUidsFromPanel.add(oldWorldUid);
-                else newUidsFromPanel.add(1); // 最终备用方案：主神
+                else newUidsFromPanel.add(1); // 最终备用方案:主神
             }
 
             // --- 添加新的模组UID ---
@@ -39323,7 +39333,7 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             }, 1200);
 
         } catch (error) {
-            console.error("呜，应用新设置时出错了，抱抱我的孩子：", error);
+            console.error("呜,应用新设置时出错了,抱抱我的孩子:", error);
             feedbackMsg.textContent = `应用失败: ${error.message}`;
             feedbackMsg.style.opacity = '1';
         } finally {
