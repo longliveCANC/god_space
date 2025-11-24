@@ -4211,7 +4211,7 @@ opacity: 0.6;
         }
 
         .header { text-align: center; margin-bottom: 2.5rem; }
-        h1 { font-size: 2.2em; font-weight: 300; letter-spacing: 8px; text-transform: uppercase; margin: 0; color: var(--text-color) }
+        h1 { font-size: 2.2em; font-weight: 300; letter-spacing: 8px; text-transform: uppercase; margin: 0; color: var(--text-color);   }
         .subtitle { font-size: 0.9em; color: var(--text-secondary-color); letter-spacing: 3px; margin-top: 0.7rem; text-transform: uppercase; }
         .form-section { margin-bottom: 2rem; }
         .form-section h2 { font-size: 1.1em; color: var(--secondary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
@@ -14959,7 +14959,7 @@ const npcImageMap_fallbackData = {
 
 
 
-window.NovaWorkshop = (function() {
+ window.NovaWorkshop = (function() {
     // 配置
     const REMOTE_URL = 'https://longlivecanc.github.io/god_space/mods.json';
     const DB_NAME = 'GodSpaceWorkshopDB';
@@ -15245,6 +15245,8 @@ async function renderParams(filterTag = 'all', searchTerm = '') {
         downloadWorldBook: downloadFile // <-- 把新函数添加在这里
     };
 })();
+
+
 
 
 
@@ -21824,14 +21826,14 @@ async function sendCommand(command, button, successText, showWarning) {
         
 
         if(sendMode === 'manual'){
-     if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof renderHistory === 'function') {
+     if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof worldHelper.renderHistory === 'function') {
             conversationHistory.push({ role: 'assistant', content: '<系统提示：等待用户输入要求...>' });
             
         }
 
         }
  await saveHistory(); // 保存这个历史性的时刻
-    renderHistory();
+    worldHelper.renderHistory();
 
     } catch (e) {
         // 如果中间出了差错，妈妈会帮你处理
@@ -21967,7 +21969,7 @@ async function loadPreviousMessages() {
     // 我们需要倒序创建，这样才能正确地插入到顶部
     for (let i = messagesToPrepend.length - 1; i >= 0; i--) {
         const msg = messagesToPrepend[i];
-        const bubble = await createMessageBubble(msg,'chat',true);
+        const bubble = await worldHelper.createMessageBubble(msg,'chat',true);
         chatDisplayArea.insertBefore(bubble, chatDisplayArea.firstChild);
     }
 
@@ -22010,7 +22012,7 @@ const groupChatPlaceholders = {};
         const userNickname = currentGameData?.user_character?.nick_name || '你';
         
         // 将消息内容渲染成 HTML（使用外部的辅助函数）
-        const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
+        const renderedMsgHtml = worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
         
         // 生成占位符
         const placeholder = `MSGREADINGPLACEHOLDER${msgPlaceholderIndex}`;
@@ -22036,7 +22038,7 @@ let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupCha
                 const sender = messageMatch[1].trim();
                 const content = messageMatch[2].trim();
                 // ⚠️ 使用外部的 renderGroupChatToHtml 函数
-                groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+                groupChatHtml += worldHelper.renderGroupChatToHtml(sender, content, userNickname);
             }
         }
     }
@@ -22257,881 +22259,10 @@ window.addEventListener('message', function(event) {
     // 7. 返回渲染好的纯净 HTML 字符串
     return bubble.innerHTML;
 }
-function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_render = false) {
-    const isSent = sender === userNickname;
-    
-    // 基础 CSS 类
-    const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
-    const bubbleClass = 'group-chat-message-bubble';
-    
-    // 预处理内容
-    let processedContent = content.trim();
-    let isSpecial = false; 
-    let isMusic = false;
-let isBgm = false;
-    // ------------------------------------------------------
-    // 0. 预先处理 BGM 特殊格式: <msg>bgm|game|[music-...]</msg>
-    // ------------------------------------------------------
-    let isAutoPlayBgm = false;
-    
-  
-        // 检查是否是 bgm 指令并且不是通过render进来的
-        if (sender === 'bgm') {
-            console.log('这里有bgm！');
-   isBgm = true;
-if(!is_from_render){
-isAutoPlayBgm = true; // 标记为自动播放
-}
-        }
  
-    // ------------------------------------------------------
-    // 特殊消息解析逻辑
-    // ------------------------------------------------------
-if(!isBgm){
-    // 1. 表情包 [name]
-    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
-        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
-            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
-        }
-        return match;
-    });
-}
-    // 2. 语音 [yy-内容]
-    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
-        const text = processedContent.substring(4, processedContent.length - 1).trim();
-        const duration = Math.floor(Math.random() * 13) + 2; 
-        processedContent = `
-            <div class="special-message voice-message" title="点击播放(模拟)">
-                <div class="special-msg-icon">
-                    <div class="voice-wave">
-                        <div class="voice-bar"></div>
-                        <div class="voice-bar"></div>
-                        <div class="voice-bar"></div>
-                        <div class="voice-bar"></div>
-                    </div>
-                </div>
-                <div class="special-msg-content">
-                    <div class="special-msg-title">语音消息</div>
-                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
-                </div>
-            </div>`;
-        isSpecial = true;
-    }
-
-else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
-     let raw = '';
-    if(processedContent.match(/^\[music-[\s\S]*\]$/)){
-raw = processedContent.substring(7, processedContent.length - 1);
-    }else{
-raw = processedContent.substring(1, processedContent.length - 1);
-    }
-       
-        raw = raw.replace(/[\r\n]/g, '').trim();
-        const parts = raw.split('$');
-        const song = (parts[0] || '未知歌曲').trim();
-        const artist = (parts[1] || '未知歌手').trim();
-        
-        // 生成唯一 ID
-        const domId = 'music_' + Math.floor(Math.random() * 1000000);
-        
-        // 转义单引号防止 JS 报错
-        const safeSong = song.replace(/'/g, "\\'");
-        const safeArtist = artist.replace(/'/g, "\\'");
-
-        processedContent = `
-            <div class="music-card-lite">
-                <div class="music-card-left">
-                    <div class="music-card-title">${song}</div>
-                    <div class="music-card-artist">${artist}</div>
-                    <div class="music-progress-track">
-                        <div id="prog-bar-${domId}" class="music-progress-bar"></div>
-                    </div>
-                    <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
-                </div>
-                
-                <div class="global-music-play-btn" id="play-btn-${domId}" 
-                     onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-                </div>
-            </div>
-        `;
-        
-if (isAutoPlayBgm) {
-            // 我们把必要的数据放在 data-* 属性里
-            processedContent += `
-                <div class="js-music-autoplay-trigger" 
-                     style="display:none;" 
-                     data-song="${safeSong}" 
-                     data-artist="${safeArtist}" 
-                     data-dom-id="${domId}">
-                </div>
-            `;
-        }
-
-        isMusic = true;
-        isSpecial = true;
-    }
-    // 4. 转账 [zz-金额]
-    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
-        const raw = processedContent.substring(4, processedContent.length - 1);
-        const amount = raw.replace(/[^0-9.]/g, '');
-        
-        // 判断逻辑：如果是发给“我”的（userNickname），则显示“向你转账”
-        // 如果“我”是发送者，则显示“向 [接收者] 转账”
-        let displayText = "";
-        if (receiver === userNickname) {
-            displayText = "向你转账";
-        } else {
-            displayText = `向 ${receiver} 转账`;
-        }
-
-        processedContent = `
-            <div class="special-message transfer-message">
-                <div class="special-msg-icon">💰</div>
-                <div class="special-msg-content">
-                    <div class="special-msg-subtitle">${displayText}</div>
-                    <div class="transfer-amount">¥ ${amount}</div>
-                </div>
-            </div>`;
-        isSpecial = true;
-    }
-
-    // 5. 图片/视频 [img-描述]
-    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
-        const desc = processedContent.substring(5, processedContent.length - 1).trim();
-        processedContent = `
-            <div class="special-message image-message">
-                <div class="special-msg-icon">🖼️</div>
-                <div class="special-msg-content">
-                    <div class="special-msg-title">发送了图片</div>
-                    <div class="special-msg-subtitle">${desc}</div>
-                </div>
-            </div>`;
-        isSpecial = true;
-    }
-    else {
-        // 普通文本
-        processedContent = processedContent
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-    }
-
-    // ------------------------------------------------------
-    // 最终组装
-    // ------------------------------------------------------
-    
-    // 音乐组件：去掉气泡背景，让卡片独立显示
-     if (isMusic) {
-        return `
-        <div class="private-chat-wrapper" style="width:100%; ">
-            <div class="${itemClass}" data-user-id="${sender}">
-                <div class="group-chat-avatar-placeholder"></div>
-                 <div class="group-chat-message-content" style="width:100%;">
-                    <div class="group-chat-user-id">${sender}</div>
-                    ${processedContent}
-                </div>
-            </div>
-        </div>`;
-    }
-
-    // 普通/特殊气泡
-    return `
-<div class="private-chat-wrapper">
-    <div class="${itemClass}" data-user-id="${sender}">
-        <div class="group-chat-avatar-placeholder"></div>
-        <div class="group-chat-message-content">
-            <div class="group-chat-user-id">${sender}</div>
-            <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
-                ${processedContent}
-            </div>
-        </div>
-    </div>
-</div>`;
-}
-  
-function renderGroupChatToHtml(sender, content, userNickname) {
-    const isSent = sender === userNickname;
-    
-    // 基础 CSS 类
-    const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
-    const bubbleClass = 'group-chat-message-bubble';
-    
-    // 预处理内容
-    let processedContent = content.trim();
-    let isSpecial = false; 
-    let isMusic = false; // 标记是否为音乐
-
-    // ------------------------------------------------------
-    // 特殊消息解析逻辑 (与 renderPrivateMsgToHtml 保持一致)
-    // ------------------------------------------------------
-
-    // 1. 表情包 [name]
-    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
-        // 注意：这里使用全局的 memeImageMap (或 memeResourceManager?.finalSrcMap)，请根据您的实际全局变量名进行调整
-        // 这里沿用您提供的代码中的 memeImageMap 变量
-        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
-            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
-        }
-        return match;
-    });
-
-    // 2. 语音 [yy-内容]
-    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
-        const text = processedContent.substring(4, processedContent.length - 1).trim();
-        const duration = Math.floor(Math.random() * 13) + 2; 
-        processedContent = `
-            <div class="special-message voice-message" title="点击播放(模拟)">
-                <div class="special-msg-icon">
-                    <div class="voice-wave">
-                        <div class="voice-bar"></div>
-                        <div class="voice-bar"></div>
-                        <div class="voice-bar"></div>
-                        <div class="voice-bar"></div>
-                    </div>
-                </div>
-                <div class="special-msg-content">
-                    <div class="special-msg-title">语音消息</div>
-                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
-                </div>
-            </div>`;
-        isSpecial = true;
-    }
-
-    // 3. 音乐 [music-歌名$歌手]
-    else if (processedContent.startsWith('[music-') && processedContent.endsWith(']')) {
-       let raw = processedContent.substring(7, processedContent.length - 1);
-        raw = raw.replace(/[\r\n]/g, '').trim();
-        const parts = raw.split('$');
-        const song = (parts[0] || '未知歌曲').trim();
-        const artist = (parts[1] || '未知歌手').trim();
-        
-        // 生成唯一 ID
-        const domId = 'music_' + Math.floor(Math.random() * 1000000);
-        
-        // 转义单引号防止 JS 报错
-        const safeSong = song.replace(/'/g, "\\'");
-        const safeArtist = artist.replace(/'/g, "\\'");
-
-        processedContent = `
-            <div class="music-card-lite">
-                <div class="music-card-left">
-                    <div class="music-card-title">${song}</div>
-                    <div class="music-card-artist">${artist}</div>
-                    <div class="music-progress-track">
-                        <div id="prog-bar-${domId}" class="music-progress-bar"></div>
-                    </div>
-                    <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
-                </div>
-                
-                <div class="global-music-play-btn" id="play-btn-${domId}" 
-                     onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-                </div>
-            </div>
-        `;
+ 
  
 
-        isMusic = true;
-        isSpecial = true;
-    }
-
-    // 4. 转账 [zz-金额]
-    // ⚠️ 注意：群聊中没有明确的接收者，我们只显示 '发起转账'
-    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
-        const raw = processedContent.substring(4, processedContent.length - 1);
-        const amount = raw.replace(/[^0-9.]/g, '');
-        
-        // 群聊中，只显示 '发起转账'
-        const displayText = "发起转账";
-
-        processedContent = `
-            <div class="special-message transfer-message">
-                <div class="special-msg-icon">💰</div>
-                <div class="special-msg-content">
-                    <div class="special-msg-subtitle">${displayText}</div>
-                    <div class="transfer-amount">¥ ${amount}</div>
-                </div>
-            </div>`;
-        isSpecial = true;
-    }
-
-    // 5. 图片/视频 [img-描述]
-    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
-        const desc = processedContent.substring(5, processedContent.length - 1).trim();
-        processedContent = `
-            <div class="special-message image-message">
-                <div class="special-msg-icon">🖼️</div>
-                <div class="special-msg-content">
-                    <div class="special-msg-title">发送了图片</div>
-                    <div class="special-msg-subtitle">${desc}</div>
-                </div>
-            </div>`;
-        isSpecial = true;
-    }
-    else {
-        // 6. 普通文本
-        // ⚠️ 群聊模式下需要处理 @提及
-        processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
-             return `<span class="group-chat-mention">@${p1}</span>`;
-        });
-        
-        // 处理 Markdown 格式
-        processedContent = processedContent
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-    }
-
-    // ------------------------------------------------------
-    // 最终组装
-    // ------------------------------------------------------
-    
-    // 音乐组件：去掉气泡背景，让卡片独立显示
-    if (isMusic) {
-        return `
-        <div class="private-chat-wrapper" style="width:100%; ">
-            <div class="${itemClass}" data-user-id="${sender}">
-                <div class="group-chat-avatar-placeholder"></div>
-                 <div class="group-chat-message-content" style="width:100%;">
-                    <div class="group-chat-user-id">${sender}</div>
-                    ${processedContent}
-                </div>
-            </div>
-        </div>`;
-    }
-
-    // 普通/特殊气泡
-    return `
-    <div class="group-chat-wrapper">
-        <div class="${itemClass}" data-user-id="${sender}">
-            <div class="group-chat-avatar-placeholder"></div>
-            <div class="group-chat-message-content">
-                <div class="group-chat-user-id">${sender}</div>
-                <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
-                    ${processedContent}
-                </div>
-            </div>
-        </div>
-    </div>`;
-}
-
- async function createMessageBubble(msg, mode = 'chat',is_from_render = false) { 
-
-    let content = msg.content;
-   
-    const originalIndex = conversationHistory.indexOf(msg);
-    if (originalIndex === -1) return document.createElement('div'); // 安全保护
-
-    // 以下所有代码，都是从你原来的 renderHistory 的 forEach 循环中“复制粘贴”过来的！
-    // 几乎一模一样，只是它现在专注于只处理一条消息。
-    const bubble = document.createElement('div');
-    bubble.classList.add('message-bubble');
-    bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
-
- 
-    let processedContent = content;
-        const htmlPlaceholders = {};
-        let placeholderIndex = 0;
-
-  
-        // 这一步必须在所有其他结构性处理之前！
-        let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
-            const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
-            const rawContent = htmlBlock || markdownBlock;
-            if (!rawContent) return match;
-            htmlPlaceholders[placeholder] = rawContent;
-            placeholderIndex++;
-            return placeholder;
-        });
-
-
-const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML 
-        let msgPlaceholderIndex = 0; // 新增：<msg> 占位符索引
-const groupChatPlaceholders = {}; // 用于存储 <group_chat> 标签生成的 HTML 
-let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
-        // 步骤 2.1：首先解析 <msg> 标签并替换为占位符
-        let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
-            const userNickname = currentGameData?.user_character?.nick_name || '你';
-            
-            // 2. 将消息内容渲染成 HTML
-            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname,is_from_render);
-            
-            // 3. 生成占位符
-           const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
-            msgPlaceholders[placeholder] = renderedMsgHtml;
-            msgPlaceholderIndex++;
-            return placeholder;
-        });
-        
-// ✨ 步骤 2.2：解析 <group_chat> 标签并替换为占位符
-const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
-let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
-    const userNickname = currentGameData?.user_character?.nick_name || '你';
-    let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
-    
-    // 逐行解析消息
-    if (typeof chatContent === 'string') {
-        const lines = chatContent.trim().split('\n');
-        for (const line of lines) {
-            const cleanedLine = line.trim();
-            
-            // 忽略空的行、summary行
-            if (!cleanedLine || cleanedLine.startsWith('summary|')) {
-                continue; 
-            }
-
-            // 匹配 发送人|消息内容
-            const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
-            if (messageMatch) {
-                const sender = messageMatch[1].trim();
-                const content = messageMatch[2].trim();
-                
-                // ⚠️ 使用前面提供的 renderGroupChatToHtml 函数
-                groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
-            }
-        }
-    }
-
-    // 3. 生成占位符
-  const placeholder = `{{GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}}}`; // <-- 修改为花括号形式
-    groupChatPlaceholders[placeholder] = groupChatHtml;
-    groupChatPlaceholderIndex++;
-    return placeholder;
-});
-
-// ⚠️ 修正：现在我们应该使用 contentWithGroupChatPlaceholder
-  const pureContent = contentWithGroupChatPlaceholder // !!! 使用新的 contentWithGroupChatPlaceholder
-       .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
-        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
-        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
-        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
-        .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
-        .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
-        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
-      
-        .replace(/<group_chat\b[^>]*>(?:(?!<group_chat\b)[\s\S])*?<\/group_chat>/gs, '');
-   
-     const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
-        // 魔法第三步：我们应用酒馆正则和深度规则
-        // const depth = Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
-        let renderedHtml = formatAsTavernRegexedString(
-            pureContent,
-            msg.role === 'user' ? 'user_input' : 'ai_output',
-            'display',
-            { depth: depth }
-        );
-
-        // 魔法第四步：我们就不需要在这里再次处理 HTML 占位符了，因为它已经在第一步完成了。
-        // renderedHtml = renderedHtml.replace(/<html>.../gs, ...); // <--- 删除这一整块
-// ✨ 魔法第四点五步：处理经过 formatAsTavernRegexedString 后新产生的 HTML 内容 ✨
-const additionalHtmlPlaceholders = {};
-let additionalPlaceholderIndex = 1000; // 使用不同的起始索引避免冲突
-
-renderedHtml = renderedHtml.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, codeBlock) => {
-    const placeholder = `ADDITIONALHTMLPLACEHOLDER${additionalPlaceholderIndex}`;
-    const rawContent = htmlBlock || codeBlock;
-    if (!rawContent) return match;
-    
- 
-    
-    additionalHtmlPlaceholders[placeholder] = rawContent;
-    additionalPlaceholderIndex++;
-    return placeholder;
-});
-
-// 将新的占位符合并到原有的占位符对象中
-Object.assign(htmlPlaceholders, additionalHtmlPlaceholders);
-
-        const protectedContent = renderedHtml
-            .replace(/“/g, 'NOVA_LQ')
-            .replace(/”/g, 'NOVA_RQ')
-            .replace(/「/g, 'NOVA_LA')
-            .replace(/」/g, 'NOVA_RA')
-            .replace(/\n/g, 'NOVA_BR');
-
-        
-        const specialBlocks = {};
-        let blockIndex = 0;
-        let contentWithDetailsPlaceholder = protectedContent.replace(/<details>[\s\S]*?<\/details>/gs, (match) => {
-            const placeholder = `SPECIALBLOCKPLACEHOLDER${blockIndex}`;
-        
-            specialBlocks[placeholder] = match;
-            blockIndex++;
-            return placeholder;
-        });
-
-         // 首先，将 NOVA_BR 替换为 <br>，然后根据换行符分割成段落
-// const contentWithBr = contentWithDetailsPlaceholder.replace(/NOVA_BR/g, '<br>');
-const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
-         const styledParagraphs = paragraphs.map(p_content => {
-            if (p_content.startsWith('SPECIALBLOCKPLACEHOLDER')) {
-                return p_content;
-            }
-                let currentlineHeightState = localStorage.getItem('lineHeightMore') || 'on';
-    if (currentlineHeightState === 'on') {
-       if (p_content.trim() === '') {
-                return '<p> </p><br>';
-            }
-    } else {
-        if (p_content.trim() === '') {
-                return '<p> </p>';
-            }
-    }
-            
-            let baseHtml = formatAsDisplayedMessage(p_content);
-            const textWithQuotes = baseHtml
-                .replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
-                .replace(/NOVA_RQ/g, '”</span>')
-                .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
-                .replace(/NOVA_RA/g, '」</span>')
-                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
-    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
-            return `<p>${textWithQuotes}</p>`;
-        });
-
-
-        // 将所有美丽的段落重新组合起来
-        let finalHtml = styledParagraphs.join('');
-// ✨【新增：替换 <msg> 占位符】✨
-        for (const placeholder in msgPlaceholders) {
-            // 注意：这里替换时不需要再进行转义，因为 msgPlaceholders 里的内容已经是最终的 HTML 结构。
-            finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
-        }
-        for (const placeholder in groupChatPlaceholders) {
-      // 替换群聊 HTML
-  finalHtml = finalHtml.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), groupChatPlaceholders[placeholder]); // <-- 替换时需要转义
-    }
-        // 最后，将我们保护好的 <details> 结构原封不动地替换回去
-          for (const placeholder in specialBlocks) {
-            const cleanBlock = specialBlocks[placeholder].replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
-                .replace(/NOVA_RQ/g, '”</span>')
-                .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
-                .replace(/NOVA_RA/g, '」</span>')
-                .replace(/NOVA_BR/g, '<br>')
-                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
-    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
-            finalHtml = finalHtml.replace(placeholder, cleanBlock);
-        }
-        if (typeof memeImageMap !== 'undefined' && memeImageMap) {
-            finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
-                if (memeImageMap[memeName]) {
-                    return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
-                }
-                return match;
-            });
-        }
-
-        bubble.innerHTML = finalHtml;
-        // 步骤3：在气泡中寻找“画卷”占位符，并用安全的“魔法结界”(iframe)替换它们
-        for (const placeholder in htmlPlaceholders) {
-            // 我们不能直接替换innerHTML，因为那样会重新解析整个气泡，导致事件监听器等丢失
-            // 我们需要找到包含占位符的文本节点并替换它
-            const walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            while (node = walker.nextNode()) {
-                if (node.nodeValue.includes(placeholder)) {
-                    const rawHtmlContent = htmlPlaceholders[placeholder];
-
-                                      // 创建我们的魔法结界 iframe
-                   // 创建我们的魔法结界 iframe
-const iframe = document.createElement('iframe');
-iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-iframe.style.width = '100%';
- 
-// iframe.style.border = '1px solid #ccc';
-iframe.style.resize = 'vertical';
-iframe.style.overflow = 'auto';
-
-// 我们给它一个唯一的"名字"，方便画卷找到它
-const frameId = 'magic-scroll-' + Date.now() + Math.random();
-iframe.id = frameId;
-
-const parentNode = node.parentNode;
-const remainingText = node.nodeValue.replace(placeholder, '');
-
-// 用iframe替换掉占位符
-if (remainingText) {
-    node.nodeValue = remainingText;
-    parentNode.insertBefore(iframe, node.nextSibling);
-} else {
-    parentNode.replaceChild(iframe, node);
-}
-
-// 这是我们的"身高倾听者"，它耐心等待画卷的报告
-window.addEventListener('message', function(event) {
-    if(event.data.frameId === frameId && event.data.height) {
-        iframe.style.height = (event.data.height + 20) + 'px';
-    }
-}, false);
-
-const detailsParent = iframe.closest('details');
-if (detailsParent) {
-    detailsParent.addEventListener('toggle', function() {
-        if (detailsParent.open) {
-            setTimeout(() => {
-                iframe.contentWindow.postMessage({
-                    action: 'recalculateHeight',
-                    frameId: frameId
-                }, '*');
-            }, 50);
-        }
-    });
-}
-
-// ✨ 新的安全内容插入方法 ✨
-iframe.onload = function() {
-    try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        
-        // 直接设置完整的HTML文档内容
-        const fullHtmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: var(--base-font-family);
-             
-             color: black;
-            margin: 0;
-            padding: 0px;
-            box-sizing: border-box;
-        }
-        body::-webkit-scrollbar { width: 8px; }
-        body::-webkit-scrollbar-track { background: rgba(200, 200, 200, 0.2); }
-        body::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        body::-webkit-scrollbar-thumb:hover { background: #555; }
-    </style>
-</head>
-<body>
-    ${rawHtmlContent}
-    <script>
-        function reportHeight() {
-            const height = document.body.scrollHeight;
-            window.parent.postMessage({
-                frameId: "${frameId}",
-                height: height
-            }, '*');
-        }
-
-        window.onload = reportHeight;
-        setTimeout(reportHeight, 100);
-        setTimeout(reportHeight, 500); // 额外延迟确保字体加载
-        
-        Array.from(document.getElementsByTagName('img')).forEach(img => {
-            if (!img.complete) { 
-                img.addEventListener('load', reportHeight); 
-            }
-        });
-
-        window.addEventListener('message', function(event) {
-            if (event.data.action === 'recalculateHeight' && event.data.frameId === '${frameId}') {
-                reportHeight();
-            }
-        });
-    <\/script>
-</body>
-</html>`;
-
-        iframeDoc.open();
-        iframeDoc.write(fullHtmlContent);
-        iframeDoc.close();
-        
-    } catch (error) {
-        console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
-        // 降级到srcdoc方法
-        iframe.srcdoc = fullHtmlContent;
-    }
-};
-
-// 先设置一个基础的srcdoc作为备选
-iframe.srcdoc = `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body>加载中...</body>
-</html>`;
-
-                    // break; // 处理完一个占位符就跳出循环，因为DOM结构已经改变
-                    // 为了处理多个placeholder，我们不能简单地break，需要重新开始遍历或采用更复杂的替换策略
-                    // 但对于单条消息内多个HTML块的场景，当前逻辑足以应对大多数情况
-                    // 如果需要更鲁棒的处理，可能需要将替换过程放在循环外进行
-                }
-            }
-        }
-const autoPlayTrigger = bubble.querySelector('.js-music-autoplay-trigger');
-if (autoPlayTrigger) {
-    const song = autoPlayTrigger.getAttribute('data-song');
-    const artist = autoPlayTrigger.getAttribute('data-artist');
-    const domId = autoPlayTrigger.getAttribute('data-dom-id');
-
-    console.log('检测到 BGM 自动播放请求:', song);
-
-    // 为了确保 DOM 完全渲染后再播放，稍微延迟一点点
-    setTimeout(() => {
-        if (window.GlobalChatAudio) {
-            window.GlobalChatAudio.playMusic(song, artist, domId, true);
-        }
-    }, 100);
-}
-        // 我们不再需要单独处理 script 的逻辑，因为iframe已经完美地处理了所有事情
-         if (mode === 'chat') { // ❤️ 只在聊天模式下添加右键菜单
-            bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
-         }
-
- 
-    // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
-    return bubble;
-}
-
-
-function cleanupGlobalUIState() {
-    console.log("[Nova's Tidying Magic] 开始清理全局UI状态...");
-
-    // 1. 清理战斗相关的UI
-    const battlePromptOverlay = document.getElementById('battle-prompt-overlay');
-    if (battlePromptOverlay) {
-        battlePromptOverlay.style.display = 'none';
-        console.log(">> 战斗提示遮罩已隐藏。");
-    }
-  const dicePoolSelector = document.getElementById('dice-pool-selector');
-    if (dicePoolSelector) dicePoolSelector.style.display = 'none';
-
-    const itemSkillPanel = document.getElementById('item-skill-panel');
-    if (itemSkillPanel) itemSkillPanel.style.display = 'none';
-
-    console.log(">> 所有浮动面板已强制隐藏。");
-    const battleOverlay = document.getElementById('battle-overlay');
-    if (battleOverlay) {
-        battleOverlay.style.display = 'none';
-        console.log(">> 战斗主界面已隐藏。");
-    }
-
- if (window.combatManager && typeof window.combatManager.cleanupEventListeners === 'function') {
-        window.combatManager.cleanupEventListeners();
-    }
-
-    // 然后再安全地销毁实例
-    if (window.combatManager) {
-        window.combatManager = null;
-        console.log(">> 旧的战斗实例已销毁。");
-    }
-
-    // （未来如果还有其他类似的全局覆盖UI，也可以在这里添加清理逻辑）
-
-    console.log("[Nova's Tidying Magic] 清理完成！");
-}
-
- async function renderHistory(is_entry = false) {
-         cleanupGlobalUIState();
-    const oldControls = document.getElementById('active-editing-controls');
-    if (oldControls) oldControls.remove();
-
-    const initContainer = document.getElementById('initialization-container');
-    const mainWrapper = document.getElementById('main-wrapper');
-
-    if (conversationHistory.length === 0) {
-        if (initContainer) initContainer.style.display = 'block';
-        if (mainWrapper) mainWrapper.style.display = 'none';
-        if (typeof window.initializationDone === 'undefined') {
-            await runInitializationMagic();
-            window.initializationDone = true;
-        }
-        if (typeof applyVersionTheme === 'function') {
-            const identitySelect = document.getElementById('user-identity');
-            applyVersionTheme(1, identitySelect);
-        }
-        return;
-    } else {
-        if (initContainer) initContainer.style.display = 'none';
-        if (mainWrapper) mainWrapper.style.display = 'flex';
-    }
-
-    const dynamicContentArea = document.getElementById('dynamic-content-area');
-    if (dynamicContentArea) {
-        Array.from(dynamicContentArea.children).forEach(child => {
-            if (child.id !== 'forum-modal-container') {
-                child.style.display = 'none';
-            }
-        });
-    }
-
-    const chatDisplayArea = document.getElementById('chat-display-area');
-    chatDisplayArea.innerHTML = ''; // 清空画卷
-
-   
-    let loadMoreBtn = document.getElementById('load-more-btn');
-    if (!loadMoreBtn) {
-        loadMoreBtn = document.createElement('button');
-        loadMoreBtn.id = 'load-more-btn';
-        loadMoreBtn.textContent = '加载更早的记录';
-        chatDisplayArea.appendChild(loadMoreBtn);
-        loadMoreBtn.addEventListener('click', loadPreviousMessages);
-    }
-    loadMoreBtn.style.display = 'none'; // 默认隐藏
-
-    // ❤️ 绑定滚动魔法
-    chatDisplayArea.onscroll = () => {
-        if (chatDisplayArea.scrollTop === 0 && earliestMessageIndexRendered > 0) {
-            loadMoreBtn.style.display = 'block'; // 滑到顶部就出现
-        } else {
-            loadMoreBtn.style.display = 'none'; // 否则就隐藏
-        }
-    };
-
-    // ❤️ 计算并设置我们初次渲染的范围
-    const hideLatestCount = getChatConfig('hide_latest_count', 5) * 2;
-    earliestMessageIndexRendered = Math.max(0, conversationHistory.length - hideLatestCount);
-    const messagesToDisplay = conversationHistory.slice(earliestMessageIndexRendered);
-   // 我们将返回一个新的 Promise，这就是我们的“对讲机”
-    return new Promise(async (resolve) => {
-        const renderChunk = async (messages, index = 0) => {
-            const chunkSize = 2;
-            const chunk = messages.slice(index, index + chunkSize);
-
-            if (chunk.length === 0) {
-                // 所有消息都渲染完了！
-                if (is_entry) {
-                    chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
-                }
-                processFinalMessageModules();
-
-                // ✨ 通过对讲机报告：“全部完成！”
-                resolve();
-                return;
-            }
-
-            const bubbles = await Promise.all(chunk.map(msg => createMessageBubble(msg, "chat", true)));
-            bubbles.forEach(bubble => chatDisplayArea.appendChild(bubble));
-
-            setTimeout(() => renderChunk(messages, index + chunkSize), 0);
-        };
-
-        // 启动我们的分块渲染魔法
-        await renderChunk(messagesToDisplay);
-    });
-}
-
-function processFinalMessageModules() {
-    // 1. 先获取最后一条消息，这是我们布置的“原材料”
-    const lastMessage = conversationHistory.length > 0 ? conversationHistory[conversationHistory.length - 1] : null;
-
-    // 2. ✨ 先打扫！把旧的事件标签清理掉，为新的标签腾出地方 ✨
-    const eventContainer = document.getElementById('event-tracker-container');
-    if (eventContainer) {
-        eventContainer.innerHTML = '';
-    }
-
-    // 3. ✨ 再布置！如果原材料存在，就开始创建新的标签和模块 ✨
-    if (lastMessage && lastMessage.role === 'assistant') {
-        const content = lastMessage.content;
-        processSpecialModulesInMessage(content);
-        handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
-    }
-
-    // 4. 最后，更新所有其他的UI显示
-    initDisplay();
-}
 function getChatConfig(key, defaultValue) {
     try {
         const chatVars = TavernHelper.getVariables({ type: 'chat' });
@@ -24351,7 +23482,7 @@ async function deleteMessage(index) {
 
         // 保存和渲染的逻辑也保持不变
         await saveHistory();
-        await renderHistory(true);
+        await worldHelper.renderHistory(true);
         updateRerollButtonState();
         showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
    
@@ -24444,14 +23575,14 @@ function editMessage(index, bubbleElement) {
         }
 
         // ✨ 在这里耐心等待渲染完成！✨
-        await renderHistory(true);
+        await worldHelper.renderHistory(true);
     };
 
     cancelBtn.onclick = async () => { // ✨ 保持一致，也用 async/await ✨
         dismissControls();
 
         // ✨ 在这里也耐心等待渲染完成！✨
-        await renderHistory(true);
+        await worldHelper.renderHistory(true);
     };
     controlsDiv.appendChild(cancelBtn);
     controlsDiv.appendChild(saveBtn);
@@ -24476,163 +23607,8 @@ function updateRerollButtonState(){
             rerollButton.disabled = true;
         }
     }
-function processSpecialModulesInMessage(content) {
-    
-    try {
-        if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
-            // console.log("[Nova's Archives] 历史记录为空,无法寻找战斗。");
-            return;
-        }
-
-        const latestHistoryEntry = conversationHistory[conversationHistory.length - 1];
-        const latestContent = latestHistoryEntry.content;
-        const battleMatch = /<battle>([\s\S]*?)<\/battle>/gs.exec(latestContent);
-
-        if (battleMatch && battleMatch[1]) {
-            let combatData;
-            const rawBattleData = battleMatch[1].trim();
-
-            // ✨✨✨ 妈妈的第一道"坚固结界" ✨✨✨
-            if (!rawBattleData || rawBattleData === '{}') {
-                console.warn("[Nova's Wisdom] 发现空的 <battle> 标签,将忽略此次战斗加载。");
-                return; // 如果数据是空的,就直接不处理
-            }
-
-            try {
-                combatData = JSON.parse(rawBattleData);
-            } catch (jsonError) {
-                console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误!数据已损坏,战斗无法加载。", jsonError);
-                console.error("损坏的数据:", rawBattleData);
-                // 当数据损坏时,我们不再调用 manageBattleLifecycle,防止错误蔓延
-                return;
-            }
-             
-            console.log(`[Nova's Archives] 从最新历史记录中成功读取战斗数据 (Floor: ${combatData.floor_id}, Status: ${combatData.status})。`);
-            manageBattleLifecycle(combatData);
-        }
-    } catch (error) {
-        console.error("[Nova's Archives] 在读取最新战斗数据时发生严重错误:", error);
-    }
  
-    // 先移除thinking/think/guide标签内容
-const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking))>/gs, '');
-
-    const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>([\s\S]*?)<\/danmu>/gs)];
-  if (allDanmuMatches.length > 0) {
-    const lastDanmuMatch = allDanmuMatches[allDanmuMatches.length - 1];
-    const danmuData = lastDanmuMatch[1].trim();
-    
-    if (danmuData) {
-      // 弹幕数据非空时才渲染
-      if (typeof renderDanmu === 'function') {
-        loadDanmuSettings();
-        renderDanmu(danmuData);
-      } else {
-        console.error("[Danmu Module] 弹幕渲染函数 `renderDanmu` 未定义。请确保在 DOM 加载完成后引入此函数。");
-      }
-    }
-  }
-    // --- 调度"选项区" 
-    const allOptionsMatches = [...cleanedContent.matchAll(/<options>([\s\S]*?)<\/options>/gs)];
-    if (allOptionsMatches.length > 0) {
-        const lastOptionsMatch = allOptionsMatches[allOptionsMatches.length - 1];
-        const optionsData = lastOptionsMatch[1].trim();
-        
-        const optionsContainer = document.getElementById('options-module-container');
-        if (optionsContainer && optionsData) {
-            optionsContainer.style.display = 'block';
-            if(typeof setupUI === 'function') {
-                setupUI(optionsData);
-            }
-        }
-    }
-
-    // --- 全新的"论坛"处理逻辑 ---
-    const allForumMatches = [...cleanedContent.matchAll(/<forum_threads>([\s\S]*?)<\/forum_threads>/gs)];
-    if (allForumMatches.length > 0) {
-        // 我们不再显示论坛,而是让小球闪烁
-        const forumOrb = document.getElementById('forum-orb-button');
-        if (forumOrb) {
-            forumOrb.classList.add('orb-flash');
-            // 动画结束后移除类,以便下次可以再次触发
-            forumOrb.addEventListener('animationend', () => {
-                forumOrb.classList.remove('orb-flash');
-            }, { once: true });
-        }
-    }
-
-    // --- 表现总结 ---
-    const allSummaryMatches = [...cleanedContent.matchAll(/<表现总结>([\s\S]*?)<\/表现总结>/gs)];
-    if (allSummaryMatches.length > 0) {
-        const summaryOrb = document.getElementById('task-summary-orb-button');
-        if (summaryOrb) {
-            summaryOrb.classList.add('orb-flash');
-            summaryOrb.addEventListener('animationend', () => {
-                summaryOrb.classList.remove('orb-flash');
-            }, { once: true });
-        }
-    }
-
-    // --- 群聊 ---
-    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat([\s\S]*?)<\/group_chat>/gs)];
-    if (allGroupChatMatches.length > 0) {
-        const chatOrb = document.getElementById('group-chat-orb-button');
-        if (chatOrb) {
-            chatOrb.classList.add('orb-flash');
-            chatOrb.addEventListener('animationend', () => {
-                chatOrb.classList.remove('orb-flash');
-            }, { once: true });
-        }
-    }
-
-    // --- 商店 ---
-    const allShopMatches = [...cleanedContent.matchAll(/<shop_item>([\s\S]*?)<\/shop_item>/gs)];
-    if (allShopMatches.length > 0) {
-        const lastShopMatch = allShopMatches[allShopMatches.length - 1];
-        let shopData = lastShopMatch[1].trim();
-        
-        const shopOrb = document.getElementById('shop-wrapper-orb');
-        if (shopOrb && shopData) {
-            shopOrb.classList.add('orb-flash');
-            //console.log("item:", shopData);
-            
-            try {
-                // 第2步:检查文本是否已经是一个合法的JSON数组格式
-                if (!shopData.startsWith('[')) {
-                    // 如果不是,我们才手动为它加上外层的括号
-                    shopData = `[${shopData}]`;
-                }
-
-                // 第3步:直接尝试解析处理后的文本
-                const parsedData = JSON.parse(shopData);
-                const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
-
-                if (!Array.isArray(newItems) || newItems.length === 0) {
-                    showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-                    return;
-                }
-
-                // 替换现有随机商店物品
-                randomItems = newItems;
-                // 将新生成的物品存入 localStorage
-                localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
-                renderShopSection('random');
-            } catch (error) {
-                console.error("[Shop] 解析商店数据失败:", error);
-                showModal('shop-modal', '解析失败', '商店数据格式错误。');
-            }
-            
-            shopOrb.addEventListener('animationend', () => {
-                shopOrb.classList.remove('orb-flash');
-            }, { once: true });
-        }
-    }
-
-
-
-
-}
- (async () => {
+(async () => {
    
 
     async function initializeCurrentGameData() {
@@ -24717,6 +23693,13 @@ const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|t
 
      window.worldHelper = {
         init: initializeCurrentGameData,
+        renderPrivateMsgToHtml:renderPrivateMsgToHtml,
+        renderGroupChatToHtml:renderGroupChatToHtml,
+        createMessageBubble:createMessageBubble,
+        processSpecialModulesInMessage:processSpecialModulesInMessage,
+        renderHistory:renderHistory,
+        processFinalMessageModules:processFinalMessageModules,
+        showNovaAlert:showNovaAlert,
         show: async () => {
              const vars = await getVariables({ type: 'chat' });
              console.log("--- 💖 当前世界数据总览 💖 ---");
@@ -50179,22 +49162,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     NovaWorkshop.init();
 });
-
-//     // 全局变量存储数据
-//     let currentMapData = null;
-//     let currentGameData = null;
-//    // --- 全局变量和数据获取 ---
-//         let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
-//         let assaSettingsData = {};
  
-// let checkMemoryData = null;   // 用于存储上一轮的投掷记忆
-//  let worldAttitudeData = null; // 用于存储世界态度变量
-// let characterStatusData = null; // 用于存储人物状态变量
 window.GameAPI = {
     // 定义一个属性 'settings'
     get assaData() {
-        // GameAPI.settings 
+        // GameAPI.assaData 
         return assaSettingsData;
+    },
+         getThemeVar: function(varName) {
+//    --modal-content-bg: none; /* 默认透明 */
+//             --primary-color: #00faff;
+//             --secondary-color: #7affff;
+//    --base-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* 默认字体 */
+//             --container-bg-color: rgba(10, 25, 47, 0.75);
+//             --border-color: rgba(0, 250, 255, 0.3);
+//             --glow-color: rgba(0, 250, 255, 0.5);
+//             --text-color: #e6f1ff;
+//             --text-secondary-color: #a8c0e1;
+//             --background-color: rgba(10, 25, 47);
+//             --danger-color: #ff4d4d;
+//             --danger-glow-color: rgba(255, 77, 77, 0.5);
+//              --success-color: #4dff88;
+//             --success-glow-color: rgba(77, 255, 136, 0.5);
+        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
     },
     get statData() {
  
@@ -50216,9 +49206,17 @@ window.GameAPI = {
  
         return characterStatusData;
     },
-     get conversationHistory() {
+    get conversationHistory() {
  
         return conversationHistory;
+    },
+ triggerassa: function(...args) {
+        // ✅ 调用时才执行，此时函数应该已经定义了
+        if (typeof triggerassa === 'function') {
+            return triggerassa(...args);
+        } else {
+            console.error("triggerassa 函数未定义");
+        }
     },
  
     updateSettings: function(newData) {
