@@ -9,5 +9,15 @@
     "scriptUrl": "https://example.com/my_mod_script.js",
     "worldBookUrl": "https://example.com/world_data.json",
     "previewImage": ""
+  }, {
+    "id": "mod_test_02",
+    "name": "测试Mod：新的面板",
+    "author": "Nova",
+    "version": "1.0",
+    "tags": ["UI", "Cheats"],
+    "description": "",
+    "scriptUrl": "",
+    "worldBookUrl": "",
+    "previewImage": ""
   }
 ]
