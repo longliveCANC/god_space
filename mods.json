@@ -20,14 +20,14 @@
     "worldBookUrl": "",
     "previewImage": ""
   } , {
-    "id": "mod_03",
-    "name": "背包物品美化",
+    "id": "小蝌蚪找妈妈-自定义词条世界书",
+    "name": "自定义词条世界书",
     "author": "assa",
     "version": "1.0",
-    "tags": ["UI"],
-    "description": "施工中...",
+    "tags": ["world"],
+    "description": "[自定义词条世界书]下载的快捷链接。将其挂载到全局后，对你想要自定义的条目进行编辑。不需要关闭原条目",
     "scriptUrl": "",
-    "worldBookUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/自定义词条世界书.json",
     "previewImage": ""
   } 
 ]
