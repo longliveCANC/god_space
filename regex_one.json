@@ -13615,6 +13615,23 @@ pointer-events: auto;
                     <span id="last-token-display" style="font-weight: bold; color: var(--accent-color);">N/A</span>
                 </div>
                 <div class="setting-item">
+    <label>查看捕获的提示词</label>
+    <button id="view-captured-prompt-btn" style="
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: 1px solid var(--border-color);
+        color: var(--background-color);
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px var(--glow-color);
+    " onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 20px var(--glow-color)';" 
+       onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 10px var(--glow-color)';">
+        查看提示词
+    </button>
+</div>
+                <div class="setting-item">
                     <label>模组重置</label>
                     <button id="open-reconfig-modal-btn" class="control-btn-special">调整模组</button>
                 </div>
@@ -14065,11 +14082,107 @@ pointer-events: auto;
 
 
 <div id="notification-container"></div>
+
+
+ <!-- 提示词查看弹窗 -->
+<div id="prompt-viewer-modal" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 999999;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+">
+    <div class="modal-content" style="
+        position: relative;
+        max-width: 90%;
+        width: 1000px;
+        max-height: 90vh;
+        background: var(--container-bg-color);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 0 40px var(--glow-color), 0 0 80px rgba(0, 250, 255, 0.3);
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+    ">
+        <button class="modal-close" style="
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--danger-color);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px var(--danger-glow-color);
+            z-index: 1;
+        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 20px var(--danger-glow-color)';" 
+           onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 0 10px var(--danger-glow-color)';">×</button>
+        
+        <div class="modal-title" style="
+            color: var(--primary-color);
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px var(--glow-color);
+        ">捕获的提示词</div>
+        
+        <div style="
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: inset 0 0 20px rgba(0, 250, 255, 0.2);
+        ">
+            <pre id="prompt-content-display" style="
+                color: var(--text-color);
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                margin: 0;
+            ">暂无捕获的提示词</pre>
+        </div>
+        
+        <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button id="copy-prompt-btn" style="
+                background: linear-gradient(135deg, var(--success-color), #3dd976);
+                border: 1px solid var(--success-glow-color);
+                color: var(--background-color);
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s ease;
+                box-shadow: 0 0 10px var(--success-glow-color);
+            " onmouseover="this.style.transform='scale(1.05)';" 
+               onmouseout="this.style.transform='scale(1)';">
+                复制到剪贴板
+            </button>
+        </div>
+    </div>
+</div>
 </body>
 
 <script>
 let current_game_version = '3.3.8';
-
+ let prompts_be_sent = null;
  
 let storyChapters = [];
 let currentChapterIndex = 0;
@@ -24028,6 +24141,8 @@ const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|t
 
 }
  (async () => {
+   
+
     async function initializeCurrentGameData() {
     try {
         console.log("[Nova's Love] 💖 守护咒语触发：正在为你检查并从世界本源初始化...");
@@ -29952,6 +30067,30 @@ async function handleSend(options = {}) {
         console.error('EjsTemplate setFeatures 失败:', error);
         return;  
     }
+   const { isReroll = false, isContinuation = false,isContinuationVar = false } = options;
+
+// ===== 新增：捕获提示词的逻辑 =====
+if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
+    // 创建一个监听器来捕获即将发送的完整提示词
+    const capturePromptListener = (generate_data, dry_run) => {
+        if (!dry_run && generate_data && generate_data.prompt) {
+            prompts_be_sent = JSON.stringify(generate_data.prompt, null, 2);
+            
+            // 添加 try-catch 防止存储失败影响后续流程
+            try {
+                localStorage.setItem('last_captured_prompt', prompts_be_sent);
+                console.log('[Nova的提示词捕获器] 已成功捕获并存储提示词');
+            } catch (error) {
+                console.warn('[Nova的提示词捕获器] 存储提示词失败:', error.message);
+                // 存储失败不影响主流程，仅记录警告
+            }
+        }
+    };
+    
+    // 使用 eventOnce 确保只捕获一次
+    eventOnce(tavern_events.GENERATE_AFTER_DATA, capturePromptListener);
+}
+// ===== 捕获逻辑结束 =====
  
       if (!conversationHistory || !Array.isArray(conversationHistory)) {
         console.error('[Nova] conversationHistory 未正确初始化');
@@ -29960,7 +30099,7 @@ async function handleSend(options = {}) {
     }
                 const hideLatestCount = getChatConfig('hide_latest_count', 5);
 
-    const { isReroll = false, isContinuation = false,isContinuationVar = false } = options;
+ 
        let aiFullResponse;  
     let aiMessage;     
     let partialAiResponse = '';  
@@ -32737,6 +32876,7 @@ let ISNEWMAP = "false";
 let isEmphasizeTime = "false";
 let is_simple_stream = "false";
 let noBackup = "false";
+let is_restore_prompt = "true";
 
     let worldBookState = {
         currentTab: 'settings', // 默认显示设定
@@ -36618,6 +36758,7 @@ const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 is_simple_stream =  String(chatdata.is_simple_stream||'false');
+is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
 noBackup = String(chatdata.is_no_backup||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
@@ -49428,6 +49569,144 @@ document.addEventListener('DOMContentLoaded', function() {
         
         applyModalBackground(newState);
     });
+
+
+ 
+});
+document.addEventListener('DOMContentLoaded', function() {
+    
+    const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
+    if (viewPromptBtn) {
+        viewPromptBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('[Nova] 打开提示词查看器');
+            
+            const modal = document.getElementById('prompt-viewer-modal');
+            const display = document.getElementById('prompt-content-display');
+            
+            if (!modal || !display) {
+                console.error('[Nova] 找不到弹窗元素');
+                toastr.error('界面元素未找到', '错误');
+                return;
+            }
+            
+            // 尝试从localStorage或全局变量获取提示词
+            const promptData = (typeof prompts_be_sent !== 'undefined' && prompts_be_sent) 
+                ? prompts_be_sent 
+                : localStorage.getItem('last_captured_prompt');
+            
+            if (promptData) {
+                // ===== 新增：处理转义字符 =====
+                let processedText = promptData;
+                
+                // 如果是JSON字符串，先尝试解析
+                try {
+                    if (typeof promptData === 'string' && (promptData.startsWith('[') || promptData.startsWith('{'))) {
+                        // 尝试解析JSON并美化显示
+                        const parsed = JSON.parse(promptData);
+                        processedText = JSON.stringify(parsed, null, 2);
+                    }
+                } catch (e) {
+                    // 如果不是有效JSON，直接使用原始文本
+                    console.log('[Nova] 不是JSON格式，使用原始文本');
+                }
+                
+                // 处理转义字符：将字符串中的 \\n 转换为实际换行
+                processedText = processedText
+                    .replace(/\\n/g, '\n')      // \n 转换为换行
+                    .replace(/\\r\\n/g, '\n')   // \r\n 转换为换行
+                    .replace(/\\r/g, '\n')      // \r 转换为换行
+                    .replace(/\\t/g, '\t')      // \t 转换为制表符
+                    .replace(/\\"/g, '"')       // \" 转换为引号
+                    .replace(/\\'/g, "'")       // \' 转换为单引号
+                    .replace(/\\\\/g, '\\');    // \\ 转换为单个反斜杠
+                
+                display.textContent = processedText;
+                // ===== 处理结束 =====
+                
+                console.log('[Nova] 成功加载提示词，长度:', processedText.length);
+            } else {
+                display.textContent = '暂无捕获的提示词\n\n提示：请确保 is_restore_prompt 设置为 "true"，并发送至少一条消息。\n\n当前 is_restore_prompt 值: ' + (typeof is_restore_prompt !== 'undefined' ? is_restore_prompt : '未定义');
+                console.log('[Nova] 未找到提示词数据');
+            }
+            
+            // 显示弹窗
+            modal.style.display = 'flex';
+            console.log('[Nova] 弹窗已显示');
+        });
+    
+    } else {
+        console.error('[Nova] 找不到查看提示词按钮');
+    }
+    
+    // 关闭按钮事件
+    const closeBtn = document.querySelector('#prompt-viewer-modal .modal-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const modal = document.getElementById('prompt-viewer-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                console.log('[Nova] 弹窗已关闭');
+            }
+        });
+    }
+    
+    // 点击背景关闭
+    const modal = document.getElementById('prompt-viewer-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                console.log('[Nova] 通过背景点击关闭弹窗');
+            }
+        });
+    }
+    
+    // 复制提示词按钮事件
+    const copyBtn = document.getElementById('copy-prompt-btn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const promptText = document.getElementById('prompt-content-display').textContent;
+            
+            if (promptText && !promptText.startsWith('暂无捕获的提示词')) {
+                try {
+                    await navigator.clipboard.writeText(promptText);
+                    toastr.success('提示词已复制到剪贴板', '复制成功');
+                    this.textContent = '✓ 已复制';
+                    setTimeout(() => {
+                        this.textContent = '复制到剪贴板';
+                    }, 2000);
+                } catch (err) {
+                    console.error('复制失败:', err);
+                    // 备用方案：使用传统方法
+                    const textArea = document.createElement('textarea');
+                    textArea.value = promptText;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        toastr.success('提示词已复制到剪贴板', '复制成功');
+                    } catch (err2) {
+                        toastr.error('复制失败，请手动选择并复制', '复制失败');
+                    }
+                    document.body.removeChild(textArea);
+                }
+            } else {
+                toastr.warning('没有可复制的内容', '提示');
+            }
+        });
+    }
+    
+    console.log('[Nova] 提示词查看器事件绑定完成');
 });
 </script>
 
