@@ -5,9 +5,9 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["UI", "world"],
-    "description": "真的会有想投稿的吗？如果有想要投稿的自定义mod（世界书或脚本），请找assa",
+    "description": "真的会有想投稿的吗？如果有想要投稿的自定义mod（世界书或脚本），请找assa。文件是简陋的接口文档",
     "scriptUrl": "",
-    "worldBookUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt.json",
   "previewImage": ""
   }, {
     "id": "mod_test_02",

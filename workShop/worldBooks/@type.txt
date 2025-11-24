@@ -1,0 +1,36 @@
+window.GameAPI = {
+    // 定义一个属性 'settings'
+    get assaData() {
+        // GameAPI.settings 
+        return assaSettingsData;
+    },
+    get statData() {
+ 
+        return currentGameData;
+    },
+      get playCharacterData() {
+ 
+        return playCharacterData;
+    },
+      get checkMemoryData() {
+ 
+        return checkMemoryData;
+    },
+      get worldAttitudeData() {
+ 
+        return worldAttitudeData;
+    },
+    get characterStatusData() {
+ 
+        return characterStatusData;
+    },
+     get conversationHistory() {
+ 
+        return conversationHistory;
+    },
+ 
+    updateSettings: function(newData) {
+        assaSettingsData = newData; // 直接修改原本的 let 变量
+        console.log("数据已通过 API 更新！");
+    }
+}
