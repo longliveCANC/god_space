@@ -316,22 +316,35 @@
             .mod01-load-more:hover { background: var(--primary-color); color: var(--container-bg-color); }
 
             /* --- 新增：嵌套对象缩进 --- */
-            .mod01-nested-block {
-                margin-left: 15px; padding-left: 10px;
-                border-left: 1px dashed rgba(255,255,255,0.1);
+      .mod01-nested-block {
+                /* 增加左边距，让层级后退 */
+                margin-left: 20px;
+                padding-left: 12px;
+                /* 增加一条明显的不仅有的引导线 */
+                border-left: 2px solid rgba(255,255,255,0.15);
+                margin-top: 4px;
                 margin-bottom: 8px;
+                /* 可选：给整个块加个极其微弱的背景，进一步区分层级 */
+                background: rgba(255,255,255,0.01);
+                border-radius: 0 4px 4px 0;
             }
- .mod01-pagination {
+            .mod01-nested-block:hover {
+                border-left-color: var(--primary-color);
+                background: rgba(255,255,255,0.03);
+            }
+  /* --- 修改：更新分页器样式以容纳更多按钮 --- */
+            .mod01-pagination {
                 display: flex; justify-content: center; align-items: center;
-                margin-top: 15px; grid-gap: 15px;
-                font-size: 12px; color: var(--text-secondary-color);
+                /* 既然放在上面，这就设为下边距 */
+                margin-bottom: 15px;
+                gap: 8px; /* 稍微紧凑一点 */
+                font-size: 11px; color: var(--text-secondary-color);
             }
             .mod01-page-btn {
-                background: rgba(255,255,255,0.05);
+                background: rgba(255,255,255,0.08); /* 稍微亮一点 */
                 border: 1px solid var(--border-color);
-                padding: 4px 12px; cursor: pointer;
-                transition: all 0.2s; border-radius: 4px;
-                user-select: none;
+                padding: 3px 10px; cursor: pointer;
+                border-radius: 3px; min-width: 25px; text-align: center;
             }
             .mod01-page-btn:hover:not(.disabled) {
                 background: var(--primary-color); color: var(--container-bg-color);
@@ -684,52 +697,7 @@
             });
         }
 
-        // --- 新增：通用递归渲染 (处理多层嵌套与过滤) ---
-        renderDeepObject(container, val) {
-            if (val === null || val === undefined) return;
-
-            if (typeof val === 'object') {
-                // 如果是对象，遍历 KV
-                const wrapper = document.createElement('div');
-                let hasContent = false;
-
-                Object.keys(val).forEach(key => {
-                    // 跳过私有
-                    if(key.startsWith('_')) return;
-
-                    hasContent = true;
-                    // 行容器
-                    const row = document.createElement('div');
-                    row.style.marginBottom = '4px';
-
-                    // 键名显示 (如果是数字键名如 "11" 且没有具体意义，你可以选择隐藏键名，这里保留但弱化)
-                    if(isNaN(key)) {
-                         row.innerHTML = `<span style="color:var(--secondary-color); font-weight:bold;">${key}: </span>`;
-                    }
-
-                    // 值容器
-                    const valSpan = document.createElement('span');
-                    // 递归调用
-                    this.renderDeepObject(valSpan, val[key]); // Recurse
-
-                    // 如果是对象，需要换行缩进；如果是直接值，行内显示
-                    if(typeof val[key] === 'object') {
-                        valSpan.className = 'mod01-nested-block';
-                        row.appendChild(document.createElement('br')); // 强制换行
-                    }
-
-                    row.appendChild(valSpan);
-                    wrapper.appendChild(row);
-                });
-
-                if(!hasContent) container.innerHTML = '<span style="opacity:0.5;font-size:12px;">[空数据]</span>';
-                else container.appendChild(wrapper);
-
-            } else {
-                // 如果是简单值
-                container.innerText = String(val); // 自动防XSS
-            }
-        }
+  
 
         // --- 新增：沉浸式事件渲染 ---
         renderEvents(container, evtData) {
@@ -764,21 +732,16 @@
 
             container.appendChild(box);
         }
-  // --- 修改 2：记忆分页 (改为翻页器模式) ---
+         // --- 修改 3：记忆分页 (顶部 + 极速跳转) ---
         renderMemoriesPaged(container, memObj) {
             const sec = document.createElement('div');
             sec.className = 'mod01-section';
             sec.innerHTML = `<div class="mod01-sec-title">MEMORY LOGS</div>`;
 
-            // 容器
-            const cloud = document.createElement('div');
-            cloud.className = 'mod01-mem-cloud';
-            cloud.style.minHeight = "120px"; // 给个最小高度防止翻页时抖动
-
             // 1. 数据展平与过滤
             let memArray = [];
             Object.keys(memObj).forEach(k => {
-                if(k.startsWith('_')) return; // 再次确保过滤
+                if(k.startsWith('_')) return;
                 memArray.push({ id: k, text: String(memObj[k]) });
             });
             // 排序 (数字序优先)
@@ -789,16 +752,63 @@
             let currentPage = 1;
             const totalPages = Math.ceil(memArray.length / pageSize);
 
-            // 渲染某一页的函数
-            const renderPage = (page) => {
-                cloud.innerHTML = ''; // 清空当前视图!
+            // 容器 (Memory Items)
+            const cloud = document.createElement('div');
+            cloud.className = 'mod01-mem-cloud';
+            cloud.style.minHeight = "120px";
 
+            // 控制器容器 (放在上面！)
+            const controlBar = document.createElement('div');
+            controlBar.className = 'mod01-pagination';
+
+            // --- 按钮逻辑 ---
+            const createBtn = (text, onClick) => {
+                const btn = document.createElement('div');
+                btn.className = 'mod01-page-btn';
+                btn.innerText = text;
+                btn.onclick = onClick;
+                return btn;
+            };
+
+            const btnFirst = createBtn('<<', () => changePage(1));
+            const btnPrev  = createBtn('<',  () => changePage(currentPage - 1));
+            const pageInfo = document.createElement('div');
+            pageInfo.className = 'mod01-page-info';
+            const btnNext  = createBtn('>',  () => changePage(currentPage + 1));
+            const btnLast  = createBtn('>>', () => changePage(totalPages));
+
+            // 更新状态
+            const updateControls = () => {
+                pageInfo.innerText = `${currentPage} / ${totalPages || 1}`;
+
+                // 通用禁用逻辑 helper
+                const setDis = (btn, condition) => {
+                    if(condition) btn.classList.add('disabled');
+                    else btn.classList.remove('disabled');
+                };
+
+                setDis(btnFirst, currentPage <= 1);
+                setDis(btnPrev,  currentPage <= 1);
+                setDis(btnNext,  currentPage >= totalPages);
+                setDis(btnLast,  currentPage >= totalPages);
+            };
+
+            // 翻页 Action
+            const changePage = (targetPage) => {
+                if(targetPage < 1 || targetPage > totalPages) return;
+                currentPage = targetPage;
+                renderPage();
+                updateControls();
+            };
+
+            // 渲染列表 Action
+            const renderPage = () => {
+                cloud.innerHTML = '';
                 if (memArray.length === 0) {
                     cloud.innerHTML = '<div style="opacity:0.5;font-size:12px;">此区域暂无记录</div>';
                     return;
                 }
-
-                const startIndex = (page - 1) * pageSize;
+                const startIndex = (currentPage - 1) * pageSize;
                 const endIndex = Math.min(startIndex + pageSize, memArray.length);
                 const slice = memArray.slice(startIndex, endIndex);
 
@@ -806,7 +816,6 @@
                     const chip = document.createElement('div');
                     chip.className = 'mod01-mem-chip';
 
-                    // 解析内容标签 [震撼/爱恋]
                     let content = item.text;
                     let tagsHtml = '';
                     const match = content.match(/\[(.*?)\]/);
@@ -818,69 +827,89 @@
                             if(t.trim()) tagsHtml += `<span class="mod01-emote-tag">${t.trim()}</span>`;
                         });
                     }
-
                     chip.innerHTML = `<span style="opacity:0.5;font-size:10px;margin-right:4px;">#${item.id}</span> ${content} ${tagsHtml}`;
-                    // 每次翻页都触发一点淡入动画，更精致
-                    chip.animate([{opacity:0, transform:'translateY(5px)'}, {opacity:1, transform:'translateY(0)'}], {duration: 300});
 
+                    // 动画
+                    chip.animate([{opacity:0, paddingLeft:'10px'}, {opacity:1, paddingLeft:'12px'}], {duration: 250});
                     cloud.appendChild(chip);
                 });
-
-                // 更新底部页码状态
-                updateControls();
             };
 
-            // 创建底部控制器
-            const controlBar = document.createElement('div');
-            controlBar.className = 'mod01-pagination';
-
-            // Prev Button
-            const btnPrev = document.createElement('div');
-            btnPrev.className = 'mod01-page-btn';
-            btnPrev.innerText = '< PREV';
-            btnPrev.onclick = () => {
-                if (currentPage > 1) { currentPage--; renderPage(currentPage); }
-            };
-
-            // Page Info ( 1 / 10 )
-            const pageInfo = document.createElement('div');
-            pageInfo.className = 'mod01-page-info';
-
-            // Next Button
-            const btnNext = document.createElement('div');
-            btnNext.className = 'mod01-page-btn';
-            btnNext.innerText = 'NEXT >';
-            btnNext.onclick = () => {
-                if (currentPage < totalPages) { currentPage++; renderPage(currentPage); }
-            };
-
-            // 更新按钮状态逻辑
-            const updateControls = () => {
-                pageInfo.innerText = `${currentPage} / ${totalPages || 1}`;
-
-                if(currentPage <= 1) btnPrev.classList.add('disabled');
-                else btnPrev.classList.remove('disabled');
-
-                if(currentPage >= totalPages) btnNext.classList.add('disabled');
-                else btnNext.classList.remove('disabled');
-            };
-
-            controlBar.appendChild(btnPrev);
-            controlBar.appendChild(pageInfo);
-            controlBar.appendChild(btnNext);
-
-            sec.appendChild(cloud);
-
-            // 只有数据超过一页才显示分页栏
+            // 组装顺序：先放控制器(如果有多页)，再放内容容器
             if (totalPages > 1) {
+                controlBar.appendChild(btnFirst);
+                controlBar.appendChild(btnPrev);
+                controlBar.appendChild(pageInfo);
+                controlBar.appendChild(btnNext);
+                controlBar.appendChild(btnLast);
                 sec.appendChild(controlBar);
             }
-
+            sec.appendChild(cloud);
             container.appendChild(sec);
 
-            // 初始化渲染第一页
-            renderPage(1);
+            // Init
+            if(memArray.length > 0) {
+                renderPage();
+                updateControls();
+            } else {
+                cloud.innerHTML = '<div style="opacity:0.5;font-size:12px;">暂无关键记忆</div>';
+            }
         }
+
+        // --- 修改 4：通用递归渲染 (增加清晰的结构视图) ---
+        renderDeepObject(container, val) {
+            if (val === null || val === undefined) return;
+
+            if (typeof val === 'object') {
+                const wrapper = document.createElement('div');
+                // 这里加个类名用于CSS控制缩进
+                wrapper.className = 'mod01-nested-block';
+
+                let hasContent = false;
+                Object.keys(val).forEach(key => {
+                    if(key.startsWith('_')) return;
+                    hasContent = true;
+
+                    const row = document.createElement('div');
+                    // 增加一点行间距，看每一行更清楚
+                    row.style.marginBottom = '6px';
+                    row.style.position = 'relative';
+
+                    // 键名
+                    let keyHtml = `<span style="color:var(--secondary-color); font-weight:bold; margin-right:5px;">${key}:</span>`;
+                    if(isNaN(key)) row.innerHTML = keyHtml;
+
+                    // 值容器
+                    const valSpan = document.createElement('span');
+
+                    // 如果值依然是对象，就不在这里显示内容，而是让它在新的一行渲染
+                    if (typeof val[key] === 'object' && val[key] !== null) {
+                        // 递归调用，wrapper将再次产生缩进
+                        this.renderDeepObject(valSpan, val[key]);
+                        // 对象的话，我们让它另起一行
+                        valSpan.style.display = "block";
+                        // 一个小小的连接符或提示（可选）
+                        if(isNaN(key)) {
+                            // 只有当有Key显示的时候，才需要换行；如果是纯数组索引，直接渲染
+                        }
+                    } else {
+                        // 简单值
+                        this.renderDeepObject(valSpan, val[key]);
+                    }
+
+                    row.appendChild(valSpan);
+                    wrapper.appendChild(row);
+                });
+
+                if(!hasContent) container.innerHTML += '<span style="opacity:0.5;font-size:12px;"> [空]</span>';
+                else container.appendChild(wrapper);
+
+            } else {
+                // 简单值直接渲染
+                container.innerText = String(val);
+            }
+        }
+
     }
 
     // 启动系统
