@@ -79,7 +79,7 @@
 
             /* 悬浮球 */
             .mod01-floater {
-                position: fixed; top: 20px; left: 20px;
+                position: fixed; top: 100px; left: 20px;
                 width: 48px; height: 48px;
                 background: var(--container-bg-color);
                 border: 2px solid var(--primary-color);
@@ -255,6 +255,10 @@
 
                         /* --- 新增：手机端适配 (响应式) --- */
             @media (max-width: 768px) {
+                 .mod01-floater {
+                position: fixed; top: 130px; left: 20px;
+              
+            }
                 .mod01-window { width: 100%; height: 100%; max-width: 100%; border-radius: 0; }
                 .mod01-body { flex-direction: column; }
                 .mod01-sidebar {
