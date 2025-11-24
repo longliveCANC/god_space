@@ -16525,7 +16525,7 @@ const motions = mergedEventData['情绪基调'] || '';
         tooltip.style.top = `${top}px`;
         tooltip.style.left = `${left}px`;
     };
- const loadCharacterCG = async () => {
+    const loadCharacterCG = async () => {
     console.log(`[Nova][CG-LOG] 尝试为 '${displayName}' 加载立绘...`);
 
     const cgImageElement = tooltip.querySelector('.tooltip-cg-image');
@@ -16536,9 +16536,11 @@ const motions = mergedEventData['情绪基调'] || '';
         return;
     }
 
+    // 先隐藏，等加载完再显示
     cgContainerElement.style.display = 'none';
 
     try {
+        // --- 1. 基础数据检查 ---
         if (typeof assaSettingsData === 'undefined' || assaSettingsData === null) {
             console.log('[Nova][CG-LOG] 状态：assaSettingsData 尚未准备好。');
             return;
@@ -16547,90 +16549,86 @@ const motions = mergedEventData['情绪基调'] || '';
             console.log('[Nova][CG-LOG] 状态：assaSettingsData 中缺少 img_map。');
             return;
         }
-        console.log('[Nova][CG-LOG] 检查通过：assaSettingsData.img_map 存在！');
 
         const imageName = assaSettingsData.img_map[displayName];
         if (!imageName) {
             console.log(`[Nova][CG-LOG] 状态：在 img_map 中未能找到 '${displayName}'。`);
             return;
         }
-        // ✨ 强制转换为字符串，确保类型一致
+ 
         const imageNameStr = String(imageName);
-        console.log(`[Nova][CG-LOG] 映射成功：'${displayName}' -> 状态名: '${imageNameStr}' (原始类型: ${typeof imageName})`);
-
-        // 🔍 调试：列出所有 CustomNpcs 中的键
-        try {
-            const allCustomNpcs = await imageDB.getAll('CustomNpcs');
-            console.log(`[Nova][CG-DEBUG] CustomNpcs 中总共有 ${allCustomNpcs.length} 个条目`);
-            console.log(`[Nova][CG-DEBUG] 所有键名:`, allCustomNpcs.map(item => item.key));
-            console.log(`[Nova][CG-DEBUG] 我们要找的键名: '${imageNameStr}' (原始类型: ${typeof imageName})`);
-        } catch (e) {
-            console.error('[Nova][CG-DEBUG] 无法列出 CustomNpcs:', e);
-        }
+        console.log(`[Nova][CG-LOG] 目标立绘Key: '${imageNameStr}'`);
 
         let imageBlob;
 
-        // ✨ 第一步：尝试从本地自定义库获取
-        console.log(`[Nova][CG-DEBUG] 正在执行: imageDB.get('CustomNpcs', '${imageNameStr}')`);
-        imageBlob = await imageDB.get('CustomNpcs', imageNameStr);
-        
-        console.log(`[Nova][CG-DEBUG] imageDB.get 返回结果:`, imageBlob);
-        console.log(`[Nova][CG-DEBUG] imageBlob 是否存在:`, !!imageBlob);
-        console.log(`[Nova][CG-DEBUG] imageBlob 类型:`, imageBlob ? typeof imageBlob : 'null/undefined');
-        
-        if (imageBlob) {
-            console.log(`[Nova][CG-LOG] ✨ 在本地宝库"CustomNpcs"中找到了'${imageNameStr}'！`);
-            console.log(`[Nova][CG-DEBUG] Blob 详细信息: size=${imageBlob.size}, type='${imageBlob.type}'`);
-            // 找到了就直接跳过远程逻辑
-        } else {
-            // ✨ 第二步：本地没找到，才去查远程
-            console.log(`[Nova][CG-LOG] 本地未找到 '${imageNameStr}'，尝试从远程获取...`);
-            
+        // --- 2. 尝试从本地库获取 (最高优先级) ---
+        try {
+            imageBlob = await imageDB.get('CustomNpcs', imageNameStr);
+            if (imageBlob) {
+                console.log(`[Nova][CG-LOG] ✨ 在本地自定义库中找到了 '${imageNameStr}'`);
+            }
+        } catch (e) {
+            console.warn(`[Nova][CG-LOG] 读取本地库时发生轻微错误 (不影响后续尝试):`, e);
+        }
+
+        // --- 3. 如果本地没有，尝试从远程获取 ---
+        if (!imageBlob) {
+            console.log(`[Nova][CG-LOG] 本地未找到，准备查找远程映射...`);
+
+            // 安全检查：确保 npcImageMap 存在
+            if (typeof npcImageMap === 'undefined') {
+                console.error(`[Nova][CG-LOG] 致命错误：npcImageMap 未定义！远程映射表可能尚未加载。`);
+                return; 
+            }
+
             const imageUrl = npcImageMap[imageNameStr];
+            
             if (!imageUrl) {
-                console.log(`[Nova][CG-LOG] 在远程食谱(npcImageMap)上也找不到'${imageNameStr}'的URL。`);
+                console.log(`[Nova][CG-LOG] 远程映射表(npcImageMap)中也找不到 '${imageNameStr}' 的对应URL。`);
                 return;
             }
-            console.log(`[Nova][CG-LOG] 远程映射找到URL: ${imageUrl}`);
 
-            // ✨ 第三步：尝试从远程缓存获取
-            imageBlob = await imageDB.get('RemoteCache', imageUrl);
+            console.log(`[Nova][CG-LOG] 发现远程URL: ${imageUrl}`);
+
+            // 3.1 查远程缓存
+            try {
+                imageBlob = await imageDB.get('RemoteCache', imageUrl);
+            } catch (e) { console.warn('读取远程缓存失败，将直接下载'); }
+
             if (imageBlob) {
-                console.log(`[Nova][CG-LOG] 在远程缓存中找到了'${imageUrl}'。`);
+                console.log(`[Nova][CG-LOG] 在远程缓存中命中图片。`);
             } else {
-                // ✨ 第四步：从网络获取
-                console.log(`[Nova][CG-LOG] 缓存中也没有，从网络 ${imageUrl} 获取...`);
+                // 3.2 网络下载
+                console.log(`[Nova][CG-LOG] 缓存未命中，开始下载: ${imageUrl}`);
                 const response = await fetch(imageUrl);
-                if (!response.ok) throw new Error(`网络获取'${imageUrl}'失败！`);
-
-                let originalBlob = await response.blob();
-
-                // 修正 MIME 类型
-                if (!originalBlob.type.startsWith('image/')) {
-                    console.warn(`[Nova][CG-LOG] 下载后发现标签错误: '${originalBlob.type}'，修正为'image/png'。`);
-                    imageBlob = new Blob([originalBlob], { type: 'image/png' });
-                } else {
-                    imageBlob = originalBlob;
+                
+                if (!response.ok) {
+                    throw new Error(`网络下载失败: ${response.status} ${response.statusText}`);
                 }
 
+                let originalBlob = await response.blob();
+                
+                // 强制修正类型，防止后续处理报错
+                imageBlob = new Blob([originalBlob], { type: 'image/png' });
+                
+                // 存入缓存
                 await imageDB.set('RemoteCache', imageUrl, imageBlob);
-                console.log(`[Nova][CG-LOG] 已将正确标签的图片存入远程缓存。`);
+                console.log(`[Nova][CG-LOG] 下载成功并已存入缓存。`);
             }
         }
 
-        // ✨ 统一处理获取到的图片（无论来源）
+        // --- 4. 图片处理与显示 ---
         if (!imageBlob) {
-            console.error(`[Nova][CG-LOG] 最终未能获取到图片数据！`);
+            console.error(`[Nova][CG-LOG] 流程结束，但未能获取到任何图片数据。`);
             return;
         }
 
-        // 二次检查 MIME 类型
-        if (imageBlob && !imageBlob.type.startsWith('image/')) {
-            console.error(`[Nova][CG-LOG] 致命错误！取出的图片标签仍然是'${imageBlob.type}'！强制修正它！`);
+        // 二次类型修正保证
+        if (!imageBlob.type.startsWith('image/')) {
             imageBlob = new Blob([imageBlob], { type: 'image/png' });
         }
 
-        // 将 Blob 转换成 Data URL
+        // Blob 转 DataURL
         const blobToDataUrl = (blob) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -16642,19 +16640,24 @@ const motions = mergedEventData['情绪基调'] || '';
 
         const stableImageUrl = await blobToDataUrl(imageBlob);
 
-        // 生成像素化版本
-        const pixelatedDataUrl = await createPixelatedCharaImage(stableImageUrl, 300, 1);
+        // 尝试生成像素化版本，如果失败则回退到原图
+        try {
+            const pixelatedDataUrl = await createPixelatedCharaImage(stableImageUrl, 300, 1);
+            cgImageElement.src = pixelatedDataUrl;
+        } catch (pixelError) {
+            console.error(`[Nova][CG-LOG] 像素化处理失败，降级显示原图:`, pixelError);
+            cgImageElement.src = stableImageUrl;
+        }
 
-        cgImageElement.src = pixelatedDataUrl;
         cgContainerElement.style.display = 'flex';
-        console.log(`[Nova][CG-LOG] ✨ 立绘已为'${displayName}'成功设置！`);
+        console.log(`[Nova][CG-LOG] ✅ 立绘加载完成！`);
 
     } catch (error) {
-        console.error(`[Nova][CG-LOG] 在为'${displayName}'加载立绘的流程中捕获到致命异常:`, error);
+        console.error(`[Nova][CG-LOG] 加载立绘时发生未捕获的异常:`, error);
         cgContainerElement.style.display = 'none';
     }
-};   
-         loadCharacterCG();
+};
+       loadCharacterCG();
     // ✨===================================================================✨
 
     tag.addEventListener('mouseenter', () => {
@@ -39906,7 +39909,7 @@ const activeUrlSet = new Set([
 if (activeUrlSet.size > 0) {
     console.log(`NOVA V9.4: 整合所有资源URL，共计 ${activeUrlSet.size} 个唯一资源需要被珍藏。`);
     // 拿着这张完美的“超级清单”，只进行一次大扫除！
-    // await imageDB.cleanupRemoteCache(activeUrlSet);
+    await imageDB.cleanupRemoteCache(activeUrlSet);
 } else {
     console.warn(`NOVA: 资源清单为空，跳过本次缓存清理，以保护离线数据。`);
 }
@@ -42270,7 +42273,7 @@ async function handleAddCG(fullPath) {
         applyButton.addEventListener('click', () => {
             if (applyButton.disabled) return;
             const finalKey = currentSelections.join('-');
-            const command = `memory('img_map.${selfKey}', '${finalKey}'); //add CG from tag combiner`;
+            const command = `memory('img_map','${selfKey}', '${finalKey}'); //add CG from tag combiner`;
             generateAndSendCommand(command);
             closeModal();
         });
@@ -42374,7 +42377,7 @@ async function handleAddCG(fullPath) {
                 itemEl.querySelector('img').onerror = () => URL.revokeObjectURL(objectURL);
                 itemEl.onclick = () => {
                     const selectedCG_Key = itemEl.dataset.key;
-                    const command = `memory('img_map.${selfKey}', '${selectedCG_Key}'); //_add CG_`;
+                    const command = `memory('img_map','${selfKey}', '${selectedCG_Key}'); //_add CG_`;
                     generateAndSendCommand(command);
                     closeModal();
                 };
