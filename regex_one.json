@@ -4211,7 +4211,7 @@ opacity: 0.6;
         }
 
         .header { text-align: center; margin-bottom: 2.5rem; }
-        h1 { font-size: 2.2em; font-weight: 300; letter-spacing: 8px; text-transform: uppercase; margin: 0; color: var(--text-color); text-shadow: 0 0 6px var(--primary-color), 0 0 12px var(--secondary-color); }
+        h1 { font-size: 2.2em; font-weight: 300; letter-spacing: 8px; text-transform: uppercase; margin: 0; color: var(--text-color) }
         .subtitle { font-size: 0.9em; color: var(--text-secondary-color); letter-spacing: 3px; margin-top: 0.7rem; text-transform: uppercase; }
         .form-section { margin-bottom: 2rem; }
         .form-section h2 { font-size: 1.1em; color: var(--secondary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
@@ -11963,6 +11963,153 @@ pointer-events: auto;
     font-size: 1.1em; /* 略微加大字体 */
     font-weight: bold; /* 加粗 */
 }
+
+
+/* 创意工坊样式模块 */
+.workshop-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 15px;
+}
+
+.workshop-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.workshop-search {
+    flex: 1;
+    display: flex;
+    gap: 5px;
+    min-width: 200px;
+}
+
+#workshop-search-input {
+    flex: 1;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.workshop-filters {
+    display: flex;
+    gap: 5px;
+}
+
+.filter-tag {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary-color);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.filter-tag.active, .filter-tag:hover {
+    background: var(--primary-color);
+    color: #000;
+    border-color: var(--primary-color);
+}
+
+.workshop-list {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    padding-right: 5px;
+}
+
+/* Mod 卡片样式 */
+.mod-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.mod-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 250, 255, 0.1);
+}
+
+.mod-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.mod-title {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+.mod-author {
+    font-size: 0.8em;
+    color: var(--text-secondary-color);
+}
+
+.mod-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.mod-tag-badge {
+    background: rgba(0, 250, 255, 0.1);
+    color: var(--secondary-color);
+    font-size: 0.75em;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.mod-desc {
+    font-size: 0.9em;
+    color: var(--text-color);
+    flex: 1;
+    line-height: 1.4;
+    opacity: 0.9;
+    max-height: 80px; /* 固定的最大高度 */
+    overflow-y: auto;  /* 当内容超出时显示滚动条 */
+    padding-right: 5px; /* 为滚动条留出一点空间 */
+}
+
+.mod-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mod-status {
+    font-size: 0.8em;
+}
+
+.status-enabled { color: var(--success-color); }
+.status-disabled { color: var(--text-secondary-color); }
+
+.loading-msg {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+    color: var(--secondary-color);
+}
   </style>
  
 </head>
@@ -13604,6 +13751,7 @@ pointer-events: auto;
             <button class="settings-tab" data-page="display">显示设置</button>
             <button class="settings-tab" data-page="data">数据管理</button>
             <button class="settings-tab" data-page="asset">素材工坊</button>
+                <button class="settings-tab" data-page="workshop">创意工坊</button>
         </div>
 
         <!-- 游戏设置页 -->
@@ -13914,7 +14062,30 @@ pointer-events: auto;
                 </div>
             </div>
         </div>
+<div class="settings-page" id="settings-page-workshop">
+    <div class="workshop-container">
 
+        <div class="workshop-toolbar">
+            <div class="workshop-search">
+                <input type="text" id="workshop-search-input" placeholder="搜索模组...">
+                <button id="workshop-search-btn" class="control-btn">🔍</button>
+            </div>
+      <div class="workshop-filters">
+    <button class="filter-tag active" data-tag="all">全部</button>
+    <button class="filter-tag" data-tag="UI">界面</button>
+    <button class="filter-tag" data-tag="world">世界书</button>
+</div>
+            <button id="workshop-refresh-btn" class="control-btn special-btn">刷新列表</button>
+             <button id="workshop-reload-runtime-btn" class="control-btn danger-btn" title="应用所有已开启的Mod (需刷新页面)">重载生效</button>
+        </div>
+
+
+        <div id="workshop-mod-list" class="workshop-list">
+
+            <div class="workshop-loading">正在连接创意工坊...</div>
+        </div>
+    </div>
+</div>
     </div>
 </div>
 
@@ -14181,13 +14352,37 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.8';
+let current_game_version = '3.3.9';
  let prompts_be_sent = null;
  
 let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
 
+    // 全局变量存储数据
+    let currentMapData = null;
+    let currentGameData = null;
+   // --- 全局变量和数据获取 ---
+        let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
+        let assaSettingsData = {};
+ let conversationHistory = [];
+let checkMemoryData = null;   // 用于存储上一轮的投掷记忆
+ let worldAttitudeData = null; // 用于存储世界态度变量
+let characterStatusData = null; // 用于存储人物状态变量
+let lasttoken = 0;
+let summarys = null;
+let ISNEWMAP = "false";
+let isEmphasizeTime = "false";
+let is_simple_stream = "false";
+let noBackup = "false";
+let is_restore_prompt = "true";
+
+    let worldBookState = {
+        currentTab: 'settings', // 默认显示设定
+        currentPage: 1,
+        itemsPerPage: 5, // 每页显示5条，你可以根据喜好调整
+        data: {}
+    };
 const processedImageCache = new Map();
 let userName = '用户';
   // 妈妈为你设定的世界书ID
@@ -14759,6 +14954,303 @@ const npcImageMap_fallbackData = {
 "摸摸头":"https://files.catbox.moe/i65j4n.gif"
 };
  let memeImageMap ={};
+
+
+
+
+
+window.NovaWorkshop = (function() {
+    // 配置
+    const REMOTE_URL = 'https://longlivecanc.github.io/god_space/mods.json';
+    const DB_NAME = 'GodSpaceWorkshopDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'user_mods'; // 存储用户对于mod的设置（开/关状态）
+
+    let db = null;
+    let allRemoteMods = []; // 暂存远程列表
+
+    // 初始化数据库
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onupgradeneeded = (event) => {
+                db = event.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    // KeyPath 使用 modId
+                    db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                }
+            };
+
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                console.log('创意工坊数据库已连接。');
+                resolve(db);
+            };
+
+            request.onerror = (event) => {
+                console.error('数据库打开失败:', event.target.errorCode);
+                reject(event.target.errorCode);
+            };
+        });
+    }
+
+    // 获取所有用户Mod设置
+    function getUserModSettings() {
+        return new Promise((resolve) => {
+            if (!db) return resolve([]);
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    // 更新Mod状态 (开启/关闭)
+    function toggleModStatus(modId, isEnabled, modData = {}) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const item = {
+                id: modId,
+                enabled: isEnabled,
+                lastUpdated: Date.now(),
+                // 缓存基础信息，防止没网时彻底无法加载
+                cachedData: {
+                    scriptUrl: modData.scriptUrl,
+                    worldBookUrl: modData.worldBookUrl
+                }
+            };
+            store.put(item);
+            transaction.oncomplete = () => {
+                console.log(`Mod ${modId} 状态更新为: ${isEnabled}`);
+                resolve();
+            };
+        });
+    }
+ // UI: 渲染 Mod 列表
+async function renderParams(filterTag = 'all', searchTerm = '') {
+    const container = document.getElementById('workshop-mod-list');
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading-msg">正在获取最新 Mod 列表...</div>';
+
+    try {
+        // 1. 加载远程 JSON
+        if (allRemoteMods.length === 0) {
+            if (typeof loadRemoteJson !== 'function') {
+                const res = await fetch(REMOTE_URL);
+                allRemoteMods = await res.json();
+            } else {
+                 allRemoteMods = await loadRemoteJson(REMOTE_URL, []);
+            }
+        }
+
+        // 2. 加载本地用户设置
+        const userSettings = await getUserModSettings();
+        const settingsMap = new Map(userSettings.map(i => [i.id, i]));
+
+        container.innerHTML = '';
+
+        // 3. 过滤与渲染
+        const filtered = allRemoteMods.filter(mod => {
+            const matchTag = filterTag === 'all' || (mod.tags && mod.tags.includes(filterTag));
+            const matchSearch = searchTerm === '' ||
+                                mod.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                mod.description.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchTag && matchSearch;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="loading-msg">没有找到符合条件的 Mod。</div>';
+            return;
+        }
+
+        filtered.forEach(mod => {
+            const setting = settingsMap.get(mod.id);
+            const isEnabled = setting ? setting.enabled : false;
+
+            const card = document.createElement('div');
+            card.className = 'mod-card';
+
+            const tagsHtml = (mod.tags || []).map(t => `<span class="mod-tag-badge">${t}</span>`).join('');
+
+            // ==================== 核心修改部分开始 ====================
+            let footerHtml = '';
+            if (mod.scriptUrl) {
+                // 如果有脚本，显示状态和开关按钮
+                const actionBtnText = isEnabled ? '🔴 禁用' : '🟢 启用';
+                const actionBtnClass = isEnabled ? 'danger-btn' : 'primary';
+                const statusText = isEnabled ? '<span class="status-enabled">已启用</span>' : '<span class="status-disabled">未启用</span>';
+                footerHtml = `
+                    <div class="mod-status">${statusText}</div>
+                    <div style="display:flex; gap:5px;">
+                       ${mod.worldBookUrl ? `<button class="control-btn" onclick="NovaWorkshop.downloadWorldBook('${mod.worldBookUrl}', '${mod.id || 'worldbook'}.json')" title="下载世界书 JSON">📘 下载</button>` : ''}
+                         <button class="control-btn ${actionBtnClass} toggle-mod-btn" data-id="${mod.id}">${actionBtnText}</button>
+                    </div>
+                `;
+            } else {
+                // 如果没有脚本，只显示 JSON 链接（如果存在）
+                 footerHtml = `
+                    <div class="mod-status"><span class="status-disabled">（无脚本）</span></div>
+                    <div style="display:flex; gap:5px;">
+   ${mod.worldBookUrl ? `<button class="control-btn" onclick="NovaWorkshop.downloadWorldBook('${mod.worldBookUrl}', '${mod.id || 'worldbook'}.json')" title="下载世界书 JSON">📘 下载</button>` : ''}
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="mod-header">
+                    <div>
+                        <div class="mod-title">${mod.name}</div>
+                        <div class="mod-author">by ${mod.author}</div>
+                    </div>
+                    <div class="mod-tags">${tagsHtml}</div>
+                </div>
+                <div class="mod-desc" title="${mod.description}">${mod.description}</div>
+                <div class="mod-footer">
+                    ${footerHtml}
+                </div>
+            `;
+
+            // 只有存在脚本时才绑定切换事件
+            if (mod.scriptUrl) {
+                const toggleBtn = card.querySelector('.toggle-mod-btn');
+                toggleBtn.onclick = async () => {
+                    await toggleModStatus(mod.id, !isEnabled, mod);
+                    // 简单重绘当前视图
+                    renderParams(filterTag, searchTerm);
+                };
+            }
+            // ==================== 核心修改部分结束 ====================
+
+            container.appendChild(card);
+        });
+
+    } catch (e) {
+        console.error('Workshop Render Error:', e);
+        container.innerHTML = `<div class="loading-msg" style="color:var(--danger-color)">加载失败: ${e.message}</div>`;
+    }
+}
+
+     async function executeActiveMods() {
+        await initDB();
+        const userSettings = await getUserModSettings();
+        const activeMods = userSettings.filter(m => m.enabled);
+
+        console.log(`[Nova Workshop] 发现 ${activeMods.length} 个已启用 Mod，准备加载...`);
+
+        for (const mod of activeMods) {
+            // 如果有 Script URL，加载并执行
+            if (mod.cachedData && mod.cachedData.scriptUrl) {
+                try {
+                    console.log(`[Nova Workshop] 正在注入 Mod 脚本: ${mod.id}`);
+
+                    // 使用 fetch + Blob 方式或者直接 script src 方式
+                    // 这里使用带时间戳的 script src 方式来强制绕过浏览器缓存
+                    const script = document.createElement('script');
+
+                    // 【妈妈的魔法修改】：在这里加上 ?t=时间戳
+                    // 这样浏览器会认为这是一个全新的请求，从而忽略缓存
+                    const cleanUrl = mod.cachedData.scriptUrl.split('?')[0]; // 防止原本就有参数
+                    const noCacheUrl = `${cleanUrl}?t=${new Date().getTime()}`;
+
+                    script.src = noCacheUrl;
+                    script.setAttribute('data-mod-id', mod.id);
+
+                    // 保证脚本按顺序执行，虽然动态脚本默认是async的，但显示设置为false更保险
+                    script.async = false;
+
+                    document.body.appendChild(script);
+                } catch (e) {
+                    console.error(`[Nova Workshop] Mod ${mod.id} 执行失败:`, e);
+                }
+            }
+        }
+    }
+   async function downloadFile(url, filename) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+
+            const blob = await response.blob(); // 将文件内容转成二进制数据
+            const blobUrl = window.URL.createObjectURL(blob); // 创建一个临时的本地链接
+
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = filename;
+
+            document.body.appendChild(a);
+            a.click(); // 模拟点击这个隐藏的链接
+
+            document.body.removeChild(a); // 清理
+            window.URL.revokeObjectURL(blobUrl); // 释放内存
+        } catch (error) {
+            console.error('Download failed:', error);
+            alert(`文件下载失败: ${error.message}`);
+        }
+    }
+    // 面板交互逻辑绑定
+    function bindEvents() {
+        // 刷新按钮
+        const refreshBtn = document.getElementById('workshop-refresh-btn');
+        if(refreshBtn) refreshBtn.onclick = () => {
+            allRemoteMods = []; // 清空缓存
+            renderParams();
+        }
+
+        // 搜索
+        const searchInput = document.getElementById('workshop-search-input');
+        const searchBtn = document.getElementById('workshop-search-btn');
+        if(searchBtn) searchBtn.onclick = () => renderParams('all', searchInput.value);
+
+        // 标签切换
+        document.querySelectorAll('.filter-tag').forEach(btn => {
+            btn.onclick = function() {
+                document.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                renderParams(this.dataset.tag, searchInput ? searchInput.value : '');
+            }
+        });
+
+        // 重载页面按钮 (提示用户刷新)
+        const reloadBtn = document.getElementById('workshop-reload-runtime-btn');
+        if(reloadBtn) reloadBtn.onclick = () => {
+            if(confirm('应用更改需要重新加载整个页面，是否刷新？')) {
+                location.reload();
+            }
+        };
+
+        // 监听 Tab 切换，如果是切到 workshop，则首次加载
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                if(tab.dataset.page === 'workshop') {
+                    renderParams();
+                }
+            });
+        });
+    }
+
+    // 暴露的接口
+    return {
+        init: async function() {
+            await initDB();
+            bindEvents();
+            // 注意：这里不自动执行 executeActiveMods，
+            // 建议你在 main.js 或页面加载的最顶层独立调用 NovaWorkshop.runMods()
+        },
+         runMods: executeActiveMods,
+        downloadWorldBook: downloadFile // <-- 把新函数添加在这里
+    };
+})();
+
+
+
+
+
+
  // 健壮的JSON加载和解析函数
 function sanitizeJSON(jsonString) {
     try {
@@ -16157,7 +16649,7 @@ function adjustToastPositions() {
     renderAchievements();
 }
 
-let conversationHistory = [];
+
         let version = 1;
 let earliestMessageIndexRendered = -1; // ❤️ 我们新的记忆指针
  
@@ -32860,30 +33352,7 @@ if (fontSizeSlider) {
 
 
  
-    // 全局变量存储数据
-    let currentMapData = null;
-    let currentGameData = null;
-   // --- 全局变量和数据获取 ---
-        let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
-        let assaSettingsData = {};
- 
-let checkMemoryData = null;   // 用于存储上一轮的投掷记忆
- let worldAttitudeData = null; // 用于存储世界态度变量
-let characterStatusData = null; // 用于存储人物状态变量
-let lasttoken = 0;
-let summarys = null;
-let ISNEWMAP = "false";
-let isEmphasizeTime = "false";
-let is_simple_stream = "false";
-let noBackup = "false";
-let is_restore_prompt = "true";
 
-    let worldBookState = {
-        currentTab: 'settings', // 默认显示设定
-        currentPage: 1,
-        itemsPerPage: 5, // 每页显示5条，你可以根据喜好调整
-        data: {}
-    };
     /**
      * 安全地从数据源获取值。
      * @param {*} value - 输入的数据
@@ -40112,7 +40581,7 @@ if (activeUrlSet.size > 0) {
 } else {
     console.warn(`NOVA: 资源清单为空，跳过本次缓存清理，以保护离线数据。`);
 }
- 
+ NovaWorkshop.runMods();
  
  await initDisplay();
 
@@ -49707,7 +50176,56 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('[Nova] 提示词查看器事件绑定完成');
+
+    NovaWorkshop.init();
 });
+
+//     // 全局变量存储数据
+//     let currentMapData = null;
+//     let currentGameData = null;
+//    // --- 全局变量和数据获取 ---
+//         let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
+//         let assaSettingsData = {};
+ 
+// let checkMemoryData = null;   // 用于存储上一轮的投掷记忆
+//  let worldAttitudeData = null; // 用于存储世界态度变量
+// let characterStatusData = null; // 用于存储人物状态变量
+window.GameAPI = {
+    // 定义一个属性 'settings'
+    get assaData() {
+        // GameAPI.settings 
+        return assaSettingsData;
+    },
+    get statData() {
+ 
+        return currentGameData;
+    },
+      get playCharacterData() {
+ 
+        return playCharacterData;
+    },
+      get checkMemoryData() {
+ 
+        return checkMemoryData;
+    },
+      get worldAttitudeData() {
+ 
+        return worldAttitudeData;
+    },
+    get characterStatusData() {
+ 
+        return characterStatusData;
+    },
+     get conversationHistory() {
+ 
+        return conversationHistory;
+    },
+ 
+    updateSettings: function(newData) {
+        assaSettingsData = newData; // 直接修改原本的 let 变量
+        console.log("数据已通过 API 更新！");
+    }
+}
 </script>
 
 </html>

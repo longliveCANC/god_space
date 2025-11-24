@@ -15,7 +15,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["UI"],
-    "description": "开启该mod后，左上角会单独有npc小球，美化字段基于原版，但陌生字段也不会报错",
+    "description": "开启该脚本后，左上角会单独有npc小球，美化字段基于原版，但陌生字段也不会报错",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
     "worldBookUrl": "",
     "previewImage": ""
