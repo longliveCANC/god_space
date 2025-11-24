@@ -1,0 +1,13 @@
+[
+  {
+    "id": "mod_test_01",
+    "name": "测试Mod：新的面板",
+    "author": "Nova",
+    "version": "1.0",
+    "tags": ["UI", "Cheats"],
+    "description": "这就添加一个新的测试按钮到界面上，点击会弹出提示。",
+    "scriptUrl": "https://example.com/my_mod_script.js",
+    "worldBookUrl": "https://example.com/world_data.json",
+    "previewImage": ""
+  }
+]
