@@ -612,8 +612,12 @@
                 headSection.appendChild(fDiv);
             }
             root.appendChild(headSection);
-
-            // --- 1. 身份 ---
+         // --- 1  事件 (沉浸式插入，优先级极高) ---
+            if(data.事件 && typeof data.事件 === 'object') {
+                this.renderEvents(root, data.事件);
+                ignoreKeys.push('事件');
+            }
+            // --- 1.5 身份 ---
             if(data.身份) {
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
@@ -622,11 +626,7 @@
                 ignoreKeys.push('身份');
             }
 
-            // --- 1.5 事件 (沉浸式插入，优先级极高) ---
-            if(data.事件 && typeof data.事件 === 'object') {
-                this.renderEvents(root, data.事件);
-                ignoreKeys.push('事件');
-            }
+   
 
             // --- 2. 属性 ---
             if(data.属性) {
