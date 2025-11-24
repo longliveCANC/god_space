@@ -1,8 +1,18 @@
 [
   {
     "id": "mod_test_01",
+    "name": "公告位",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["UI", "world"],
+    "description": "真的会有想投稿的吗？如果有想要投稿的自定义mod（世界书或脚本），请找assa",
+    "scriptUrl": "",
+    "worldBookUrl": "",
+  "previewImage": ""
+  }, {
+    "id": "mod_test_02",
     "name": "测试Mod：新的面板",
-    "author": "Nova",
+    "author": "assa",
     "version": "1.0",
     "tags": ["UI", "Cheats"],
     "description": "这就添加一个新的测试按钮到界面上，点击会弹出提示。",
@@ -10,19 +20,9 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/test.json",
     "previewImage": ""
   }, {
-    "id": "mod_test_02",
-    "name": "测试Mod：新的面板",
-    "author": "Nova",
-    "version": "1.0",
-    "tags": ["UI", "Cheats"],
-    "description": "",
-    "scriptUrl": "",
-    "worldBookUrl": "",
-    "previewImage": ""
-  }, {
     "id": "mod_test_03",
     "name": "测试Mod：新的面板",
-    "author": "Nova",
+    "author": "assa",
     "version": "1.0",
     "tags": ["UI", "Cheats"],
     "description": "",
@@ -32,7 +32,7 @@
   }, {
     "id": "mod_test_04",
     "name": "测试Mod：新的面板",
-    "author": "Nova",
+    "author": "assa",
     "version": "1.0",
     "tags": ["UI", "Cheats","world"],
     "description": "",
@@ -42,7 +42,7 @@
   }, {
     "id": "mod_test_05",
     "name": "测试Mod：新的面板",
-    "author": "Nova",
+    "author": "assa",
     "version": "1.0",
     "tags": ["UI", "Cheats","Script"],
     "description": "",
