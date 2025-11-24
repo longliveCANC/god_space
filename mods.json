@@ -11,13 +11,13 @@
   "previewImage": ""
   }, {
     "id": "mod_test_02",
-    "name": "npc美化",
+    "name": "原版npc美化",
     "author": "assa",
     "version": "1.0",
     "tags": ["UI", "world"],
-    "description": "开启该mod后，左上角会单独有npc小球。\n世界书是一个包含了很多自定义版本的npc档案，下载后可以按需取用",
+    "description": "开启该mod后，左上角会单独有npc小球，美化字段基于原版，但陌生字段也不会报错",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
-    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/morenpc01.json",
+    "worldBookUrl": "",
     "previewImage": ""
   } 
 ]
