@@ -252,6 +252,76 @@
             ::-webkit-scrollbar { width: 5px; height: 5px; }
             ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
             ::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
+
+                        /* --- 新增：手机端适配 (响应式) --- */
+            @media (max-width: 768px) {
+                .mod01-window { width: 100%; height: 100%; max-width: 100%; border-radius: 0; }
+                .mod01-body { flex-direction: column; }
+                .mod01-sidebar {
+                    width: 100%; height: 120px; flex-shrink: 0;
+                    border-right: none; border-bottom: 1px solid var(--border-color);
+                    display: flex; flex-direction: row; overflow-x: auto; /* 横向滚动 */
+                    padding: 5px;
+                }
+                .mod01-item {
+                    min-width: 140px; border-bottom: none; border-right: 1px solid rgba(255,255,255,0.05);
+                    display: flex; flex-direction: column; justify-content: center;
+                }
+                .mod01-item.active { border-left: none; background: rgba(255,255,255,0.1); border-bottom: 3px solid var(--primary-color);}
+                .mod01-detail { padding: 15px; }
+                .mod01-card-head { flex-direction: column; }
+                .mod01-favor-box { margin-top: 15px; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 5px 15px;}
+                .mod01-favor-val { font-size: 18px; }
+            }
+
+            /* --- 新增：沉浸式事件块 --- */
+            .mod01-event-box {
+                background: linear-gradient(to right, rgba(255,255,255,0.02), transparent);
+                border-left: 4px solid var(--secondary-color);
+                padding: 15px; margin-bottom: 20px;
+                font-family: serif; /* 增加文学感 */
+            }
+            .mod01-event-thought {
+                font-size: 1.1em; font-style: italic; color: var(--text-color);
+                margin-bottom: 10px; opacity: 0.9;
+                quotes: "“" "”" "‘" "’";
+            }
+            .mod01-event-thought::before { content: open-quote; color: var(--primary-color); font-size: 1.5em; margin-right: 5px;}
+            .mod01-event-thought::after { content: close-quote; color: var(--primary-color); font-size: 1.5em; }
+
+            .mod01-event-status {
+                font-size: 0.85em; color: var(--text-secondary-color);
+                display: inline-block; background: rgba(0,0,0,0.2);
+                padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color);
+            }
+            .mod01-event-detail-row { margin-top: 6px; font-size: 0.9em; color: var(--text-secondary-color); }
+
+            /* --- 新增：情感 Tag 美化 --- */
+            .mod01-emote-tag {
+                display: inline-block; font-size: 10px; padding: 1px 6px;
+                margin-left: 4px; border-radius: 4px;
+                border: 1px solid var(--glow-color); color: var(--primary-color);
+                background: rgba(255,255,255,0.05);
+                transform: translateY(-1px);
+            }
+
+            /* --- 新增：分页按钮 --- */
+            .mod01-load-more {
+                display: block; width: 100%; padding: 10px; margin-top: 10px;
+                text-align: center; cursor: pointer;
+                background: rgba(255,255,255,0.05); border: 1px dashed var(--border-color);
+                color: var(--secondary-color); transition: all 0.2s;
+                font-size: 12px;
+            }
+            .mod01-load-more:hover { background: var(--primary-color); color: var(--container-bg-color); }
+
+            /* --- 新增：嵌套对象缩进 --- */
+            .mod01-nested-block {
+                margin-left: 15px; padding-left: 10px;
+                border-left: 1px dashed rgba(255,255,255,0.1);
+                margin-bottom: 8px;
+            }
+
         `;
         document.head.appendChild(style);
     }
@@ -409,51 +479,46 @@
             });
         }
 
-        // ============ 核心详情渲染 ============
+   // ============ 核心详情渲染 (更新) ============
         renderCard(npc) {
             const root = document.getElementById('mod01-detail-root');
             root.innerHTML = '';
             const data = npc.data;
+            // 预定义顺序与特殊处理
+            // 注意：事件现在被我提到前面来检查
+            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter'];
 
-            // --- 0. 顶部区域：名字、外貌、好感度 ---
+            // --- 0. 顶部区域：名字、外貌、好感度 (保持不变) ---
             const headSection = document.createElement('div');
             headSection.className = 'mod01-card-head';
+            // ... (这部分代码与上一版相同，为节省篇幅省略，请保留原代码) ...
 
-            // 左：名字+外貌
+            // 左侧信息 + 外貌
             const basicInfo = document.createElement('div');
             basicInfo.className = 'mod01-basic-info';
             basicInfo.style.flex = "1";
             basicInfo.innerHTML = `<h1>${npc.name}</h1>`;
-            if(data.外貌) {
-                basicInfo.innerHTML += `<div class="mod01-desc-box">${data.外貌}</div>`;
-            } else {
-                basicInfo.innerHTML += `<div class="mod01-desc-box">暂无外貌描述...</div>`;
-            }
+            // 处理外貌
+            if(data.外貌) basicInfo.innerHTML += `<div class="mod01-desc-box">${data.外貌}</div>`;
+            else basicInfo.innerHTML += `<div class="mod01-desc-box">...</div>`;
 
-            // 右：好感度 (如果有)
+            // 右侧好感度
             let favorHtml = '';
             if(data.好感度 !== undefined) {
                 let fVal = parseInt(data.好感度);
                 if (isNaN(fVal)) fVal = '?';
-                favorHtml = `
-                    <div class="mod01-favor-box">
-                        <div class="mod01-favor-val">${fVal}</div>
-                        <div class="mod01-favor-label">Relation</div>
-                    </div>
-                `;
+                favorHtml = `<div class="mod01-favor-box"><div class="mod01-favor-val">${fVal}</div><div class="mod01-favor-label">Relation</div></div>`;
             }
             headSection.appendChild(basicInfo);
             if(favorHtml) {
-                const fDiv = document.createElement('div');
-                fDiv.innerHTML = favorHtml;
+                const fDiv = document.createElement('div'); fDiv.innerHTML = favorHtml;
+                // 为了手机端样式，这里不限制宽度
+                fDiv.style.flexShrink="0";
                 headSection.appendChild(fDiv);
             }
             root.appendChild(headSection);
 
-            // 预定义顺序与特殊处理
-            const ignoreKeys = ['外貌', '好感度', '未定字段'];
-
-            // --- 1. 身份 (特殊处理：不作为TAG，直接长文本) ---
+            // --- 1. 身份 ---
             if(data.身份) {
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
@@ -462,147 +527,131 @@
                 ignoreKeys.push('身份');
             }
 
-            // --- 2. 属性 (Stats) - 动态上限逻辑 ---
+            // --- 1.5 事件 (沉浸式插入，优先级极高) ---
+            if(data.事件 && typeof data.事件 === 'object') {
+                this.renderEvents(root, data.事件);
+                ignoreKeys.push('事件');
+            }
+
+            // --- 2. 属性 ---
             if(data.属性) {
                 this.renderStats(root, data.属性);
                 ignoreKeys.push('属性');
             }
 
-            // --- 3. 表/里性格 (特殊对比 Grid) ---
-            // 只有当两者都存在时才用对比美化，否则按普通渲染
+            // --- 3. 表/里性格 ---
             if(data.表性格 && data.里性格) {
                 this.renderPersona(root, data.表性格, data.里性格);
                 ignoreKeys.push('表性格', '里性格');
             }
 
-            // --- 4. 关键记忆 (Memory Cloud) ---
-            // Bug Fix for match
+            // --- 4. 关键记忆 (分页) ---
             if(data.关键记忆) {
-                this.renderMemories(root, data.关键记忆);
+                this.renderMemoriesPaged(root, data.关键记忆);
                 ignoreKeys.push('关键记忆');
             }
 
-            // --- 5. 剩余字段 ---
-            // 对"对xxx印象"做通用捕获
+            // --- 5. 剩余字段 (递归 + 过滤) ---
             Object.keys(data).forEach(k => {
-                if(ignoreKeys.includes(k)) return;
+                if(ignoreKeys.includes(k) || k.startsWith('_')) return; // 跳过_开头的
 
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
                 sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
 
-                const val = data[k];
-                if(typeof val === 'object' && val !== null) {
-                    // 转为 Tag 墙或者简单列表
-                    let html = '<div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:4px;">';
-                    Object.entries(val).forEach(([subK, subV]) => {
-                         html += `<div style="margin-bottom:5px;"><strong style="color:var(--secondary-color)">${subK}:</strong> <span style="opacity:0.8">${subV}</span></div>`;
-                    });
-                     html += '</div>';
-                     sec.innerHTML += html;
-                } else {
-                    sec.innerHTML += `<div class="mod01-text-block">${val}</div>`;
-                }
+                // 调用通用递归渲染，如果是字符串直接通过，如果是对象则递归
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'mod01-text-block';
+                this.renderDeepObject(contentDiv, data[k]);
+
+                sec.appendChild(contentDiv);
                 root.appendChild(sec);
             });
         }
 
-        // --- 逻辑：Stats 美化 ---
-        renderStats(container, statsStr) {
-            // 解析字符串 "【力量:4; 敏捷:11】"
-            if(typeof statsStr !== 'string') return;
-            // 暴力清洗：去括号，分割
-            let raw = statsStr.replace(/[【】\[\]]/g, '').trim();
-            if(!raw) return;
-            const items = raw.split(/[;,]/).filter(s => s.trim());
+        // --- 新增：通用递归渲染 (处理多层嵌套与过滤) ---
+        renderDeepObject(container, val) {
+            if (val === null || val === undefined) return;
 
-            if(items.length === 0) return;
+            if (typeof val === 'object') {
+                // 如果是对象，遍历 KV
+                const wrapper = document.createElement('div');
+                let hasContent = false;
 
-            // 1. 提取所有数值找最大
-            let parsedStats = [];
-            let maxVal = 0;
-            items.forEach(pair => {
-                let [k, v] = pair.split(':');
-                if(!k || !v) return;
-                k = k.trim(); v = parseInt(v.trim());
-                if(!isNaN(v)) {
-                   parsedStats.push({k, v});
-                   if(v > maxVal) maxVal = v;
-                }
-            });
+                Object.keys(val).forEach(key => {
+                    // 跳过私有
+                    if(key.startsWith('_')) return;
 
-            // 2. 只有解析成功才渲染条，否则原文
-            if(parsedStats.length === 0) {
-                 const div = document.createElement('div');
-                 div.className = 'mod01-section';
-                 div.innerHTML = `<div class="mod01-sec-title">属性</div><div>${statsStr}</div>`;
-                 container.appendChild(div);
-                 return;
+                    hasContent = true;
+                    // 行容器
+                    const row = document.createElement('div');
+                    row.style.marginBottom = '4px';
+
+                    // 键名显示 (如果是数字键名如 "11" 且没有具体意义，你可以选择隐藏键名，这里保留但弱化)
+                    if(isNaN(key)) {
+                         row.innerHTML = `<span style="color:var(--secondary-color); font-weight:bold;">${key}: </span>`;
+                    }
+
+                    // 值容器
+                    const valSpan = document.createElement('span');
+                    // 递归调用
+                    this.renderDeepObject(valSpan, val[key]); // Recurse
+
+                    // 如果是对象，需要换行缩进；如果是直接值，行内显示
+                    if(typeof val[key] === 'object') {
+                        valSpan.className = 'mod01-nested-block';
+                        row.appendChild(document.createElement('br')); // 强制换行
+                    }
+
+                    row.appendChild(valSpan);
+                    wrapper.appendChild(row);
+                });
+
+                if(!hasContent) container.innerHTML = '<span style="opacity:0.5;font-size:12px;">[空数据]</span>';
+                else container.appendChild(wrapper);
+
+            } else {
+                // 如果是简单值
+                container.innerText = String(val); // 自动防XSS
+            }
+        }
+
+        // --- 新增：沉浸式事件渲染 ---
+        renderEvents(container, evtData) {
+            const box = document.createElement('div');
+            box.className = 'mod01-event-box mod01-section';
+
+            // 1. 核心：当前想法 (不显示Key, 直接展示内容)
+            if(evtData.当前想法) {
+                const p = document.createElement('div');
+                p.className = 'mod01-event-thought';
+                p.textContent = evtData.当前想法;
+                box.appendChild(p);
             }
 
-            // 3. 确定上限逻辑: 小于10 => 10, 大于10 => Max
-            const limit = maxVal < 10 ? 10 : maxVal;
+            // 2. 核心：当前状态 (Tag样式)
+            if(evtData.当前状态) {
+               const st = document.createElement('div');
+               st.innerHTML = `<span style="font-size:12px; margin-right:5px; opacity:0.7;">STATUS:</span> <span class="mod01-event-status">${evtData.当前状态}</span>`;
+               st.style.marginBottom = '10px';
+               box.appendChild(st);
+            }
 
-            const sec = document.createElement('div');
-            sec.className = 'mod01-section';
-            sec.innerHTML = `<div class="mod01-sec-title">COMBAT SPECS</div>`;
-
-            parsedStats.forEach(stat => {
-                const percent = (stat.v / limit) * 100;
+            // 3. 其他字段 (行为链、目标等)
+            const ignores = ['当前想法', '当前状态'];
+            Object.keys(evtData).forEach(k => {
+                if(ignores.includes(k) || k.startsWith('_')) return;
                 const row = document.createElement('div');
-                row.className = 'mod01-stat-row';
-                row.innerHTML = `
-                    <div class="mod01-stat-name">${stat.k}</div>
-                    <div class="mod01-stat-bar-bg">
-                        <div class="mod01-stat-fill" style="width:${percent}%"></div>
-                    </div>
-                    <div class="mod01-stat-val">${stat.v}</div>
-                `;
-                sec.appendChild(row);
+                row.className = 'mod01-event-detail-row';
+                row.innerHTML = `<strong>${k}</strong>: ${evtData[k]}`;
+                box.appendChild(row);
             });
-            container.appendChild(sec);
+
+            container.appendChild(box);
         }
 
-        // --- 逻辑：性格 Mask 渲染 ---
-        renderPersona(container, outP, inP) {
-            const sec = document.createElement('div');
-            sec.className = 'mod01-section';
-            sec.innerHTML = `<div class="mod01-sec-title">性格模型 (表 / 里)</div>`;
-
-            const grid = document.createElement('div');
-            grid.className = 'mod01-persona-grid';
-
-            // Helper
-            const buildCard = (dataObj, label, color) => {
-                let html = `<div class="mod01-persona-label" style="background:${color}">${label}</div>`;
-                Object.entries(dataObj).forEach(([k, v]) => {
-                    html += `
-                        <div style="margin-bottom:8px;">
-                            <span class="mod01-p-term">${k}</span>
-                            <span class="mod01-p-desc">${v}</span>
-                        </div>
-                    `;
-                });
-                return html;
-            };
-
-            const cardOut = document.createElement('div');
-            cardOut.className = 'mod01-persona-card';
-            cardOut.innerHTML = buildCard(outP, 'SURFACE', 'var(--primary-color)');
-
-            const cardIn = document.createElement('div');
-            cardIn.className = 'mod01-persona-card';
-            // 里性格用深一点或不同色
-            cardIn.innerHTML = buildCard(inP, 'INNER', 'var(--secondary-color)');
-
-            grid.appendChild(cardOut);
-            grid.appendChild(cardIn);
-            sec.appendChild(grid);
-            container.appendChild(sec);
-        }
-
-        // --- 逻辑：记忆星云 (Fix Bug included) ---
-        renderMemories(container, memObj) {
+        // --- 修改：记忆分页 + 增强美化 ---
+        renderMemoriesPaged(container, memObj) {
             const sec = document.createElement('div');
             sec.className = 'mod01-section';
             sec.innerHTML = `<div class="mod01-sec-title">MEMORY LOGS</div>`;
@@ -610,29 +659,78 @@
             const cloud = document.createElement('div');
             cloud.className = 'mod01-mem-cloud';
 
-            Object.entries(memObj).forEach(([key, val]) => {
-                // Bug fix: 确保 val是字符串
-                let rawText = typeof val === 'string' ? val : String(val);
-                let emote = '';
-
-                // 解析情感 [xxx]
-                const match = rawText.match(/\[(.*?)\]$/);
-                if(match) {
-                    emote = match[1];
-                    rawText = rawText.replace(match[0], '');
-                }
-
-                const chip = document.createElement('div');
-                chip.className = 'mod01-mem-chip';
-                // 根据情感稍微改边框或文字颜色
-                let emoteHtml = emote ? `<span style="color:var(--primary-color); font-weight:bold; font-size:10px; margin-left:5px;">[${emote}]</span>` : '';
-
-                chip.innerHTML = `${rawText} ${emoteHtml}`;
-                cloud.appendChild(chip);
+            // 1. 数据预处理：把 Object 转为 Array (过滤掉私有字段)
+            let memArray = [];
+            Object.keys(memObj).forEach(k => {
+                if(k.startsWith('_')) return;
+                memArray.push({ id: k, text: String(memObj[k]) });
             });
 
+            // 简单的按 key 排序可能不准（字符串 '10' 会排在 '2' 前面），尝试转数字排
+            // 如果你的key是 "1", "2"...
+            memArray.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
+
+            // State
+            let currIdx = 0;
+            const pageSize = 5;
+
+            // Render function
+            const loadBatch = () => {
+                const slice = memArray.slice(currIdx, currIdx + pageSize);
+                slice.forEach(item => {
+                    const chip = document.createElement('div');
+                    chip.className = 'mod01-mem-chip';
+
+                    // 2. 内容解析 Tags [震撼/爱恋]
+                    let content = item.text;
+                    let tagsHtml = '';
+
+                    // 匹配末尾或中间的 [...]
+                    const match = content.match(/\[(.*?)\]/);
+                    if(match) {
+                        content = content.replace(match[0], ''); // 移除原文本 tags
+                        const rawTags = match[1]; // "震撼/爱恋"
+                        const parts = rawTags.split(/[ \/、]/); // 支持 空格 / 、 分割
+                        parts.forEach(t => {
+                            if(t.trim()) tagsHtml += `<span class="mod01-emote-tag">${t.trim()}</span>`;
+                        });
+                    }
+
+                    chip.innerHTML = `<span style="opacity:0.5;font-size:10px;margin-right:4px;">#${item.id}</span> ${content} ${tagsHtml}`;
+                    // 动画淡入
+                    chip.style.animation = "mod01-fade 0.5s";
+                    cloud.appendChild(chip);
+                });
+
+                currIdx += pageSize;
+
+                // 按钮处理
+                if(currIdx >= memArray.length) {
+                    if(btn) btn.style.display = 'none';
+                } else {
+                    if(btn) {
+                       btn.style.display = 'block';
+                       btn.innerText = `LOAD MORE (${memArray.length - currIdx} remaining)`;
+                    }
+                }
+            };
+
             sec.appendChild(cloud);
+
+            // Button
+            let btn = null;
+            if(memArray.length > pageSize) {
+                btn = document.createElement('div');
+                btn.className = 'mod01-load-more';
+                btn.onclick = loadBatch;
+                sec.appendChild(btn);
+            }
+
             container.appendChild(sec);
+
+            // init load
+            if(memArray.length > 0) loadBatch();
+            else cloud.innerHTML = '<div style="opacity:0.5;font-size:12px;">暂无关键记忆</div>';
         }
     }
 
