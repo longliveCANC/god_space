@@ -479,8 +479,103 @@
             });
         }
 
-   // ============ 核心详情渲染 (更新) ============
-        renderCard(npc) {
+  
+
+        // --- 逻辑：Stats 美化 ---
+        renderStats(container, statsStr) {
+            // 解析字符串 "【力量:4; 敏捷:11】"
+            if(typeof statsStr !== 'string') return;
+            // 暴力清洗：去括号，分割
+            let raw = statsStr.replace(/[【】\[\]]/g, '').trim();
+            if(!raw) return;
+            const items = raw.split(/[;,]/).filter(s => s.trim());
+
+            if(items.length === 0) return;
+
+            // 1. 提取所有数值找最大
+            let parsedStats = [];
+            let maxVal = 0;
+            items.forEach(pair => {
+                let [k, v] = pair.split(':');
+                if(!k || !v) return;
+                k = k.trim(); v = parseInt(v.trim());
+                if(!isNaN(v)) {
+                   parsedStats.push({k, v});
+                   if(v > maxVal) maxVal = v;
+                }
+            });
+
+            // 2. 只有解析成功才渲染条，否则原文
+            if(parsedStats.length === 0) {
+                 const div = document.createElement('div');
+                 div.className = 'mod01-section';
+                 div.innerHTML = `<div class="mod01-sec-title">属性</div><div>${statsStr}</div>`;
+                 container.appendChild(div);
+                 return;
+            }
+
+            // 3. 确定上限逻辑: 小于10 => 10, 大于10 => Max
+            const limit = maxVal < 10 ? 10 : maxVal;
+
+            const sec = document.createElement('div');
+            sec.className = 'mod01-section';
+            sec.innerHTML = `<div class="mod01-sec-title">COMBAT SPECS</div>`;
+
+            parsedStats.forEach(stat => {
+                const percent = (stat.v / limit) * 100;
+                const row = document.createElement('div');
+                row.className = 'mod01-stat-row';
+                row.innerHTML = `
+                    <div class="mod01-stat-name">${stat.k}</div>
+                    <div class="mod01-stat-bar-bg">
+                        <div class="mod01-stat-fill" style="width:${percent}%"></div>
+                    </div>
+                    <div class="mod01-stat-val">${stat.v}</div>
+                `;
+                sec.appendChild(row);
+            });
+            container.appendChild(sec);
+        }
+
+        // --- 逻辑：性格 Mask 渲染 ---
+        renderPersona(container, outP, inP) {
+            const sec = document.createElement('div');
+            sec.className = 'mod01-section';
+            sec.innerHTML = `<div class="mod01-sec-title">性格模型 (表 / 里)</div>`;
+
+            const grid = document.createElement('div');
+            grid.className = 'mod01-persona-grid';
+
+            // Helper
+            const buildCard = (dataObj, label, color) => {
+                let html = `<div class="mod01-persona-label" style="background:${color}">${label}</div>`;
+                Object.entries(dataObj).forEach(([k, v]) => {
+                    html += `
+                        <div style="margin-bottom:8px;">
+                            <span class="mod01-p-term">${k}</span>
+                            <span class="mod01-p-desc">${v}</span>
+                        </div>
+                    `;
+                });
+                return html;
+            };
+
+            const cardOut = document.createElement('div');
+            cardOut.className = 'mod01-persona-card';
+            cardOut.innerHTML = buildCard(outP, 'SURFACE', 'var(--primary-color)');
+
+            const cardIn = document.createElement('div');
+            cardIn.className = 'mod01-persona-card';
+            // 里性格用深一点或不同色
+            cardIn.innerHTML = buildCard(inP, 'INNER', 'var(--secondary-color)');
+
+            grid.appendChild(cardOut);
+            grid.appendChild(cardIn);
+            sec.appendChild(grid);
+            container.appendChild(sec);
+        }
+
+            renderCard(npc) {
             const root = document.getElementById('mod01-detail-root');
             root.innerHTML = '';
             const data = npc.data;
