@@ -6,8 +6,8 @@
     "version": "1.0",
     "tags": ["UI", "Cheats"],
     "description": "这就添加一个新的测试按钮到界面上，点击会弹出提示。",
-    "scriptUrl": "https://example.com/my_mod_script.js",
-    "worldBookUrl": "https://example.com/world_data.json",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/scripts/test.js",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/worldBooks/test.json",
     "previewImage": ""
   }, {
     "id": "mod_test_02",
