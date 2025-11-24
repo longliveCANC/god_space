@@ -181,10 +181,10 @@
         // 获取实时数据，如果没有定义则显示提示
         let dataToShow = "Error: window.assaSettingsData is undefined.";
 
-        if (window.assaSettingsData) {
+        if (window.GameAPI.assaData) {
             try {
                 // 格式化 JSON，缩进2空格
-                dataToShow = JSON.stringify(window.assaSettingsData, null, 2);
+                dataToShow = JSON.stringify(window.GameAPI.assaData, null, 2);
             } catch (e) {
                 dataToShow = "Error parsing JSON: " + e.message;
             }
