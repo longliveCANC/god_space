@@ -14068,7 +14068,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.7';
+let current_game_version = '3.3.8';
 
  
 let storyChapters = [];
@@ -26587,9 +26587,67 @@ async function saveHistory() {
     await handleSend({ isReroll: true });
 }
 async function showRollResultCard(rollData) {
-    if (!rollData || !rollData.check_type) {
-         console.log("没有有效的投掷数据来显示看板。");
+    if (!rollData) {
+        console.log("没有有效的投掷数据来显示看板。");
         return;
+    }
+    
+    // 新增：检查是否为字符串类型的系统提示
+    if (typeof rollData === 'string') {
+        await updateVariablesWith(old_variables => {
+            return {
+                ...old_variables,
+                "检定记忆": rollData,
+            };
+        }, { type: 'message' });
+        checkMemoryData = rollData;
+        
+        const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
+        if (!isRollCardEnabled) {
+            return;
+        }
+        
+        const container = document.getElementById('roll-result-card-container');
+        if (!container) return;
+        
+        // 简化的系统提示显示
+        const cardHTML = `
+            <div class="roll-card-content system-notice">
+                <div class="roll-card-header">系统提示</div>
+                <div class="roll-card-description" style="margin: 15px 0; text-align: center; font-size: 1.1em;">
+                    ${rollData}
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = cardHTML;
+        container.className = 'roll-result-card-container';
+        container.style.display = 'block';
+        
+        setTimeout(() => {
+            container.classList.add('show');
+        }, 10);
+        
+        const closeCard = () => {
+            container.classList.remove('show');
+            setTimeout(() => {
+                if (!container.classList.contains('show')) {
+                    container.style.display = 'none';
+                }
+            }, 500);
+            document.removeEventListener('click', handleClickOutside, true);
+        };
+        
+        const handleClickOutside = (event) => {
+            if (container.contains(event.target)) return;
+            closeCard();
+        };
+        
+        setTimeout(() => {
+            document.addEventListener('click', handleClickOutside, true);
+        }, 0);
+        
+        return; // 处理完系统提示后直接返回
     }
 
             await updateVariablesWith(old_variables => {
