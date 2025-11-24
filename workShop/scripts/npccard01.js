@@ -321,7 +321,26 @@
                 border-left: 1px dashed rgba(255,255,255,0.1);
                 margin-bottom: 8px;
             }
-
+ .mod01-pagination {
+                display: flex; justify-content: center; align-items: center;
+                margin-top: 15px; grid-gap: 15px;
+                font-size: 12px; color: var(--text-secondary-color);
+            }
+            .mod01-page-btn {
+                background: rgba(255,255,255,0.05);
+                border: 1px solid var(--border-color);
+                padding: 4px 12px; cursor: pointer;
+                transition: all 0.2s; border-radius: 4px;
+                user-select: none;
+            }
+            .mod01-page-btn:hover:not(.disabled) {
+                background: var(--primary-color); color: var(--container-bg-color);
+                box-shadow: 0 0 5px var(--glow-color);
+            }
+            .mod01-page-btn.disabled {
+                opacity: 0.3; cursor: not-allowed; border-color: transparent;
+            }
+            .mod01-page-info { font-family: monospace; font-weight: bold; }
         `;
         document.head.appendChild(style);
     }
@@ -537,7 +556,7 @@
             container.appendChild(sec);
         }
 
-        // --- 逻辑：性格 Mask 渲染 ---
+  // --- 修改 1：性格 Mask 渲染 (修复私有字段显示的问题) ---
         renderPersona(container, outP, inP) {
             const sec = document.createElement('div');
             sec.className = 'mod01-section';
@@ -546,10 +565,13 @@
             const grid = document.createElement('div');
             grid.className = 'mod01-persona-grid';
 
-            // Helper
+            // Helper: 只有这里改动了，加入了过滤
             const buildCard = (dataObj, label, color) => {
                 let html = `<div class="mod01-persona-label" style="background:${color}">${label}</div>`;
+
                 Object.entries(dataObj).forEach(([k, v]) => {
+                    if (k.startsWith('_')) return; // <--- 关键修改：过滤掉_开头的字段！
+
                     html += `
                         <div style="margin-bottom:8px;">
                             <span class="mod01-p-term">${k}</span>
@@ -566,7 +588,6 @@
 
             const cardIn = document.createElement('div');
             cardIn.className = 'mod01-persona-card';
-            // 里性格用深一点或不同色
             cardIn.innerHTML = buildCard(inP, 'INNER', 'var(--secondary-color)');
 
             grid.appendChild(cardOut);
@@ -574,7 +595,6 @@
             sec.appendChild(grid);
             container.appendChild(sec);
         }
-
             renderCard(npc) {
             const root = document.getElementById('mod01-detail-root');
             root.innerHTML = '';
@@ -744,88 +764,122 @@
 
             container.appendChild(box);
         }
-
-        // --- 修改：记忆分页 + 增强美化 ---
+  // --- 修改 2：记忆分页 (改为翻页器模式) ---
         renderMemoriesPaged(container, memObj) {
             const sec = document.createElement('div');
             sec.className = 'mod01-section';
             sec.innerHTML = `<div class="mod01-sec-title">MEMORY LOGS</div>`;
 
+            // 容器
             const cloud = document.createElement('div');
             cloud.className = 'mod01-mem-cloud';
+            cloud.style.minHeight = "120px"; // 给个最小高度防止翻页时抖动
 
-            // 1. 数据预处理：把 Object 转为 Array (过滤掉私有字段)
+            // 1. 数据展平与过滤
             let memArray = [];
             Object.keys(memObj).forEach(k => {
-                if(k.startsWith('_')) return;
+                if(k.startsWith('_')) return; // 再次确保过滤
                 memArray.push({ id: k, text: String(memObj[k]) });
             });
-
-            // 简单的按 key 排序可能不准（字符串 '10' 会排在 '2' 前面），尝试转数字排
-            // 如果你的key是 "1", "2"...
+            // 排序 (数字序优先)
             memArray.sort((a,b) => (parseInt(a.id)||0) - (parseInt(b.id)||0));
 
-            // State
-            let currIdx = 0;
+            // 分页核心变量
             const pageSize = 5;
+            let currentPage = 1;
+            const totalPages = Math.ceil(memArray.length / pageSize);
 
-            // Render function
-            const loadBatch = () => {
-                const slice = memArray.slice(currIdx, currIdx + pageSize);
+            // 渲染某一页的函数
+            const renderPage = (page) => {
+                cloud.innerHTML = ''; // 清空当前视图!
+
+                if (memArray.length === 0) {
+                    cloud.innerHTML = '<div style="opacity:0.5;font-size:12px;">此区域暂无记录</div>';
+                    return;
+                }
+
+                const startIndex = (page - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, memArray.length);
+                const slice = memArray.slice(startIndex, endIndex);
+
                 slice.forEach(item => {
                     const chip = document.createElement('div');
                     chip.className = 'mod01-mem-chip';
 
-                    // 2. 内容解析 Tags [震撼/爱恋]
+                    // 解析内容标签 [震撼/爱恋]
                     let content = item.text;
                     let tagsHtml = '';
-
-                    // 匹配末尾或中间的 [...]
                     const match = content.match(/\[(.*?)\]/);
                     if(match) {
-                        content = content.replace(match[0], ''); // 移除原文本 tags
-                        const rawTags = match[1]; // "震撼/爱恋"
-                        const parts = rawTags.split(/[ \/、]/); // 支持 空格 / 、 分割
+                        content = content.replace(match[0], '');
+                        const rawTags = match[1];
+                        const parts = rawTags.split(/[ \/、]/);
                         parts.forEach(t => {
                             if(t.trim()) tagsHtml += `<span class="mod01-emote-tag">${t.trim()}</span>`;
                         });
                     }
 
                     chip.innerHTML = `<span style="opacity:0.5;font-size:10px;margin-right:4px;">#${item.id}</span> ${content} ${tagsHtml}`;
-                    // 动画淡入
-                    chip.style.animation = "mod01-fade 0.5s";
+                    // 每次翻页都触发一点淡入动画，更精致
+                    chip.animate([{opacity:0, transform:'translateY(5px)'}, {opacity:1, transform:'translateY(0)'}], {duration: 300});
+
                     cloud.appendChild(chip);
                 });
 
-                currIdx += pageSize;
-
-                // 按钮处理
-                if(currIdx >= memArray.length) {
-                    if(btn) btn.style.display = 'none';
-                } else {
-                    if(btn) {
-                       btn.style.display = 'block';
-                       btn.innerText = `LOAD MORE (${memArray.length - currIdx} remaining)`;
-                    }
-                }
+                // 更新底部页码状态
+                updateControls();
             };
+
+            // 创建底部控制器
+            const controlBar = document.createElement('div');
+            controlBar.className = 'mod01-pagination';
+
+            // Prev Button
+            const btnPrev = document.createElement('div');
+            btnPrev.className = 'mod01-page-btn';
+            btnPrev.innerText = '< PREV';
+            btnPrev.onclick = () => {
+                if (currentPage > 1) { currentPage--; renderPage(currentPage); }
+            };
+
+            // Page Info ( 1 / 10 )
+            const pageInfo = document.createElement('div');
+            pageInfo.className = 'mod01-page-info';
+
+            // Next Button
+            const btnNext = document.createElement('div');
+            btnNext.className = 'mod01-page-btn';
+            btnNext.innerText = 'NEXT >';
+            btnNext.onclick = () => {
+                if (currentPage < totalPages) { currentPage++; renderPage(currentPage); }
+            };
+
+            // 更新按钮状态逻辑
+            const updateControls = () => {
+                pageInfo.innerText = `${currentPage} / ${totalPages || 1}`;
+
+                if(currentPage <= 1) btnPrev.classList.add('disabled');
+                else btnPrev.classList.remove('disabled');
+
+                if(currentPage >= totalPages) btnNext.classList.add('disabled');
+                else btnNext.classList.remove('disabled');
+            };
+
+            controlBar.appendChild(btnPrev);
+            controlBar.appendChild(pageInfo);
+            controlBar.appendChild(btnNext);
 
             sec.appendChild(cloud);
 
-            // Button
-            let btn = null;
-            if(memArray.length > pageSize) {
-                btn = document.createElement('div');
-                btn.className = 'mod01-load-more';
-                btn.onclick = loadBatch;
-                sec.appendChild(btn);
+            // 只有数据超过一页才显示分页栏
+            if (totalPages > 1) {
+                sec.appendChild(controlBar);
             }
 
             container.appendChild(sec);
 
-            // init load
-            if(memArray.length > 0) loadBatch();
-            else cloud.innerHTML = '<div style="opacity:0.5;font-size:12px;">暂无关键记忆</div>';
+            // 初始化渲染第一页
+            renderPage(1);
         }
     }
 
