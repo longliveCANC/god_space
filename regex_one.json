@@ -12110,6 +12110,21 @@ pointer-events: auto;
     padding: 20px;
     color: var(--secondary-color);
 }
+
+.group-chat-message-bubble {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+/* 当气泡内有特殊消息时，保持特殊消息的原有样式 */
+.group-chat-message-bubble .special-message,
+.group-chat-message-bubble .music-card-lite {
+    display: block;
+    margin: 4px 0;
+}
   </style>
  
 </head>
@@ -13599,12 +13614,12 @@ pointer-events: auto;
                 <div class="book-bookmarks">
 
                     <div class="bookmark" data-tab="global_npc">全局人物</div>
-                    <div class="bookmark" data-tab="global_loretings">全局设定</div>
+                    <div class="bookmark" data-tab="global_settings">全局设定</div>
                     <div class="bookmark" data-tab="global_背包">你的背包</div>
                     <div class="bookmark" data-tab="global_其他技能">你的技能</div>
                     <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>
                      <div class="bookmark" data-tab="npc" id="world_npc_bookmark">世界人物</div>
-                    <div class="bookmark active" data-tab="settings" id="world_loretings_bookmark">世界设定</div>
+                    <div class="bookmark active" data-tab="settings" id="world_settings_bookmark">世界设定</div>
                     <div class="bookmark" data-tab="global_备忘录" id="things_bookmark">备忘录</div>
                      <div class="bookmark" data-tab="the_created" id="the_created_bookmark">$#%</div> 
                    
@@ -14352,7 +14367,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.9';
+let current_game_version = '3.3.10';
  let prompts_be_sent = null;
  
 let storyChapters = [];
@@ -14376,6 +14391,7 @@ let isEmphasizeTime = "false";
 let is_simple_stream = "false";
 let noBackup = "false";
 let is_restore_prompt = "true";
+let is_show_notifications = "true";
 
     let worldBookState = {
         currentTab: 'settings', // 默认显示设定
@@ -24118,66 +24134,57 @@ function cleanupGlobalUIState() {
  ensureLoadMoreButtonExists();
  
 initDisplay();
-    //   清理完毕  
-     function delayedUpdate(content) {
+ 
+
+ function delayedUpdate(content) {
     handleUpdateNotifications(content);
  
-
- 
 }
-
+if(is_show_notifications === 'true'){
+ 
+            delayedUpdate(finalMessage.content);
+           
+}
+      
 // 调用时传入 content
-delayedUpdate(finalMessage.content);
+
 }
  /**
  * 全局聊天音频管理器
  * 负责所有音乐卡片的播放控制、搜索、淡入淡出及 UI 同步
  */
  
- function renderPrivateMsgToHtml(sender, receiver, content, userNickname,is_from_render = false) {
+ function renderPrivateMsgToHtml(sender, receiver, content, userNickname, is_from_render = false) {
     const isSent = sender === userNickname;
     
-    // 基础 CSS 类
     const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
     const bubbleClass = 'group-chat-message-bubble';
     
-    // 预处理内容
     let processedContent = content.trim();
     let isSpecial = false; 
     let isMusic = false;
-let isBgm = false;
-    // ------------------------------------------------------
-    // 0. 预先处理 BGM 特殊格式: <msg>bgm|game|[music-...]</msg>
-    // ------------------------------------------------------
+    let isBgm = false;
     let isAutoPlayBgm = false;
     
-  
-        // 检查是否是 bgm 指令并且不是通过render进来的
-        if (sender === 'bgm') {
-            console.log('这里有bgm！');
-   isBgm = true;
-if(!is_from_render){
-isAutoPlayBgm = true; // 标记为自动播放
-}
+    // 检查 BGM
+    if (sender === 'bgm') {
+        console.log('这里有bgm！');
+        isBgm = true;
+        if (!is_from_render) {
+            isAutoPlayBgm = true;
         }
- 
-    // ------------------------------------------------------
-    // 特殊消息解析逻辑
-    // ------------------------------------------------------
-if(!isBgm){
-    // 1. 表情包 [name]
-    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
-        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
-            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
-        }
-        return match;
-    });
-}
-    // 2. 语音 [yy-内容]
-    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
-        const text = processedContent.substring(4, processedContent.length - 1).trim();
-        const duration = Math.floor(Math.random() * 13) + 2; 
-        processedContent = `
+    }
+    
+    // ✨ 新增：特殊消息占位符映射
+    const specialMsgPlaceholders = {};
+    let specialMsgIndex = 0;
+    
+    // ✨ 步骤1：提取所有特殊消息并替换为占位符
+    // 语音消息 [yy-内容]
+    processedContent = processedContent.replace(/\[yy-([^\]]+)\]/g, (match, text) => {
+        const duration = Math.floor(Math.random() * 13) + 2;
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message voice-message" title="点击播放(模拟)">
                 <div class="special-msg-icon">
                     <div class="voice-wave">
@@ -24189,33 +24196,28 @@ if(!isBgm){
                 </div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">语音消息</div>
-                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text.trim()}</div>
                 </div>
             </div>`;
+        specialMsgIndex++;
         isSpecial = true;
-    }
-
-else if (processedContent.match(/^\[music-[\s\S]*\]$/) || (isBgm &&processedContent.match(/^\[[\s\S]*\]$/) )) {
-     let raw = '';
-    if(processedContent.match(/^\[music-[\s\S]*\]$/)){
-raw = processedContent.substring(7, processedContent.length - 1);
-    }else{
-raw = processedContent.substring(1, processedContent.length - 1);
-    }
-       
+        return placeholder;
+    });
+    
+    // 音乐消息 [music-歌名$歌手] 或 BGM 的 [歌名$歌手]
+    const musicRegex = isBgm ? /\[([^\]]+)\]/g : /\[music-([^\]]+)\]/g;
+    processedContent = processedContent.replace(musicRegex, (match, raw) => {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim();
         const artist = (parts[1] || '未知歌手').trim();
         
-        // 生成唯一 ID
         const domId = 'music_' + Math.floor(Math.random() * 1000000);
-        
-        // 转义单引号防止 JS 报错
         const safeSong = song.replace(/'/g, "\\'");
         const safeArtist = artist.replace(/'/g, "\\'");
-
-        processedContent = `
+        
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        let musicHtml = `
             <div class="music-card-lite">
                 <div class="music-card-left">
                     <div class="music-card-title">${song}</div>
@@ -24225,44 +24227,36 @@ raw = processedContent.substring(1, processedContent.length - 1);
                     </div>
                     <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
                 </div>
-                
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
                      onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                 </div>
-            </div>
-        `;
+            </div>`;
         
-if (isAutoPlayBgm) {
-            // 我们把必要的数据放在 data-* 属性里
-            processedContent += `
+        if (isAutoPlayBgm) {
+            musicHtml += `
                 <div class="js-music-autoplay-trigger" 
                      style="display:none;" 
                      data-song="${safeSong}" 
                      data-artist="${safeArtist}" 
                      data-dom-id="${domId}">
-                </div>
-            `;
+                </div>`;
         }
-
+        
+        specialMsgPlaceholders[placeholder] = musicHtml;
+        specialMsgIndex++;
         isMusic = true;
         isSpecial = true;
-    }
-    // 4. 转账 [zz-金额]
-    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
-        const raw = processedContent.substring(4, processedContent.length - 1);
+        return placeholder;
+    });
+    
+    // 转账消息 [zz-金额积分]
+    processedContent = processedContent.replace(/\[zz-([^\]]+)\]/g, (match, raw) => {
         const amount = raw.replace(/[^0-9.]/g, '');
+        let displayText = receiver === userNickname ? "向你转账" : `向 ${receiver} 转账`;
         
-        // 判断逻辑：如果是发给“我”的（userNickname），则显示“向你转账”
-        // 如果“我”是发送者，则显示“向 [接收者] 转账”
-        let displayText = "";
-        if (receiver === userNickname) {
-            displayText = "向你转账";
-        } else {
-            displayText = `向 ${receiver} 转账`;
-        }
-
-        processedContent = `
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message transfer-message">
                 <div class="special-msg-icon">💰</div>
                 <div class="special-msg-content">
@@ -24270,95 +24264,98 @@ if (isAutoPlayBgm) {
                     <div class="transfer-amount">¥ ${amount}</div>
                 </div>
             </div>`;
+        specialMsgIndex++;
         isSpecial = true;
-    }
-
-    // 5. 图片/视频 [img-描述]
-    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
-        const desc = processedContent.substring(5, processedContent.length - 1).trim();
-        processedContent = `
+        return placeholder;
+    });
+    
+    // 图片消息 [img-描述]
+    processedContent = processedContent.replace(/\[img-([^\]]+)\]/g, (match, desc) => {
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message image-message">
                 <div class="special-msg-icon">🖼️</div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">发送了图片</div>
-                    <div class="special-msg-subtitle">${desc}</div>
+                    <div class="special-msg-subtitle">${desc.trim()}</div>
                 </div>
             </div>`;
+        specialMsgIndex++;
         isSpecial = true;
-    }
-    else {
-        // 普通文本
-        processedContent = processedContent
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-    }
-
-    // ------------------------------------------------------
-    // 最终组装
-    // ------------------------------------------------------
+        return placeholder;
+    });
     
-    // 音乐组件：去掉气泡背景，让卡片独立显示
-     if (isMusic) {
+    // ✨ 步骤2：处理表情包（不在 BGM 模式下）
+    if (!isBgm) {
+        processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+            if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
+                return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+            }
+            return match;
+        });
+    }
+    
+    // ✨ 步骤3：处理普通文本格式
+    processedContent = processedContent
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    
+    // ✨ 步骤4：将占位符替换回特殊消息HTML
+    for (const placeholder in specialMsgPlaceholders) {
+        processedContent = processedContent.replace(placeholder, specialMsgPlaceholders[placeholder]);
+    }
+    
+    // 最终组装
+    if (isMusic && specialMsgIndex === 1 && !processedContent.replace(specialMsgPlaceholders[`__SPECIAL_MSG_0__`] || '', '').trim()) {
+        // 纯音乐消息，独立显示
         return `
-        <div class="private-chat-wrapper" style="width:100%; ">
+        <div class="private-chat-wrapper" style="width:100%;">
             <div class="${itemClass}" data-user-id="${sender}">
                 <div class="group-chat-avatar-placeholder"></div>
-                 <div class="group-chat-message-content" style="width:100%;">
+                <div class="group-chat-message-content" style="width:100%;">
                     <div class="group-chat-user-id">${sender}</div>
                     ${processedContent}
                 </div>
             </div>
         </div>`;
     }
-
-    // 普通/特殊气泡
+    
+    // 普通/混合气泡
     return `
 <div class="private-chat-wrapper">
     <div class="${itemClass}" data-user-id="${sender}">
         <div class="group-chat-avatar-placeholder"></div>
         <div class="group-chat-message-content">
             <div class="group-chat-user-id">${sender}</div>
-            <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+            <div class="${bubbleClass}" ${isSpecial ? 'style="padding:12px;  "' : ''}>
                 ${processedContent}
             </div>
         </div>
     </div>
 </div>`;
 }
-   
 
 function renderGroupChatToHtml(sender, content, userNickname) {
     const isSent = sender === userNickname;
     
-    // 基础 CSS 类
     const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
     const bubbleClass = 'group-chat-message-bubble';
     
-    // 预处理内容
     let processedContent = content.trim();
     let isSpecial = false; 
-    let isMusic = false; // 标记是否为音乐
-
-    // ------------------------------------------------------
-    // 特殊消息解析逻辑 (与 renderPrivateMsgToHtml 保持一致)
-    // ------------------------------------------------------
-
-    // 1. 表情包 [name]
-    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
-        // 注意：这里使用全局的 memeImageMap (或 memeResourceManager?.finalSrcMap)，请根据您的实际全局变量名进行调整
-        // 这里沿用您提供的代码中的 memeImageMap 变量
-        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
-            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
-        }
-        return match;
-    });
-
-    // 2. 语音 [yy-内容]
-    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
-        const text = processedContent.substring(4, processedContent.length - 1).trim();
-        const duration = Math.floor(Math.random() * 13) + 2; 
-        processedContent = `
+    let isMusic = false;
+    
+    // ✨ 特殊消息占位符映射
+    const specialMsgPlaceholders = {};
+    let specialMsgIndex = 0;
+    
+    // ✨ 步骤1：提取所有特殊消息
+    // 语音消息
+    processedContent = processedContent.replace(/\[yy-([^\]]+)\]/g, (match, text) => {
+        const duration = Math.floor(Math.random() * 13) + 2;
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message voice-message" title="点击播放(模拟)">
                 <div class="special-msg-icon">
                     <div class="voice-wave">
@@ -24370,28 +24367,27 @@ function renderGroupChatToHtml(sender, content, userNickname) {
                 </div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">语音消息</div>
-                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text.trim()}</div>
                 </div>
             </div>`;
+        specialMsgIndex++;
         isSpecial = true;
-    }
-
-    // 3. 音乐 [music-歌名$歌手]
-    else if (processedContent.startsWith('[music-') && processedContent.endsWith(']')) {
-      let raw = processedContent.substring(7, processedContent.length - 1);
+        return placeholder;
+    });
+    
+    // 音乐消息
+    processedContent = processedContent.replace(/\[music-([^\]]+)\]/g, (match, raw) => {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim();
         const artist = (parts[1] || '未知歌手').trim();
         
-        // 生成唯一 ID
         const domId = 'music_' + Math.floor(Math.random() * 1000000);
-        
-        // 转义单引号防止 JS 报错
         const safeSong = song.replace(/'/g, "\\'");
         const safeArtist = artist.replace(/'/g, "\\'");
-
-        processedContent = `
+        
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="music-card-lite">
                 <div class="music-card-left">
                     <div class="music-card-title">${song}</div>
@@ -24401,93 +24397,94 @@ function renderGroupChatToHtml(sender, content, userNickname) {
                     </div>
                     <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
                 </div>
-                
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
                      onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                 </div>
-            </div>
-        `;
-        
- 
-
+            </div>`;
+        specialMsgIndex++;
         isMusic = true;
         isSpecial = true;
-    }
-
-    // 4. 转账 [zz-金额]
-    // ⚠️ 注意：群聊中没有明确的接收者，我们只显示 '发起转账'
-    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
-        const raw = processedContent.substring(4, processedContent.length - 1);
+        return placeholder;
+    });
+    
+    // 转账消息
+    processedContent = processedContent.replace(/\[zz-([^\]]+)\]/g, (match, raw) => {
         const amount = raw.replace(/[^0-9.]/g, '');
-        
-        // 群聊中，只显示 '发起转账'
-        const displayText = "发起转账";
-
-        processedContent = `
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message transfer-message">
                 <div class="special-msg-icon">💰</div>
                 <div class="special-msg-content">
-                    <div class="special-msg-subtitle">${displayText}</div>
+                    <div class="special-msg-subtitle">发起转账</div>
                     <div class="transfer-amount">¥ ${amount}</div>
                 </div>
             </div>`;
+        specialMsgIndex++;
         isSpecial = true;
-    }
-
-    // 5. 图片/视频 [img-描述]
-    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
-        const desc = processedContent.substring(5, processedContent.length - 1).trim();
-        processedContent = `
+        return placeholder;
+    });
+    
+    // 图片消息
+    processedContent = processedContent.replace(/\[img-([^\]]+)\]/g, (match, desc) => {
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message image-message">
                 <div class="special-msg-icon">🖼️</div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">发送了图片</div>
-                    <div class="special-msg-subtitle">${desc}</div>
+                    <div class="special-msg-subtitle">${desc.trim()}</div>
                 </div>
             </div>`;
+        specialMsgIndex++;
         isSpecial = true;
-    }
-    else {
-        // 6. 普通文本
-        // ⚠️ 群聊模式下需要处理 @提及
-        processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
-             return `<span class="group-chat-mention">@${p1}</span>`;
-        });
-        
-        // 处理 Markdown 格式
-        processedContent = processedContent
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-    }
-
-    // ------------------------------------------------------
-    // 最终组装
-    // ------------------------------------------------------
+        return placeholder;
+    });
     
-    // 音乐组件：去掉气泡背景，让卡片独立显示
-    if (isMusic) {
+    // ✨ 步骤2：处理表情包
+    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+        if (typeof memeImageMap !== 'undefined' && memeImageMap && memeImageMap[inner]) {
+            return `<img src="${memeImageMap[inner]}" alt="${inner}" class="meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+        }
+        return match;
+    });
+    
+    // ✨ 步骤3：处理@提及和普通文本格式
+    processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
+        return `<span class="group-chat-mention">@${p1}</span>`;
+    });
+    
+    processedContent = processedContent
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    
+    // ✨ 步骤4：替换占位符
+    for (const placeholder in specialMsgPlaceholders) {
+        processedContent = processedContent.replace(placeholder, specialMsgPlaceholders[placeholder]);
+    }
+    
+    // 最终组装
+    if (isMusic && specialMsgIndex === 1 && !processedContent.replace(specialMsgPlaceholders[`__SPECIAL_MSG_0__`] || '', '').trim()) {
         return `
-        <div class="private-chat-wrapper" style="width:100%; ">
+        <div class="private-chat-wrapper" style="width:100%;">
             <div class="${itemClass}" data-user-id="${sender}">
                 <div class="group-chat-avatar-placeholder"></div>
-                 <div class="group-chat-message-content" style="width:100%;">
+                <div class="group-chat-message-content" style="width:100%;">
                     <div class="group-chat-user-id">${sender}</div>
                     ${processedContent}
                 </div>
             </div>
         </div>`;
     }
-
-    // 普通/特殊气泡
+    
     return `
     <div class="group-chat-wrapper">
         <div class="${itemClass}" data-user-id="${sender}">
             <div class="group-chat-avatar-placeholder"></div>
             <div class="group-chat-message-content">
                 <div class="group-chat-user-id">${sender}</div>
-                <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+                <div class="${bubbleClass}" ${isSpecial ? 'style="padding:12px; "' : ''}>
                     ${processedContent}
                 </div>
             </div>
@@ -25202,7 +25199,9 @@ function processFinalMessageModules() {
     if (lastMessage && lastMessage.role === 'assistant') {
         const content = lastMessage.content;
         processSpecialModulesInMessage(content);
+        if(is_show_notifications === 'true'){
         handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
+        }
     }
 
     // 4. 最后，更新所有其他的UI显示
@@ -36211,6 +36210,7 @@ const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 is_simple_stream =  String(chatdata.is_simple_stream||'false');
 is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
+is_show_notifications = String(chatdata.is_show_notifications||'true');
 noBackup = String(chatdata.is_no_backup||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
@@ -36262,7 +36262,7 @@ if(isThingsRecord ==="true"){
 
 }
    if (version === '7') {
- document.getElementById('world_loretings_bookmark').style.display = 'none';
+ document.getElementById('world_settings_bookmark').style.display = 'none';
        document.getElementById('world_npc_bookmark').style.display = 'none';
         document.getElementById('group_member_bookmark').style.display = 'none';
            document.getElementById('page-task-orb').style.display = 'none';
@@ -36270,7 +36270,7 @@ if(isThingsRecord ==="true"){
           
     
         } else {
-  document.getElementById('world_loretings_bookmark').style.display = 'flex';
+  document.getElementById('world_settings_bookmark').style.display = 'flex';
     document.getElementById('world_npc_bookmark').style.display = 'flex';
     document.getElementById('group_member_bookmark').style.display = 'flex';
          document.getElementById('page-task-orb').style.display = 'flex';
@@ -45268,7 +45268,7 @@ const switchActiveChat = (type, id) => {
     };
 /* === 用下面这个完整函数，替换你旧的 createMessageElement 函数 === */
  
-const createMessageElement = (msg, userNickname) => {
+ const createMessageElement = (msg, userNickname) => {
     const isSent = msg.user_id === userNickname;
     const alignClass = isSent ? 'sent' : 'received';
     
@@ -45277,29 +45277,21 @@ const createMessageElement = (msg, userNickname) => {
     
     // 预处理内容
     let processedContent = (msg.content || '').trim();
-    let isSpecial = false; 
-    let isMusic = false; 
+
+    // ✨ 新增：特殊消息占位符映射
+    const specialMsgPlaceholders = {};
+    let specialMsgIndex = 0;
+    let hasSpecialMsg = false;
 
     // ------------------------------------------------------
-    // 消息内容解析（从 renderPrivateMsgToHtml 移植）
+    // ✨ 步骤1：提取所有特殊消息并替换为占位符
     // ------------------------------------------------------
 
-    // 1. 表情包 [name]
-    // 注意：这里先做一次替换，让表情包变成图片 HTML
-    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
-        // 使用您在 renderChatWindowUI 中引用的 memeResourceManager
-        const memeSrc = memeResourceManager?.finalSrcMap[inner];
-        if (memeSrc) {
-            return `<img src="${memeSrc}" alt="${inner}" class="group-chat-meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
-        }
-        return match;
-    });
-    
-    // 2. 语音 [yy-内容]
-    if (processedContent.startsWith('[yy-') && processedContent.endsWith(']')) {
-        const text = processedContent.substring(4, processedContent.length - 1).trim();
-        const duration = Math.floor(Math.random() * 13) + 2; 
-        processedContent = `
+    // 1. 语音消息 [yy-内容]
+    processedContent = processedContent.replace(/\[yy-([^\]]+)\]/g, (match, text) => {
+        const duration = Math.floor(Math.random() * 13) + 2;
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message voice-message" title="点击播放(模拟)">
                 <div class="special-msg-icon">
                     <div class="voice-wave">
@@ -45311,27 +45303,27 @@ const createMessageElement = (msg, userNickname) => {
                 </div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">语音消息</div>
-                    <div class="special-msg-subtitle">${duration}" • ${text}</div>
+                    <div class="special-msg-subtitle">${duration}" • ${text.trim()}</div>
                 </div>
             </div>`;
-        isSpecial = true;
-    }
+        specialMsgIndex++;
+        hasSpecialMsg = true;
+        return placeholder;
+    });
 
-    else if (processedContent.match(/^\[music-[\s\S]*\]$/)) {
-        let raw = processedContent.substring(7, processedContent.length - 1);
+    // 2. 音乐消息 [music-歌名$歌手]
+    processedContent = processedContent.replace(/\[music-([^\]]+)\]/g, (match, raw) => {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim();
         const artist = (parts[1] || '未知歌手').trim();
         
-        // 生成唯一 ID
         const domId = 'music_' + Math.floor(Math.random() * 1000000);
-        
-        // 转义单引号防止 JS 报错
         const safeSong = song.replace(/'/g, "\\'");
         const safeArtist = artist.replace(/'/g, "\\'");
-
-        processedContent = `
+        
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="music-card-lite">
                 <div class="music-card-left">
                     <div class="music-card-title">${song}</div>
@@ -45341,28 +45333,23 @@ const createMessageElement = (msg, userNickname) => {
                     </div>
                     <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
                 </div>
-                
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
                      onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                 </div>
-            </div>
-        `;
- 
-        isMusic = true;
-        isSpecial = true;
-    }
-    // 4. 转账 [zz-金额]
-    else if (processedContent.startsWith('[zz-') && processedContent.endsWith(']')) {
-        const raw = processedContent.substring(4, processedContent.length - 1);
-        const amount = raw.replace(/[^0-9.]/g, '');
-        
-        // 群聊模式下，转账目标应该是接收者，但我们没有 receiver 信息。
-        // 为了兼容，这里显示一个通用信息。
-        const displayText = isSent ? "发起转账" : `向 ${msg.user_id} 转账`; // 只能用发起者
-        // 如果是群聊，可以简化为 '转账消息'
+            </div>`;
+        specialMsgIndex++;
+        hasSpecialMsg = true;
+        return placeholder;
+    });
 
-        processedContent = `
+    // 3. 转账消息 [zz-金额]
+    processedContent = processedContent.replace(/\[zz-([^\]]+)\]/g, (match, raw) => {
+        const amount = raw.replace(/[^0-9.]/g, '');
+        const displayText = isSent ? "发起转账" : `向 ${msg.user_id} 转账`;
+        
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message transfer-message">
                 <div class="special-msg-icon">💰</div>
                 <div class="special-msg-content">
@@ -45370,34 +45357,64 @@ const createMessageElement = (msg, userNickname) => {
                     <div class="transfer-amount">¥ ${amount}</div>
                 </div>
             </div>`;
-        isSpecial = true;
-    }
+        specialMsgIndex++;
+        hasSpecialMsg = true;
+        return placeholder;
+    });
 
-    // 5. 图片/视频 [img-描述]
-    else if (processedContent.startsWith('[img-') && processedContent.endsWith(']')) {
-        const desc = processedContent.substring(5, processedContent.length - 1).trim();
-        processedContent = `
+    // 4. 图片消息 [img-描述]
+    processedContent = processedContent.replace(/\[img-([^\]]+)\]/g, (match, desc) => {
+        const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
+        specialMsgPlaceholders[placeholder] = `
             <div class="special-message image-message">
                 <div class="special-msg-icon">🖼️</div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">发送了图片</div>
-                    <div class="special-msg-subtitle">${desc}</div>
+                    <div class="special-msg-subtitle">${desc.trim()}</div>
                 </div>
             </div>`;
-        isSpecial = true;
-    }
-    else {
-        // 6. 普通文本
-        // 处理提及
-        processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
-            return `<span class="group-chat-mention">@${p1}</span>`;
-        });
+        specialMsgIndex++;
+        hasSpecialMsg = true;
+        return placeholder;
+    });
 
-        // 处理 Markdown 格式
-        processedContent = processedContent
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
+    // ------------------------------------------------------
+    // ✨ 步骤2：处理表情包
+    // ------------------------------------------------------
+    processedContent = processedContent.replace(/\[([^\]]+)\]/g, (match, inner) => {
+        // 跳过已处理的特殊格式占位符
+        if (inner.startsWith('yy-') || inner.startsWith('music-') || 
+            inner.startsWith('zz-') || inner.startsWith('img-') ||
+            inner.includes('__SPECIAL_MSG_')) {
+            return match;
+        }
+        
+        const memeSrc = memeResourceManager?.finalSrcMap[inner];
+        if (memeSrc) {
+            return `<img src="${memeSrc}" alt="${inner}" class="group-chat-meme-image" style="max-width: 150px; vertical-align: middle; margin: 4px; border-radius: 8px;" />`;
+        }
+        return match;
+    });
+
+    // ------------------------------------------------------
+    // ✨ 步骤3：处理普通文本格式
+    // ------------------------------------------------------
+    // 处理提及
+    processedContent = processedContent.replace(/@(\S+)/g, (match, p1) => {
+        return `<span class="group-chat-mention">@${p1}</span>`;
+    });
+
+    // 处理 Markdown 格式
+    processedContent = processedContent
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+
+    // ------------------------------------------------------
+    // ✨ 步骤4：将占位符替换回特殊消息HTML
+    // ------------------------------------------------------
+    for (const placeholder in specialMsgPlaceholders) {
+        processedContent = processedContent.replace(placeholder, specialMsgPlaceholders[placeholder]);
     }
 
     // ------------------------------------------------------
@@ -45408,7 +45425,7 @@ const createMessageElement = (msg, userNickname) => {
     div.className = `group-chat-message-item ${alignClass}`;
     div.dataset.userId = msg.user_id;
 
-    // 回复逻辑（保持不变）
+    // 回复逻辑
     const replyInfo = msg.reply_to || msg.replyTo;
     let replyHtml = '';
     if (replyInfo && replyInfo.user_id && replyInfo.content) {
@@ -45416,34 +45433,21 @@ const createMessageElement = (msg, userNickname) => {
         replyHtml = `<div class="group-chat-reply-quote"><b>${replyInfo.user_id}:</b> ${cleanContent}</div>`;
     }
 
-    // 音乐组件：去掉气泡背景，让卡片独立显示
-    if (isMusic) {
-        div.style.width = '100%';
-        div.style.maxWidth = '340px'; // 限制最大宽度，美观
-        div.innerHTML = `
-            <div class="group-chat-avatar-placeholder"></div>
-             <div class="group-chat-message-content" style="width:100%;">
-                <div class="group-chat-user-id">${msg.user_id}</div>
-                ${replyHtml}
-                ${processedContent}
-            </div>`;
-        return div;
-    }
-
-    // 普通/特殊气泡（使用上面解析出的 processedContent）
+    // 组装消息（如果有特殊消息，去掉气泡背景和padding）
     div.innerHTML = `
         <div class="group-chat-avatar-placeholder"></div>
         <div class="group-chat-message-content">
             <div class="group-chat-user-id">${msg.user_id}</div>
             ${replyHtml}
-            <div class="${bubbleClass}" ${isSpecial ? 'style="padding:0; background:transparent;"' : ''}>
+            <div class="${bubbleClass}" ${hasSpecialMsg ? 'style="padding:0; background:transparent;"' : ''}>
                 ${processedContent}
             </div>
         </div>`;
 
     return div;
 };
-    const getGroupMembers = (groupName) => {
+
+const getGroupMembers = (groupName) => {
         // 尝试从 settings 中路径获取
         const groupData = assaSettingsData?.global_lore?.settings?.['群聊']?.[groupName];
         if (!groupData || !groupData['当前人员']) return [];
