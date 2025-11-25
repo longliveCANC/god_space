@@ -39,5 +39,15 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-合理性审查之骰.json",
     "previewImage": ""
+  } , {
+    "id": "领养小孩-外挂版世界书",
+    "name": "dlc:领养小孩",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["world"],
+    "description": "带简单分阶段的领养小孩模拟器mod，需外挂并开无世界观。专属该dlc的美化正在施工中...",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养小孩-外挂版世界书.json",
+    "previewImage": ""
   } 
 ]
