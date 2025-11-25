@@ -411,12 +411,93 @@
     display: block;
     margin-bottom: 5px;
 }
+
+.mod01-inventory-grid {
+    display: grid;
+    /* 每行最多显示2个卡片，如果空间不足则自动换行 */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    padding-top: 10px;
+}
+.mod01-item-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 15px;
+    transition: all 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+.mod01-item-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-color: var(--primary-color);
+}
+.mod01-item-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+.mod01-item-card-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+.mod01-item-card-quality {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    text-transform: capitalize;
+}
+.mod01-item-detail-row {
+    display: flex;
+    font-size: 13px;
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+.mod01-item-detail-label {
+    width: 60px;
+    flex-shrink: 0;
+    color: var(--text-secondary-color);
+    opacity: 0.7;
+}
+.mod01-item-detail-value {
+    color: var(--text-color);
+    word-break: break-word;
+}
         `;
         document.head.appendChild(style);
     }
 
     // --- 3. 核心逻辑类 ---
     class NovaNPCSystemV2 {
+            // 中文映射词典
+    KEY_MAP = {
+        "info": "简介", "effect": "属性", "type": "种类",
+        "quality": "质量", "num": "数量", "level": "等级", "status": "状态"
+    };
+
+    // 识别是否为物品列表的助手
+    isInventory(obj) {
+        if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return false;
+        const values = Object.values(obj);
+        if (values.length === 0) return false;
+        const firstItem = values[0];
+        if (typeof firstItem !== 'object' || firstItem === null) return false;
+        const keys = Object.keys(firstItem);
+        // 如果物品的属性中，有两个以上是我们定义的映射键，就认为是物品列表
+        const knownKeys = Object.keys(this.KEY_MAP);
+        let matchCount = 0;
+        for (const key of keys) {
+            if (knownKeys.includes(key)) matchCount++;
+        }
+        return matchCount >= 3; // 至少匹配两项才算，避免误判
+    }
         constructor() {
             this.container = null;
             this.allItems = [];
@@ -779,18 +860,25 @@
                 ignoreKeys.push('关键记忆');
             }
 
-            // --- 剩余字段 (递归 + 过滤，现在会自动跳过我们处理过的内容) ---
             Object.keys(data).forEach(k => {
                 if(ignoreKeys.includes(k) || k.startsWith('_')) return;
 
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
-                sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
 
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'mod01-text-block';
-                this.renderDeepObject(contentDiv, data[k]);
-                sec.appendChild(contentDiv);
+                // 判断是否是物品列表
+                if (this.isInventory(data[k])) {
+                    // 是物品列表，就用新的分页渲染器
+                    this.renderInventoryPaged(sec, data[k], k);
+                } else {
+                    // 不是，就用原来的通用渲染器
+                    sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'mod01-text-block';
+                    this.renderDeepObject(contentDiv, data[k]);
+                    sec.appendChild(contentDiv);
+                }
+
                 root.appendChild(sec);
             });
         }
@@ -830,6 +918,98 @@
             });
 
             container.appendChild(box);
+        }
+           // --- 新增：物品/背包的分页卡片化渲染器 ---
+        renderInventoryPaged(container, invData, title) {
+            container.innerHTML = `<div class="mod01-sec-title">${title}</div>`;
+
+            // 1. 数据转换：将对象转换为数组
+            const itemsArray = Object.entries(invData)
+                .filter(([key, val]) => !key.startsWith('_') && typeof val === 'object')
+                .map(([name, data]) => ({ name, data }));
+
+            if (itemsArray.length === 0) {
+                container.innerHTML += '<div style="opacity:0.5;font-size:12px;">此区域暂无物品</div>';
+                return;
+            }
+
+            // 2. 分页逻辑 (大量复用自记忆分页)
+            const pageSize = 4; // 每页显示4个物品
+            let currentPage = 1;
+            const totalPages = Math.ceil(itemsArray.length / pageSize);
+
+            const grid = document.createElement('div');
+            grid.className = 'mod01-inventory-grid';
+
+            const controlBar = document.createElement('div');
+            controlBar.className = 'mod01-pagination';
+
+            const renderPage = () => {
+                grid.innerHTML = '';
+                const startIndex = (currentPage - 1) * pageSize;
+                const slice = itemsArray.slice(startIndex, startIndex + pageSize);
+
+                slice.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'mod01-item-card';
+
+                    let detailsHtml = '';
+                    // 使用我们的中文映射来生成详情
+                    Object.entries(item.data).forEach(([key, value]) => {
+                         if (key === 'quality' || key.startsWith('_')) return; // 'quality' 在头部显示，跳过
+                        const label = this.KEY_MAP[key] || key;
+                        detailsHtml += `
+                            <div class="mod01-item-detail-row">
+                                <span class="mod01-item-detail-label">${label}:</span>
+                                <span class="mod01-item-detail-value">${value}</span>
+                            </div>
+                        `;
+                    });
+
+                    card.innerHTML = `
+                        <div class="mod01-item-card-header">
+                            <span class="mod01-item-card-title">${item.name}</span>
+                            ${item.data.quality ? `<span class="mod01-item-card-quality">${item.data.quality}</span>` : ''}
+                        </div>
+                        <div class="mod01-item-card-details">${detailsHtml}</div>
+                    `;
+                    grid.appendChild(card);
+                });
+            };
+
+            // 3. 分页控制器 (与记忆分页完全一致的逻辑)
+            if (totalPages > 1) {
+                const createBtn = (text, onClick) => { /* ... 此处省略和renderMemoriesPaged中完全相同的代码 ... */ }; // 为了简洁，这里省略了，实际请复制
+                // 你可以直接从 renderMemoriesPaged 函数中复制完整的 "分页控制器" 逻辑代码到这里
+                // 从 const createBtn... 到 controlBar.appendChild(btnLast);
+                const btnFirst = document.createElement('div'); btnFirst.className = 'mod01-page-btn'; btnFirst.innerText = '<<'; btnFirst.onclick = () => changePage(1);
+                const btnPrev = document.createElement('div'); btnPrev.className = 'mod01-page-btn'; btnPrev.innerText = '<'; btnPrev.onclick = () => changePage(currentPage - 1);
+                const pageInfo = document.createElement('div'); pageInfo.className = 'mod01-page-info';
+                const btnNext = document.createElement('div'); btnNext.className = 'mod01-page-btn'; btnNext.innerText = '>'; btnNext.onclick = () => changePage(currentPage + 1);
+                const btnLast = document.createElement('div'); btnLast.className = 'mod01-page-btn'; btnLast.innerText = '>>'; btnLast.onclick = () => changePage(totalPages);
+
+                const updateControls = () => {
+                    pageInfo.innerText = `${currentPage} / ${totalPages}`;
+                    const setDis = (btn, cond) => cond ? btn.classList.add('disabled') : btn.classList.remove('disabled');
+                    setDis(btnFirst, currentPage <= 1); setDis(btnPrev, currentPage <= 1);
+                    setDis(btnNext, currentPage >= totalPages); setDis(btnLast, currentPage >= totalPages);
+                };
+
+                const changePage = (target) => {
+                    if (target < 1 || target > totalPages) return;
+                    currentPage = target;
+                    renderPage();
+                    updateControls();
+                };
+
+                controlBar.appendChild(btnFirst); controlBar.appendChild(btnPrev); controlBar.appendChild(pageInfo);
+                controlBar.appendChild(btnNext); controlBar.appendChild(btnLast);
+                container.appendChild(controlBar);
+                updateControls();
+            }
+
+            container.appendChild(grid);
+            renderPage(); // 初始渲染第一页
         }
          // --- 修改 3：记忆分页 (顶部 + 极速跳转) ---
         renderMemoriesPaged(container, memObj) {
