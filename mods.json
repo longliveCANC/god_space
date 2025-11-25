@@ -10,14 +10,14 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
   "previewImage": ""
   }, {
-    "id": "mod_02",
-    "name": "原版npc美化",
+    "id": "小蝌蚪找妈妈-mod-超复杂npc",
+    "name": "npc美化UI/超复杂npc世界书",
     "author": "assa",
     "version": "1.0",
-    "tags": ["UI"],
-    "description": "开启该脚本后，左上角会单独有npc小球，美化字段基于原版，但陌生字段也不会报错",
+    "tags": ["UI","world"],
+    "description": "开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
-    "worldBookUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-超复杂npc.json",
     "previewImage": ""
   } , {
     "id": "小蝌蚪找妈妈-自定义词条世界书",
@@ -28,6 +28,16 @@
     "description": "[自定义词条世界书]下载的快捷链接。将其挂载到全局后，对你想要自定义的条目进行编辑。不需要关闭原条目",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/自定义词条世界书.json",
+    "previewImage": ""
+  } , {
+    "id": "小蝌蚪找妈妈-mod-合理性审查之骰",
+    "name": "合理性审查之骰",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["world"],
+    "description": "[自定义词条世界书]下载的快捷链接。将其挂载到全局后，对你想要自定义的条目进行编辑。不需要关闭原条目",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-合理性审查之骰.json",
     "previewImage": ""
   } 
 ]
