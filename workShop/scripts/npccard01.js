@@ -474,9 +474,9 @@
             };
 
             // 获取数据源
-            pushData(safeGet('global_set.npc'), '全局');
-            pushData(safeGet('global_set.小队信息'), '小队');
-            pushData(safeGet('world_set.npc'), '世界');
+            pushData(safeGet('global_lore.npc'), '全局');
+            pushData(safeGet('global_lore.小队信息'), '小队');
+            pushData(safeGet('world_lore.npc'), '世界');
 
             this.renderList();
 
