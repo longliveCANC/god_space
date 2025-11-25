@@ -49,5 +49,15 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养小孩-外挂版世界书.json",
     "previewImage": ""
+  } , {
+    "id": "小蝌蚪找妈妈-mod-信息面板",
+    "name": "在正文生成美化的物品面板",
+    "author": "LushFlower",
+    "version": "1.0",
+    "tags": ["world"],
+    "description": "拓展了原本的物品格式，且会在正文生成物品、个人面板等被美化过的信息面板。",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/信息面板.json",
+    "previewImage": ""
   } 
 ]
