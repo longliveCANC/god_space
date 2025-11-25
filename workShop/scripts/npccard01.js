@@ -727,7 +727,11 @@
                      tagsContainer.innerHTML += `<div class="mod01-info-tag"><strong>HP:</strong> ${data.hp}</div>`;
                 }
             }
-
+      // --- 事件 (沉浸式插入，这部分逻辑不变) ---
+            if(data.事件 && typeof data.事件 === 'object') {
+                this.renderEvents(root, data.事件);
+                ignoreKeys.push('事件');
+            }
             // --- 妈妈的改动：用正则表达式查找并渲染关系/印象 ---
             const relationRegex = /(和.+关系|对.+印象)$/;
             Object.keys(data).forEach(key => {
@@ -746,11 +750,7 @@
             });
 
 
-            // --- 事件 (沉浸式插入，这部分逻辑不变) ---
-            if(data.事件 && typeof data.事件 === 'object') {
-                this.renderEvents(root, data.事件);
-                ignoreKeys.push('事件');
-            }
+      
 
             // --- 身份 (这部分逻辑不变) ---
             if(data.身份) {
