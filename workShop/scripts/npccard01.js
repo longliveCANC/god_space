@@ -934,7 +934,7 @@
             }
 
             // 2. 分页逻辑 (大量复用自记忆分页)
-            const pageSize = 4; // 每页显示4个物品
+            const pageSize = 1; // 每页显示4个物品
             let currentPage = 1;
             const totalPages = Math.ceil(itemsArray.length / pageSize);
 
@@ -979,7 +979,13 @@
 
             // 3. 分页控制器 (与记忆分页完全一致的逻辑)
             if (totalPages > 1) {
-                const createBtn = (text, onClick) => { /* ... 此处省略和renderMemoriesPaged中完全相同的代码 ... */ }; // 为了简洁，这里省略了，实际请复制
+                           const createBtn = (text, onClick) => {
+                const btn = document.createElement('div');
+                btn.className = 'mod01-page-btn';
+                btn.innerText = text;
+                btn.onclick = onClick;
+                return btn;
+            };
                 // 你可以直接从 renderMemoriesPaged 函数中复制完整的 "分页控制器" 逻辑代码到这里
                 // 从 const createBtn... 到 controlBar.appendChild(btnLast);
                 const btnFirst = document.createElement('div'); btnFirst.className = 'mod01-page-btn'; btnFirst.innerText = '<<'; btnFirst.onclick = () => changePage(1);
