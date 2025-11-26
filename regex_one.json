@@ -14627,7 +14627,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.11';
+let current_game_version = '3.3.12';
  let prompts_be_sent = null;
  
 let storyChapters = [];
@@ -15496,6 +15496,7 @@ const npcImageMap_fallbackData = {
         modal.classList.add('active');
     }
 
+     // 【新增】编辑器弹窗：增加“立刻执行”按钮
     function openEditorModal(existingMod = null) {
         const modal = document.getElementById('ws-editor-modal');
         setupModalClose('ws-editor-modal');
@@ -15505,6 +15506,36 @@ const npcImageMap_fallbackData = {
         const codeInput = document.getElementById('ws-edit-code');
         const saveBtn = document.getElementById('ws-save-local-btn');
         const delBtn = document.getElementById('ws-delete-local-btn');
+
+        // --- 新增代码开始 ---
+        // 查找或创建“立刻执行”按钮 (防止重复添加)
+        let runBtn = document.getElementById('ws-run-local-now-btn');
+        if (!runBtn) {
+            runBtn = document.createElement('button');
+            runBtn.id = 'ws-run-local-now-btn';
+            runBtn.className = 'control-btn'; // 使用通用样式
+            runBtn.style.cssText = "background: #b58900; color: black; margin-right: 10px;"; // 区分颜色
+            runBtn.innerText = "▶ 立刻执行";
+            // 插入到保存按钮之前
+            saveBtn.parentNode.insertBefore(runBtn, saveBtn);
+        }
+
+        // 绑定立刻执行事件
+        runBtn.onclick = () => {
+            const code = codeInput.value;
+            if(!code.trim()) { alert('没有代码可以执行'); return; }
+            try {
+                const script = document.createElement('script');
+                script.textContent = code;
+                script.setAttribute('data-temp-run', Date.now()); // 标记为临时运行
+                document.body.appendChild(script);
+                alert('脚本已执行！');
+            } catch(e) {
+                console.error(e);
+                alert('执行出错，请查看控制台');
+            }
+        };
+        // --- 新增代码结束 ---
 
         if(existingMod) {
             nameInput.value = existingMod.name;
@@ -15540,7 +15571,6 @@ const npcImageMap_fallbackData = {
 
         modal.classList.add('active');
     }
-
     async function loadDataAndRender() {
         if(allRemoteMods.length === 0) {
             try {
@@ -15636,22 +15666,32 @@ const npcImageMap_fallbackData = {
                     </div>
                 `;
 
+            // 【修改】卡片点击：打开详情
                 card.onclick = (e) => {
                     const toggleCallback = async () => {
-                        if(mod.scriptUrl === 'local') await toggleLocalStatus(mod.id, !isEnabled);
-                        else await toggleModStatus(mod.id, !isEnabled, mod);
+                        if(mod.scriptUrl === 'local') {
+                            await toggleLocalStatus(mod.id, !isEnabled);
+                            mod.enabled = !isEnabled; // <--- 【关键】手动更新内存状态
+                        } else {
+                            await toggleModStatus(mod.id, !isEnabled, mod);
+                        }
                     };
                     openDetailModal(mod, isEnabled, toggleCallback);
                 };
 
+
+               // 【修改】快捷按钮点击：直接切换
                 const scriptBtn = card.querySelector('.card-action-btn');
                 if(scriptBtn) {
                     scriptBtn.onclick = async (e) => {
                         e.stopPropagation();
-                        // 按钮点击时，添加 loading 状态或暂时禁用防止连点（可选）
-                        if(mod.scriptUrl === 'local') await toggleLocalStatus(mod.id, !isEnabled);
-                        else await toggleModStatus(mod.id, !isEnabled, mod);
-                        refreshView(false);
+                        if(mod.scriptUrl === 'local') {
+                            await toggleLocalStatus(mod.id, !isEnabled);
+                            mod.enabled = !isEnabled; // <--- 【关键】手动更新内存状态
+                        } else {
+                            await toggleModStatus(mod.id, !isEnabled, mod);
+                        }
+                        refreshView(false); // 刷新界面
                     };
                 }
 
