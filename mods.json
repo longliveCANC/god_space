@@ -19,7 +19,17 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-超复杂npc.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/pintu-fulicat.com-1764150678828.jpg"
-  } , {
+  } ,  {
+    "id": "mod02-数据编辑器",
+    "name": "npc美化UI/超复杂npc档案",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["脚本","通用"],
+    "description": "开启该脚本后，令小盒左上角可以直接编辑世界状态和人物角色数据。也就是statdata和playcharacterdata",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod02.js",
+    "worldBookUrl": "",
+    "previewImage": ""
+  } ,{
     "id": "小蝌蚪找妈妈-自定义词条世界书",
     "name": "自定义词条世界书",
     "author": "assa",
