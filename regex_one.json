@@ -22469,7 +22469,7 @@ async function sendCommand(command, button, successText, showWarning) {
                     
                     if (openingEntry && openingEntry.content) {
                         conversationHistory.push({ role: 'assistant', content: openingEntry.content });
-                        worldHelper.processUpdateMemoryCommands(openingEntry.content,-1);
+                        await worldHelper.processUpdateMemoryCommands(openingEntry.content,-1);
                         foundOpening = true;
                         console.log(`在世界书 "${worldbookName}" 中找到[开局]词条`);
                         break; // 找到第一个就停止
@@ -30305,7 +30305,7 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
         }
         if(isContinuationVar){
   userText = `中断写作任务，按照最新要求执行`;
-        continuationText = `[中断写作任务，新任务：直接对以下正文进行memory的分析和完整更新，不输出任何正文: ${lastAiMessage.content}\n请从<variableAnalyze>开始。]`;
+        continuationText = `[中断写作任务，新任务：直接对以下正文进行memory的分析和完整更新，不输出任何正文: ${lastAiMessage.content}\n请从<statusAnalyze>开始。]`;
         console.log("[Nova's Whisper] 正在请求重新生成变量...");
       
         }else{
