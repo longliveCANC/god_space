@@ -22457,11 +22457,11 @@ async function sendCommand(command, button, successText, showWarning) {
         
  
         // 4. 合并所有需要检查的世界书(角色+全局)
-        const allBoundWorldbooks = [...new Set([...charAllWorldbooks, ...getGlobalWorldbookNames()])];
+        const allBoundWorldbooks = [...new Set([...getGlobalWorldbookNames()])];
         
-        // 5. 如果绑定的世界书大于1个,查找[开局]词条
+ 
         let foundOpening = false;
-        if (allBoundWorldbooks.length > 1) {
+        if (allBoundWorldbooks.length > 0) {
             for (const worldbookName of allBoundWorldbooks) {
                 try {
                     const allEntries = await getLorebookEntries(worldbookName);
