@@ -13,6 +13,25 @@
 "small":{}
 },
 
+//指令示例
+
+add_update: "memory('path', 'key', 'new_value // string/num/compact json object'); //reason",
+rename: "memory('path.old_key', 'path.new_key'); //rename",
+move: "memory('old_path.key', 'new_path.key'); //move",
+delete: "delete('path', 'key'); //reason",
+
+set_status('日期', '01月01日'); //Init time,
+set_status('时间','18:00'); //Time passed,
+set_status('user_character.current_location','xxx'); 
+memory('global_lore.其他技能', '火球术', '{"info":"发射普通的火球。","effect":"【dp+1;能量池-100】","level":"初级"}'); //add skills,
+memory('global_lore.其他技能.火球术', 'effect', '【dp+1;能量池-100】'); //update skill effect,
+memory('global_lore.背包', '欧元', '400'); //消耗其他货币
+memory('global_lore.npc.阴沉男人', 'global_lore.npc.张三'); //rename NPC，必须都要带上完整路径
+ delete('global_lore.npc', '张三');// delete NPC,
+ set_attribute('货币段.<%= zhixian_role %>.D', 0, 1); //Gain currency,
+set_attribute('能力段.类型','_','血统'); 
+set_attribute('衍生属性段.能量池.当前值','0','50');
+set_attribute('属性段.生理属性.力量.基础', 0, 1); //Increase attribute 
 
 window.GameAPI = {
     // 定义一个属性 'settings'
@@ -84,4 +103,4 @@ window.GameAPI = {
          renderHistory:renderHistory,//直接这么用renderHistory();，渲染全部界面。这样用的意思是渲染结束后回到底部renderHistory(true);
         showNovaAlert:showNovaAlert,//例：showNovaAlert("已处理");
         processUpdateMemoryCommands:processUpdateMemoryCommands,//直接从酒馆修改变量。例：await processUpdateMemoryCommands("一长串string，有指令就行", -1)
-        }
+  }
