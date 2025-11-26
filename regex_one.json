@@ -23008,7 +23008,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
             // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
@@ -24205,7 +24205,7 @@ if(is_show_notifications === 'true'){
     });
     
     // 音乐消息 [music-歌名$歌手] 或 BGM 的 [歌名$歌手]
-    const musicRegex = isBgm ? /\[([^\]]+)\]/g : /\[music-([^\]]+)\]/g;
+    const musicRegex = isBgm ? /\[music-([^\]]+)\]/g : /\[([^\]]+)\]/g;
     processedContent = processedContent.replace(musicRegex, (match, raw) => {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
@@ -24454,13 +24454,13 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         return `<span class="group-chat-mention">@${p1}</span>`;
     });
     
-    processedContent = processedContent
+   processedContent = processedContent
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
         .replace(/\n/g, '<br>');
-    
+
     // ✨ 步骤4：替换占位符
-    for (const placeholder in specialMsgPlaceholders) {
+   for (const placeholder in specialMsgPlaceholders) {
         processedContent = processedContent.replace(placeholder, specialMsgPlaceholders[placeholder]);
     }
     
@@ -24510,7 +24510,7 @@ async function createMessageBubble(msg, mode = 'chat',is_from_render = false) {
         const htmlPlaceholders = {};
         let placeholderIndex = 0;
 
-  
+ 
         // 这一步必须在所有其他结构性处理之前！
         let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
             const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
@@ -29927,6 +29927,12 @@ for (const entry of worldInfoForProcessing) {
 if (messageVars && messageVars.检定记忆) {
     currentRollData = messageVars.检定记忆;
     console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
+         await updateVariablesWith(old_variables => {
+            return {
+                ...old_variables,
+                checkok: 'false',
+            };
+        }, { type: 'chat' });
                 }else{
                      console.log("messageVars.checkMemory不存在？");
                 }
@@ -30862,7 +30868,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|shop_item|forum_threads|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
         
         };
 
@@ -36197,6 +36203,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
         assaSettingsData = chatdata.assa_data;
         playCharacterData = chatdata.play_character_data; // 新增：缓存角色模板数据
          checkMemoryData = data.检定记忆;
+         checkMemoryOk = String(chatdata.checkok||'true');
          worldAttitudeData = chatdata.跨世界声望说明;
         characterStatusData = chatdata.当前人物状态;
         lasttoken = globaldata?.LAST_SEND_TOKENS || 0;
