@@ -79,5 +79,15 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-dlc-垂钓诸天.json",
     "previewImage": ""
+}, {
+    "id": "很小的天气",
+    "name": "天气改变",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["通用"],
+   "description": "一个小功能，将以下面的文本直接复制到世界书的某个地方，比如最高优先级或者d0 深度2，可以随机改变天气。<br><h3>{{random::此回合必须改变天气并体现在正文中！天气格式为:天气图标 天气，包括但不限于:☀️晴天，🌤️晴转多云，⛈️雷暴雨，🌨️小雪，☁️阴天，🌨️下雪，❄️大雪:: :: :: :: :: :: :: :: :: :: :: :: }}</h3>",
+   "scriptUrl": "",
+    "worldBookUrl": "",
+    "previewImage": ""
 }
 ]
