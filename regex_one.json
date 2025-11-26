@@ -24307,6 +24307,7 @@ function updateRerollButtonState(){
         renderHistory:renderHistory,
         processFinalMessageModules:processFinalMessageModules,
         showNovaAlert:showNovaAlert,
+        processUpdateMemoryCommands:processUpdateMemoryCommands,
         show: async () => {
              const vars = await getVariables({ type: 'chat' });
              console.log("--- 💖 当前世界数据总览 💖 ---");
@@ -49857,18 +49858,22 @@ window.GameAPI = {
         return conversationHistory;
     },
  triggerassa: function(...args) {
-        // ✅ 调用时才执行，此时函数应该已经定义了
+       
         if (typeof triggerassa === 'function') {
             return triggerassa(...args);
         } else {
             console.error("triggerassa 函数未定义");
         }
     },
+ initDisplay: function(...args) {
  
-    updateSettings: function(newData) {
-        assaSettingsData = newData; // 直接修改原本的 let 变量
-        console.log("数据已通过 API 更新！");
-    }
+        if (typeof initDisplay === 'function') {
+            return initDisplay(...args);
+        } else {
+            console.error("initDisplay 函数未定义");
+        }
+    } 
+ 
 }
 </script>
 

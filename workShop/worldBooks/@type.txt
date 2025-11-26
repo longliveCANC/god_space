@@ -1,3 +1,19 @@
+
+//assaData的结构
+  {
+"img_map":{},
+            "global_lore": { "npc": {}, "settings": {}, "背包": {},"其他技能": {} ,"小队信息":{},"称号":{},"资源条":{},"分阶段好感":{},"备忘录":{}},
+
+            "world_lore": { "npc": {}, "settings": {} },
+            "map": { "全局地点表": [], "主要地点表": {} },
+            "home": { "items": {} },
+"plot":{"主方向":"","当前事件":{"info":"","进度":0},"未来剧情节点":{}},
+            "summary":{
+"big":{},
+"small":{}
+},
+
+
 window.GameAPI = {
     // 定义一个属性 'settings'
     get assaData() {
@@ -23,39 +39,49 @@ window.GameAPI = {
     },
     get statData() {
  
-        return currentGameData;
+        return currentGameData;//stat_data
     },
       get playCharacterData() {
  
-        return playCharacterData;
+        return playCharacterData;//玩家数据
     },
       get checkMemoryData() {
  
-        return checkMemoryData;
+        return checkMemoryData;//object，检定记忆
     },
       get worldAttitudeData() {
  
-        return worldAttitudeData;
+        return worldAttitudeData;//string
     },
     get characterStatusData() {
  
-        return characterStatusData;
+        return characterStatusData;//string
     },
     get conversationHistory() {
  
-        return conversationHistory;
+        return conversationHistory;//全部对话历史
     },
- triggerassa: function(...args) {
-        // ✅ 调用时才执行，此时函数应该已经定义了
+ triggerassa: function(...args) {//triggerassa(`/setinput ${messageToSend}`);一般这么用，就是存到令小盒。/send就是直接发送
+ 
         if (typeof triggerassa === 'function') {
             return triggerassa(...args);
         } else {
             console.error("triggerassa 函数未定义");
         }
     },
+  initDisplay: function(...args) {//刷新变量
  
-    updateSettings: function(newData) {
-        assaSettingsData = newData; // 直接修改原本的 let 变量
-        console.log("数据已通过 API 更新！");
-    }
+        if (typeof initDisplay === 'function') {
+            return initDisplay(...args);
+        } else {
+            console.error("initDisplay 函数未定义");
+        }
+    } 
 }
+
+    window.worldHelper = {
+        init: initializeCurrentGameData,//从世界书初始化数据
+         renderHistory:renderHistory,//直接这么用renderHistory();，渲染全部界面。这样用的意思是渲染结束后回到底部renderHistory(true);
+        showNovaAlert:showNovaAlert,//例：showNovaAlert("已处理");
+        processUpdateMemoryCommands:processUpdateMemoryCommands,//直接从酒馆修改变量。例：await processUpdateMemoryCommands("一长串string，有指令就行", -1)
+        }
