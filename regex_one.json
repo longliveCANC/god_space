@@ -14628,7 +14628,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.15';
+let current_game_version = '3.3.16';
  let prompts_be_sent = null;
  
 let storyChapters = [];
@@ -22430,15 +22430,62 @@ async function sendCommand(command, button, successText, showWarning) {
             if(warningMessage) warningMessage.style.display = 'block';
         }
 
+ 
+        // 1. 获取角色卡绑定的世界书
+        const charWorldbooks = getCharWorldbookNames('current');
+        const charAllWorldbooks = [
+            ...(charWorldbooks.primary ? [charWorldbooks.primary] : []),
+            ...charWorldbooks.additional
+        ];
+        
+        // 2. 获取全局世界书
+        const globalWorldbooks = getGlobalWorldbookNames();
+        
+        // 3. 检查是否需要取消重复绑定
+ 
+        const targetWorldbook = '小蝌蚪找妈妈-同层版';
+        if (charAllWorldbooks.includes(targetWorldbook) && globalWorldbooks.includes(targetWorldbook)) {
+            // 从全局世界书中移除该世界书
+            const newGlobalWorldbooks = globalWorldbooks.filter(name => name !== targetWorldbook);
+            await rebindGlobalWorldbooks(newGlobalWorldbooks);
+            toastr.info(`已取消全局世界书 "${targetWorldbook}" 的绑定(因角色卡已绑定)`);
+        }
         
 
-        if(sendMode === 'manual'){
-     if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof worldHelper.renderHistory === 'function') {
-            conversationHistory.push({ role: 'assistant', content: '<系统提示：等待用户输入要求...>' });
-            
+  if(sendMode === 'manual'){
+    if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof worldHelper.renderHistory === 'function') {
+        
+ 
+        // 4. 合并所有需要检查的世界书(角色+全局)
+        const allBoundWorldbooks = [...new Set([...charAllWorldbooks, ...getGlobalWorldbookNames()])];
+        
+        // 5. 如果绑定的世界书大于1个,查找[开局]词条
+        let foundOpening = false;
+        if (allBoundWorldbooks.length > 1) {
+            for (const worldbookName of allBoundWorldbooks) {
+                try {
+                    const allEntries = await getLorebookEntries(worldbookName);
+                    const openingEntry = allEntries.find(entry => entry.comment === "[开局]");
+                    
+                    if (openingEntry && openingEntry.content) {
+                        conversationHistory.push({ role: 'assistant', content: openingEntry.content });
+                        foundOpening = true;
+                        console.log(`在世界书 "${worldbookName}" 中找到[开局]词条`);
+                        break; // 找到第一个就停止
+                    }
+                } catch (e) {
+                    console.warn(`读取世界书 "${worldbookName}" 时出错:`, e);
+                }
+            }
         }
-
+        
+        // 6. 如果没找到[开局]词条,使用原来的默认提示
+        if (!foundOpening) {
+            conversationHistory.push({ role: 'assistant', content: '<系统提示:等待用户输入要求...>' });
         }
+        // 【新增功能结束】
+    }
+}
  await saveHistory(); // 保存这个历史性的时刻
     worldHelper.renderHistory();
 
