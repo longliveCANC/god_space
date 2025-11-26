@@ -22469,6 +22469,7 @@ async function sendCommand(command, button, successText, showWarning) {
                     
                     if (openingEntry && openingEntry.content) {
                         conversationHistory.push({ role: 'assistant', content: openingEntry.content });
+                        worldHelper.processUpdateMemoryCommands(openingEntry.content,-1);
                         foundOpening = true;
                         console.log(`在世界书 "${worldbookName}" 中找到[开局]词条`);
                         break; // 找到第一个就停止
