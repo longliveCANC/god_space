@@ -249,7 +249,7 @@
 
                 </div>
                 <div class="mod02-modal-footer">
-                    <button id="mod02-execute-btn" class="mod02-action-button">注入修改并刷新</button>
+                    <button id="mod02-execute-btn" class="mod02-action-button">注入修改</button>
                 </div>
             </div>
         `;

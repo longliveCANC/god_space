@@ -13936,7 +13936,7 @@ pointer-events: auto;
         </div>
 
         <div id="command-modal" class="modal">
-    <div class="modal-content" style="width: 90vh; max-width: 800px; max-height: 80vh;">
+    <div class="modal-content" id="ling-box" style="width: 90vh; max-width: 800px; max-height: 80vh;">
         <div class="modal-header">
             <h2 class="modal-title">编辑待发指令</h2>
             <button class="modal-close">&times;</button>
