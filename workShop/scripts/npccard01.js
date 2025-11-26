@@ -418,6 +418,59 @@
     color: var(--text-color);
     word-break: break-word;
 }
+    /* --- 新增：顶部信息标签 --- */
+.mod01-info-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed var(--border-color);
+}
+.mod01-info-tag {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary-color);
+}
+.mod01-info-tag strong {
+    margin-right: 5px;
+    color: var(--secondary-color);
+    opacity: 0.8;
+}
+.mod01-hp-bar {
+    width: 60px;
+    height: 5px;
+    background: rgba(255, 77, 109, 0.2); /* HP底色用红色系*/
+    border-radius: 2.5px;
+    margin: 0 5px;
+    overflow: hidden;
+}
+.mod01-hp-fill {
+    height: 100%;
+    background: #ff4d6d; /* 亮红色 */
+    box-shadow: 0 0 4px #ff4d6d;
+}
+
+/* --- 新增：关系/印象块 --- */
+.mod01-relation-block {
+    background: rgba(255,255,255,0.02);
+    border-left: 3px solid var(--primary-color);
+    padding: 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.mod01-relation-title {
+    font-weight: bold;
+    color: var(--primary-color);
+    display: block;
+    margin-bottom: 5px;
+}
         `;
         document.head.appendChild(style);
     }
@@ -693,28 +746,25 @@
             sec.appendChild(grid);
             container.appendChild(sec);
         }
-            renderCard(npc) {
+       renderCard(npc) {
             const root = document.getElementById('mod01-detail-root');
             root.innerHTML = '';
             const data = npc.data;
-            // 预定义顺序与特殊处理
-            // 注意：事件现在被我提到前面来检查
-            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter'];
 
-            // --- 0. 顶部区域：名字、外貌、好感度 (保持不变) ---
+            // --- 妈妈的改动：提前定义所有需要特殊处理的字段 ---
+            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp'];
+
+
+            // --- 0. 顶部区域：名字、外貌、好感度 (这部分保持不变) ---
             const headSection = document.createElement('div');
             headSection.className = 'mod01-card-head';
-            // ... (这部分代码与上一版相同，为节省篇幅省略，请保留原代码) ...
-
             // 左侧信息 + 外貌
             const basicInfo = document.createElement('div');
             basicInfo.className = 'mod01-basic-info';
             basicInfo.style.flex = "1";
             basicInfo.innerHTML = `<h1>${npc.name}</h1>`;
-            // 处理外貌
             if(data.外貌) basicInfo.innerHTML += `<div class="mod01-desc-box">${data.外貌}</div>`;
             else basicInfo.innerHTML += `<div class="mod01-desc-box">...</div>`;
-
             // 右侧好感度
             let favorHtml = '';
             if(data.好感度 !== undefined) {
@@ -725,17 +775,65 @@
             headSection.appendChild(basicInfo);
             if(favorHtml) {
                 const fDiv = document.createElement('div'); fDiv.innerHTML = favorHtml;
-                // 为了手机端样式，这里不限制宽度
                 fDiv.style.flexShrink="0";
                 headSection.appendChild(fDiv);
             }
             root.appendChild(headSection);
-         // --- 1  事件 (沉浸式插入，优先级极高) ---
+
+            // --- 妈妈的改动：新增一个容器，专门放我们的新标签 ---
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'mod01-info-tags-container';
+            root.appendChild(tagsContainer); // 提前插入，这样内容就在最上面了
+
+            // 解析 性别
+            if (data.性别) {
+                tagsContainer.innerHTML += `<div class="mod01-info-tag"><strong>性别:</strong> ${data.性别}</div>`;
+            }
+            // 解析 年龄
+            if (data.年龄) {
+                tagsContainer.innerHTML += `<div class="mod01-info-tag"><strong>年龄:</strong> ${data.年龄}</div>`;
+            }
+            // 解析 HP
+            if (data.hp && typeof data.hp === 'string' && data.hp.includes('/')) {
+                const [current, max] = data.hp.split('/').map(n => parseInt(n.trim()));
+                if (!isNaN(current) && !isNaN(max) && max > 0) {
+                    const percent = (current / max) * 100;
+                    tagsContainer.innerHTML += `
+                        <div class="mod01-info-tag">
+                            <strong>HP:</strong> ${current}/${max}
+                            <div class="mod01-hp-bar"><div class="mod01-hp-fill" style="width: ${percent}%"></div></div>
+                        </div>
+                    `;
+                } else {
+                     tagsContainer.innerHTML += `<div class="mod01-info-tag"><strong>HP:</strong> ${data.hp}</div>`;
+                }
+            }
+
+            // --- 妈妈的改动：用正则表达式查找并渲染关系/印象 ---
+            const relationRegex = /(和.+关系|对.+印象)$/;
+            Object.keys(data).forEach(key => {
+                if(relationRegex.test(key)) {
+                    const relationBlock = document.createElement('div');
+                    relationBlock.className = 'mod01-relation-block';
+                    relationBlock.innerHTML = `
+                        <span class="mod01-relation-title">${key}</span>
+                        <span>${data[key]}</span>
+                    `;
+                    // 我们把它插在标签容器后面，主内容前面
+                    tagsContainer.insertAdjacentElement('afterend', relationBlock);
+
+                    ignoreKeys.push(key); // 处理完就加到忽略列表里
+                }
+            });
+
+
+            // --- 事件 (沉浸式插入，这部分逻辑不变) ---
             if(data.事件 && typeof data.事件 === 'object') {
                 this.renderEvents(root, data.事件);
                 ignoreKeys.push('事件');
             }
-            // --- 1.5 身份 ---
+
+            // --- 身份 (这部分逻辑不变) ---
             if(data.身份) {
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
@@ -744,45 +842,36 @@
                 ignoreKeys.push('身份');
             }
 
-   
-
-            // --- 2. 属性 ---
+            // --- 属性 (这部分逻辑不变) ---
             if(data.属性) {
                 this.renderStats(root, data.属性);
                 ignoreKeys.push('属性');
             }
 
-            // --- 3. 表/里性格 ---
+            // --- 表/里性格 (这部分逻辑不变) ---
             if(data.表性格 && data.里性格) {
                 this.renderPersona(root, data.表性格, data.里性格);
                 ignoreKeys.push('表性格', '里性格');
             }
 
-            // --- 4. 关键记忆 (分页) ---
+            // --- 关键记忆 (分页) (这部分逻辑不变) ---
             if(data.关键记忆) {
                 this.renderMemoriesPaged(root, data.关键记忆);
                 ignoreKeys.push('关键记忆');
             }
-   // --- 妈妈的改动：剩余字段渲染时，增加对物品列表的判断 ---
+
+            // --- 剩余字段 (递归 + 过滤，现在会自动跳过我们处理过的内容) ---
             Object.keys(data).forEach(k => {
                 if(ignoreKeys.includes(k) || k.startsWith('_')) return;
 
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
+                sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
 
-                // 判断是否是物品列表
-                if (this.isInventory(data[k])) {
-                    // 是物品列表，就用新的分页渲染器
-                    this.renderInventoryPaged(sec, data[k], k);
-                } else {
-                    // 不是，就用原来的通用渲染器
-                    sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = 'mod01-text-block';
-                    this.renderDeepObject(contentDiv, data[k]);
-                    sec.appendChild(contentDiv);
-                }
-
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'mod01-text-block';
+                this.renderDeepObject(contentDiv, data[k]);
+                sec.appendChild(contentDiv);
                 root.appendChild(sec);
             });
         }
