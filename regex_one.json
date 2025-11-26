@@ -14628,7 +14628,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.12';
+let current_game_version = '3.3.13';
  let prompts_be_sent = null;
  
 let storyChapters = [];
