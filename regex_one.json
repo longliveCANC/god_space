@@ -42342,8 +42342,20 @@ function setupSkillChoicePanel() {
         if (typeof teammateDataString !== 'string') continue;
 
         const matches = teammateDataString.match(/【[^】]+】/g);
+
+               // 2. 解析属性数据（支持带或不带【】的字符串）
+        let stringsToParse = [];
+    
         if (matches) {
-            matches.forEach(match => {
+            stringsToParse = matches.map(match => match.substring(1, match.length - 1));
+        } else if (teammateDataString.trim()) {
+            stringsToParse.push(teammateDataString);
+        }
+
+        if (stringsToParse.length === 0) continue; // 如果解析后啥也没有，就跳过
+
+      
+            stringsToParse.forEach(match => {
                 const content = match.substring(1, match.length - 1);
                 content.split(/;|；/).forEach(attr => {
                     const pair = attr.split(/:|：/);
@@ -42362,7 +42374,7 @@ function setupSkillChoicePanel() {
                     }
                 });
             });
-        }
+       
     }
 
     // 按你的要求，默认从大到小排序
@@ -48627,10 +48639,21 @@ function getEquipmentBonuses_combat(statData, assaData) {
             stringToParse = itemData.effect || itemData.属性 || itemData.效果 || '';
         }
 
+
+
+        let stringsToParse = [];
         const matches = stringToParse.match(/【[^】]+】/g);
+
         if (matches) {
-            // (解析逻辑同上)
-            matches.forEach(match => {
+            stringsToParse = matches.map(match => match.substring(1, match.length - 1));
+        } else if (stringToParse.trim()) {
+            stringsToParse.push(stringToParse);
+        }
+
+        if (stringsToParse.length === 0) return// 如果解析后啥也没有，就跳过
+
+   
+            stringsToParse.forEach(match => {
                 const content = match.substring(1, match.length - 1);
                 content.split(/;|；/).forEach(attr => {
                     const parts = attr.match(/^(.+?)\s*([+-]\d+)$/) || attr.match(/^(.+?)[:|：]\s*([+-]?\d+)$/);
@@ -48639,7 +48662,7 @@ function getEquipmentBonuses_combat(statData, assaData) {
                     }
                 });
             });
-        }
+ 
     });
 
     return bonuses;
