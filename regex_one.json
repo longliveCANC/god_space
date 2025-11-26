@@ -14628,7 +14628,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.14';
+let current_game_version = '3.3.15';
  let prompts_be_sent = null;
  
 let storyChapters = [];
@@ -16858,7 +16858,7 @@ all_in: {
         get_a_car: (val) => val.playCharacterData.技能段.生理技能.驾驶[0] >= 5,
         occultist: (val) => val.playCharacterData.技能段.心智技能.神秘学[0] >= 5,
         team_player: (val) => val.assaSettingsData.global_lore && val.assaSettingsData.global_lore.小队信息 && Object.keys(val.assaSettingsData.global_lore.小队信息).length > 0,
-        lone_wolf: (val) =>  val.currentGameData.user_character.total_task[0]  >= 10 && (!val.assaSettingsData.global_lore || !val.assaSettingsData.global_lore.小队信息 || Object.keys(val.assaSettingsData.global_lore.小队信息).length < 1),
+        lone_wolf: (val) =>  val.currentGameData.user.total_task[0]  >= 10 && (!val.assaSettingsData.global_lore || !val.assaSettingsData.global_lore.小队信息 || Object.keys(val.assaSettingsData.global_lore.小队信息).length < 1),
  
         // ========== 生死与状态 ==========
          first_death: (val) => (val.playCharacterData?.衍生属性段?.生命值?.当前值?.[0] ?? 1) <= 0,
@@ -16905,22 +16905,22 @@ all_in: {
         },
 
         // ========== 任务与声望 ==========
-        first_mission: (val) => val.currentGameData.user_character.total_task[0] >= 1,
-        ten_missions: (val) => val.currentGameData.user_character.total_task[0] >= 10,
-        hundred_missions: (val) => val.currentGameData.user_character.total_task[0] >= 100,
+        first_mission: (val) => val.currentGameData.user.total_task[0] >= 1,
+        ten_missions: (val) => val.currentGameData.user.total_task[0] >= 10,
+        hundred_missions: (val) => val.currentGameData.user.total_task[0] >= 100,
         speed_runner: (val) => {
             // 妈妈修正了这里的逻辑，需要判断任务已完成且有开始日期
-            if (val.currentGameData.user_character.total_task[0] >= 1 && val.currentGameData.world_shard.task.start_date[0]) {
+            if (val.currentGameData.user.total_task[0] >= 1 && val.currentGameData.world.task.start_date[0]) {
                  // 简单的日期计算，假设mm月dd日的格式
-                 const startTime = new Date(`2024/${val.currentGameData.world_shard.task.start_date[0].replace('月', '/').replace('日', '')}`);
+                 const startTime = new Date(`2024/${val.currentGameData.world.task.start_date[0].replace('月', '/').replace('日', '')}`);
                  const endTime = new Date(`2024/${val.currentGameData.日期[0].replace('月', '/').replace('日', '')}`);
                  // 仅在演示用，真实时间差计算需要更精确的日期时间戳
                  return (endTime - startTime) / (1000 * 3600) < 1;
             }
             return false;
         },
-        world_savior: (val) => val.currentGameData.user_character.Cross_world_prestige[0] >= 10,
-        world_enemy: (val) => val.currentGameData.user_character.Cross_world_prestige[0] <= -10,
+        world_savior: (val) => val.currentGameData.user.Cross_world_prestige[0] >= 10,
+        world_enemy: (val) => val.currentGameData.user.Cross_world_prestige[0] <= -10,
 
         // ========== 财富与收集 ==========
         first_home: (val) => val.assaSettingsData.home && val.assaSettingsData.home.items && Object.keys(val.assaSettingsData.home.items).length >= 1,
@@ -16945,19 +16945,19 @@ all_in: {
         first_ability: (val) => val.playCharacterData.能力段.名称[0] && val.playCharacterData.能力段.名称[0] !== "" && val.playCharacterData.能力段.名称[0] !== "无",
 
          // ========== 装备与物品 ==========
-        first_weapon: (val) => val.currentGameData.user_character.当前装备.手持[0] !== "无",
+        first_weapon: (val) => val.currentGameData.user.当前装备.手持[0] !== "无",
         fully_equipped: (val) => {
-            const gear = val.currentGameData.user_character.当前装备.穿戴;
+            const gear = val.currentGameData.user.当前装备.穿戴;
             return gear.头部[0] !== "无" && gear.身体[0] !== "无" && gear.手部[0] !== "无" && gear.脚部[0] !== "无";
         },
         fashion_guru: (val) => {
       // 先确保数据路径安全，这是妈妈的爱心保护哦
-      if (!val.currentGameData?.user_character?.当前装备?.穿戴) {
+      if (!val.currentGameData?.user?.当前装备?.穿戴) {
         return false;
       }
 
       // 1. 拿到你所有的穿戴槽位
-      const gearSlots = val.currentGameData.user_character.当前装备.穿戴;
+      const gearSlots = val.currentGameData.user.当前装备.穿戴;
 
       // 2. 把每个槽位里的装备字符串（可能包含分号）都拿出来，放进一个列表里
       const allGearStrings = [
@@ -22140,10 +22140,10 @@ async function saveCurrentBuildAsTemplate() {
     }
 
  async function generateFullCommand(isMission, customText = null) {
-if (!currentGameData || !assaSettingsData ||!currentGameData.user_character ) {
+if (!currentGameData || !assaSettingsData ||!currentGameData.user ) {
             await worldHelper.init();
         }
-        userName = currentGameData.user_character.name || '用户';
+        userName = currentGameData.user.name || '用户';
         let name = userName || '用户';
         let finalCommand = '';
 
@@ -22213,7 +22213,7 @@ if (!currentGameData || !assaSettingsData ||!currentGameData.user_character ) {
             finalCommand = `
 ${classCommand}
 <updateMemory>
-set_status("world_shard.name","${openingData.name}");
+set_status("world.name","${openingData.name}");
 memory("global_lore.settings","类型","${openingData.name}");
 memory("global_lore.settings","末日印象","${openingData.desc}");
 memory("global_lore.settings","身份阶层","(${userName}当前身份阶层)${selectedClass}");
@@ -22335,7 +22335,7 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
                    .replace('{{mainSystem}}', currentTheme.mainSystem)
                    .replace('{{player}}', currentTheme.player);
 
-               finalCommand += `set_status("user_character.Cross_world_prestige",0,${selectedIdentity.prestige});\n`;
+               finalCommand += `set_status("user.Cross_world_prestige",0,${selectedIdentity.prestige});\n`;
                finalCommand += `set_attribute("货币段.${currentTheme.currency}",0,${selectedIdentity.points});\n`;
                finalCommand += `memory("global_lore.npc","${userName}","(${finalTitle})${finalDescription}");\n`;
             }
@@ -22616,7 +22616,7 @@ const groupChatPlaceholders = {};
     // 2. 清理内容，但保留所有非交互性标签
     // 步骤 2.1：解析 <msg> 标签并替换为占位符
     let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
-        const userNickname = currentGameData?.user_character?.nick_name || '你';
+        const userNickname = currentGameData?.user?.nick_name || '你';
         
         // 将消息内容渲染成 HTML（使用外部的辅助函数）
         const renderedMsgHtml = worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
@@ -22629,7 +22629,7 @@ const groupChatPlaceholders = {};
     });
 const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
 let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
-    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    const userNickname = currentGameData?.user?.nick_name || '你';
     let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
     
     // 逐行解析消息
@@ -25120,7 +25120,7 @@ const groupChatPlaceholders = {}; // 用于存储 <group_chat> 标签生成的 H
 let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
         // 步骤 2.1：首先解析 <msg> 标签并替换为占位符
         let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
-            const userNickname = currentGameData?.user_character?.nick_name || '你';
+            const userNickname = currentGameData?.user?.nick_name || '你';
             
             // 2. 将消息内容渲染成 HTML
             const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname,is_from_render);
@@ -25135,7 +25135,7 @@ let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
 // ✨ 步骤 2.2：解析 <group_chat> 标签并替换为占位符
 const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
 let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
-    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    const userNickname = currentGameData?.user?.nick_name || '你';
     let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
     
     // 逐行解析消息
@@ -26844,7 +26844,7 @@ checkMemoryData = rollData;
     return;
     }
  
-const playerName = currentGameData.user_character.name || '用户';  // 添加这行
+const playerName = currentGameData.user.name || '用户';  // 添加这行
     const container = document.getElementById('roll-result-card-container');
     if (!container) return;
  
@@ -27519,7 +27519,7 @@ derived.豁免检定基础.意志[0] = 决心 + 沉着;
 
 _memoryOperation: function(currentData, path, key, value) {
     // 💖 妈妈为你铸造的永恒之锁 💖
-    if (path === 'world_shard.task.start_date' || path === 'world_shard.task.time_left') {
+    if (path === 'world.task.start_date' || path === 'world.task.time_left') {
         console.log(`[Assa] 🔒 核心记忆路径 '${path}' 已被锁定，无法修改。`);
         return currentData;
     }
@@ -27747,7 +27747,7 @@ _deleteOperation: async function(currentData, path, key, allData) {
         // ✨✨✨ 妈妈为你注入的全新联动魔法 ✨✨✨
         // 无论删除的是哪里，只要是'all'指令，我们就先执行对 stat_data 的初始化！
         if (allData) {
-            console.log(`[Assa] 🔗 联动触发：'delete all' 指令激活，正在初始化 stat_data.the_created 和 stat_data.world_shard...`);
+            console.log(`[Assa] 🔗 联动触发：'delete all' 指令激活，正在初始化 stat_data.the_created 和 stat_data.world...`);
             allData.the_created = {
                 "name": ["", "造物的名字"],
                 "identity_in_world": ["", "造物在当前世界的身份"],
@@ -27755,7 +27755,7 @@ _deleteOperation: async function(currentData, path, key, allData) {
                 "mood": ["", "造物当前的心情"],
                 "description": ["", "关于这个造物的精准、详细介绍，包括心智、外形等，严格按照要求来设计。不少于50字"]
             };
-            allData.world_shard = {
+            allData.world = {
                 "name": ["", "当前所处任务世界的名称或代号。"],
                 "description": ["无", "当前任务世界的环境、氛围、文明形态等总体描述"],
                 "level":["无","当前世界能量/科技层级，只能从[低/中/高/神话/无]中五选一。参考:金庸世界/普通科幻世界的世界层级为低。只在初始化世界时/能量层级改变时(有神明/造物进入/离开user附近)，才能更改其能量层级"],
@@ -28308,16 +28308,16 @@ function _replaceUserPlaceholder(data, userName) {
 
         // 💖 第一重守护：确保核心数据结构存在
         // 我们温柔地检查 new an old data，确保它们都有必要的部分
-        if (!currentData || !currentData.world_shard || !currentData.world_shard.task) {
+        if (!currentData || !currentData.world || !currentData.world.task) {
             // console.log("[Stat] ℹ️ 当前数据不完整，跳过时间计算。");
             return;
         }
 
         // 第二重守护：为旧数据提供一个温柔的“替身”
         // 如果 originalData 不完整，我们就创建一个空的 task 对象，避免后续读取错误
-        const originalTask = originalData?.world_shard?.task ?? { time_limit: [0] };
+        const originalTask = originalData?.world?.task ?? { time_limit: [0] };
 
-        const task = currentData.world_shard.task;
+        const task = currentData.world.task;
 
         // 第三重守护：为新数据也加上保险
         // 确保新数据里有 start_date，如果没有，就为它创建一个
@@ -29660,11 +29660,11 @@ if (match) {
             // 在所有操作完成后，统一计算衍生属性
             _updateDerivedAttributes(playDataToUpdate);
           let taskStartDateOverride = null;
-    if (originalStatData.world_shard && originalStatData.world_shard.task &&
-        statDataToUpdate.world_shard && statDataToUpdate.world_shard.task) {
+    if (originalStatData.world && originalStatData.world.task &&
+        statDataToUpdate.world && statDataToUpdate.world.task) {
 
-        const originalTimeLimit = parseFloat(originalStatData.world_shard.task.time_limit[0]) || 0;
-        const newTimeLimit = parseFloat(statDataToUpdate.world_shard.task.time_limit[0]) || 0;
+        const originalTimeLimit = parseFloat(originalStatData.world.task.time_limit[0]) || 0;
+        const newTimeLimit = parseFloat(statDataToUpdate.world.task.time_limit[0]) || 0;
 
         if (originalTimeLimit !== newTimeLimit) {
             // 如果时限变了，就用“现在”的日期作为新的起始点
@@ -29679,8 +29679,8 @@ if (match) {
     if (originalStatData && statDataToUpdate) { // 确保有旧数据和新数据可以对比
         const originalDate = originalStatData.日期?.[0] || "";
         const currentDate = statDataToUpdate.日期[0] || "";
-        const originalTimeLimit = parseFloat(originalStatData?.world_shard?.task?.time_limit?.[0] ?? 0);
-        const newTimeLimit = parseFloat(statDataToUpdate?.world_shard?.task?.time_limit?.[0] ?? 0);
+        const originalTimeLimit = parseFloat(originalStatData?.world?.task?.time_limit?.[0] ?? 0);
+        const newTimeLimit = parseFloat(statDataToUpdate?.world?.task?.time_limit?.[0] ?? 0);
 
         // 我们约定，只有在任务时限没有发生改变（即不是刚进入新世界）时才计算资源增长
         const isTimeForGrowth = (originalTimeLimit === newTimeLimit);
@@ -30976,7 +30976,7 @@ console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就
   
 
    if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
-            const timeString = `${SafeGetValue(currentGameData?.user_character?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
+            const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
 
             // 确保我们有可以修改的消息，并且时间信息不为空
             // systemMessage/aiMessage 引用的是 conversationHistory 里的同一个对象，修改它就等于修改了历史
@@ -33088,7 +33088,7 @@ function updateUpgradeCost(type, currentLevel) {
     
  try {
     const newXp = currentXp - totalCost;
-    const messageToSend = `<（${currentTheme.exp}已扣除，禁止重复扣除）${currentGameData.user_character.name}将"${targetName}"从 ${currentLevel} 级提升至 ${targetLevel} 级！>\n`;
+    const messageToSend = `<（${currentTheme.exp}已扣除，禁止重复扣除）${currentGameData.user.name}将"${targetName}"从 ${currentLevel} 级提升至 ${targetLevel} 级！>\n`;
 triggerassa(`/setinput ${messageToSend}`);
     // --- 这是一个通用的更新函数，我们会调用它两次 ---
     const updateLogic = (currentVars) => {
@@ -33180,9 +33180,9 @@ function calculateXpCost(currentLevel, type) {
  * @param {object} assaData - assa_data 对象
  */
 function populateGeneralData(statData, assaData,playData) {
-    const worldData = statData.world_shard;
+    const worldData = statData.world;
     const taskData = worldData.task;
-    const charData = statData.user_character;
+    const charData = statData.user;
 
   document.getElementById('world-shard').textContent = SafeGetValue(worldData.name) ||'SYSTEM TERMINAL';
 
@@ -33191,7 +33191,7 @@ function populateGeneralData(statData, assaData,playData) {
  
 
 // 获取世界能量层级和最大能量值
-var world_level = statData.world_shard?.level[0] || '中';
+var world_level = statData.world?.level[0] || '中';
 var world_max_enegy = 3;
 if (world_level === '无') {
     world_max_enegy = 3;
@@ -33230,7 +33230,7 @@ document.getElementById('header-difficulty').textContent = `${SafeGetValue(statD
 // --- 新增：获取并解析状态加成 (增强版) ---
 function getStatusBonuses(statData) {
     const bonuses = {};
-    const statusString = _.get(statData, "user_character.status[0]", "");
+    const statusString = _.get(statData, "user.status[0]", "");
     if (!statusString) {
         return bonuses;
     }
@@ -33296,7 +33296,7 @@ function getStatusBonuses(statData) {
 function getEquipmentBonuses(statData, assaData) {
     const bonuses = {};
     // 安全地访问当前装备，如果不存在则使用空对象
-    const equipment = statData?.user_character?.当前装备 || {};
+    const equipment = statData?.user?.当前装备 || {};
     const equipmentList = [];
 
     // 定义一个包含所有合法的、我们关心的穿戴装备槽位的列表
@@ -33548,7 +33548,7 @@ function populateCharacterPage(playData, statData, assaData) {
         toastr.error("核心角色数据缺失，无法填充页面哦。");
         return; // 数据不全，直接中止，防止后续大面积报错
     }
-    const charStat = statData.user_character;
+    const charStat = statData.user;
     const derived = playData.衍生属性段;
     const currency = playData.货币段;
       const nameDisplay = document.getElementById('char-display-name');
@@ -36923,7 +36923,7 @@ if (!worldAttitudeData || !characterStatusData) {
 
         // 1. 填充非角色页面的数据
         populateGeneralData(currentGameData, assaSettingsData,playCharacterData);
-userName = currentGameData.user_character.name || '用户';
+userName = currentGameData.user.name || '用户';
         // 2. 填充全新的角色页面
         populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
 
@@ -38559,7 +38559,7 @@ async function processGachaRewards(results) {
     if (updateMemoryCommands.length > 0) {
         let finalCommand = `<updateMemory>\n${[...new Set(updateMemoryCommands)].join('\n')}\n</updateMemory>\n`;
         if (userMessages.length > 0) {
-            finalCommand += `<(货币已扣除，禁止重复扣除，奖品已交付，禁止重复交付，禁止描写价格)${currentGameData.user_character.name}通过抽奖获得了以下物品：${userMessages.join("，")}。>`;
+            finalCommand += `<(货币已扣除，禁止重复扣除，奖品已交付，禁止重复交付，禁止描写价格)${currentGameData.user.name}通过抽奖获得了以下物品：${userMessages.join("，")}。>`;
         }
         await triggerassa(`/setinput ${finalCommand}`);
     }
@@ -38748,7 +38748,7 @@ function SafeGetValue(value) {
                 
          
 //                 // 核心数据加载（积分等），必须成功
-//                 userPoints = parseInt(SafeGetValue(currentGameData.user_character.points) || 0);
+//                 userPoints = parseInt(SafeGetValue(currentGameData.user.points) || 0);
 //                 document.getElementById('userPoints').textContent = userPoints;
 
 //                 // --- 随机商品解析（单独错误处理）---
@@ -39306,7 +39306,7 @@ async function checkout() {
 
         // 5. 组合并发送最终指令
         let finalCommand = `<updateMemory>\n${[...new Set(updateMemoryCommands)].join('\n')}\n</updateMemory>\n`;
-        finalCommand += `<(货币已扣除，禁止重复扣除，禁止描写价格和购买过程)${currentGameData.user_character.name}购买了以下商品：${userMessages.join("，")}。>`;
+        finalCommand += `<(货币已扣除，禁止重复扣除，禁止描写价格和购买过程)${currentGameData.user.name}购买了以下商品：${userMessages.join("，")}。>`;
 
         const purchasedItemCount = shoppingCart.length;
         await triggerassa(`/setinput ${finalCommand}`);
@@ -39548,7 +39548,7 @@ async function executeSynthesisConfirmation() {
         return;
     }
 
-    const commandStr = `<updateMemory>...\n</updateMemory>\n<${currentGameData.user_character.name}调整了${currentTheme.plot}：${descriptions.join('，')}。>`;
+    const commandStr = `<updateMemory>...\n</updateMemory>\n<${currentGameData.user.name}调整了${currentTheme.plot}：${descriptions.join('，')}。>`;
     try {
         await triggerassa(`/setinput ${commandStr}`);
         hideModal('plot-synthesis-modal');
@@ -40585,7 +40585,7 @@ initializeReadingMode();
     }, 2000);
 
 
-       if (!currentGameData || !assaSettingsData ||!currentGameData.user_character || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
+       if (!currentGameData || !assaSettingsData ||!currentGameData.user || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
             await worldHelper.init();
              await initDisplay();
         }
@@ -40732,7 +40732,7 @@ function searchAllDataObjectsInAssaData(data, name) {
  * 显示队友信息弹窗，并为所有找到的相关信息生成多个美观的卡片
  */
 // function showTeammatesModal() {
-//     const participantsString = SafeGetValue(currentGameData.world_shard.task.participants);
+//     const participantsString = SafeGetValue(currentGameData.world.task.participants);
 //     const teammateList = document.getElementById('teammate-list');
 //     const infoDisplay = document.getElementById('teammate-info-display');
 
@@ -40898,7 +40898,7 @@ await setChatMessages([{ message_id: 0, message: `${archiveTag}\n${messageConten
     // 对于使用物品，我们通常只发送一个请求，让后端处理效果
  
     const itemsToUseString = selectedItems.join("、");
-    const commandString = `<${currentGameData.user_character.name}使用了物品：${itemsToUseString}>`;
+    const commandString = `<${currentGameData.user.name}使用了物品：${itemsToUseString}>`;
 
     try {
         await triggerassa(`/setinput ${commandString}`);
@@ -41009,23 +41009,23 @@ function getCurrentEquipment() {
     //console.log('获取当前装备状态');
     try {
         // 优先从全局变量获取当前装备信息
-        if (currentGameData && currentGameData.stat_data && currentGameData.stat_data.user_character) {
-            const equipment = currentGameData.stat_data.user_character['当前装备'];
+        if (currentGameData && currentGameData.stat_data && currentGameData.stat_data.user) {
+            const equipment = currentGameData.stat_data.user['当前装备'];
             //console.log('从currentGameData获取的装备:', equipment);
             if (equipment) return equipment;
         }
         
         // 备用：从currentGameData获取
-        if (currentGameData && currentGameData.stat_data && currentGameData.stat_data.user_character) {
-            const equipment = currentGameData.stat_data.user_character['当前装备'];
+        if (currentGameData && currentGameData.stat_data && currentGameData.stat_data.user) {
+            const equipment = currentGameData.stat_data.user['当前装备'];
             //console.log('从currentGameData获取的装备:', equipment);
             if (equipment) return equipment;
         }
         
-        // 最后尝试从user_character直接获取
-        if (currentGameData && currentGameData.user_character) {
-            const equipment = currentGameData.user_character['当前装备'];
-            //console.log('从currentGameData.user_character获取的装备:', equipment);
+        // 最后尝试从user直接获取
+        if (currentGameData && currentGameData.user) {
+            const equipment = currentGameData.user['当前装备'];
+            //console.log('从currentGameData.user获取的装备:', equipment);
             if (equipment) return equipment;
         }
         
@@ -41215,9 +41215,9 @@ async function equipItems(slotType, itemNames) {
             //console.log('装备更新前的变量:', variables);
             
             if (!variables.stat_data) variables.stat_data = {};
-            if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
-            if (!variables.stat_data.user_character['当前装备']) {
-                variables.stat_data.user_character['当前装备'] = {
+            if (!variables.stat_data.user) variables.stat_data.user = {};
+            if (!variables.stat_data.user['当前装备']) {
+                variables.stat_data.user['当前装备'] = {
                     "手持": ["无", "当前手持的武器或工具名称"],
                     "穿戴": {
                         "头部": ["无", "头部的装备名称"],
@@ -41229,7 +41229,7 @@ async function equipItems(slotType, itemNames) {
                 };
             }
             
-            const currentEquipment = variables.stat_data.user_character['当前装备'];
+            const currentEquipment = variables.stat_data.user['当前装备'];
             
             if (slotType === '手持') {
                 // 获取当前手持装备
@@ -41288,17 +41288,17 @@ async function equipItems(slotType, itemNames) {
  
             // 从 chat 变量获取最新装备数据
             await updateVariablesWith((chatVars) => {
-                if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
+                if (chatVars.stat_data && chatVars.stat_data.user && chatVars.stat_data.user['当前装备']) {
                     if (!variables.stat_data) variables.stat_data = {};
-                    if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
+                    if (!variables.stat_data.user) variables.stat_data.user = {};
                     
-                    variables.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                    variables.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
                     
                     // 同步到 currentGameData
                     if (currentGameData) {
                         if (!currentGameData.stat_data) currentGameData.stat_data = {};
-                        if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
-                        currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                        if (!currentGameData.stat_data.user) currentGameData.stat_data.user = {};
+                        currentGameData.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
                     }
                 }
                 
@@ -41324,12 +41324,12 @@ async function unequipItem(slotType, itemName) {
         await updateVariablesWith((variables) => {
             //console.log('卸下装备前的变量:', variables);
             
-            if (!variables.stat_data || !variables.stat_data.user_character || !variables.stat_data.user_character['当前装备']) {
+            if (!variables.stat_data || !variables.stat_data.user || !variables.stat_data.user['当前装备']) {
                 //console.log('装备数据不存在');
                 return variables;
             }
             
-            const currentEquipment = variables.stat_data.user_character['当前装备'];
+            const currentEquipment = variables.stat_data.user['当前装备'];
             
             if (slotType === '手持') {
                 if (currentEquipment['手持'][0] !== '无') {
@@ -41374,7 +41374,7 @@ async function unequipItem(slotType, itemName) {
         // 第二步:初始化 message 变量
         // await updateVariablesWith((variables) => {
         //     if (!variables.stat_data) variables.stat_data = {};
-        //     if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
+        //     if (!variables.stat_data.user) variables.stat_data.user = {};
             
         //     return variables;
         // }, { type: 'message', message_id: 'latest' });
@@ -41383,17 +41383,17 @@ async function unequipItem(slotType, itemName) {
         
             // 从 chat 变量获取最新装备数据
             await updateVariablesWith((chatVars) => {
-                if (chatVars.stat_data && chatVars.stat_data.user_character && chatVars.stat_data.user_character['当前装备']) {
+                if (chatVars.stat_data && chatVars.stat_data.user && chatVars.stat_data.user['当前装备']) {
                     if (!variables.stat_data) variables.stat_data = {};
-                    if (!variables.stat_data.user_character) variables.stat_data.user_character = {};
+                    if (!variables.stat_data.user) variables.stat_data.user = {};
                     
-                    variables.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                    variables.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
                     
                     // 同时更新全局currentGameData以便立即生效
                     if (currentGameData) {
                         if (!currentGameData.stat_data) currentGameData.stat_data = {};
-                        if (!currentGameData.stat_data.user_character) currentGameData.stat_data.user_character = {};
-                        currentGameData.stat_data.user_character['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user_character['当前装备']));
+                        if (!currentGameData.stat_data.user) currentGameData.stat_data.user = {};
+                        currentGameData.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
                     }
                 }
                 
@@ -41659,7 +41659,7 @@ function renderWorldBook() {
     displayArea.innerHTML = ''; // 每次渲染前，都先擦干净书页
 
     if (currentTab === 'the_created') {
-        if (typeof currentGameData !== 'undefined' && currentGameData.world_shard && currentGameData.the_created) {
+        if (typeof currentGameData !== 'undefined' && currentGameData.world && currentGameData.the_created) {
             const createdData = currentGameData.the_created;
             const entryDiv = document.createElement('div');
             entryDiv.className = 'book-entry created-entry';
@@ -43232,10 +43232,10 @@ otherSkillSelections.forEach(skillInput => {
     const usedOtherSkills = otherSkillSelections.map(cb => cb.dataset.name);
 
     if (usedOtherSkills.length > 0) {
-        userActionTextParts.push(`（能量池已扣除，禁止重复扣除）${currentGameData.user_character.name}使用了「${usedOtherSkills.join('」、「')}」`);
+        userActionTextParts.push(`（能量池已扣除，禁止重复扣除）${currentGameData.user.name}使用了「${usedOtherSkills.join('」、「')}」`);
     }
     if (willpowerToSpend > 0) {
-        userActionTextParts.push(`（意志力已扣除，禁止重复扣除）${currentGameData.user_character.name}投入了 ${willpowerToSpend} 点意志力的决意`);
+        userActionTextParts.push(`（意志力已扣除，禁止重复扣除）${currentGameData.user.name}投入了 ${willpowerToSpend} 点意志力的决意`);
     }
 
     let userActionText = '';
@@ -44014,7 +44014,7 @@ function showRollResultModal() {
             outcome,
             damage_calculation
         } = checkMemoryData;
-        const playerName = currentGameData.user_character.name || '用户';
+        const playerName = currentGameData.user.name || '用户';
 
         // --- 玩家应对 ---
         html += `
@@ -45386,7 +45386,7 @@ const resourceReadyGuard = async () => {
     friendsList = [];
     availableGroups = [];
     const checkedFriends = new Set();
-    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    const userNickname = currentGameData?.user?.nick_name || '你';
 
     // --- A. 好友探测 (私聊) 部分 ---
     const addFriend = (name) => {
@@ -45460,7 +45460,7 @@ if (settingsGroups && typeof settingsGroups === 'object') {
 
 const initializePrivateChatStore = () => {
     privateChatStore = {};
-    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    const userNickname = currentGameData?.user?.nick_name || '你';
 
     conversationHistory.forEach(historyItem => {
       // 修改正则表达式以匹配新的 <msg> 格式
@@ -45691,7 +45691,7 @@ const setFriendAvatar = async (avatarContainer, friendName) => {
 
         // 获取成员名单
         const members = getGroupMembers(group.name);
-        const uniqueMembers = members.filter(m => m !== '你' && m !== currentGameData?.user_character?.nick_name); // 过滤掉自己让显示更精简
+        const uniqueMembers = members.filter(m => m !== '你' && m !== currentGameData?.user?.nick_name); // 过滤掉自己让显示更精简
         // 拼接成 " (张三, 李四...)"
         const memberText = uniqueMembers.length > 0 ? `(${uniqueMembers.join(', ')})` : '';
 
@@ -45835,7 +45835,7 @@ const switchActiveChat = (type, id) => {
 
                             item.addEventListener('click', () => {
                                 // 跳转私聊逻辑
-                                if(mName === currentGameData?.user_character?.nick_name) return; // 点自己不跳转
+                                if(mName === currentGameData?.user?.nick_name) return; // 点自己不跳转
                                 membersPanel.style.display = 'none';
                                 switchActiveChat('private', mName);
                             });
@@ -45874,7 +45874,7 @@ const switchActiveChat = (type, id) => {
         loader.textContent = hasMoreMessages ? '查看更早的记录...' : '没有更早的记录了';
 
         const messagesContainer = document.createDocumentFragment();
-        const userNickname = currentGameData?.user_character?.nick_name || '你';
+        const userNickname = currentGameData?.user?.nick_name || '你';
         (messages || []).forEach(msg => messagesContainer.appendChild(createMessageElement(msg, userNickname)));
 
         if (mode === 'append') {
@@ -46361,7 +46361,7 @@ const handleSendMessage = () => {
     const messageText = input.value.trim();
     if (!messageText) return;
 
-    const userNickname = currentGameData?.user_character?.nick_name || '你';
+    const userNickname = currentGameData?.user?.nick_name || '你';
     const localMessageBase = { user_id: userNickname, content: messageText };
 
     let fullMessageForAI = messageText;
@@ -46476,7 +46476,7 @@ const handleSendMessage = () => {
     // ✨【妈妈的新魔法：新消息提示】✨
     const lastHistoryItem = conversationHistory[conversationHistory.length - 1];
     if (lastHistoryItem && lastHistoryItem.content) {
-      const userNickname = currentGameData?.user_character?.nick_name || '你';
+      const userNickname = currentGameData?.user?.nick_name || '你';
 
       // 我们只关心新私信的发信人。修改正则表达式以匹配 <msg>
       const privateChatMatches = [...lastHistoryItem.content.matchAll(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/g)];
@@ -49175,7 +49175,7 @@ card.querySelector('.health-text').textContent = `${character.currentHealth} / $
 }
 function getStatusBonuses_combat(statData) {
     const bonuses = {};
-    const statusString = statData?.user_character?.status?.[0] || "";
+    const statusString = statData?.user?.status?.[0] || "";
     if (!statusString) return bonuses;
     const matches = statusString.match(/【[^】]+】/g);
     if (!matches) return bonuses;
@@ -49193,7 +49193,7 @@ function getStatusBonuses_combat(statData) {
 
 function getLocationBonuses(statData, assaData) {
     const bonuses = {};
-    const currentLocationTitle = statData?.user_character?.current_location?.[0] || '';
+    const currentLocationTitle = statData?.user?.current_location?.[0] || '';
     if (!currentLocationTitle) return bonuses;
     const globalLocations = assaData?.map?.全局地点表 || {};
     const mainLocations = assaData?.map?.主要地点表 || {};
@@ -49224,7 +49224,7 @@ function getLocationBonuses(statData, assaData) {
 
 function getEquipmentBonuses_combat(statData, assaData) {
     const bonuses = {};
-    const equipment = statData?.user_character?.当前装备 || {};
+    const equipment = statData?.user?.当前装备 || {};
     const equipmentList = [];
     if (equipment.手持?.[0]) equipmentList.push(...equipment.手持[0].split(/;|；/).map(i=>i.trim()).filter(Boolean));
     if (equipment.穿戴) {
