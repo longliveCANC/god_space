@@ -861,17 +861,25 @@
             }
 
             // --- 剩余字段 (递归 + 过滤，现在会自动跳过我们处理过的内容) ---
-            Object.keys(data).forEach(k => {
+  Object.keys(data).forEach(k => {
                 if(ignoreKeys.includes(k) || k.startsWith('_')) return;
 
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
-                sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
 
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'mod01-text-block';
-                this.renderDeepObject(contentDiv, data[k]);
-                sec.appendChild(contentDiv);
+                // 判断是否是物品列表
+                if (this.isInventory(data[k])) {
+                    // 是物品列表，就用新的分页渲染器
+                    this.renderInventoryPaged(sec, data[k], k);
+                } else {
+                    // 不是，就用原来的通用渲染器
+                    sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'mod01-text-block';
+                    this.renderDeepObject(contentDiv, data[k]);
+                    sec.appendChild(contentDiv);
+                }
+
                 root.appendChild(sec);
             });
         }
