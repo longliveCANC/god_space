@@ -986,7 +986,7 @@
                 return;
             }
 
-            const pageSize = 2;
+            const pageSize = 1;
             let currentPage = 1;
             const totalPages = Math.ceil(itemsArray.length / pageSize);
 

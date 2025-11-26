@@ -14628,7 +14628,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.13';
+let current_game_version = '3.3.14';
  let prompts_be_sent = null;
  
 let storyChapters = [];
@@ -41609,7 +41609,7 @@ function renderNestedData(container, data, parentPath = '', rootTab = '', hideFa
 
                 childrenContainer = document.createElement('div');
                 childrenContainer.className = 'tree-children collapsed';
-                renderNestedData(childrenContainer, value, currentPath, rootTab, true, isReadOnly);
+                renderNestedData(childrenContainer, value, currentPath, rootTab, false, isReadOnly);
 
                 toggle.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -41799,7 +41799,7 @@ function renderWorldBook() {
 
                 // 关键修正：将完整的父路径传递给 renderNestedData
                 const rootEntryPath = `${getEntryPath(currentTab)}.${key}`;
-               renderNestedData(contentDiv, value, rootEntryPath, currentTab, true, false);
+               renderNestedData(contentDiv, value, rootEntryPath, currentTab, false, false);
                 cardHeader.addEventListener('click', (e) => {
                     if (e.target.closest('.entry-menu-button')) return;
                     contentDiv.classList.toggle('collapsed');
