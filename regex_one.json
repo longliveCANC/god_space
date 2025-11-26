@@ -15572,11 +15572,13 @@ const npcImageMap_fallbackData = {
         modal.classList.add('active');
     }
     async function loadDataAndRender() {
-        if(allRemoteMods.length === 0) {
-            try {
+         if (allRemoteMods.length === 0) {
+            if (typeof loadRemoteJson !== 'function') {
                 const res = await fetch(REMOTE_URL);
                 allRemoteMods = await res.json();
-            } catch(e) { console.error('Remote load failed', e); }
+            } else {
+                 allRemoteMods = await loadRemoteJson(REMOTE_URL, []);
+            }
         }
         allLocalMods = await getLocalScripts();
 
