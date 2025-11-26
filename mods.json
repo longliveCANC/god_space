@@ -23,7 +23,7 @@
     "id": "mod02-数据编辑器",
     "name": "数据编辑器",
     "author": "assa",
-    "version": "1.0",
+    "version": "1.1",
     "tags": ["脚本","通用"],
     "description": "开启该脚本后，令小盒左上角可以直接编辑世界状态和人物角色数据。也就是statdata和playcharacterdata。需要游戏版本是3.3.13及以上",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod02.js",
