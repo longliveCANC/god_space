@@ -45,7 +45,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["world","dlc"],
-    "description": "带简单分阶段的领养小孩模拟器mod，需外挂该世界书并开启无世界观。小孩有专属的属性字段，因此比较推荐就用原版的简单npc档案。建议关骰子。专属该dlc的美化正在施工中...",
+    "description": "带简单分阶段的领养小孩模拟器，需外挂该世界书并开启无世界观。小孩有专属的属性字段，因此比较推荐就用原版的简单npc档案。没有开局，自己随便输入吧，什么随机初始化啥的。建议关骰子。专属该dlc的美化正在施工中...",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养小孩-外挂版世界书.json",
     "previewImage": ""
