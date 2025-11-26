@@ -383,16 +383,18 @@
 }
 .mod01-item-card-header {
     display: flex;
-    justify-content: space-between;
+    /* justify-content: space-between; <-- 妈妈把这行去掉了 */
     align-items: center;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 8px;
     margin-bottom: 12px;
+    gap: 8px; /* <-- 妈妈用 gap 来控制间距 */
 }
 .mod01-item-card-title {
     font-size: 16px;
     font-weight: bold;
     color: var(--primary-color);
+    flex-grow: 1; /* <-- 妈妈加了这行，让标题占据多余空间，把质量标签推到最右边 */
 }
 .mod01-item-card-quality {
     font-size: 11px;
@@ -470,6 +472,48 @@
     color: var(--primary-color);
     display: block;
     margin-bottom: 5px;
+}
+    .mod01-item-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 15px;
+    transition: all 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* <-- 妈妈帮你加了这一行，为了数量能定位 */
+    padding-bottom: 30px; /* <-- 妈妈帮你增加了底部空间，给数量留位置 */
+}
+
+/* --- 新增：物品种类标签 --- */
+.mod01-item-card-type-tag {
+    font-size: 10px;
+    padding: 1px 7px;
+    /* margin-left: 8px; <-- 妈妈把这行去掉了，因为用了 gap */
+    border-radius: 4px;
+    background: var(--secondary-color);
+    color: var(--container-bg-color);
+    text-transform: uppercase;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* --- 新增：物品数量角标 --- */
+.mod01-item-card-count {
+    position: absolute;
+    bottom: 8px;
+    right: 15px;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-secondary-color);
+    opacity: 0.7;
+}
+
+/* --- 修改：布尔值标签的样式可以更简洁 --- */
+.mod01-info-tag.boolean {
+    background: rgba(0, 250, 255, 0.1); /* 用一个特别的背景色来区分 */
+    color: var(--primary-color);
 }
         `;
         document.head.appendChild(style);
@@ -751,21 +795,19 @@
             root.innerHTML = '';
             const data = npc.data;
 
-            // --- 妈妈的改动：提前定义所有需要特殊处理的字段 ---
+            // --- 妈妈帮你更新了忽略列表 ---
             const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp'];
 
 
             // --- 0. 顶部区域：名字、外貌、好感度 (这部分保持不变) ---
             const headSection = document.createElement('div');
             headSection.className = 'mod01-card-head';
-            // 左侧信息 + 外貌
             const basicInfo = document.createElement('div');
             basicInfo.className = 'mod01-basic-info';
             basicInfo.style.flex = "1";
             basicInfo.innerHTML = `<h1>${npc.name}</h1>`;
             if(data.外貌) basicInfo.innerHTML += `<div class="mod01-desc-box">${data.外貌}</div>`;
             else basicInfo.innerHTML += `<div class="mod01-desc-box">...</div>`;
-            // 右侧好感度
             let favorHtml = '';
             if(data.好感度 !== undefined) {
                 let fVal = parseInt(data.好感度);
@@ -780,20 +822,18 @@
             }
             root.appendChild(headSection);
 
-            // --- 妈妈的改动：新增一个容器，专门放我们的新标签 ---
+            // --- 顶部信息标签容器 ---
             const tagsContainer = document.createElement('div');
             tagsContainer.className = 'mod01-info-tags-container';
-            root.appendChild(tagsContainer); // 提前插入，这样内容就在最上面了
+            root.appendChild(tagsContainer);
 
-            // 解析 性别
+            // --- 已有标签渲染 (性别, 年龄, HP) ---
             if (data.性别) {
                 tagsContainer.innerHTML += `<div class="mod01-info-tag"><strong>性别:</strong> ${data.性别}</div>`;
             }
-            // 解析 年龄
             if (data.年龄) {
                 tagsContainer.innerHTML += `<div class="mod01-info-tag"><strong>年龄:</strong> ${data.年龄}</div>`;
             }
-            // 解析 HP
             if (data.hp && typeof data.hp === 'string' && data.hp.includes('/')) {
                 const [current, max] = data.hp.split('/').map(n => parseInt(n.trim()));
                 if (!isNaN(current) && !isNaN(max) && max > 0) {
@@ -808,6 +848,20 @@
                      tagsContainer.innerHTML += `<div class="mod01-info-tag"><strong>HP:</strong> ${data.hp}</div>`;
                 }
             }
+
+            // --- ★ 妈妈的新魔法：自动渲染布尔值为 true 的标签 ---
+            Object.entries(data).forEach(([key, value]) => {
+                 if( key.startsWith('_')) return;
+                // 如果值是 true (布尔值或字符串) 并且我们还没处理过它
+                if ((value === true || String(value).toLowerCase() === 'true') && !ignoreKeys.includes(key)) {
+
+                    // 创建一个漂亮的标签
+                    tagsContainer.innerHTML += `<div class="mod01-info-tag boolean">${key}</div>`;
+                    // 告诉后面的代码不要再重复渲染这个字段了
+                    ignoreKeys.push(key);
+                }
+            });
+
 
             // --- 妈妈的改动：用正则表达式查找并渲染关系/印象 ---
             const relationRegex = /(和.+关系|对.+印象)$/;
@@ -860,31 +914,30 @@
                 ignoreKeys.push('关键记忆');
             }
 
-            // --- 剩余字段 (递归 + 过滤，现在会自动跳过我们处理过的内容) ---
-  Object.keys(data).forEach(k => {
-                if(ignoreKeys.includes(k) || k.startsWith('_')) return;
+          Object.keys(data).forEach(k => {
+                const value = data[k];
+                // ★ 妈妈的重点修改：_ 开头的字段是最高优先级，直接跳过
+                if (k.startsWith('_')) return;
+
+                // 然后再检查其他忽略条件
+                if(ignoreKeys.includes(k) || value === false || String(value).toLowerCase() === 'false') return;
 
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
 
-                // 判断是否是物品列表
-                if (this.isInventory(data[k])) {
-                    // 是物品列表，就用新的分页渲染器
-                    this.renderInventoryPaged(sec, data[k], k);
+                if (this.isInventory(value)) {
+                    this.renderInventoryPaged(sec, value, k);
                 } else {
-                    // 不是，就用原来的通用渲染器
                     sec.innerHTML = `<div class="mod01-sec-title">${k}</div>`;
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'mod01-text-block';
-                    this.renderDeepObject(contentDiv, data[k]);
+                    this.renderDeepObject(contentDiv, value);
                     sec.appendChild(contentDiv);
                 }
 
                 root.appendChild(sec);
             });
         }
-
-  
 
         // --- 新增：沉浸式事件渲染 ---
         renderEvents(container, evtData) {
@@ -919,11 +972,11 @@
 
             container.appendChild(box);
         }
-          // --- 新增：物品/背包的分页卡片化渲染器 ---
+
         renderInventoryPaged(container, invData, title) {
             container.innerHTML = `<div class="mod01-sec-title">${title}</div>`;
 
-            // 1. 数据转换：将对象转换为数组
+            // ★ 妈妈的重点修改：在数据转换时就过滤掉 _ 开头的
             const itemsArray = Object.entries(invData)
                 .filter(([key, val]) => !key.startsWith('_') && typeof val === 'object')
                 .map(([name, data]) => ({ name, data }));
@@ -933,8 +986,7 @@
                 return;
             }
 
-            // 2. 分页逻辑 (大量复用自记忆分页)
-            const pageSize = 1; // 每页显示4个物品
+            const pageSize = 2;
             let currentPage = 1;
             const totalPages = Math.ceil(itemsArray.length / pageSize);
 
@@ -954,9 +1006,11 @@
                     card.className = 'mod01-item-card';
 
                     let detailsHtml = '';
-                    // 使用我们的中文映射来生成详情
+                    const specialKeys = ['quality', 'type', 'num'];
+
                     Object.entries(item.data).forEach(([key, value]) => {
-                         if (key === 'quality' || key.startsWith('_')) return; // 'quality' 在头部显示，跳过
+                         // ★ 妈妈的重点修改：再次确认过滤 _ 字段
+                         if (key.startsWith('_') || specialKeys.includes(key)) return;
                         const label = this.KEY_MAP[key] || key;
                         detailsHtml += `
                             <div class="mod01-item-detail-row">
@@ -966,33 +1020,35 @@
                         `;
                     });
 
+                    // ★ 妈妈的重点修改：调整了HTML结构，让种类紧跟名字
                     card.innerHTML = `
                         <div class="mod01-item-card-header">
                             <span class="mod01-item-card-title">${item.name}</span>
+                            ${item.data.type ? `<span class="mod01-item-card-type-tag">${item.data.type}</span>` : ''}
                             ${item.data.quality ? `<span class="mod01-item-card-quality">${item.data.quality}</span>` : ''}
                         </div>
                         <div class="mod01-item-card-details">${detailsHtml}</div>
+                        ${item.data.num ? `<div class="mod01-item-card-count">x${item.data.num}</div>` : ''}
                     `;
                     grid.appendChild(card);
                 });
             };
 
-            // 3. 分页控制器 (与记忆分页完全一致的逻辑)
+            // 分页控制器逻辑 (这部分保持不变)
             if (totalPages > 1) {
-                           const createBtn = (text, onClick) => {
-                const btn = document.createElement('div');
-                btn.className = 'mod01-page-btn';
-                btn.innerText = text;
-                btn.onclick = onClick;
-                return btn;
-            };
-                // 你可以直接从 renderMemoriesPaged 函数中复制完整的 "分页控制器" 逻辑代码到这里
-                // 从 const createBtn... 到 controlBar.appendChild(btnLast);
-                const btnFirst = document.createElement('div'); btnFirst.className = 'mod01-page-btn'; btnFirst.innerText = '<<'; btnFirst.onclick = () => changePage(1);
-                const btnPrev = document.createElement('div'); btnPrev.className = 'mod01-page-btn'; btnPrev.innerText = '<'; btnPrev.onclick = () => changePage(currentPage - 1);
-                const pageInfo = document.createElement('div'); pageInfo.className = 'mod01-page-info';
-                const btnNext = document.createElement('div'); btnNext.className = 'mod01-page-btn'; btnNext.innerText = '>'; btnNext.onclick = () => changePage(currentPage + 1);
-                const btnLast = document.createElement('div'); btnLast.className = 'mod01-page-btn'; btnLast.innerText = '>>'; btnLast.onclick = () => changePage(totalPages);
+                const createBtn = (text, onClick) => {
+                    const btn = document.createElement('div');
+                    btn.className = 'mod01-page-btn';
+                    btn.innerText = text;
+                    btn.onclick = onClick;
+                    return btn;
+                };
+                const btnFirst = createBtn('<<', () => changePage(1));
+                const btnPrev  = createBtn('<',  () => changePage(currentPage - 1));
+                const pageInfo = document.createElement('div');
+                pageInfo.className = 'mod01-page-info';
+                const btnNext  = createBtn('>',  () => changePage(currentPage + 1));
+                const btnLast  = createBtn('>>', () => changePage(totalPages));
 
                 const updateControls = () => {
                     pageInfo.innerText = `${currentPage} / ${totalPages}`;
@@ -1015,8 +1071,9 @@
             }
 
             container.appendChild(grid);
-            renderPage(); // 初始渲染第一页
+            renderPage();
         }
+ 
          // --- 修改 3：记忆分页 (顶部 + 极速跳转) ---
         renderMemoriesPaged(container, memObj) {
             const sec = document.createElement('div');
