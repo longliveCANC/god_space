@@ -40,7 +40,7 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/自定义词条世界书.json",
     "previewImage": ""
   } , {
-    "id": "小蝌蚪找妈妈-mod-合理性审查之骰",
+    "id": "x-mod-合理性审查之骰",
     "name": "合理性审查之骰",
     "author": "assa",
     "version": "1.0",
@@ -51,7 +51,7 @@
     "previewImage": ""
   } , {
     "id": "领养小孩-外挂版世界书",
-    "name": "dlc:领养小孩",
+    "name": "领养小孩",
     "author": "assa",
     "version": "1.0",
     "tags": ["dlc"],
@@ -71,7 +71,7 @@
     "previewImage": ""
   } , {
     "id": "小蝌蚪找妈妈-dlc-垂钓诸天",
-    "name": "dlc:垂钓诸天",
+    "name": "垂钓诸天",
     "author": "原作者:GG棒 二改:assa",
     "version": "1.0",
     "tags": ["dlc"],
