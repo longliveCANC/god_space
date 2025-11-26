@@ -5,7 +5,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["UI", "world"],
-    "description": "真的会有想投稿的吗？如果有想要投稿的自定义mod（世界书或脚本），请找assa。文件是简陋的接口文档",
+    "description": "dlc需要开启无世界观。真的会有想投稿的吗？如果有想要投稿的自定义mod（世界书或脚本），请找assa。文件是简陋的接口文档",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
   "previewImage": ""
@@ -44,7 +44,7 @@
     "name": "dlc:领养小孩",
     "author": "assa",
     "version": "1.0",
-    "tags": ["world","需开无世界观"],
+    "tags": ["world","dlc"],
     "description": "带简单分阶段的领养小孩模拟器mod，需外挂该世界书并开启无世界观。小孩有专属的属性字段，因此比较推荐就用原版的简单npc档案。建议关骰子。专属该dlc的美化正在施工中...",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养小孩-外挂版世界书.json",
@@ -58,6 +58,16 @@
     "description": "拓展了原本的物品格式，且会在正文生成物品、个人面板等被美化过的信息面板。主神模式专用。",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/信息面板.json",
+    "previewImage": ""
+  } , {
+    "id": "小蝌蚪找妈妈-dlc-垂钓诸天",
+    "name": "dlc:垂钓诸天",
+    "author": "原作者:GG棒 二改:assa",
+    "version": "1.0",
+    "tags": ["world","dlc"],
+    "description": "感谢GG棒开放二创授权！地球被高等文明选中，所有人被传送到一个孤岛，开始钓鱼，所有生活物资都只能靠钓鱼获取。",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-dlc-垂钓诸天.json",
     "previewImage": ""
   } 
 ]
