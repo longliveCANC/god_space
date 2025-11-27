@@ -25965,8 +25965,8 @@ function processFinalMessageModules() {
         const content = lastMessage.content;
         processSpecialModulesInMessage(content);
         if(is_show_notifications === 'true'){
-        // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
-           handleNotificationsFromBatch();
+        handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
+        //    handleNotificationsFromBatch();
         }
     }
 
