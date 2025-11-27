@@ -12342,6 +12342,55 @@ pointer-events: auto;
     align-items: center;
     gap: 8px;
 }
+
+.music-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px; /* 与上方元素的间距 */
+    color: var(--text-secondary-color, #aaa); /* 图标颜色 */
+}
+
+/* 音量滑块样式 */
+.volume-slider {
+    -webkit-appearance: none; /* 移除默认样式 */
+    appearance: none;
+    width: 100%; /* 占满剩余空间 */
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* 滑块的滑轨（Chrome, Safari） */
+.volume-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+}
+
+/* 滑块的拖动按钮（Chrome, Safari） */
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color, #00faff);
+    border-radius: 50%;
+    margin-top: -4px; /* 垂直居中 */
+    box-shadow: 0 0 4px rgba(0, 250, 255, 0.5);
+}
+
+/* 滑块的拖动按钮（Firefox） */
+.volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color, #00faff);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
   </style>
  
 </head>
@@ -14628,7 +14677,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.18';
+let current_game_version = '3.3.19';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -24537,6 +24586,18 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         // 元数据加载后显示总时长
         this.audio.onloadedmetadata = () => this.updateProgress();
     },
+   setVolume: function(value) {
+        const newVolume = parseFloat(value);
+        if (isNaN(newVolume)) return;
+
+        // 更新 audio 元素的实时音量
+        this.audio.volume = newVolume;
+        // 更新默认音量，这样下次播放或切歌时会记住这个设置
+        this.defaultVolume = newVolume;
+
+        // (可选) 为了让所有滑块UI同步，但按你要求，我们先不加，保持简单
+        // document.querySelectorAll('.volume-slider').forEach(slider => slider.value = newVolume);
+    },
 
     // 格式化时间 (秒 -> mm:ss)
     formatTime: function(seconds) {
@@ -24609,9 +24670,10 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
                         let vol = 0;
                         this.audio.volume = 0;
                         const fadeIn = setInterval(() => {
-                            if (vol < this.defaultVolume) {
-                                vol += 0.05;
-                                this.audio.volume = Math.min(vol, 1); 
+                              if (vol < this.defaultVolume) {
+                            vol += 0.05;
+                            // ✨ 修改这里：确保音量不会超过 this.defaultVolume
+                            this.audio.volume = Math.min(vol, this.defaultVolume);
                             } else {
                                 clearInterval(fadeIn);
                                 resolve();
@@ -24997,6 +25059,17 @@ if(is_show_notifications === 'true'){
                 <div class="music-card-left">
                     <div class="music-card-title">${song}</div>
                     <div class="music-card-artist">${artist}</div>
+                            <div class="music-volume-control">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path></svg>
+            <input
+                type="range"
+                class="volume-slider"
+                min="0"
+                max="1"
+                step="0.01"
+                value="0.5"
+                oninput="GlobalChatAudio.setVolume(this.value)">
+        </div>
                     <div class="music-progress-track">
                         <div id="prog-bar-${domId}" class="music-progress-bar"></div>
                     </div>
