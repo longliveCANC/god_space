@@ -14628,7 +14628,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.17';
+let current_game_version = '3.3.18';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -28665,7 +28665,10 @@ function handleNotificationsFromBatch(operations) {
     // 如果没有传入 operations，就默认使用全局的 collectedBatchOps
       let  opsToProcess = operations || collectedBatchOps;
 
-    if (!opsToProcess || opsToProcess.length === 0) return;
+    if (!opsToProcess || opsToProcess.length === 0) {
+         showUpdateNotification(`没有发现变量更新指令，请在左下角按情况使用重roll/继续/继续[变量]`);
+         return;
+    };
   const  uniqueOpsMap = new Map();
     opsToProcess.forEach(op => {
         // 生成唯一标识：操作类型 + 路径 + 键名
