@@ -14628,7 +14628,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.18';
+let current_game_version = '3.3.17';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -30749,17 +30749,23 @@ for (const entry of worldInfoForProcessing) {
 
             }
      
-            try {
-      const messageVars = await TavernHelper.getVariables({ type: 'chat' });
+  try {
+  const messageVars = await TavernHelper.getVariables({ type: 'chat' });
 if (messageVars && messageVars.检定记忆) {
     currentRollData = messageVars.检定记忆;
     console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
+           if (!rollCardShownThisTurn && currentRollData) {
+                    showRollResultCard(currentRollData);
+                    rollCardShownThisTurn = true; // 标记已显示，防止重复
+ }
          await updateVariablesWith(old_variables => {
             return {
                 ...old_variables,
                 checkok: 'false',
             };
         }, { type: 'chat' });
+
+
                 }else{
                      console.log("messageVars.checkMemory不存在？");
                 }
@@ -30960,12 +30966,8 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 // 使用节流函数更新UI，而不是直接硬更
                 throttledRender(fullText);
 
-                // ❤️ 投骰子和注入扫描保持不变
-                const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
-                if (!rollCardShownThisTurn && currentRollData) {
-                    showRollResultCard(currentRollData);
-                    rollCardShownThisTurn = true;
-                }
+       
+          
             };
 
  const injections = [];
@@ -31068,10 +31070,7 @@ if (isContinuation) {
 
         } else {//非流式
             const generationEndedListener = (response) => {
-                if (!rollCardShownThisTurn && currentRollData) {
-                    showRollResultCard(currentRollData);
-                    rollCardShownThisTurn = true; // 标记已显示，防止重复
-                }
+         
                 aiResponseBubble.innerHTML = formatAsDisplayedMessage(response);
                 // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
             };
