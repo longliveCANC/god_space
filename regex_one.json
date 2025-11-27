@@ -14628,7 +14628,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.16';
+let current_game_version = '3.3.17';
  let prompts_be_sent = null;
  
 let storyChapters = [];
@@ -22430,7 +22430,7 @@ async function sendCommand(command, button, successText, showWarning) {
             if(warningMessage) warningMessage.style.display = 'block';
         }
 
- 
+ try{
         // 1. 获取角色卡绑定的世界书
         const charWorldbooks = getCharWorldbookNames('current');
         const charAllWorldbooks = [
@@ -22450,17 +22450,21 @@ async function sendCommand(command, button, successText, showWarning) {
             await rebindGlobalWorldbooks(newGlobalWorldbooks);
             toastr.info(`已取消全局世界书 "${targetWorldbook}" 的绑定(因角色卡已绑定)`);
         }
-        
+        }catch{
+            toastr.warning("检查世界书出错"+e);
+        }
 
   if(sendMode === 'manual'){
     if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof worldHelper.renderHistory === 'function') {
         
- 
-        // 4. 合并所有需要检查的世界书(角色+全局)
+         let foundOpening = false;
+
+         
+ try{
         const allBoundWorldbooks = [...new Set([...getGlobalWorldbookNames()])];
         
  
-        let foundOpening = false;
+
         if (allBoundWorldbooks.length > 0) {
             for (const worldbookName of allBoundWorldbooks) {
                 try {
@@ -22475,11 +22479,13 @@ async function sendCommand(command, button, successText, showWarning) {
                         break; // 找到第一个就停止
                     }
                 } catch (e) {
-                    console.warn(`读取世界书 "${worldbookName}" 时出错:`, e);
+                    toastr.warn(`读取世界书 "${worldbookName}" 时出错:`+e);
                 }
             }
         }
-        
+              }catch{
+            toastr.warning("获取全局世界书的时候出错"+e);
+        }
         // 6. 如果没找到[开局]词条,使用原来的默认提示
         if (!foundOpening) {
             conversationHistory.push({ role: 'assistant', content: '<系统提示:等待用户输入要求...>' });
