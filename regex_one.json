@@ -14660,6 +14660,16 @@ let is_show_notifications = "true";
         itemsPerPage: 5, // 每页显示5条，你可以根据喜好调整
         data: {}
     };
+            let keyLocalizationMap = {
+        "info": "简介",
+        "effect": "属性",
+        "type": "种类",
+        "quality": "质量",
+          "num": "数量",
+        "level": "等级",
+        "status":"状态" // 看，新的小标签就在这里！
+    };
+         
 const processedImageCache = new Map();
 let userName = '用户';
   // 妈妈为你设定的世界书ID
@@ -24902,7 +24912,7 @@ initDisplay();
 
  function delayedUpdate(content) {
     // handleUpdateNotifications(content);
-    handleNotificationsFromBatch();
+    // handleNotificationsFromBatch();
  
 }
 if(is_show_notifications === 'true'){
@@ -28679,8 +28689,11 @@ function handleNotificationsFromBatch(operations) {
     const updatedMapLocations = new Set();
     let hasSummaryUpdate = false;
 
-    opsToProcess.forEach(op => {
+    opsToProcess.forEach(op => { 
         const { type, path, key, value, context } = op;
+                const displayKey = keyLocalizationMap[key] || key;
+        const displayOldKey = (context && context.oldKey) ? (keyLocalizationMap[context.oldKey] || context.oldKey) : null;
+
         // --- 1. 处理 set_status (状态与生命) ---
         if (type === 'set_status') {
             // 🩸 规则：生命波动 (health-change)
@@ -28738,21 +28751,39 @@ function handleNotificationsFromBatch(operations) {
                 showUpdateNotification(`${npcName} 的好感度变为 ${value}`);
             }
             // 📅 规则：事件追踪 (generic-event-tracker)
-            else if (path.endsWith('.事件') || key === 'event' || key === '事件' || key === '当前状态') {
-                // 简单的判定，具体逻辑可以像正则版那样细化
-                let displayName = path.endsWith('.事件') ? path.split('.').slice(-2, -1)[0] : path.split('.').pop();
-                displayEventTag(displayName, value);
+               else if (path.endsWith('.事件') || key === 'event' || key === '事件' || ['当前状态', '当前想法', '情绪基调'].includes(key)) {
+                // 1. 智能提取名字
+                // 如果路径以 .事件 结尾，名字在倒数第二位 (npc.Name.事件)
+                // 否则假设路径本身就是名字 (这种情况比较少见，但为了兼容保留逻辑)
+                let displayName = path.endsWith('.事件')
+                    ? path.split('.').slice(-2, -1)[0]
+                    : path.split('.').pop();
+
+                // 2. 智能包装数据
+                // 如果 key 是具体的属性名，说明 value 只是文本，我们需要把它包装成 JSON 对象
+                let finalValue = value;
+                if (['当前状态', '当前想法', '情绪基调'].includes(key)) {
+                    // 构造一个临时的对象，然后转为 JSON 字符串
+                    // 这样 displayEventTag 就能读懂它了：{ "当前状态": "..." }
+                    try {
+                        const obj = {};
+                        obj[key] = value;
+                        finalValue = JSON.stringify(obj);
+                    } catch (e) {
+                        console.warn(`[Nova] 事件数据包装失败:`, e);
+                    }
+                }
+
+                displayEventTag(displayName, finalValue);
             }
             // 🎒 规则：背包更新
-            else if (path.includes('global_lore.背包') ) {
-                flashElement('page-character-orb', 'notify', 5000);
-                 showUpdateNotification(` 背包 更新了 ${key}`);
-            } else if (path.includes('global_lore.其他技能')) {
-                flashElement('page-character-orb', 'notify', 5000);
-                 showUpdateNotification(` 其他技能 更新了 ${key}`);
-            }
+     else if (path.includes('global_lore.背包') || path.includes('global_lore.其他技能')) {
+    flashElement('page-character-orb', 'notify', 5000);
+    const category = path.replace('global_lore.','');
+    showUpdateNotification(`${category} 更新了 ${displayKey}`);
+} 
             // 🗺️ 规则：地图更新
-            else if (path.includes('map.')) {
+  else if (path.includes('map.')) {
                 flashElement('map-view-orb', 'notify', 5000);
 
                 // 💖 补全部分：提取主要地点表更新
@@ -28775,7 +28806,8 @@ function handleNotificationsFromBatch(operations) {
                         updatedMapLocations.add(locationName);
                         updateDetails.mapUpdates.push(locationName.trim());
                         console.log(`🗺️ 地图更新已记录: ${locationName}`);
-                          showUpdateNotification(` 主要地点表 更新了 ${locationName}`);
+                       const category = path.replace('map.','');
+                          showUpdateNotification(` ${category} 更新了 ${displayKey}`);
                     }
                 }
             }
@@ -28783,14 +28815,14 @@ function handleNotificationsFromBatch(operations) {
             // 排除掉上面已经处理过的特殊情况
            else  if (!path.startsWith('summary.') && !path.startsWith('map.') && !path.endsWith('.事件')) {
                 // 简单的翻译逻辑
-                const translationMap = { 'global_lore': '全局', 'world_lore': '世界', 'npc': '人物', 'settings': '设定', 'plot': '剧情' };
+                const translationMap = { 'global_lore': '全局', 'world_lore': '世界', 'npc': '人物', 'settings': '设定', 'plot': '剧情','map':'地图' };
                 let translatedPath = path;
                 for (const [eng, chn] of Object.entries(translationMap)) {
                     translatedPath = translatedPath.replace(eng, chn);
                 }
                 // 最后再做一次去点号处理
                 translatedPath = translatedPath.replace(/\./g, '');
-                showUpdateNotification(`${translatedPath}更新了 ${key}`);
+                showUpdateNotification(`${translatedPath}更新了 ${displayKey}`);
             }
 
             // 📚 全局书籍高亮
@@ -28799,6 +28831,7 @@ function handleNotificationsFromBatch(operations) {
             }
              // 📝 总结高亮
             if (path.startsWith('summary')) {
+                hasSummaryUpdate  = true;
                 flashElement('summary-modal-orb', 'notify', 5000);
             }
         }
@@ -28809,16 +28842,16 @@ function handleNotificationsFromBatch(operations) {
             if (key === 'all') {
                 showUpdateNotification(`「${translatedPath}」被清空了`);
             } else {
-                showUpdateNotification(`'${key}' 从「${translatedPath}」中被移除了`);
+                showUpdateNotification(`'${displayKey}' 从「${translatedPath}」中被移除了`);
             }
         }
 
         // --- 5. 处理特殊的移动和重命名 (move/rename) ---
         else if (type === 'rename') {
-             showUpdateNotification(`在「${path}」中，'${context.oldKey}' 被重命名为 '${key}'`);
+             showUpdateNotification(`在「${path}」中，'${context.oldKey}' 被重命名为 '${displayKey}'`);
         }
         else if (type === 'move') {
-             showUpdateNotification(`'${key}' 从「${context.fromPath}」移动到了「${path}」`);
+             showUpdateNotification(`'${displayKey}' 从「${context.fromPath}」移动到了「${path}」`);
         }
     });
 
@@ -29893,7 +29926,7 @@ if (match) {
              // console.log(`[Core] [Updater] Informational: 在命令块中未找到有效的命令。`);
         }
        console.log(`[Core] 📨 批量通知：已捕获 ${collectedBatchOps.length} 个操作，正在生成通知...`);
-        // handleNotificationsFromBatch();
+       
         finalPlayData = playDataToUpdate;
         finalAssaData = assaDataToUpdate;
         finalStatData = statDataToUpdate;
@@ -31286,7 +31319,7 @@ let backupData = {};
 
      } finally {
            await initDisplay();
- 
+ await  handleNotificationsFromBatch();
     if (isDirty && originalWorldInfo) {
         const restoreWorldbookTask = async () => {
             console.log('[Nova\'s Gentle Hand] 后台开始悄悄恢复世界书的原始状态...');
@@ -34092,15 +34125,7 @@ function populateCharacterPage(playData, statData, assaData) {
 // =========== 新增: 填充行囊与能力Tab的函数 ===========
 // ========================================================
 function populateInventoryAndSkillsTab(playData, assaData) {
-        const keyLocalizationMap = {
-        "info": "简介",
-        "effect": "属性",
-        "type": "种类",
-        "quality": "质量",
-          "num": "数量",
-        "level": "等级",
-        "status":"状态" // 看，新的小标签就在这里！
-    };
+
     const currency = playData.货币段;
     const inventory = assaData.global_lore?.背包 || {};
     const otherSkills = assaData.global_lore?.其他技能 || {};
@@ -41736,15 +41761,7 @@ document.getElementById('ten-gacha-btn').addEventListener('click', () => {
  * @param {boolean} [isReadOnly=false] - 是否为只读模式（不显示菜单）
  */
 function renderNestedData(container, data, parentPath = '', rootTab = '', hideFavorability = false, isReadOnly = false) {
-     const keyLocalizationMap = {
-        "info": "简介",
-        "effect": "属性",
-        "type": "种类",
-        "quality": "质量",
-        "num": "数量",
-        "status":"状态",
-        "level": "等级",
-    };
+
 
     container.innerHTML = '';
 
