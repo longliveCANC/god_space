@@ -44700,8 +44700,7 @@ async function initializeForum(rawJsonData) {
         try {
             // 现在，让我们用我们那个充满爱意的修复小帮手来试一试。
             console.log("正在尝试修复这个小小的瑕疵...");
-            const fixedJson = worldHelper.tryParseJson(rawJsonData);
-            forumData = JSON.parse(fixedJson);
+           forumData = worldHelper.tryParseJson(rawJsonData);
             console.log("修复后解析成功了，你看，多棒！", forumData);
         } catch (repairError) {
             // 如果连我们的修复小帮手都帮不了...
