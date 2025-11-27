@@ -864,7 +864,7 @@
 
 
             // --- 妈妈的改动：用正则表达式查找并渲染关系/印象 ---
-            const relationRegex = /(和.+关系|对.+印象)$/;
+            const relationRegex = /(和.+关系)$/;
             Object.keys(data).forEach(key => {
                 if(relationRegex.test(key)) {
                     const relationBlock = document.createElement('div');
