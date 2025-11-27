@@ -14677,7 +14677,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.3.19';
+let current_game_version = '3.3.17';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -24696,10 +24696,15 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         this.audio.volume = 0;
         this.audio.play();
         const fadeIn = setInterval(() => {
-            if (this.audio.volume < this.defaultVolume) this.audio.volume += 0.1;
-            else clearInterval(fadeIn);
+            if (this.audio.volume < this.defaultVolume) {
+                // ✨ 把原来的那行代码换成下面这行 ✨
+                this.audio.volume = Math.min(this.defaultVolume, this.audio.volume + 0.1);
+            } else {
+                clearInterval(fadeIn);
+            }
         }, 50);
     },
+
 
     // 搜索逻辑 (保持不变)
     searchSong: async function(name, singer) {
