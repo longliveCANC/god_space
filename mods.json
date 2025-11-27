@@ -13,9 +13,9 @@
     "id": "小蝌蚪找妈妈-mod-超复杂npc",
     "name": "npc美化UI/超复杂npc档案",
     "author": "assa",
-    "version": "1.0",
-    "tags": ["脚本","通用","npc档案"],
-    "description": "开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。\n世界书是额外的，超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用",
+    "version": "2.0",
+    "tags": ["脚本","通用","npc档案","nsfw"],
+    "description": "[1127世界书更新nsfw词条，选开]开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。\n世界书是额外的，超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-超复杂npc.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/mod01.png"
