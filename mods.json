@@ -9,7 +9,17 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
   "previewImage": ""
-  }, {
+  },  {
+    "id": "小蝌蚪找妈妈-同层版",
+    "name": "本体世界书快捷链接",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["公告"],
+    "description": "永远最新的本体世界书链接，如果在线更新有什么问题，可以在这里手动下载。",
+   "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/book.json",
+  "previewImage": ""
+  } ,{
     "id": "小蝌蚪找妈妈-mod-超复杂npc",
     "name": "npc美化UI/超复杂npc档案",
     "author": "assa",
