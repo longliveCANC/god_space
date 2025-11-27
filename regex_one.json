@@ -41573,19 +41573,16 @@ async function equipItems(slotType, itemNames) {
             return variables;
         }, { type: 'chat' });
         
-      
-        await updateVariablesWith((chatVars) => {
-            return chatVars;
-        }, { type: 'chat' });
+ 
         
  
             // 从 chat 变量获取最新装备数据
             await updateVariablesWith((chatVars) => {
                 if (chatVars.stat_data && chatVars.stat_data.user && chatVars.stat_data.user['当前装备']) {
-                    if (!variables.stat_data) variables.stat_data = {};
-                    if (!variables.stat_data.user) variables.stat_data.user = {};
+                    if (!chatVars.stat_data) chatVars.stat_data = {};
+                    if (!chatVars.stat_data.user) chatVars.stat_data.user = {};
                     
-                    variables.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
+                    chatVars.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
                     
                     // 同步到 currentGameData
                     if (currentGameData) {
@@ -41595,7 +41592,7 @@ async function equipItems(slotType, itemNames) {
                     }
                 }
                 
-                return variables;
+                return chatVars;
             }, { type: 'chat' });
        
         
@@ -41677,10 +41674,10 @@ async function unequipItem(slotType, itemName) {
             // 从 chat 变量获取最新装备数据
             await updateVariablesWith((chatVars) => {
                 if (chatVars.stat_data && chatVars.stat_data.user && chatVars.stat_data.user['当前装备']) {
-                    if (!variables.stat_data) variables.stat_data = {};
-                    if (!variables.stat_data.user) variables.stat_data.user = {};
+                    if (!chatVars.stat_data) chatVars.stat_data = {};
+                    if (!chatVars.stat_data.user) chatVars.stat_data.user = {};
                     
-                    variables.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
+                    chatVars.stat_data.user['当前装备'] = JSON.parse(JSON.stringify(chatVars.stat_data.user['当前装备']));
                     
                     // 同时更新全局currentGameData以便立即生效
                     if (currentGameData) {
@@ -41691,7 +41688,7 @@ async function unequipItem(slotType, itemName) {
                 }
                 
                 //console.log('message变量同步更新:', variables);
-                return variables;
+                return chatVars;
             }, { type: 'chat' });
         
         
