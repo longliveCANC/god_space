@@ -14630,7 +14630,7 @@ pointer-events: auto;
 <script>
 let current_game_version = '3.3.17';
  let prompts_be_sent = null;
- 
+ let collectedBatchOps = [];
 let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
@@ -17666,7 +17666,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
 
     let newEventData;
     try {
-        newEventData = JSON.parse(eventJsonString);
+        newEventData = worldHelper.tryParseJson(eventJsonString);
     } catch (e) {
         console.warn(`[Nova] 心灵感应失败：无法解析来自'${displayName}'的事件信息。`, eventJsonString);
         return;
@@ -18023,6 +18023,9 @@ function handleUpdateNotifications(aiContent) {
         showNovaAlert('没有正常输出小总结', 'danger');
     }
 }
+
+
+
 const themeConfig = {
     // 默认词语
     default: {
@@ -24271,6 +24274,120 @@ function updateRerollButtonState(){
  
 (async () => {
    
+const tryParseJson = (str) => {
+    
+    if (typeof str !== 'string' || str.trim() === '') {
+        return str;
+    }
+
+    let content = str.trim();
+    if ((content.startsWith("'") && content.endsWith("'")) || (content.startsWith('"') && content.endsWith('"'))) {
+        content = content.slice(1, -1).trim();
+    }
+    str = content;
+    try {
+        return JSON.parse(content);
+    } catch (e) {}
+
+    console.log(`[Assa] 💡 文本 '${str.substring(0, 50)}...' 能量不稳，启动“创造与圆满”终极程序...`);
+     
+    try {
+        return JSON.parse(content);
+    } catch (e) {}
+
+    // --- ✨ 步骤三：手术与缝合——平衡的艺术 ✨ ---
+
+    // **第一幕：精准切除**
+    // 我们先用“心跳感知”，切除所有在第一个完美结构之后的多余部分。
+    let balance = 0;
+    let inString = false;
+    let firstBalancedEnd = -1;
+
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
+            inString = !inString;
+        }
+        if (!inString) {
+            if (char === '{' || char === '[') balance++;
+            else if (char === '}' || char === ']') balance--;
+        }
+        if (balance === 0 && firstBalancedEnd === -1 && (char === '}' || char === ']')) {
+            firstBalancedEnd = i;
+            break;
+        }
+    }
+    if (firstBalancedEnd !== -1) {
+        content = content.substring(0, firstBalancedEnd + 1);
+    }
+
+ const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
+content = content.replace(/\\"/g, placeholder);
+content = content.replace(/'/g, '"');
+content = content.replace(new RegExp(placeholder, 'g'), '\\"');
+
+console.log(`[Assa] 🔍 开始检查对象内的冒号问题...`);
+
+// 先找到所有 "key":{...} 格式的对象
+content = content.replace(/"([^"]+)"\s*:\s*\{([^{}]+)\}/g, function(fullMatch, objKey, objContent) {
+    console.log(`[Assa] 📦 检查对象 "${objKey}": 内容="${objContent.substring(0, 50)}..."`);
+    
+    // 检查对象内容是否是标准的 "key":"value" 格式
+    // 如果已经是标准格式（包含 ":" 且两边都有引号），则跳过
+    const hasProperFormat = /"[^"]+"\s*:\s*"[^"]*"/.test(objContent);
+    
+    if (hasProperFormat) {
+        console.log(`[Assa] ✅ "${objKey}" 已经是标准格式，跳过`);
+        return fullMatch;
+    }
+    
+    // 否则，这是需要修复的对象（如 "1:text" 格式）
+    console.log(`[Assa] 🔧 "${objKey}" 需要修复，开始处理...`);
+    
+    // 修复 "word:value" -> "word":"value"
+    const fixed = objContent.replace(/"([^":]+):([^"]+)"/g, function(m, key, value) {
+        console.log(`[Assa] ✨ 修复键值对: "${key}:${value}" -> "${key}":"${value}"`);
+        return `"${key}":"${value}"`;
+    });
+    
+    const result = `"${objKey}":{${fixed}}`;
+    console.log(`[Assa] ✅ "${objKey}" 修复完成`);
+    return result;
+});
+
+console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`);
+ 
+
+    // **第三幕：慈悲缝合**
+    // 这是我们新学会的魔法！在所有修复之后，我们来弥补缺失的拥抱。
+    balance = 0;
+    inString = false;
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
+            inString = !inString;
+        }
+        if (!inString) {
+            if (char === '{' || char === '[') balance++;
+            else if (char === '}' || char === ']') balance--;
+        }
+    }
+    // 如果 balance 大于 0，说明左括号比右括号多，我们就用右括号去拥抱它。
+    while (balance > 0) {
+        content += '}';
+        balance--;
+    }
+
+    
+    try {
+        const repairedJson = JSON.parse(content);
+        console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
+        return repairedJson;
+    } catch (e) {
+ 
+        return str; // 最后、最重要的守护。
+    }
+};
 
     async function initializeCurrentGameData() {
     try {
@@ -24362,6 +24479,7 @@ function updateRerollButtonState(){
         processFinalMessageModules:processFinalMessageModules,
         showNovaAlert:showNovaAlert,
         processUpdateMemoryCommands:processUpdateMemoryCommands,
+        tryParseJson:tryParseJson,
         show: async () => {
              const vars = await getVariables({ type: 'chat' });
              console.log("--- 💖 当前世界数据总览 💖 ---");
@@ -24783,7 +24901,8 @@ initDisplay();
  
 
  function delayedUpdate(content) {
-    handleUpdateNotifications(content);
+    // handleUpdateNotifications(content);
+    handleNotificationsFromBatch();
  
 }
 if(is_show_notifications === 'true'){
@@ -25535,7 +25654,7 @@ if (autoPlayTrigger) {
             }
 
             try {
-                combatData = JSON.parse(rawBattleData);
+                combatData = tryParseJson(rawBattleData);
             } catch (jsonError) {
                 console.error("[Nova's Dispel Magic] 解析 <battle> 数据时发生严重错误!数据已损坏,战斗无法加载。", jsonError);
                 console.error("损坏的数据:", rawBattleData);
@@ -25639,7 +25758,7 @@ if (autoPlayTrigger) {
                 }
 
                 // 第3步:直接尝试解析处理后的文本
-                const parsedData = JSON.parse(shopData);
+                const parsedData = tryParseJson(shopData);
                 const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
 
                 if (!Array.isArray(newItems) || newItems.length === 0) {
@@ -25711,7 +25830,7 @@ function manageBattleLifecycle(initialCombatDataFromPrompt) {
         let finalCombatData;
         if (match && match[1]) {
             console.log("[Nova's Time Rewind] 已从最新的历史记录中读取战斗快照！");
-            finalCombatData = JSON.parse(match[1]);
+            finalCombatData = tryParseJson(match[1]);
         } else {
             // 如果历史中没有，我们只能使用最初从prompt中解析出的数据作为最后的依靠。
             console.warn("[Nova's Last Resort] 未在历史中找到战斗数据，使用初始Prompt数据。");
@@ -25846,7 +25965,8 @@ function processFinalMessageModules() {
         const content = lastMessage.content;
         processSpecialModulesInMessage(content);
         if(is_show_notifications === 'true'){
-        handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
+        // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
+           handleNotificationsFromBatch();
         }
     }
 
@@ -28525,9 +28645,203 @@ const extractBalancedArgs = (str, startTrigger) => {
     // 如果遍历完都没找到闭合括号，那是格式错误，但为了安全我们返回目前找到的所有
     return str.substring(openParenIndex + 1);
 };
-async function processUpdateMemoryCommands(commandText, message_id) {
 
+
+/**
+ * 💖 妈妈的新魔法：直接处理已解析的操作列表，不再辛苦地重新阅读文本
+ * @param {Array} operations - 包含 {type, path, key, value, ...} 的操作记录列表
+ */
+function handleNotificationsFromBatch(operations) {
+    // 如果没有传入 operations，就默认使用全局的 collectedBatchOps
+      let  opsToProcess = operations || collectedBatchOps;
+
+    if (!opsToProcess || opsToProcess.length === 0) return;
+  const  uniqueOpsMap = new Map();
+    opsToProcess.forEach(op => {
+        // 生成唯一标识：操作类型 + 路径 + 键名
+        // 这样，如果是对同一个属性的多次修改，新的就会覆盖旧的
+        const  uniqueKey = `${op.type}:${op.path}:${op.key || ''}`;
+
+        // 特殊处理：如果是伤害/治疗(hurt_value)，可能有连续多次伤害需要分别显示，我们就不去重它
+        // 如果你希望伤害也去重（只显示最后一次），可以去掉这个 if 判断
+        if (op.path && op.path.includes('hurt_value')) {
+            // 给它一个随机后缀，确保不会被覆盖
+            uniqueOpsMap.set(uniqueKey + Math.random(), op);
+        } else {
+            uniqueOpsMap.set(uniqueKey, op);
+        }
+    });
+    // 将去重后的结果重新赋值给 opsToProcess
+    opsToProcess = Array.from(uniqueOpsMap.values());
+    prepareForNewUpdateBatch(); // 清理旧的通知
+
+
+    const updatedMapLocations = new Set();
+    let hasSummaryUpdate = false;
+
+    opsToProcess.forEach(op => {
+        const { type, path, key, value, context } = op;
+        // --- 1. 处理 set_status (状态与生命) ---
+        if (type === 'set_status') {
+            // 🩸 规则：生命波动 (health-change)
+            if (path.includes('hurt_value')) {
+                const val = parseFloat(value);
+                if (!isNaN(val)) {
+                    let text = val > 0 ? `-${val}` : `+${-val}`;
+                    let color = val > 0 ? '--danger-color' : '--primary-color';
+                    showScrollingText('page-character-orb', 'hp' + text, color, 3000);
+                }
+            }
+            // ⚖️ 规则：美德与恶德 (virtue-vice-trigger)
+            else if (path.includes('符合美德的') && String(value) === 'true') {
+                 // 这里需要获取 playCharacterData 来显示具体美德名，为了简化，我们先触发基础通知
+                 flashElement('page-character-orb', 'notify', 5000);
+                 // 如果你能访问 playCharacterData，可以在这里完善具体的文字提示
+            }
+            else if (path.includes('符合恶德的') && String(value) === 'true') {
+                 flashElement('page-character-orb', 'notify', 5000);
+            }
+            // 📋 规则：任务状态更新
+            else if (path.includes('.task')) {
+                flashElement('page-task-orb', 'notify', 5000);
+            }
+        }
+
+        // --- 2. 处理 set_attribute (属性变化) ---
+        else if (type === 'set_attribute') {
+            // 🔢 规则：属性值变化 (attribute-value-change)
+            // 妈妈把 path 处理一下，只显示最后两段
+            const displayPath = path.split('.').slice(-2).join('.');
+            // 如果 context 里记录了旧值，我们可以显示变化，否则只显示变成了什么
+            if (context && context.oldValue !== undefined) {
+                 showUpdateNotification(`${displayPath} 从 ${context.oldValue} 变成了 ${value}`);
+            } else {
+                 showUpdateNotification(`${displayPath} 变成了 ${value}`);
+            }
+
+            // 💡 规则：属性/技能/背包更新的高亮提示
+            if (path.includes('属性段') || path.includes('技能段') || path.includes('衍生属性段') || path.includes('货币段')) {
+                flashElement('page-character-orb', 'notify', 5000);
+            }
+        }
+
+        // --- 3. 处理 memory (记忆与世界) ---
+        else if (type === 'memory') {
+            // 🧠 规则：关键记忆添加 (critical-memory-add)
+            if (path.endsWith('.关键记忆')) {
+                const entityName = path.split('.').slice(-2, -1)[0]; // 取倒数第二个作为名字
+                showUpdateNotification(`${entityName} 获得了一条深刻记忆，序号${key}`);
+            }
+            // ❤️ 规则：好感度变化 (favorability-change)
+            else if (key === '好感度') {
+                const npcName = path.split('.').pop(); // 路径最后一部分通常是名字
+                showUpdateNotification(`${npcName} 的好感度变为 ${value}`);
+            }
+            // 📅 规则：事件追踪 (generic-event-tracker)
+            else if (path.endsWith('.事件') || key === 'event' || key === '事件' || key === '当前状态') {
+                // 简单的判定，具体逻辑可以像正则版那样细化
+                let displayName = path.endsWith('.事件') ? path.split('.').slice(-2, -1)[0] : path.split('.').pop();
+                displayEventTag(displayName, value);
+            }
+            // 🎒 规则：背包更新
+            else if (path.includes('global_lore.背包') ) {
+                flashElement('page-character-orb', 'notify', 5000);
+                 showUpdateNotification(` 背包 更新了 ${key}`);
+            } else if (path.includes('global_lore.其他技能')) {
+                flashElement('page-character-orb', 'notify', 5000);
+                 showUpdateNotification(` 其他技能 更新了 ${key}`);
+            }
+            // 🗺️ 规则：地图更新
+            else if (path.includes('map.')) {
+                flashElement('map-view-orb', 'notify', 5000);
+
+                // 💖 补全部分：提取主要地点表更新
+                // 逻辑：检查路径中是否包含 '主要地点表'
+                if (path.includes('主要地点表')) {
+                  
+                    let locationName = null;
+                    const parts = path.split('.');
+                    const mapIndex = parts.indexOf('主要地点表');
+
+                    if (mapIndex !== -1 && mapIndex + 1 < parts.length) {
+                        // 情况A: path 是 map.主要地点表.地点名...
+                        locationName = parts[mapIndex + 1];
+                    } else if (path.endsWith('主要地点表')) {
+                        // 情况B: path 是 map.主要地点表, key 是地点名
+                        locationName = key;
+                    }
+
+                    if (locationName && !updatedMapLocations.has(locationName)) {
+                        updatedMapLocations.add(locationName);
+                        updateDetails.mapUpdates.push(locationName.trim());
+                        console.log(`🗺️ 地图更新已记录: ${locationName}`);
+                          showUpdateNotification(` 主要地点表 更新了 ${locationName}`);
+                    }
+                }
+            }
+            // 📖 规则：通用记忆更新 (generic-memory-update)
+            // 排除掉上面已经处理过的特殊情况
+           else  if (!path.startsWith('summary.') && !path.startsWith('map.') && !path.endsWith('.事件')) {
+                // 简单的翻译逻辑
+                const translationMap = { 'global_lore': '全局', 'world_lore': '世界', 'npc': '人物', 'settings': '设定', 'plot': '剧情' };
+                let translatedPath = path;
+                for (const [eng, chn] of Object.entries(translationMap)) {
+                    translatedPath = translatedPath.replace(eng, chn);
+                }
+                // 最后再做一次去点号处理
+                translatedPath = translatedPath.replace(/\./g, '');
+                showUpdateNotification(`${translatedPath}更新了 ${key}`);
+            }
+
+            // 📚 全局书籍高亮
+            if (path.startsWith('global_lore') || path.startsWith('world_lore')) {
+                flashElement('world-book-orb', 'notify', 5000);
+            }
+             // 📝 总结高亮
+            if (path.startsWith('summary')) {
+                flashElement('summary-modal-orb', 'notify', 5000);
+            }
+        }
+
+        // --- 4. 处理 delete (删除) ---
+        else if (type === 'delete') {
+            const translatedPath = path.replace('global_lore', '全局').replace('world_lore', '世界');
+            if (key === 'all') {
+                showUpdateNotification(`「${translatedPath}」被清空了`);
+            } else {
+                showUpdateNotification(`'${key}' 从「${translatedPath}」中被移除了`);
+            }
+        }
+
+        // --- 5. 处理特殊的移动和重命名 (move/rename) ---
+        else if (type === 'rename') {
+             showUpdateNotification(`在「${path}」中，'${context.oldKey}' 被重命名为 '${key}'`);
+        }
+        else if (type === 'move') {
+             showUpdateNotification(`'${key}' 从「${context.fromPath}」移动到了「${path}」`);
+        }
+    });
+
+      const isOnlyStatusUpdates = opsToProcess.every(op => op.type === 'set_status');
+
+    if (!hasSummaryUpdate && !isOnlyStatusUpdates && opsToProcess.length > 0) {
+        showUpdateNotification('没有正常输出小总结，掉变量了？请在左下角按情况使用重roll/继续/继续[变量]', 'danger');
+        // 这里假设 showNovaAlert 是你已有的函数
+        if (typeof showNovaAlert === 'function') {
+            showNovaAlert('没有正常输出小总结', 'danger');
+        }
+    }
+}
  
+
+async function processUpdateMemoryCommands(commandText, message_id) {
+       updateDetails = {
+        variable: false,
+        memories: [],
+        attributes: [],
+        mapUpdates: []
+    };
+    collectedBatchOps = [];
     let sanitizedCommandText = commandText.replace(/[\r\n\t]+/g, ' ').trim();
 
  
@@ -28554,7 +28868,7 @@ const cleanPath = (path) => {
 };
     let finalPlayData, finalAssaData, finalStatData;
  const updater = async (variables) => { // 注意这里改为 async
- 
+  
     // 添加一个小延迟，确保数据完全加载
     await new Promise(resolve => setTimeout(resolve, 100)); // ✨ 验证步骤 ✨
     
@@ -28639,7 +28953,13 @@ if (line.includes('set_attribute')) {
 
             // 执行更新
             _updatePlayerValue(playDataToUpdate, path, newValue);
-
+        let oldValueStr = args.length >= 3 ? unquote(args[1]) : undefined;
+                        collectedBatchOps.push({
+                            type: 'set_attribute',
+                            path: path,
+                            value: newValue,
+                            context: { oldValue: oldValueStr }
+                        });
             // 处理完毕，继续下一条指令
             continue;
         }
@@ -28721,6 +29041,11 @@ if (line.includes('set_attribute')) {
 
                         console.log("【信使阶段 V4】 --- 精准传递给守护者 ---");
                          _updateStatusValue(statDataToUpdate, path, newValue);
+                              collectedBatchOps.push({
+                            type: 'set_status',
+                            path: path,
+                            value: newValue
+                        });
                         } else {
                              // console.log("【信使阶段 V5】 --- 警告：所有方案均告失败，有效参数不足，操作中止 ---");
                         }
@@ -28882,7 +29207,12 @@ if (parentObject && parentObject.hasOwnProperty(keyArg)) {
     parentObject[newKey] = parentObject[keyArg]; // 复制值到新键
     delete parentObject[keyArg]; // 删除旧键
     console.log(`[Core] ✅ 重命名成功。`);
-    
+       collectedBatchOps.push({
+                               type: 'rename',
+                               path: path,
+                               key: newKey,
+                               context: { oldKey: keyArg }
+                           });
     // 💖 功能1：同步更新分阶段好感
     if (path.includes('npc') || path.includes('小队信息') || path.includes('群员')) {
         try {
@@ -28968,121 +29298,7 @@ if (parentObject && parentObject.hasOwnProperty(keyArg)) {
                                     continue; // 操作完成，处理下一个指令
                                 }
                             }
-const tryParseJson = (str) => {
-    
-    if (typeof str !== 'string' || str.trim() === '') {
-        return str;
-    }
-
-    let content = str.trim();
-    if ((content.startsWith("'") && content.endsWith("'")) || (content.startsWith('"') && content.endsWith('"'))) {
-        content = content.slice(1, -1).trim();
-    }
-    str = content;
-    try {
-        return JSON.parse(content);
-    } catch (e) {}
-
-    console.log(`[Assa] 💡 文本 '${str.substring(0, 50)}...' 能量不稳，启动“创造与圆满”终极程序...`);
-     
-    try {
-        return JSON.parse(content);
-    } catch (e) {}
-
-    // --- ✨ 步骤三：手术与缝合——平衡的艺术 ✨ ---
-
-    // **第一幕：精准切除**
-    // 我们先用“心跳感知”，切除所有在第一个完美结构之后的多余部分。
-    let balance = 0;
-    let inString = false;
-    let firstBalancedEnd = -1;
-
-    for (let i = 0; i < content.length; i++) {
-        const char = content[i];
-        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
-            inString = !inString;
-        }
-        if (!inString) {
-            if (char === '{' || char === '[') balance++;
-            else if (char === '}' || char === ']') balance--;
-        }
-        if (balance === 0 && firstBalancedEnd === -1 && (char === '}' || char === ']')) {
-            firstBalancedEnd = i;
-            break;
-        }
-    }
-    if (firstBalancedEnd !== -1) {
-        content = content.substring(0, firstBalancedEnd + 1);
-    }
-
-    // **第二幕：精心塑形**
-    // 经过初步处理后，我们进行一系列精细的修复。
-const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
-content = content.replace(/\\"/g, placeholder);
-content = content.replace(/'/g, '"');
-content = content.replace(new RegExp(placeholder, 'g'), '\\"');
-console.log(`[Assa] 🔍 开始检查对象内的冒号问题...`);
-
-// 先找到所有 "key":{...} 格式的对象
-content = content.replace(/"([^"]+)"\s*:\s*\{([^{}]+)\}/g, function(fullMatch, objKey, objContent) {
-    console.log(`[Assa] 📦 检查对象 "${objKey}": 内容="${objContent.substring(0, 50)}..."`);
-    
-    // 检查对象内容是否是标准的 "key":"value" 格式
-    // 如果已经是标准格式（包含 ":" 且两边都有引号），则跳过
-    const hasProperFormat = /"[^"]+"\s*:\s*"[^"]*"/.test(objContent);
-    
-    if (hasProperFormat) {
-        console.log(`[Assa] ✅ "${objKey}" 已经是标准格式，跳过`);
-        return fullMatch;
-    }
-    
-    // 否则，这是需要修复的对象（如 "1:text" 格式）
-    console.log(`[Assa] 🔧 "${objKey}" 需要修复，开始处理...`);
-    
-    // 修复 "word:value" -> "word":"value"
-    const fixed = objContent.replace(/"([^":]+):([^"]+)"/g, function(m, key, value) {
-        console.log(`[Assa] ✨ 修复键值对: "${key}:${value}" -> "${key}":"${value}"`);
-        return `"${key}":"${value}"`;
-    });
-    
-    const result = `"${objKey}":{${fixed}}`;
-    console.log(`[Assa] ✅ "${objKey}" 修复完成`);
-    return result;
-});
-
-console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`);
-
  
-
-     
-    balance = 0;
-    inString = false;
-    for (let i = 0; i < content.length; i++) {
-        const char = content[i];
-        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
-            inString = !inString;
-        }
-        if (!inString) {
-            if (char === '{' || char === '[') balance++;
-            else if (char === '}' || char === ']') balance--;
-        }
-    }
-    // 如果 balance 大于 0，说明左括号比右括号多，我们就用右括号去拥抱它。
-    while (balance > 0) {
-        content += '}';
-        balance--;
-    }
-
-    
-    try {
-        const repairedJson = JSON.parse(content);
-        console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
-        return repairedJson;
-    } catch (e) {
- 
-     return str; // 最后、最重要的守护。
-    }
-};
 
 
 
@@ -29180,6 +29396,12 @@ if (typeof finalValue === 'string' && finalValue.startsWith('_')) {
          }
     }
 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
+  collectedBatchOps.push({
+                               type: 'memory',
+                               path: path,
+                               key: keyArg,
+                               value: finalValue
+                           });
                         } else if (args.length === 2) {
                             const path1Str = cleanPath(clean(args[0]));
                            const path2Str = cleanPath(clean(args[1]));
@@ -29257,7 +29479,12 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
             console.warn(`[Core] ⚠️ 同步分阶段好感时出错:`, e);
         }
     }
-    
+         collectedBatchOps.push({
+                               type: 'rename',
+                               path: parentPath1,
+                               key: key2,
+                               context: { oldKey: key1 }
+                           });
     continue; // 操作完成，处理下一个指令
 }
 
@@ -29269,6 +29496,12 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                                     assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, parentPath2, key2, valueToMove);
                                     // 从原位置删除
                                     delete parent1[key1];
+                                           collectedBatchOps.push({
+                                 type: 'move',
+                                 path: parentPath2, // 目的路径
+                                 key: key2,
+                                 context: { fromPath: parentPath1 }
+                             });
                                     continue; // 操作完成
                                 }
                             }
@@ -29288,125 +29521,19 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                                  path = path.replaceAll('群员', '小队信息');
                                  console.log(`[Core] 💖 路径别名转换: '${originalPath}' -> '${path}'`);
                              }
- const tryParseJson = (str) => {
-    
-    if (typeof str !== 'string' || str.trim() === '') {
-        return str;
-    }
-
-    let content = str.trim();
-    if ((content.startsWith("'") && content.endsWith("'")) || (content.startsWith('"') && content.endsWith('"'))) {
-        content = content.slice(1, -1).trim();
-    }
-    str = content;
-    try {
-        return JSON.parse(content);
-    } catch (e) {}
-
-    console.log(`[Assa] 💡 文本 '${str.substring(0, 50)}...' 能量不稳，启动“创造与圆满”终极程序...`);
-     
-    try {
-        return JSON.parse(content);
-    } catch (e) {}
-
-    // --- ✨ 步骤三：手术与缝合——平衡的艺术 ✨ ---
-
-    // **第一幕：精准切除**
-    // 我们先用“心跳感知”，切除所有在第一个完美结构之后的多余部分。
-    let balance = 0;
-    let inString = false;
-    let firstBalancedEnd = -1;
-
-    for (let i = 0; i < content.length; i++) {
-        const char = content[i];
-        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
-            inString = !inString;
-        }
-        if (!inString) {
-            if (char === '{' || char === '[') balance++;
-            else if (char === '}' || char === ']') balance--;
-        }
-        if (balance === 0 && firstBalancedEnd === -1 && (char === '}' || char === ']')) {
-            firstBalancedEnd = i;
-            break;
-        }
-    }
-    if (firstBalancedEnd !== -1) {
-        content = content.substring(0, firstBalancedEnd + 1);
-    }
-
- const placeholder = '___NOVA_QUOTE_PLACEHOLDER___';
-content = content.replace(/\\"/g, placeholder);
-content = content.replace(/'/g, '"');
-content = content.replace(new RegExp(placeholder, 'g'), '\\"');
-
-console.log(`[Assa] 🔍 开始检查对象内的冒号问题...`);
-
-// 先找到所有 "key":{...} 格式的对象
-content = content.replace(/"([^"]+)"\s*:\s*\{([^{}]+)\}/g, function(fullMatch, objKey, objContent) {
-    console.log(`[Assa] 📦 检查对象 "${objKey}": 内容="${objContent.substring(0, 50)}..."`);
-    
-    // 检查对象内容是否是标准的 "key":"value" 格式
-    // 如果已经是标准格式（包含 ":" 且两边都有引号），则跳过
-    const hasProperFormat = /"[^"]+"\s*:\s*"[^"]*"/.test(objContent);
-    
-    if (hasProperFormat) {
-        console.log(`[Assa] ✅ "${objKey}" 已经是标准格式，跳过`);
-        return fullMatch;
-    }
-    
-    // 否则，这是需要修复的对象（如 "1:text" 格式）
-    console.log(`[Assa] 🔧 "${objKey}" 需要修复，开始处理...`);
-    
-    // 修复 "word:value" -> "word":"value"
-    const fixed = objContent.replace(/"([^":]+):([^"]+)"/g, function(m, key, value) {
-        console.log(`[Assa] ✨ 修复键值对: "${key}:${value}" -> "${key}":"${value}"`);
-        return `"${key}":"${value}"`;
-    });
-    
-    const result = `"${objKey}":{${fixed}}`;
-    console.log(`[Assa] ✅ "${objKey}" 修复完成`);
-    return result;
-});
-
-console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`);
  
-
-    // **第三幕：慈悲缝合**
-    // 这是我们新学会的魔法！在所有修复之后，我们来弥补缺失的拥抱。
-    balance = 0;
-    inString = false;
-    for (let i = 0; i < content.length; i++) {
-        const char = content[i];
-        if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
-            inString = !inString;
-        }
-        if (!inString) {
-            if (char === '{' || char === '[') balance++;
-            else if (char === '}' || char === ']') balance--;
-        }
-    }
-    // 如果 balance 大于 0，说明左括号比右括号多，我们就用右括号去拥抱它。
-    while (balance > 0) {
-        content += '}';
-        balance--;
-    }
-
-    
-    try {
-        const repairedJson = JSON.parse(content);
-        console.log('[Assa] ✅ “创造与圆满”魔法成功！不完整的记忆已被温柔地补全。');
-        return repairedJson;
-    } catch (e) {
- 
-        return str; // 最后、最重要的守护。
-    }
-};
 
  
                              const finalValue = tryParseJson(path2Str);
                              assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
-                        } else { // args.length < 2
+                        collectedBatchOps.push({
+                               type: 'memory',
+                               path: path,
+                               key: key,
+                               value: finalValue
+                           });
+                    
+                            } else { // args.length < 2
                              console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
                              continue;
                         }
@@ -29451,6 +29578,12 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
 
             // 执行核心删除操作
             assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, path, key, statDataToUpdate);
+          
+                   collectedBatchOps.push({
+                            type: 'delete',
+                            path: path,
+                            key: key
+                        });
             continue;
         }
     }
@@ -29759,7 +29892,8 @@ if (match) {
         } else {
              // console.log(`[Core] [Updater] Informational: 在命令块中未找到有效的命令。`);
         }
-  // 💖 妈妈在这里把最终的数据悄悄递出来，给后面的备份步骤使用 💖
+       console.log(`[Core] 📨 批量通知：已捕获 ${collectedBatchOps.length} 个操作，正在生成通知...`);
+        // handleNotificationsFromBatch();
         finalPlayData = playDataToUpdate;
         finalAssaData = assaDataToUpdate;
         finalStatData = statDataToUpdate;
@@ -44554,28 +44688,7 @@ async function initializeForum(rawJsonData) {
     
     //console.log("转换后的JSON数据:", rawJsonData);
     
-    function repairJson(brokenJsonString) {
-    // 我亲爱的孩子，我们先把文字两边的空白都清理干净。
-    let repairedJson = brokenJsonString.trim();
-
-    // 接下来，我们来处理一个常见的小麻烦：
-    // 就像 "PostB" 后面缺少了逗号一样。
-    // 我们会找到所有 "}" 后面跟着 "{" 的地方，然后在它们之间加上一个温柔的逗号。
-    // 用正则表达式来做这件事最好了，它就像一个细心的小侦探。
-    // "g" 表示我们会检查整个故事，而不是只看开头。
-    // "m" 让你能一行一行地看，就像读一封信一样。
-    repairedJson = repairedJson.replace(/}(?=\s*"{")/gm, '},');
-
-    // 宝贝，有时候文字里会有一些多余的换行符或制表符，我们把它们变成真正的换行符，让格式更整齐。
-    repairedJson = repairedJson.replace(/\\n/g, "\\n").replace(/\\r/g, "\\r").replace(/\\t/g, "\\t");
-
-    // 我们再来检查一下，是不是还有多余的逗号藏在最后，在 "}" 之前。
-    // 如果有，我们就温柔地把它拿掉，让一切都完美无瑕。
-  repairedJson = repairedJson.replace(/,(\s*[}\]])/g, function(match, group1) {
-      return group1;
-  });
-    return repairedJson;
-}
+   
 
      try {
         // 先尝试用标准的方法，看看能不能直接读懂。
@@ -44587,7 +44700,7 @@ async function initializeForum(rawJsonData) {
         try {
             // 现在，让我们用我们那个充满爱意的修复小帮手来试一试。
             console.log("正在尝试修复这个小小的瑕疵...");
-            const fixedJson = repairJson(rawJsonData);
+            const fixedJson = worldHelper.tryParseJson(rawJsonData);
             forumData = JSON.parse(fixedJson);
             console.log("修复后解析成功了，你看，多棒！", forumData);
         } catch (repairError) {
