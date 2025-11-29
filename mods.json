@@ -80,7 +80,7 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养大人-外挂版世界书.json",
     "previewImage": ""
   }, {
-    "id": "小蝌蚪找妈妈-mod-信息面板",
+    "id": "x-mod-信息面板",
     "name": "在正文生成美化的物品面板",
     "author": "LushFlower",
     "version": "1.0",
@@ -90,7 +90,7 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/信息面板.json",
     "previewImage": ""
   } , {
-    "id": "小蝌蚪找妈妈-dlc-垂钓诸天",
+    "id": "x-dlc-垂钓诸天",
     "name": "垂钓诸天",
     "author": "原作者:GG棒 二改:assa",
     "version": "2.0",
@@ -110,7 +110,7 @@
     "worldBookUrl": "",
     "previewImage": ""
 }, {
-    "id": "小蝌蚪找妈妈-dlc-将军模拟器",
+    "id": "x-dlc-将军模拟器",
     "name": "将军模拟器",
     "author": "原作者:北极星星 二改:assa",
     "version": "2.0",
