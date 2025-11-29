@@ -24571,14 +24571,21 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
     currentMeta: { song: '', artist: '', id: null, domId: null }, 
     fadeTimer: null,
     defaultVolume: 0.5, 
-
+sLoopEnabled: false, // 新增：单曲循环开关
     init: function() {
         this.audio.volume = this.defaultVolume;
         // 绑定事件
-        this.audio.onended = () => { 
-            this.updateAllUiState(false); 
-            this.resetProgressUI(); // 播放结束归零进度条
-        };
+ this.audio.onended = () => { 
+    if (this.isLoopEnabled) {
+        // 如果开启了单曲循环,重新播放
+        this.audio.currentTime = 0;
+        this.audio.play();
+    } else {
+        // 否则按原逻辑处理
+        this.updateAllUiState(false); 
+        this.resetProgressUI();
+    }
+};
         this.audio.onpause = () => this.updateAllUiState(false);
         this.audio.onplay = () => this.updateAllUiState(true);
         // 核心：时间更新监听
@@ -24586,6 +24593,24 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         // 元数据加载后显示总时长
         this.audio.onloadedmetadata = () => this.updateProgress();
     },
+    setLoop: function(enabled) {
+    this.isLoopEnabled = enabled;
+    console.log('单曲循环已' + (enabled ? '开启' : '关闭'));
+},
+toggleLoop: function(domId) {
+    this.isLoopEnabled = !this.isLoopEnabled;
+    
+    // 更新所有循环按钮的视觉状态
+    document.querySelectorAll('.music-loop-btn').forEach(btn => {
+        if (this.isLoopEnabled) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    console.log('单曲循环已' + (this.isLoopEnabled ? '开启' : '关闭'));
+},
    setVolume: function(value) {
         const newVolume = parseFloat(value);
         if (isNaN(newVolume)) return;
@@ -24865,6 +24890,31 @@ GlobalChatAudio.init();
             cursor: pointer; flex-shrink: 0; transition: transform 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         .global-music-play-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
+
+        /* 循环按钮样式 */
+.music-loop-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+.music-loop-btn:hover {
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+    transform: scale(1.05);
+}
+/* 循环激活状态 */
+.music-loop-btn.active {
+    background: var(--primary-color, #00faff);
+    color: #000;
+    border-color: var(--primary-color, #00faff);
+}
+.music-loop-btn.active:hover {
+    filter: brightness(1.1);
+}
     `;
     document.head.appendChild(style);
 }
@@ -25080,6 +25130,12 @@ if(is_show_notifications === 'true'){
                     </div>
                     <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
                 </div>
+                  <div class="music-loop-btn" id="loop-btn-${domId}" 
+         onclick="GlobalChatAudio.toggleLoop('${domId}')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"></path>
+        </svg>
+    </div>
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
                      onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
@@ -25250,6 +25306,12 @@ function renderGroupChatToHtml(sender, content, userNickname) {
                     </div>
                     <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
                 </div>
+                  <div class="music-loop-btn" id="loop-btn-${domId}" 
+         onclick="GlobalChatAudio.toggleLoop('${domId}')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"></path>
+        </svg>
+    </div>
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
                      onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
@@ -25321,7 +25383,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     if (isMusic && specialMsgIndex === 1 && !processedContent.replace(specialMsgPlaceholders[`__SPECIAL_MSG_0__`] || '', '').trim()) {
         return `
         <div class="private-chat-wrapper" style="width:100%;">
-            <div class="${itemClass}" data-user-id="${sender}">
+            <div class="${itemClass}" data-user-id="${sender}" style="width:100%">
                 <div class="group-chat-avatar-placeholder"></div>
                 <div class="group-chat-message-content" style="width:100%;">
                     <div class="group-chat-user-id">${sender}</div>
@@ -46153,10 +46215,10 @@ const switchActiveChat = (type, id) => {
  const createMessageElement = (msg, userNickname) => {
     const isSent = msg.user_id === userNickname;
     const alignClass = isSent ? 'sent' : 'received';
-    
+     let isMusic = false;
     // 基础 CSS 类
     const bubbleClass = 'group-chat-message-bubble';
-    
+    const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
     // 预处理内容
     let processedContent = (msg.content || '').trim();
 
@@ -46215,12 +46277,21 @@ const switchActiveChat = (type, id) => {
                     </div>
                     <div id="time-${domId}" class="music-time-text">0:00 / 0:00</div>
                 </div>
+
+                 <div class="music-loop-btn" id="loop-btn-${domId}" 
+         onclick="GlobalChatAudio.toggleLoop('${domId}')">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"></path>
+        </svg>
+    </div>
+
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
                      onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                 </div>
             </div>`;
         specialMsgIndex++;
+         isMusic = true;
         hasSpecialMsg = true;
         return placeholder;
     });
@@ -46315,6 +46386,18 @@ const switchActiveChat = (type, id) => {
         replyHtml = `<div class="group-chat-reply-quote"><b>${replyInfo.user_id}:</b> ${cleanContent}</div>`;
     }
 
+    // 最终组装
+    if (isMusic && specialMsgIndex === 1 && !processedContent.replace(specialMsgPlaceholders[`__SPECIAL_MSG_0__`] || '', '').trim()) {
+        div.innerHTML = `
+ 
+                <div class="group-chat-avatar-placeholder"></div>
+                <div class="group-chat-message-content" style="width:100%;">
+                    <div class="group-chat-user-id">${msg.user_id}</div>
+                    ${processedContent}
+                </div>
+           `;
+          return div;
+    }
     // 组装消息（如果有特殊消息，去掉气泡背景和padding）
     div.innerHTML = `
         <div class="group-chat-avatar-placeholder"></div>
