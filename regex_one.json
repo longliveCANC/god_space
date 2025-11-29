@@ -25051,7 +25051,7 @@ if(is_show_notifications === 'true'){
     processedContent = processedContent.replace(musicRegex, (match, raw) => {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
-        const song = (parts[0] || '未知歌曲').trim();
+        const song = (parts[0] || '未知歌曲').trim().replace('music-','');
         const artist = (parts[1] || '未知歌手').trim();
         
         const domId = 'music_' + Math.floor(Math.random() * 1000000);
