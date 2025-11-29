@@ -17747,9 +17747,9 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         }
         existingTag.remove();
     }
-const motions = mergedEventData['情绪基调'] || '';
-    const status = mergedEventData['当前状态'] || '（状态未知）';
-    const thought = mergedEventData['当前想法'] || '（内心一片沉寂）';
+const motions = mergedEventData['情绪基调'] ||mergedEventData['状态'] || '';
+    const status = mergedEventData['当前状态'] || mergedEventData['姿势'] ||'（状态未知）';
+    const thought = mergedEventData['当前想法'] || mergedEventData['想法'] ||'（内心一片沉寂）';
     const firstChar = displayName.charAt(0) || '◆';
 
     const tag = document.createElement('div');
@@ -25097,7 +25097,7 @@ if(is_show_notifications === 'true'){
     });
     
     // 音乐消息 [music-歌名$歌手] 或 BGM 的 [歌名$歌手]
-    const musicRegex = isBgm ? /\[music-([^\]]+)\]/g : /\[([^\]]+)\]/g;
+    const musicRegex = isBgm ?/\[([^\]]+)\]/g  : /\[music-([^\]]+)\]/g;
     processedContent = processedContent.replace(musicRegex, (match, raw) => {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
@@ -28905,7 +28905,7 @@ function handleNotificationsFromBatch(operations) {
                 // 2. 智能包装数据
                 // 如果 key 是具体的属性名，说明 value 只是文本，我们需要把它包装成 JSON 对象
                 let finalValue = value;
-                if (['当前状态', '当前想法', '情绪基调'].includes(key)) {
+                if (['当前状态', '当前想法', '情绪基调',"姿势","状态","想法","穿着"].includes(key)) {
                     // 构造一个临时的对象，然后转为 JSON 字符串
                     // 这样 displayEventTag 就能读懂它了：{ "当前状态": "..." }
                     try {
