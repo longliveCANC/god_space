@@ -34012,22 +34012,46 @@ allTitles = assaData?.global_lore?.称号|| {};
                 });
 
                 // 如果当前是收起状态，则展开它
+           // 如果当前是收起状态,则展开它
                 if (!isCurrentlyActive) {
                     const titleData = allTitles[titleName];
-                    let detailsHtml = '<ul>';
-                    for (const key in titleData) {
-                        // 过滤掉我们不希望直接显示的key
-                        if (Object.prototype.hasOwnProperty.call(titleData, key) && key !== '是否显示') {
-                            const label = keyToLabelMap[key] || key; // 使用映射或原始key
-                            const value = titleData[key].toString().replace(/\\n/g, '<br>'); // 处理换行
-                            detailsHtml += `<li><span class="detail-key">${label}:</span> <span class="detail-value">${value}</span></li>`;
+                    
+                    // 递归函数处理嵌套对象
+                    function renderNestedData(data, level = 0) {
+                        let html = '<ul class="nested-level-' + level + '">';
+                        
+                        for (const key in data) {
+                            if (!Object.prototype.hasOwnProperty.call(data, key) || key === '是否显示') {
+                                continue;
+                            }
+                            
+                            const label = keyToLabelMap[key] || key;
+                            const value = data[key];
+                            
+                            // 判断值的类型
+                            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                                // 嵌套对象
+                                html += `<li class="nested-object">
+                                    <span class="detail-key">${label}:</span>
+                                    ${renderNestedData(value, level + 1)}
+                                </li>`;
+                            } else if (Array.isArray(value)) {
+                                // 数组
+                                html += `<li><span class="detail-key">${label}:</span> <span class="detail-value">[${value.join(', ')}]</span></li>`;
+                            } else {
+                                // 普通值
+                                const displayValue = String(value).replace(/\\n/g, '<br>');
+                                html += `<li><span class="detail-key">${label}:</span> <span class="detail-value">${displayValue}</span></li>`;
+                            }
                         }
+                        
+                        html += '</ul>';
+                        return html;
                     }
-                    detailsHtml += '</ul>';
-
-                    detailsPanel.innerHTML = detailsHtml;
+                    
+                    detailsPanel.innerHTML = renderNestedData(titleData);
                     detailsPanel.classList.add('active');
-                } else {
+                }else {
                     // 如果当前是展开状态，则收起它
                     detailsPanel.classList.remove('active');
                     // 可以加一个延时清空内容，等待动画结束
