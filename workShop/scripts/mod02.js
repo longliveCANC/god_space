@@ -490,15 +490,20 @@
                         commandPath = commandPath.substring('statData.'.length);
                     } else if (commandPath.startsWith('playCharacterData.')) {
                         commandPath = commandPath.substring('playCharacterData.'.length);
+                    }else if (commandPath.startsWith('assaData.')) {
+                        commandPath = commandPath.substring('assaData.'.length);
                     }
                  
                     let command;
                     if (dataType === 'statData') {
                         // 现在使用修正后的 commandPath
                         command = `set_status('${commandPath}', '${newValue}'); // 由Nova编辑器修改`;
-                    } else {
+                    } else if(dataType === 'playCharacterData'){
                         // 现在使用修正后的 commandPath
                         command = `set_attribute('${commandPath}', '${originalValue}', '${newValue}'); // 由Nova编辑器修改`;
+                    }else{
+                           command = `memory('${commandPath}', '${newValue}'); // 由Nova编辑器修改`;
+                 
                     }
                     commandsToExecute[fullPath] = command; // 使用fullPath作为key来保证唯一性
                 });
@@ -516,6 +521,7 @@
 
             const statData = GameAPI.statData;
             const playCharacterData = GameAPI.playCharacterData;
+     const assaData = GameAPI.assaData;
 
             if (statData) {
                 createField(editorBody, '', 'statData', statData, 'statData');
@@ -523,6 +529,10 @@
 
             if (playCharacterData) {
                 createField(editorBody, '', 'playCharacterData', playCharacterData, 'playCharacterData');
+            }
+
+              if (assaData) {
+                createField(editorBody, '', 'assaData', assaData, 'assaData');
             }
         }
 

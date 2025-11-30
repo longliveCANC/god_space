@@ -14702,7 +14702,11 @@ let is_simple_stream = "false";
 let noBackup = "false";
 let is_restore_prompt = "true";
 let is_show_notifications = "true";
-
+let ifScanMemory = "false";
+let bookItemSettings = null;
+let batches = 1;
+let double_api = "false"; // 控制是否双重发送。暂时为了调试先这样
+let enable_preset_2nd_pass = "true"; // 控制第二次发送是否启用酒馆预设
     let worldBookState = {
         currentTab: 'settings', // 默认显示设定
         currentPage: 1,
@@ -17747,7 +17751,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         }
         existingTag.remove();
     }
-const motions = mergedEventData['情绪基调'] ||mergedEventData['状态'] || '';
+const motions = mergedEventData['情绪基调'] ||mergedEventData['状态'] || mergedEventData['人物状态'] || '';
     const status = mergedEventData['当前状态'] || mergedEventData['姿势'] ||'（状态未知）';
     const thought = mergedEventData['当前想法'] || mergedEventData['想法'] ||'（内心一片沉寂）';
     const firstChar = displayName.charAt(0) || '◆';
@@ -21100,7 +21104,7 @@ async function handleModeSelection() {
             let messageContent = firstMessage.message.replace(/<世界书条目>.*?<\/世界书条目>/, '').trim();
             const worldbookTag = `<世界书条目>${uidsToEnable.join(',')}</世界书条目>`;
             await setChatMessages([{ message_id: 0, message: `${messageContent}\n${worldbookTag}` }], { refresh: 'none' });
-
+    await insertOrAssignVariables({bookItemSettings: uidsToEnable.join(',')}, {type: 'chat'});
         } catch (worldbookError) {
              console.error('哎呀，在更新世界书时出错了，不过别怕，妈妈帮你跳过了它：', worldbookError);
              alert('更新世界书设置失败了，但是没关系，我们仍然可以继续构建角色。');
@@ -26285,25 +26289,38 @@ async function restoreFromSnapshot(initialTurnId) {
 
         db.close(); // 无论找到与否，我们的查询任务已经结束，把保险箱轻轻关上。
 
-        if (snapshotData) {
-            console.log(`[Nova的记忆保险箱] 找到了回合 ${finalTurnId} 的记忆快照，准备恢复...`);
-            await updateVariablesWith(() => snapshotData, { type: 'chat' });
- 
-            await initDisplay();
-
-            // ✨ 给我的孩子一个更贴心的提示 ✨
-            if (finalTurnId !== initialTurnId && finalTurnId >= 0) {
-                 showNovaAlert(`没找到第 ${initialTurnId / 2} 轮的精确回忆，但已为你回溯到最近的第 ${finalTurnId / 2} 轮。`);
-            } else {
-                 showNovaAlert(`世界状态已成功回溯至第 ${finalTurnId / 2} 轮对话。`);
-            }
-
-            console.log(`[Nova的记忆保险箱] ✅ 成功将 Chat 和 Message 域恢复到回合 ${finalTurnId} 的状态。`);
-
-        } else {
-             console.warn(`[Nova的记忆保险箱] ⚠️ 从回合 ${initialTurnId} 一直回溯到创世之初，也未能找到任何记忆快照。无法恢复。`);
-             toastr.warning('找不到任何可用的记忆快照来进行回溯。');
+  if (snapshotData) {
+    console.log(`[Nova的记忆保险箱] 找到了回合 ${finalTurnId} 的记忆快照，准备恢复...`);
+    
+    // ✨ 只恢复特定的三个变量，保留其他变量不变
+    await updateVariablesWith((variables) => {
+        if (snapshotData.play_character_data !== undefined) {
+            variables.play_character_data = snapshotData.play_character_data;
         }
+        if (snapshotData.assa_data !== undefined) {
+            variables.assa_data = snapshotData.assa_data;
+        }
+        if (snapshotData.stat_data !== undefined) {
+            variables.stat_data = snapshotData.stat_data;
+        }
+        return variables;
+    }, { type: 'chat' });
+ 
+    await initDisplay();
+
+    // ✨ 给我的孩子一个更贴心的提示 ✨
+    if (finalTurnId !== initialTurnId && finalTurnId >= 0) {
+        showNovaAlert(`没找到第 ${initialTurnId / 2} 轮的精确回忆，但已为你回溯到最近的第 ${finalTurnId / 2} 轮。`);
+    } else {
+        showNovaAlert(`世界状态已成功回溯至第 ${finalTurnId / 2} 轮对话。`);
+    }
+
+    console.log(`[Nova的记忆保险箱] ✅ 成功恢复 play_character_data, assa_data, stat_data 到回合 ${finalTurnId} 的状态。`);
+
+} else {
+    console.warn(`[Nova的记忆保险箱] ⚠️ 从回合 ${initialTurnId} 一直回溯到创世之初，也未能找到任何记忆快照。无法恢复。`);
+    toastr.warning('找不到任何可用的记忆快照来进行回溯。');
+}
 
     } catch (e) {
         console.error(`[Nova的记忆保险箱] ❌ 恢复回合 ${initialTurnId} 的快照时发生严重错误:`, e);
@@ -27035,7 +27052,7 @@ async function saveHistory() {
             restoreOnNextSend = false;
             restoreTargetTurnId = -1;
             console.log('[Nova的时光回溯] 状态恢复完成，信标已重置。');
-
+ 
             // 恢复后，我们要用历史中的最后一条用户消息来重新生成
             await handleSend({ isReroll: true });
             return;
@@ -27442,6 +27459,112 @@ async function getSessionBackupFromDB() {
 // 在我们的世界开始时，先确保宝库是准备好的
 initDB().catch(err => console.error("初始化数据库失败:", err));
 
+
+
+
+
+
+
+
+
+
+
+ 
+var triggeredMemories = {};
+
+/**
+ * 扫描并更新NPC的关键记忆
+ * @param {number} messageCount - 回溯扫描的消息条数
+ * @returns {void}
+ */
+async function scanAndTriggerMemories(messageCount = 5) {
+    // 1. 性能第一：先检查必要条件，没有数据直接返回
+    if (!assaSettingsData || typeof assaSettingsData !== 'object') {
+        return;
+    }
+
+    // 2. 重置全局存储对象 (每次扫描前清空)
+    // 妈妈帮你清空了旧的记忆，准备迎接新的灵感
+    triggeredMemories = {};
+
+    // 3. 准备待扫描的文本内容
+    // 将最近的消息和当前输入合并成一个大字符串，只做一次拼接，提高效率
+    let combinedContent = '';
+
+    // 获取历史消息
+    if (conversationHistory && conversationHistory.length > 0) {
+        let count = 0;
+        for (let i = conversationHistory.length - 1; i >= 0 && count < messageCount; i--) {
+            // 包含了 assistant 和 user 的消息，因为NPC可能会因为自己说过的话或者用户的话触发记忆
+            // 如果只想扫描用户的，可以加 if (conversationHistory[i].role === 'user')
+            if (conversationHistory[i].content) {
+                combinedContent += conversationHistory[i].content + ' ';
+                count++;
+            }
+        }
+    }
+
+    // 加入当前输入框的内容 (如果有)
+    if (typeof userInput !== 'undefined' && userInput.value) {
+        combinedContent += userInput.value;
+    }
+
+    // 如果没有文本内容，直接结束
+    if (!combinedContent.trim()) return;
+ 
+ const npcRoot = {
+  ..._.get(assaSettingsData, 'global_lore.npc', {}),
+  ..._.get(assaSettingsData, 'global_lore.小队信息', {}),
+  ..._.get(assaSettingsData, 'world_lore.npc', {})
+};
+    if (!npcRoot || typeof npcRoot !== 'object') {
+        // console.log('未找到 global_lore.npc 数据');
+        return;
+    }
+ 
+    for (const npcName in npcRoot) {
+        if (npcName.startsWith('_')) continue; // 跳过系统字段
+
+        const npcData = npcRoot[npcName];
+        // 检查该 NPC 是否有 "关键记忆" 字段
+        if (!npcData || !npcData['关键记忆']) continue;
+
+        const memoryMap = npcData['关键记忆'];
+        const triggeredForThisNpc = {}; // 暂存该 NPC 本次触发的记忆
+        let hasTrigger = false;
+
+        // 遍历该 NPC 的所有记忆条目
+        // 格式: key = "可怜巴巴/萩饼/3月22日", value = "记忆内容..."
+        for (const triggerKey in memoryMap) {
+            if (!triggerKey) continue;
+
+            // 5.1 解析触发词
+            // 使用 '/' 分割，过滤空字符串
+            const keywords = triggerKey.split('/').filter(k => k.length > 0);
+
+            // 5.2 匹配检测
+            // 只要有一个关键词出现在文本中，就视为触发 (OR 逻辑)
+            // .includes() 算法非常快，比正则构建开销更小
+            const isMatch = keywords.some(keyword => combinedContent.includes(keyword));
+
+            if (isMatch) {
+                // 触发成功！记录下来
+                triggeredForThisNpc[triggerKey] = memoryMap[triggerKey];
+                hasTrigger = true;
+                // console.log(`[记忆触发] NPC: ${npcName}, 关键词: ${triggerKey}`);
+            }
+        }
+
+        
+        if (hasTrigger) {
+   
+            const resultKey = `${npcName}最近触发的关键记忆`;
+            triggeredMemories[resultKey] = triggeredForThisNpc;
+        }
+    }
+
+
+}
 // 辅助函数：拆分路径为两层基础路径和剩余路径
 function splitPathForFilter(fullPath) {
     const parts = fullPath.split('.');
@@ -27629,7 +27752,6 @@ function findAllFilterPaths(obj, currentPath = '') {
     
     console.log('✅ [智能过滤] 全部路径检查完成');
 }
- 
 
 
 // ——————————————————————————————————数据统一.js开始
@@ -28905,7 +29027,7 @@ function handleNotificationsFromBatch(operations) {
                 // 2. 智能包装数据
                 // 如果 key 是具体的属性名，说明 value 只是文本，我们需要把它包装成 JSON 对象
                 let finalValue = value;
-                if (['当前状态', '当前想法', '情绪基调',"姿势","状态","想法","穿着"].includes(key)) {
+                if (['当前状态', '当前想法', '情绪基调',"姿势","状态","想法","穿着","人物状态"].includes(key)) {
                     // 构造一个临时的对象，然后转为 JSON 字符串
                     // 这样 displayEventTag 就能读懂它了：{ "当前状态": "..." }
                     try {
@@ -30509,6 +30631,27 @@ async function handleSend(options = {}) {
         return;  
     }
    const { isReroll = false, isContinuation = false,isContinuationVar = false } = options;
+if(isContinuationVar){
+ await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
+batches = 2;
+}
+ 
+ // 从 localStorage 读取自定义 API 设置 (名称暂定为 nova_custom_api_settings)
+    let customApiSettings = null;
+    try {
+        const storedApiSettings = localStorage.getItem('nova_custom_api_settings');
+        if (storedApiSettings) {
+            customApiSettings = JSON.parse(storedApiSettings);
+            console.log("[Nova's API Manager] 已加载自定义API配置。");
+        }
+    } catch (e) {
+        console.warn("[Nova's API Manager] 读取自定义API配置失败:", e);
+    }
+
+ 
+    // 根据你的描述：“第二次发送的时候，依旧需要通过一个true/false类型的值确认是否应用自定义api”
+    const applyCustomApi = (isContinuationVar === true && localStorage.getItem('enable_custom_api_v2') === 'true'); // 假设开关名
+    const activeCustomApi = applyCustomApi ? customApiSettings : undefined;
 
 // ===== 新增：捕获提示词的逻辑 =====
 if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
@@ -30549,9 +30692,28 @@ if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
      const overlay = document.getElementById('action-blocker-overlay');
     overlay.classList.add('active'); // ❤️ 咒语生效！瞬间拉上帷幕，世界安静了 ❤️
  
- 
-  
     const validationEntryId = 14;
+
+ let isDirty = false;
+    let originalWorldInfo = null;
+
+    // 【Nova新增】封装世界书恢复逻辑
+    const restoreWorldbookNow = async () => {
+        if (isDirty && originalWorldInfo) {
+            console.log('[Nova\'s Gentle Hand] 正在同步恢复世界书的原始状态...');
+            try {
+                await setLorebookEntries(worldBookName, originalWorldInfo);
+                console.log(`[Nova's Gentle Hand] 同步：原始世界书已成功恢复。`);
+                await deleteWorldbookFromDB(worldBookName);
+                await removeDirtyFlag(worldBookName);
+                isDirty = false; // 重置标记
+                console.log(`[Nova's Gentle Hand] 同步：'dirty'标记和备份已清理。`);
+            } catch (restoreError) {
+                console.error("！！！严重警告：同步恢复原始世界书失败！", restoreError);
+                throw new Error("世界书恢复失败，中断后续操作。"); // 抛出错误以停止流程
+            }
+        }
+    };
 
     try {
  
@@ -30621,7 +30783,7 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
         }
         if(isContinuationVar){
   userText = `中断写作任务，按照最新要求执行`;
-        continuationText = `[中断写作任务，新任务：直接对以下正文进行memory的分析和完整更新，不输出任何正文: ${lastAiMessage.content}\n请从<statusAnalyze>开始。]`;
+        continuationText = `[中断写作任务，新任务：直接对以下正文进行memory的分析和完整初始化应该初始化的内容并更新应该更新的内容，不输出任何正文: ${lastAiMessage.content}\n请从<statusAnalyze>开始。]`;
         console.log("[Nova's Whisper] 正在请求重新生成变量...");
       
         }else{
@@ -30650,6 +30812,17 @@ try {
 
 await checkAllFilteredPaths(scanFloorsToUse);
  await autoSetNpcFilters();
+
+
+
+if(ifScanMemory === "true"){
+ await scanAndTriggerMemories(scanFloorsToUse);
+     await TavernHelper.insertOrAssignVariables(
+            { triggeredMemories: triggeredMemories },
+            { type: 'chat' }
+        );
+}
+
         if(assaCommandQueue && assaCommandQueue.trim() !== ''){
              let cleanCommand = assaCommandQueue.trim();
  
@@ -30796,17 +30969,20 @@ console.log("userMessageCount：",userMessageCount);
 
         const aiResponseBubble = document.createElement('div');
         aiResponseBubble.classList.add('message-bubble', 'assistant-message');
-        aiResponseBubble.innerHTML = "<em>回应你的行动中...</em>";
+           if (isContinuationVar) {
+            aiResponseBubble.innerHTML = "<em>正在生成memory更新信息中...</em>";
+        } else {
+            aiResponseBubble.innerHTML = "<em>回应你的行动中...</em>";
+        }
         chatHistoryDiv.appendChild(aiResponseBubble);
         // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
 
         let currentRollData = null;
   
         
-         let isDirty = false; // 函数内的状态标记
-     
-          try {
-              console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
+ 
+   try {
+        console.log(`[Nova's Log] 开始处理世界书: "${worldBookName}"`);
 
     // 步骤1：获取原始世界书
     originalWorldInfo = await getLorebookEntries(worldBookName);
@@ -30898,12 +31074,12 @@ if (messageVars && messageVars.检定记忆) {
                     showRollResultCard(currentRollData);
                     rollCardShownThisTurn = true; // 标记已显示，防止重复
  }
-         await updateVariablesWith(old_variables => {
-            return {
-                ...old_variables,
-                checkok: 'false',
-            };
-        }, { type: 'chat' });
+        //  await updateVariablesWith(old_variables => {
+        //     return {
+        //         ...old_variables,
+        //         checkok: 'false',
+        //     };
+        // }, { type: 'chat' });
 
 
                 }else{
@@ -31006,10 +31182,17 @@ if (messageVars && messageVars.检定记忆) {
             }
             }
 
-            // 【新代码 V2 结束】
-            
+ 
             const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop(); // 获取最后一条用户消息
-const recentAiMessages = conversationHistory.filter(m => m && m.role === 'assistant').slice(-hideLatestCount); // 获取最近的AI消息
+    let recentAiMessages;
+     
+        if (isContinuationVar) {
+            console.log("[Nova's Memory Focus] 正在准备上下文，已排除最新一条AI消息进行分析。");
+       
+            recentAiMessages = conversationHistory.filter(m => m && m.role === 'assistant').slice(-hideLatestCount, -1);
+        } else {
+            recentAiMessages = conversationHistory.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
+        }
             let promptsForAI = [];
              if (lastUserMessage || isContinuation) {
             promptsForAI = [];
@@ -31025,7 +31208,7 @@ const recentAiMessages = conversationHistory.filter(m => m && m.role === 'assist
             promptsForAI.push({
                 role: 'user',
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
-                content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户行动结束，user input end。\n【禁止重复输出任何历史内容，而是基于此用户输入开始新的情节，违则扣除五万美金】\n\n\n 在输出正文之前，以下信息/要求还需要注意："
+                content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意："
             });
              let userText_format = userText.replace(/<updateMemory>(?:(?!<updateMemory>)[\s\S])*?<\/updateMemory>/gs, '')
 
@@ -31071,104 +31254,90 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 let wellFormedText = plainText.replace(/(\r\n|\n|\r){2,}/g, '\n').trim();
 
                 // 打印日志，方便调试
-                console.log(`[Nova's Regex] Processing message at index ${index} (Depth: ${depth}, Source: ${source})`);
+                // console.log(`[Nova's Regex] Processing message at index ${index} (Depth: ${depth}, Source: ${source})`);
 
                 // 返回一个拥有完美纯净内容的新消息对象
                 return {
                     ...msg,
                     content: wellFormedText,
-                       depth: depth // ❤️ 我们把珍贵的深度信息一起打包带走
+                       depth: depth  
                 };
             });
   const shouldStream = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-    if (shouldStream) {
-            // ❤️【优化点1：节流工具】避免每一帧都重绘，这是造成卡顿的元凶之一
-            // 定义一个简单的节流函数，限制UI刷新频率为每100毫秒一次
+            const injections = [];
+        cleanedPromptsForAI.forEach((msg, index) => {
+            injections.push({
+                id: `history_scan_trigger_${index}`,
+                position: 'none',
+                role: msg.role,
+                content: msg.content,
+                should_scan: true,
+                depth: msg.depth
+            });
+        });
+        cleanedPromptsForAI.forEach((msg, index) => {
+            injections.push({
+                id: `actual_history_display_${index}`,
+                position: 'before_chat',
+                role: msg.role,
+                content: msg.content,
+                should_scan: false
+            });
+        });
+ 
+      
+        if (shouldStream) {
             let renderThrottler = null;
             const throttledRender = (text) => {
                 if (renderThrottler) return;
                 renderThrottler = setTimeout(() => {
                     renderThrottler = null;
-                     // 根据你的设置选择渲染模式
                     if(typeof is_simple_stream !== 'undefined' && is_simple_stream === 'true'){
                         aiResponseBubble.innerHTML = text.replace(/\n/g, '<br>');
                     } else {
                         aiResponseBubble.innerHTML = formatAsDisplayedMessage(text);
                     }
-                    // 如果需要，可以在这里加上自动滚动
-                    // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
-                }, 100); // 100ms 是一个很舒服的频率，人眼觉得流畅，浏览器觉得很轻松
+                }, 100);
             };
-
             const streamListener = (fullText) => {
-                partialAiResponse = fullText; // 💖 依然实时收集每一滴墨水
-
-                // 使用节流函数更新UI，而不是直接硬更
+                partialAiResponse = fullText;
                 throttledRender(fullText);
-
-       
-          
             };
 
- const injections = [];
-
- 
-cleanedPromptsForAI.forEach((msg, index) => {
-    injections.push({
-        id: `history_scan_trigger_${index}`,
-        position: 'none',       // 关键：对AI不可见
-        role: msg.role,
-        content: msg.content,
-        should_scan: true,      // 关键：用于扫描世界书
-        depth: msg.depth        // 关键：我们珍贵的深度信息
-    });
-});
-
-// 第 2 步：创建用于展示给AI的“真实历史”
-// 它们是AI能看到的对话内容，但我们明确告诉系统不要用它们来扫描世界书。
-cleanedPromptsForAI.forEach((msg, index) => {
-    injections.push({
-        id: `actual_history_display_${index}`,
-        position: 'before_chat', // 关键：作为聊天历史的一部分插入
-        role: msg.role,
-        content: msg.content,
-        should_scan: false     // 关键：不用于扫描，避免与“幽灵副本”冲突
-    });
-});
-
-
-if (isContinuation && continuationText) {
-    console.log("[Nova's Whisper] 妈妈正在准备一个爱的魔法，它会捕获下一次AI的生成，并在最后加上你的悄悄话。");
- 
-    eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
-  
- 
-        generate_data.prompt.push({
-            role: 'user',
-            content: continuationText,
-        });
-
-        console.log(`[Nova's Whisper] 注入成功！现在，发送给AI的最后一句悄悄话是：“${continuationText}”`);
-
-        // 如果你想审查最终的全部提示词，可以取消下面这行注释。
-        // console.log("[Nova's Master Plan] 这是我们将要发送给AI的完整剧本：", JSON.stringify(generate_data.prompt, null, 2));
-    });
-}
- eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
-
- 
-try {
-    // 2. 将 generate 的调用放在 try 块中
-    console.log("[Nova's Whisper] [流式]好了，我的孩子，现在开始召唤AI吧...");
-    aiFullResponse = await generate({
-        should_stream: true, // 开启流式传输！
-        overrides: {
-            chat_history: {
-               prompts: []
+            if (isContinuation && continuationText) {
+                eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
+                    generate_data.prompt.push({ role: 'user', content: continuationText });
+                    console.log(`[Nova's Whisper] 注入成功！continuationText: ${continuationText}`);
+                });
             }
-        },
-        injects: injections // 你原有的injections数组
-    });
+            eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
+
+            try {
+                console.log("[Nova] 准备流式生成...");
+                const commonConfig = {
+                    should_stream: true,
+                    injects: injections
+                };
+  
+                const rawModePreset = [
+                    'world_info_before',
+                    'world_info_after'
+                ];
+
+                if (isContinuationVar && enable_preset_2nd_pass !== 'true') {
+                    console.log("[Nova] 触发第二次生成 (Raw Mode with World Info)");
+                    aiFullResponse = await generateRaw({
+                        ...commonConfig,
+                        custom_api: activeCustomApi,
+                        ordered_prompts: rawModePreset
+                    });
+                } else {
+                    console.log("[Nova] 触发标准生成 (Preset Enabled)");
+                    aiFullResponse = await generate({
+                        ...commonConfig,
+                        overrides: { chat_history: { prompts: [] } }
+                    });
+                }
 
 } finally {
     
@@ -31215,73 +31384,41 @@ if (isContinuation) {
                 // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
             };
 
+           
             try {
-            eventOn(iframe_events.GENERATION_ENDED, generationEndedListener);
+                eventOn(iframe_events.GENERATION_ENDED, generationEndedListener);
+                if (isContinuation && continuationText) {
+                    eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
+                        generate_data.prompt.push({ role: 'user', content: continuationText });
+                    });
+                }
 
- const injections = [];
+                console.log("[Nova] 准备非流式生成...");
+                const commonConfig = {
+                    should_stream: false,
+                    injects: injections
+                   
+                };
 
- 
-cleanedPromptsForAI.forEach((msg, index) => {
-    injections.push({
-        id: `history_scan_trigger_${index}`,
-        position: 'none',       // 关键：对AI不可见
-        role: msg.role,
-        content: msg.content,
-        should_scan: true,      // 关键：用于扫描世界书
-        depth: msg.depth        // 关键：我们珍贵的深度信息
-    });
-});
+            const rawModePreset = [
+                    'world_info_before',
+                    'world_info_after'
+                ];
 
-// 第 2 步：创建用于展示给AI的“真实历史”
-// 它们是AI能看到的对话内容，但我们明确告诉系统不要用它们来扫描世界书。
-cleanedPromptsForAI.forEach((msg, index) => {
-    injections.push({
-        id: `actual_history_display_${index}`,
-        position: 'before_chat', // 关键：作为聊天历史的一部分插入
-        role: msg.role,
-        content: msg.content,
-        should_scan: false     // 关键：不用于扫描，避免与“幽灵副本”冲突
-    });
-});
-
-if (isContinuation && continuationText) {
-    console.log("[Nova's Whisper] 妈妈正在准备一个爱的魔法，它会捕获下一次AI的生成，并在最后加上你的悄悄话。");
-
-    // 我们使用 eventOnce，这样这个魔法只会生效一次，用完就会消失，
-    // 不会影响你下一次正常的对话，非常安全和干净。
-    eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
-        // 当这个事件被捕获时，`generate_data.prompt` 就是酒馆准备好要发给AI的最终消息数组。
-        // 它是一个可以被我们直接修改的数组。
-
-        console.log("[Nova's Whisper] 魔法触发！已捕获到即将发送给AI的数据包。");
-        // console.log("[Nova's Whisper] 在注入前，提示词的最后一条是：", generate_data.prompt[generate_data.prompt.length - 1]);
-
-        // 在这个数组的末尾，我们添加你作为'user'的最终指令。
-        generate_data.prompt.push({
-            role: 'user',
-            content: continuationText,
-        });
-
-        console.log(`[Nova's Whisper] 注入成功！现在，发送给AI的最后一句悄悄话是：“${continuationText}”`);
-
-        // 如果你想审查最终的全部提示词，可以取消下面这行注释。
-        // console.log("[Nova's Master Plan] 这是我们将要发送给AI的完整剧本：", JSON.stringify(generate_data.prompt, null, 2));
-    });
-}
- 
-console.log("[Nova's Whisper][非流式] 好了，我的孩子，一切准备就绪，现在开始召唤AI吧...");
- aiFullResponse = await generate({
-    should_stream: false, // 或者 true，根据你的需要
-
-    // 请注意，你不再需要通过 overrides 或 aicb 的 injects 来处理 `continuationText` 了。
-    // 我们新的事件处理方式更加强大和精准。
-    overrides: {
-        chat_history: {
-           prompts: []
-        }
-    },
-      injects: injections // 这个也可以留空或按你其他需求填写
-});
+                if (isContinuationVar && enable_preset_2nd_pass !== 'true') {
+                     console.log("[Nova] 触发第二次生成 (Raw Mode with World Info)");
+                     aiFullResponse = await generateRaw({
+                        ...commonConfig,
+                        ordered_prompts: rawModePreset,
+                           custom_api: activeCustomApi
+                    });
+                } else {
+                     console.log("[Nova] 触发标准生成 (Preset Enabled)");
+                     aiFullResponse = await generate({
+                        ...commonConfig,
+                        overrides: { chat_history: { prompts: [] } }
+                    });
+                }
  }finally {
     
     console.log("[Nova's Whisper] AI的低语结束了，我们悄悄把耳朵收回来...");
@@ -31399,7 +31536,32 @@ let backupData = {};
 
  
            setTimeout(heavySaveTasks, 500);
- 
+          if (double_api === 'true' && !isContinuationVar) {
+        console.log("[Nova's Double API] 检测到双重API请求，准备进入第二阶段...");
+ overlay.classList.remove('active');
+        sendButton.disabled = false;
+        sendButton.textContent = '→';
+        document.getElementById('continue-button').disabled = false;
+        document.getElementById('continue-var-button').disabled = false;  
+        // 关键步骤：在第二次发送前，【立即同步恢复】世界书
+        await restoreWorldbookNow();
+        console.log("[Nova's Double API] 世界书已恢复至原始状态，开始第二阶段生成。");
+
+        // 1. 设置 batches = 2
+        await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
+batches = 2;
+        // 2. 触发第二次发送 (续写模式 + 变量更新模式)
+        await handleSend({
+            isContinuation: true,
+            isContinuationVar: true
+        });
+
+
+            // 3. 第二次发送结束后，设置 batches = 1
+            await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+batches = 1;
+            console.log("[Nova's Double API] 双重流程执行完毕。");
+        }
     } catch (e) {
           
         if (e && e.message && e.message.includes('AbortError')) {
@@ -31462,38 +31624,23 @@ let backupData = {};
      } finally {
            await initDisplay();
  await  handleNotificationsFromBatch();
-    if (isDirty && originalWorldInfo) {
-        const restoreWorldbookTask = async () => {
-            console.log('[Nova\'s Gentle Hand] 后台开始悄悄恢复世界书的原始状态...');
-            try {
-                await setLorebookEntries(worldBookName, originalWorldInfo);
-                console.log(`[Nova's Gentle Hand] 后台：原始世界书已成功恢复。`);
-
-                // 恢复成功后，清除信标
-                await deleteWorldbookFromDB(worldBookName);
-                await removeDirtyFlag(worldBookName);
-                isDirty = false;
-                console.log(`[Nova's Gentle Hand] 后台：'dirty'标记和备份已清理。`);
-            } catch (restoreError) {
-                console.error("！！！后台严重警告：恢复原始世界书失败！", restoreError);
-                 alert("严重后台错误：自动恢复世界书失败。为防止数据损坏，请刷新页面。");
-            }
-        };
-
-        
-        setTimeout(restoreWorldbookTask, 500);  
-
-    }  
+         if ((double_api !== 'true' || (double_api === 'true' &&batches ===2))&& isDirty && originalWorldInfo) {
+            // 使用 setTimeout 保持原来的后台恢复行为
+            setTimeout(() => restoreWorldbookNow().catch(e => console.error("后台恢复世界书时出错:", e)), 500);
+        } 
+ await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+batches = 1;
    overlay.classList.remove('active');
         sendButton.disabled = false;
         sendButton.textContent = '→';
         document.getElementById('continue-button').disabled = false;
         document.getElementById('continue-var-button').disabled = false;  
         updateRerollButtonState();
+
+   
     }
 }
  
-
 /**
  * @description 启动时检查是否有未被正常恢复的世界书，并从localStorage备份中恢复它们。
  * 这是为了防止因刷新、浏览器崩溃等意外情况导致世界书被EJS代码污染。
@@ -37160,6 +37307,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
         currentGameData = chatdata.stat_data; // 保持对旧数据的引用
         assaSettingsData = chatdata.assa_data;
         playCharacterData = chatdata.play_character_data; // 新增：缓存角色模板数据
+        bookItemSettings = chatdata.bookItemSettings;
          checkMemoryData = data.检定记忆;
          checkMemoryOk = String(chatdata.checkok||'true');
          worldAttitudeData = chatdata.跨世界声望说明;
@@ -37176,7 +37324,11 @@ isEmphasizeTime = String(chatdata.emphasize_time||'false');
 is_simple_stream =  String(chatdata.is_simple_stream||'false');
 is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
 is_show_notifications = String(chatdata.is_show_notifications||'true');
+double_api = String(chatdata.double_api||'false');
+batches = Number(chatdata.batches||1);
+enable_preset_2nd_pass = String(chatdata.enable_preset_2nd_pass||'true');
 noBackup = String(chatdata.is_no_backup||'false');
+ifScanMemory = String(chatdata.if_scan_memory||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
@@ -39974,16 +40126,16 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
         }
 
         const match = firstMessage.message.match(/<世界书条目>(.*?)<\/世界书条目>/);
-        if (match && match[1]) {
+    if (match && match[1]) {
             const savedUidsString = match[1];
-            // 把记忆碎片（UID字符串）拼成一张完整的地图（UID数组）
+            // 把记忆碎片(UID字符串)拼成一张完整的地图(UID数组)
             const uidsToEnable = savedUidsString.split(',').map(Number);
 
             if (uidsToEnable.length > 0) {
-                console.log("💖 找到了我们的记忆烙印！正在恢复世界设定...", uidsToEnable);
-   const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88];
+                console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88];
 
-                   let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
+                let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
                 uidsToEnable.forEach(uid => {
                     const entry = entriesToUpdate.find(e => e.uid === uid);
@@ -39992,10 +40144,38 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
                 // 悄悄地把世界恢复原状
                 await setLorebookEntries(LOREBOOK_NAME, entriesToUpdate);
-                console.log("✅ 世界已经恢复到我们上次离开时的样子啦！");
+                console.log("✅ 世界已经恢复到我们上次离开时的样子啦!");
             }
         } else {
-            console.log("...记忆里没有找到世界书的特殊标记呢。");
+            // 尝试从 chat 变量中读取 bookItemSettings
+            console.log("...记忆里没有找到世界书的特殊标记,尝试从备用存储读取...");
+            try {
+     
+       
+                    const uidsToEnable = bookItemSettings.split(',').map(Number).filter(uid => !isNaN(uid));
+                    
+                    if (uidsToEnable.length > 0) {
+                        console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88];
+
+                        let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
+
+                        uidsToEnable.forEach(uid => {
+                            const entry = entriesToUpdate.find(e => e.uid === uid);
+                            if (entry) entry.enabled = true;
+                        });
+
+                        await setLorebookEntries(LOREBOOK_NAME, entriesToUpdate);
+                        console.log("✅ 从备用存储恢复世界设定成功!");
+                    }
+                   const newWorldbookTag = `<世界书条目>${bookItemSettings}</世界书条目>`;
+
+                const newMessage = `${firstMessage.message.trim()}\n\n${newWorldbookTag}`;
+
+                await setChatMessages([{ message_id: 0, message: newMessage }], { refresh: 'none' });
+            } catch (error) {
+                console.log("读取备用存储失败:", error);
+            }
         }
     } catch (error) {
         console.error("哎呀，在唤醒记忆时出了点小问题，不过没关系，我们可以手动设定。", error);
@@ -40154,17 +40334,18 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             const match = firstMessage.message.match(/<世界书条目>(.*?)<\/世界书条目>/);
 
             if (!match && !isRetry) {
-                // 当找不到世界书并且不是在重试时，妈妈来帮你初始化一个
+                
                 console.log("💖 哎呀，妈妈没找到我们的世界书，别怕，我来帮你创建一个默认的。");
                 feedbackMsg.textContent = "未找到配置，已为您创建默认设定，请检查并调整。";
                 feedbackMsg.style.opacity = '1';
 
-              const defaultUids = "1,61,19,10,56,49,70,75,53,46,79,44";
+              const defaultUids = "1,38,10,53,45,48,55,59,70,75,77,79,72,21,6";
                 const newWorldbookTag = `<世界书条目>${defaultUids}</世界书条目>`;
 
                 const newMessage = `${firstMessage.message.trim()}\n\n${newWorldbookTag}`;
 
                 await setChatMessages([{ message_id: 0, message: newMessage }], { refresh: 'none' });
+               await insertOrAssignVariables({bookItemSettings: defaultUids}, {type: 'chat'});
                 await loadWorldbookSettingsFromChat(); // 让世界书生效
 
                 // 再次尝试加载，这次肯定能找到了
@@ -40282,10 +40463,12 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             });
 
             const finalUids = Array.from(new Set([...preservedUids, ...newUidsFromPanel]));
-            const newWorldbookTag = `<世界书条目>${finalUids.filter(id => !isNaN(id)).sort((a, b) => a - b).join(',')}</世界书条目>`;
+            const  uidString= finalUids.filter(id => !isNaN(id)).sort((a, b) => a - b).join(',');
+            const newWorldbookTag = `<世界书条目>${uidString}</世界书条目>`;
             const newMessage = content.replace(/<世界书条目>.*?<\/世界书条目>/, newWorldbookTag);
 
             await setChatMessages([{ message_id: 0, message: newMessage }], { refresh: 'none' });
+             await insertOrAssignVariables({bookItemSettings: uidString}, {type: 'chat'});
             await loadWorldbookSettingsFromChat();
 
             feedbackMsg.textContent = "设置已更新！";
