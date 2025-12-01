@@ -30763,6 +30763,11 @@ function throttle(func, limit) {
     }
 }
 async function handleSend(options = {}) {
+     await TavernHelper.insertOrAssignVariables(
+            { checklock: 'false' },
+            { type: 'chat' }
+  );
+   setTimeout(() => console.log('等待锁释放'), 50);
     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
 
     // 1. 检查 EjsTemplate 对象是否存在，以及 setFeatures 方法是否存在
@@ -30858,6 +30863,7 @@ if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
 
     // 【Nova新增】封装世界书恢复逻辑
     const restoreWorldbookNow = async () => {
+     
         if (isDirty && originalWorldInfo) {
             console.log('[Nova\'s Gentle Hand] 正在同步恢复世界书的原始状态...');
             try {
@@ -30872,6 +30878,8 @@ if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
                 throw new Error("世界书恢复失败，中断后续操作。"); // 抛出错误以停止流程
             }
         }
+
+ 
     };
 
     try {
@@ -31103,7 +31111,7 @@ console.log("userMessageCount：",userMessageCount);
 } catch (error) {
     console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理你的指令时遇到了困难:", error);
 }
-             
+ 
     if (isReroll) {
         const chatDisplayArea = document.getElementById('chat-display-area');
         if (chatDisplayArea && chatDisplayArea.children.length > 0) {
@@ -31219,12 +31227,18 @@ for (const entry of worldInfoForProcessing) {
                         processedWorldInfo.push(entry); // 未启用的条目直接保留
                     }
                 }
+                   await TavernHelper.insertOrAssignVariables(
+      { checklock: 'true' },
+       { type: 'chat' }
+      );
                 // 步骤3：将处理后的世界书应用到当前会话
                 await setLorebookEntries(worldBookName, processedWorldInfo);
-                    await TavernHelper.insertOrAssignVariables(
-            { checkok: 'true' },
-            { type: 'chat' }
-        );
+
+        //    await TavernHelper.insertOrAssignVariables(
+        //     { checklock: 'true' },
+        //     { type: 'chat' }
+        // );
+
             }else{
 
             }
@@ -31233,10 +31247,7 @@ for (const entry of worldInfoForProcessing) {
   const messageVars = await TavernHelper.getVariables({ type: 'chat' });
 if (messageVars && messageVars.检定记忆) {
     currentRollData = messageVars.检定记忆;
-             await TavernHelper.insertOrAssignVariables(
-            { checkok: 'false' },
-            { type: 'chat' }
-        );
+
     console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
            if (!rollCardShownThisTurn && currentRollData) {
                     showRollResultCard(currentRollData);
@@ -37520,7 +37531,7 @@ function togglePixelatedEffect(containerSelector = '.status-container', enable =
 }
 
 async function initDisplay(is_first=true) {
-
+  
     console.log(`[initDisplay 被召唤] is_first: ${is_first}, 当前时间: ${new Date().toLocaleTimeString()}`);
     try {
  
@@ -37537,7 +37548,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
         playCharacterData = chatdata.play_character_data; // 新增：缓存角色模板数据
         bookItemSettings = chatdata.bookItemSettings;
          checkMemoryData = data.检定记忆;
-         checkMemoryOk = String(chatdata.checkok||'true');
+         checkMemoryOk = String(chatdata.checklock||'true');
          worldAttitudeData = chatdata.跨世界声望说明;
         characterStatusData = chatdata.当前人物状态;
         lasttoken = globaldata?.LAST_SEND_TOKENS || 0;
