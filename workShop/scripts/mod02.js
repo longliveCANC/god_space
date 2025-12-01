@@ -17,7 +17,71 @@
 
     function initializeMod() {
         console.log("【Nova的爱心脚本】找到目标元素，开始注入魔法...");
-
+   const defaultStatData = {
+            "hurt_value": [0,"本条回复中，user受到额外伤害的值"],
+            "纪年":"",
+            "日期": ["", "今天的日期，格式为 mm月dd日，从01月01日开始，乃进入任务世界的计时，禁止为空或未知。只有初始化和当时间流逝跨度大于一天的时候才能改变其值"],
+            "星期":"",
+            "时间": [
+                "",
+                "按照进行行动后实际经历的时间合理进行更新，每次输出内容后必须更新，格式为 hh:mm，禁止为空或未知"
+            ],
+            "天气":["",""],
+            "场景图": [
+                "",
+                "user当前所在的地图图片资源，按要求更新"
+            ],
+            "group_name":"",
+            "world": {
+                "name": ["", "当前所处任务世界的名称或代号。"],
+                "description": ["无", "当前任务世界的环境、氛围、文明形态等总体描述"],
+                "level":["无","当前世界能量/科技层级，只能从[低/中/高/神话/无]中五选一。参考:金庸世界/普通科幻世界的世界层级为低。只在初始化世界时/能量层级改变时(有神明/造物进入/离开user附近)，才能更改其能量层级"],
+                "task": {
+                    "objective": ["无", "发布的任务目标"],
+                    "progress": [0, "任务进度百分比，以数字表示，初始/无任务必为0。"],
+                    "status": ["未完成", "任务状态：未完成/已完成/失败"],
+                    "start_date": ["", "任务开始时的日期，AI禁止操作"],
+                    "rewards": ["无", "任务成功后的奖励"],
+                    "penalties": ["无","任务失败后的惩罚"],
+                    "time_limit":[-1, "任务的总体时间限制(天数，可以为小数，比如12小时即是0.5。无明确时限时设置为999)，只有在初始化任务或任务结算时改变，其余时候禁止操作！回到个人空间时设置limit为3，意为最多休整三天"],
+                    "time_left":[-1, "任务的剩余天数，AI任何时刻都禁止操作"]
+                }
+            },
+            "the_created": {
+                "name": ["", "造物的名字"],
+                "identity_in_world": ["", "造物在当前世界的身份"],
+                "current_status": ["", "造物当前的状态。"],
+                "mood": ["", "造物当前的心情"],
+                "description": ["", "关于这个造物的精准、详细介绍，包括心智、外形等，严格按照要求来设计。不少于50字"]
+            },
+            "user": {
+                "name": "user",
+                "nick_name":"",
+                "status":["","用户当前所拥有的buff和debuff，多个状态用;分隔"],
+                "total_task":[0,"完成的任务总量，完成/失败一个任务后，结算的时候加一"],
+                "Cross_world_prestige":[0,"用户的跨世界声望，可为负，在脱离一个世界时结算，只有对世界产生重大影响才更新。数值克制，例如：拯救了一个完整的世界，声望+5"],
+                "current_location": [
+                    "",
+                    "user当前所在的位置，移动后更新"
+                ],
+                "当前装备":{
+                    "手持": ["无", "当前手持的武器或工具名称，多个装备用;分割"],
+                    "穿戴": {
+                        "头部": ["无", "头部的装备名称"],
+                        "身体": ["无", "身体的装备名称"],
+                        "手部": ["无", "手部的装备名称"],
+                        "脚部": ["无", "脚部的装备名称"],
+                        "饰品": ["无", "特殊饰品名称"]
+                    }
+                }
+            },
+            "检定属性": ["", "下一轮行动需要进行判定的核心 属性段 和 技能段 (禁止检定 其他技能 )组合，设置三个。用半角符号;分隔，例如：力量;敏捷;白刃。若存在选项区，选取第一个选项区的检定属性作为值"],
+            "检定难度":[1,"每一轮都预测下一轮行动会直接面对的危机的难度级别。禁止为空"],
+            "敌方攻击骰池": ["", "当判定当前处于战斗状态时，预测敌方当前即将落下的攻击所属的核心属性段和技能段组合，无上限。用半角:设置敌方此属性的值，多个属性用半角符号;分隔，例如：力量:2;感知:3;白刃:2。多个敌人攻击时直接设置其属性，禁止设置名称"],
+            "dp_bonus":[0,"来源于意志力或技能，AI禁止设置"],
+            "符合美德的":["false","当检测到此轮用户表现符合美德触发条件时，设置为true;当不符合时，设置为false"],
+            "符合恶德的":["false","当检测到此轮用户表现符合恶德触发条件时，设置为true;当不符合时，设置为false"]
+        };
         // --- 1. 创建并注入样式 ---
         const style = document.createElement('style');
         style.id = 'mod02-styles';
@@ -155,7 +219,7 @@
                 border-radius: 8px;
                 margin-bottom: 15px;
             }
-            .mod02-category-title {
+   .mod02-category-title {
                 background: rgba(0, 250, 255, 0.1);
                 padding: 10px 15px;
                 font-size: 1.2em;
@@ -163,6 +227,26 @@
                 cursor: pointer;
                 border-bottom: 1px solid ${theme.border};
                 border-radius: 8px 8px 0 0;
+                /* --- 妈妈在这里加上了魔法 --- */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+                     .mod02-reset-btn {
+                background: transparent;
+                border: 1px solid ${theme.border};
+                color: ${theme.textSecondary};
+                border-radius: 4px;
+                padding: 2px 8px;
+                font-size: 0.8em;
+                cursor: pointer;
+                transition: all 0.2s;
+                margin-left: 10px;
+            }
+            .mod02-reset-btn:hover {
+                background: ${theme.primary};
+                color: ${theme.bg};
+                border-color: ${theme.primary};
             }
             .mod02-category-content {
                 padding: 15px;
@@ -419,23 +503,102 @@
 
             return key.replace(/_/g, ' ');
         }
+       // 辅助函数：从对象中根据路径获取值
+        function getNestedValue(obj, path) {
+            if (!path) return obj;
+            return path.split('.').reduce((prev, curr) => {
+                return prev ? prev[curr] : undefined;
+            }, obj);
+        }
 
-     function createField(container, path, key, value, dataType) {
-            // 当值是对象（但不是数组）时，它是一个分类，我们直接创建分类，不使用field-group包裹
+        // 辅助函数：递归生成重置指令
+        function generateResetCommands(basePath, defaultObj, commands) {
+            for (const key in defaultObj) {
+                if (Object.prototype.hasOwnProperty.call(defaultObj, key)) {
+                    const value = defaultObj[key];
+                    const currentPath = basePath ? `${basePath}.${key}` : key;
+
+                    // 如果是对象且不是数组，继续递归
+                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                        generateResetCommands(currentPath, value, commands);
+                    } else {
+                        // 是叶子节点（值或数组），生成指令
+                        const originalValue = Array.isArray(value) ? value[0] : value;
+                        // 移除前缀用于指令
+                        let commandPath = currentPath;
+                        // 这里我们只处理 statData 的重置
+                         // 注意：传入的 basePath 在 createField 中已经包含了父级路径
+
+                        // 生成指令
+                        // 注意：这里由于是重置，我们明确知道是 set_status
+                        const command = `set_status('${commandPath}', '${originalValue}'); // 重置为默认值`;
+                         // 使用 statData. 前缀作为 key 存入 commandsToExecute 以确保唯一性
+                        commands['statData.' + currentPath] = command;
+                    }
+                }
+            }
+        }
+
+        function createField(container, path, key, value, dataType) {
+            // 当值是对象（但不是数组）时，它是一个分类
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                 const category = document.createElement('div');
                 category.className = 'mod02-category';
 
                 const categoryTitle = document.createElement('div');
                 categoryTitle.className = 'mod02-category-title';
-                categoryTitle.textContent = beautifyLabel(path, key);
+
+                // 标题文本容器
+                const titleText = document.createElement('span');
+                titleText.textContent = beautifyLabel(path, key);
+                categoryTitle.appendChild(titleText);
+
+                  // --- 新增：重置按钮 ---
+                // 只有 statData 且在默认数据中有对应项时才显示重置
+                const currentPath = path ? `${path}.${key}` : key;
+
+                let defaultObj = null;
+                if (dataType === 'statData') {
+                    if (currentPath === 'statData') {
+                        // 如果是根节点，直接对应整个默认数据对象
+                        defaultObj = defaultStatData;
+                    } else if (currentPath.startsWith('statData.')) {
+                        // 如果是子节点，去掉 'statData.' 前缀再去查找
+                        const relativePath = currentPath.substring(9); // 'statData.'.length
+                        defaultObj = getNestedValue(defaultStatData, relativePath);
+                    }
+                }
+
+                if (defaultObj) {
+                    const resetBtn = document.createElement('button');
+                    resetBtn.className = 'mod02-reset-btn';
+                    resetBtn.innerHTML = '↺ 重置';
+                    resetBtn.title = '将此分类下所有属性重置为默认值';
+
+                    resetBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // 阻止折叠/展开
+                        if (confirm(`确定要将【${beautifyLabel(path, key)}】重置为默认状态吗？这会覆盖当前的所有修改。`)) {
+                            // 计算用于生成指令的相对路径
+                            let basePathForGen = '';
+                            if (currentPath !== 'statData') {
+                                basePathForGen = currentPath.substring(9);
+                            }
+
+                            generateResetCommands(basePathForGen, defaultObj, commandsToExecute);
+                            worldHelper.showNovaAlert(`已生成【${beautifyLabel(path, key)}】的重置指令，请点击“注入修改”执行。`);
+                        }
+                    });
+                    categoryTitle.appendChild(resetBtn);
+                }
+                // -----------------------
 
                 const categoryContent = document.createElement('div');
                 categoryContent.className = 'mod02-category-content';
-                // 初始时折叠，但如果分类下内容不多，也可以考虑默认展开
                 categoryContent.style.display = 'none';
 
-                categoryTitle.addEventListener('click', () => {
+                categoryTitle.addEventListener('click', (e) => {
+                    // 如果点击的是按钮，不触发折叠（虽然上面阻止了冒泡，双重保险）
+                    if (e.target.tagName === 'BUTTON') return;
                     categoryContent.style.display = categoryContent.style.display === 'none' ? 'grid' : 'none';
                 });
 
@@ -448,8 +611,8 @@
 
                 category.appendChild(categoryTitle);
                 category.appendChild(categoryContent);
-                // 直接将分类附加到容器，避免了额外的缩进
                 container.appendChild(category);
+
 
             } else {
                 // 对于数组、字符串、数字等，它们是真正的字段，我们使用field-group包裹
