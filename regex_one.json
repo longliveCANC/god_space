@@ -14690,6 +14690,8 @@ let isReadingModeOpen = false;
    // --- 全局变量和数据获取 ---
         let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
         let assaSettingsData = {};
+   let currentRollData = null;
+  
  let conversationHistory = [];
 let checkMemoryData = null;   // 用于存储上一轮的投掷记忆
  let worldAttitudeData = null; // 用于存储世界态度变量
@@ -27267,21 +27269,21 @@ async function saveHistory() {
     // handleSend会检测到我们刚刚设置的信标，先回溯，再用你最后的话重新生成。
     await handleSend({ isReroll: true });
 }
-async function showRollResultCard(rollData) {
+async function showRollResultCard(rollData=null) {
     if (!rollData) {
         console.log("没有有效的投掷数据来显示看板。");
         return;
     }
     
-    // 新增：检查是否为字符串类型的系统提示
+ 
     if (typeof rollData === 'string') {
-        await updateVariablesWith(old_variables => {
-            return {
-                ...old_variables,
-                "检定记忆": rollData,
-            };
-        }, { type: 'message' });
-        checkMemoryData = rollData;
+        // await updateVariablesWith(old_variables => {
+        //     return {
+        //         ...old_variables,
+        //         "检定记忆": rollData,
+        //     };
+        // }, { type: 'message' });
+        // checkMemoryData = rollData;
         
         const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
         if (!isRollCardEnabled) {
@@ -27296,7 +27298,7 @@ async function showRollResultCard(rollData) {
             <div class="roll-card-content system-notice">
                 <div class="roll-card-header">系统提示</div>
                 <div class="roll-card-description" style="margin: 15px 0; text-align: center; font-size: 1.1em;">
-                    ${rollData}
+                    ${checkMemoryData}
                 </div>
             </div>
         `;
@@ -27331,13 +27333,13 @@ async function showRollResultCard(rollData) {
         return; // 处理完系统提示后直接返回
     }
 
-            await updateVariablesWith(old_variables => {
-            return {
-                ...old_variables,
-                "检定记忆":rollData,
-            };
-        }, { type: 'message' });
-checkMemoryData = rollData;
+        //     await updateVariablesWith(old_variables => {
+        //     return {
+        //         ...old_variables,
+        //         "检定记忆":rollData,
+        //     };
+        // }, { type: 'message' });
+// checkMemoryData = rollData;
        const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
     if(!isRollCardEnabled){
      
@@ -31146,8 +31148,7 @@ console.log("userMessageCount：",userMessageCount);
         chatHistoryDiv.appendChild(aiResponseBubble);
         // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
 
-        let currentRollData = null;
-  
+
         
  
    try {
@@ -31244,13 +31245,13 @@ for (const entry of worldInfoForProcessing) {
             }
      
   try {
-  const messageVars = await TavernHelper.getVariables({ type: 'chat' });
+ const messageVars = await TavernHelper.getVariables({ type: 'chat' });
 if (messageVars && messageVars.检定记忆) {
-    currentRollData = messageVars.检定记忆;
+    checkMemoryData = messageVars.检定记忆;
 
-    console.log("已捕获到投骰结果，准备展示看板。", currentRollData);
-           if (!rollCardShownThisTurn && currentRollData) {
-                    showRollResultCard(currentRollData);
+    console.log("已捕获到投骰结果，准备展示看板。", checkMemoryData);
+           if (!rollCardShownThisTurn && checkMemoryData) {
+                    showRollResultCard(checkMemoryData);
                     rollCardShownThisTurn = true; // 标记已显示，防止重复
  }
  
@@ -37547,7 +37548,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
         assaSettingsData = chatdata.assa_data;
         playCharacterData = chatdata.play_character_data; // 新增：缓存角色模板数据
         bookItemSettings = chatdata.bookItemSettings;
-         checkMemoryData = data.检定记忆;
+         checkMemoryData = chatdata.检定记忆;
          checkMemoryOk = String(chatdata.checklock||'true');
          worldAttitudeData = chatdata.跨世界声望说明;
         characterStatusData = chatdata.当前人物状态;
