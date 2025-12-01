@@ -3104,7 +3104,7 @@ input[type="range"]::-moz-range-thumb {
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 0 8px var(--glow-color);
+     
 }
 .orb:hover {
     background: var(--primary-color);
@@ -3283,13 +3283,13 @@ box-shadow: 0 0 8px var(--glow-color);
                         border-color 0.5s ease;
         }
 
-        .choice-card.focused { z-index: 10; transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; border-color: var(--primary-color); background: color-mix(in srgb, var(--container-bg-color) 80%, black); backdrop-filter: blur(8px); box-shadow: 0 8px 30px var(--glow-color); }
+        .choice-card.focused { z-index: 10; transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; border-color: var(--primary-color); background: color-mix(in srgb, var(--container-bg-color) 80%, black); backdrop-filter: blur(8px);   }
         .choice-card.disabled { background: rgba(40, 40, 45, 0.5); border-color: rgba(100, 100, 100, 0.3); cursor: not-allowed; color: #888; box-shadow: none; opacity: 0.3 !important; }
         .choice-card.disabled .tag { background-color: #555; color: #999; box-shadow: none; }
 
         .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
         .tag { font-family: var(--base-font-family), serif; background-color: var(--secondary-color); color: var(--background-color); padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; box-shadow: 0 0 8px var(--glow-color); transition: all 0.3s ease; }
-        .choice-card.focused .tag { background-color: var(--primary-color); box-shadow: 0 0 12px var(--glow-color); }
+        .choice-card.focused .tag { background-color: var(--primary-color);  }
 
         .description { margin: 0;  font-size: var(--base-font-size, 16px);  line-height: 1.8; color: var(--text-primary-color); transition: color 0.3s ease; }
         .choice-card.focused .description { color: #ffffff; }
@@ -14311,6 +14311,31 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
             <span id="danmu-count-value">2</span>
           </div>
         </div>
+
+        <div class="setting-item">
+    <label for="pixelation-toggle">角色图像素化</label>
+    <div class="switch-container">
+        <button id="pixelation-toggle" class="switch-btn" data-state="off">关闭</button>
+    </div>
+</div>
+
+<div class="setting-item">
+    <label for="chara-height-slider">像素化目标高度</label>
+    <div class="slider-controls">
+        <input type="range" id="chara-height-slider" min="100" max="800" step="10" value="300">
+        <span id="chara-height-value">300px</span>
+    </div>
+</div>
+
+<div class="setting-item">
+    <label for="pixel-size-slider">像素点大小</label>
+    <div class="slider-controls">
+        <input type="range" id="pixel-size-slider" min="1" max="20" step="1" value="1">
+        <span id="pixel-size-value">1px</span>
+    </div>
+</div>
+
+
             </div>
         </div>
 
@@ -14924,7 +14949,19 @@ let userName = '用户';
 }
 ]
 };
- function buildRawPreset() {
+ 
+ function getPixelationSettings() {
+    // 启用状态 (默认 false)
+    const isEnabled = localStorage.getItem('setting_chara_pixelate_enabled') === 'true';
+    // 目标高度 (默认 300)
+    const targetHeight = parseInt(localStorage.getItem('setting_chara_pixelate_height')) || 300;
+    // 像素点大小 (默认 1)
+    const pixelSize = parseInt(localStorage.getItem('setting_chara_pixelate_size')) || 1;
+    
+    return { isEnabled, targetHeight, pixelSize };
+}
+ 
+function buildRawPreset() {
     console.log("[Nova's Preset Builder] ❤️ 正在构建并修复预设指令...");
     const orderedPrompts = [];
 
@@ -17843,6 +17880,9 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         middleParam.includes('event') ||
         middleParam.includes('事件') ||
         middleParam.includes('当前状态') ||
+         middleParam.includes('状态') ||
+           middleParam.includes('想法') ||
+              middleParam.includes('人物状态') ||
         middleParam.includes('当前想法') ||
         middleParam.includes('情绪基调') // 👈 确保这里有情绪基调
     );
@@ -17984,7 +18024,20 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         action: () => flashElement('map-view-orb', 'notify', 5000)
     }
 ];
-  function displayEventTag(displayName, eventJsonString) {
+
+ function getPixelationSettings() {
+    // 启用状态 (默认 false)
+    const isEnabled = localStorage.getItem('setting_chara_pixelate_enabled') === 'true';
+    // 目标高度 (默认 300)
+    const targetHeight = parseInt(localStorage.getItem('setting_chara_pixelate_height')) || 300;
+    // 像素点大小 (默认 1)
+    const pixelSize = parseInt(localStorage.getItem('setting_chara_pixelate_size')) || 1;
+    
+    return { isEnabled, targetHeight, pixelSize };
+}
+ 
+
+function displayEventTag(displayName, eventJsonString) {
     if (!displayName || !eventJsonString) return;
 
     let newEventData;
@@ -18177,15 +18230,18 @@ const motions = mergedEventData['情绪基调'] ||mergedEventData['状态'] || m
 
         const stableImageUrl = await blobToDataUrl(imageBlob);
 
-        // 尝试生成像素化版本，如果失败则回退到原图
-        try {
-            const pixelatedDataUrl = await createPixelatedCharaImage(stableImageUrl, 300, 1);
-            cgImageElement.src = pixelatedDataUrl;
-        } catch (pixelError) {
-            console.error(`[Nova][CG-LOG] 像素化处理失败，降级显示原图:`, pixelError);
-            cgImageElement.src = stableImageUrl;
-        }
 
+try {
+   // 1. 获取动态设置值
+    const { isEnabled, targetHeight, pixelSize } = getPixelationSettings();
+
+    // 2. 使用动态设置值调用函数
+    const pixelatedDataUrl = await createPixelatedCharaImage(stableImageUrl, targetHeight, pixelSize, isEnabled);
+    cgImageElement.src = pixelatedDataUrl;
+} catch (pixelError) {
+    console.error(`[Nova][CG-LOG] 像素化处理失败，降级显示原图:`, pixelError);
+    cgImageElement.src = stableImageUrl;
+}
         cgContainerElement.style.display = 'flex';
         console.log(`[Nova][CG-LOG] ✅ 立绘加载完成！`);
 
@@ -22823,11 +22879,11 @@ async function sendCommand(command, button, successText, showWarning) {
         if (!foundOpening) {
             conversationHistory.push({ role: 'assistant', content: '<系统提示:等待用户输入要求...>' });
         }
-        // 【新增功能结束】
+       
     }
 }
  await saveHistory(); // 保存这个历史性的时刻
-    worldHelper.renderHistory();
+  worldHelper.renderHistory();
 
     } catch (e) {
         // 如果中间出了差错，妈妈会帮你处理
@@ -37201,8 +37257,9 @@ let backgroundState = {
     currentBgType: 'grid' // 新增一个状态，记录当前背景类型
 };
 
- function createPixelatedCharaImage(imageUrl, targetHeight = 300, pixelSize = 10) {
-    console.log(`[Nova] 已启动连通区域分析处理流程, 目标高度: ${targetHeight}`);
+ // 修改点 1: 增加 enablePixelation 参数，默认为 true 保持原有行为，设为 false 则为高清模式
+function createPixelatedCharaImage(imageUrl, targetHeight = 300, pixelSize = 10, enablePixelation = true) {
+    console.log(`[Nova] 已启动连通区域分析处理流程, 目标高度: ${targetHeight}, 像素化模式: ${enablePixelation ? '开启' : '关闭'}`);
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -37210,12 +37267,16 @@ let backgroundState = {
         img.onload = function() {
             try {
                 const canvas = document.createElement('canvas');
+                // 建议在非像素化模式下关闭 willReadFrequently 以提升一点性能，不过保持开启也没大碍
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
                 const aspectRatio = img.width / img.height;
                 const newWidth = targetHeight * aspectRatio;
                 canvas.width = newWidth;
                 canvas.height = targetHeight;
+
+                // 修改点 2: 如果不像素化，使用高质量平滑算法；如果像素化，关闭平滑以保持锐利
+                ctx.imageSmoothingEnabled = !enablePixelation;
                 ctx.drawImage(img, 0, 0, newWidth, targetHeight);
                 console.log(`[Nova] 身高魔法已生效，画布尺寸: ${newWidth.toFixed(0)}x${targetHeight}`);
 
@@ -37224,66 +37285,70 @@ let backgroundState = {
 
                 console.log('[Nova] 开始施展"连通区域识别"与"背景分离"终极魔法...');
 
-                // 第一步：分析所有像素块的颜色信息
+                // 修改点 3: 确定实际处理的单元格大小。
+                // 如果开启像素化，使用传入的 pixelSize；
+                // 如果关闭像素化，强制设为 1（即逐像素处理，保留原图细节）
+                const blockSize = enablePixelation ? pixelSize : 1;
+
+                // 下面的代码几乎不需要改动，只需要把原本的 pixelSize 变量替换为 blockSize
                 const blockColors = new Map();
-                const gridWidth = Math.ceil(canvas.width / pixelSize);
-                const gridHeight = Math.ceil(canvas.height / pixelSize);
+                const gridWidth = Math.ceil(canvas.width / blockSize);
+                const gridHeight = Math.ceil(canvas.height / blockSize);
 
                 for (let gy = 0; gy < gridHeight; gy++) {
                     for (let gx = 0; gx < gridWidth; gx++) {
-                        const x = gx * pixelSize;
-                        const y = gy * pixelSize;
-                        
+                        const x = gx * blockSize;
+                        const y = gy * blockSize;
+
                         let r_sum = 0, g_sum = 0, b_sum = 0, a_sum = 0, count = 0;
 
-                        for (let dy = 0; dy < pixelSize && y + dy < canvas.height; dy++) {
-                            for (let dx = 0; dx < pixelSize && x + dx < canvas.width; dx++) {
+                        for (let dy = 0; dy < blockSize && y + dy < canvas.height; dy++) {
+                            for (let dx = 0; dx < blockSize && x + dx < canvas.width; dx++) {
                                 const idx = ((y + dy) * canvas.width + (x + dx)) * 4;
-                                r_sum += data[idx]; 
-                                g_sum += data[idx + 1]; 
-                                b_sum += data[idx + 2]; 
+                                r_sum += data[idx];
+                                g_sum += data[idx + 1];
+                                b_sum += data[idx + 2];
                                 a_sum += data[idx + 3];
                                 count++;
                             }
                         }
 
                         if (count > 0) {
+                            // 当 blockSize 为 1 时，这里的 avg 就是该像素的原始颜色
                             const r_avg = r_sum / count;
                             const g_avg = g_sum / count;
                             const b_avg = b_sum / count;
                             const a_avg = a_sum / count;
-                            
+
                             blockColors.set(`${gx},${gy}`, {
                                 r: r_avg, g: g_avg, b: b_avg, a: a_avg,
                                 x, y, gx, gy,
-                                isBackground: false, // 标记是否为背景
-                                visited: false // 连通性分析标记
+                                isBackground: false,
+                                visited: false
                             });
                         }
                     }
                 }
 
-                // 辅助函数：检查颜色是否为白色背景候选
                 function isWhiteCandidate(r, g, b) {
-                    const minWhite = 220; // 降低阈值，包含更多浅色
+                    const minWhite = 220;
                     const maxWhite = 255;
-                    const colorVariance = 30; // 增加容差
-                    
+                    const colorVariance = 30;
+
                     const isWhiteRange = r >= minWhite && g >= minWhite && b >= minWhite &&
                                         r <= maxWhite && g <= maxWhite && b <= maxWhite;
-                    
+
                     const maxChannel = Math.max(r, g, b);
                     const minChannel = Math.min(r, g, b);
                     const isUniformWhite = (maxChannel - minChannel) <= colorVariance;
-                    
+
                     return isWhiteRange && isUniformWhite;
                 }
 
-                // 辅助函数：获取邻近块的坐标
                 function getNeighbors(gx, gy) {
                     const neighbors = [];
-                    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // 四方向连通
-                    
+                    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
                     directions.forEach(([dx, dy]) => {
                         const nx = gx + dx;
                         const ny = gy + dy;
@@ -37294,16 +37359,11 @@ let backgroundState = {
                     return neighbors;
                 }
 
-                // 关键函数：从边缘开始的连通性洪水填充算法
                 function floodFillFromBorders() {
                     const queue = [];
-                    
-                    // 从四个边缘开始，找到所有白色候选块作为种子点
                     console.log('[Nova] 🌊 开始从边缘进行洪水填充...');
-                    
-                    // 上边缘和下边缘
+
                     for (let gx = 0; gx < gridWidth; gx++) {
-                        // 上边缘
                         const topKey = `${gx},0`;
                         const topBlock = blockColors.get(topKey);
                         if (topBlock && isWhiteCandidate(topBlock.r, topBlock.g, topBlock.b)) {
@@ -37311,8 +37371,7 @@ let backgroundState = {
                             topBlock.isBackground = true;
                             topBlock.visited = true;
                         }
-                        
-                        // 下边缘
+
                         const bottomKey = `${gx},${gridHeight - 1}`;
                         const bottomBlock = blockColors.get(bottomKey);
                         if (bottomBlock && isWhiteCandidate(bottomBlock.r, bottomBlock.g, bottomBlock.b)) {
@@ -37321,10 +37380,8 @@ let backgroundState = {
                             bottomBlock.visited = true;
                         }
                     }
-                    
-                    // 左边缘和右边缘
+
                     for (let gy = 0; gy < gridHeight; gy++) {
-                        // 左边缘
                         const leftKey = `0,${gy}`;
                         const leftBlock = blockColors.get(leftKey);
                         if (leftBlock && isWhiteCandidate(leftBlock.r, leftBlock.g, leftBlock.b)) {
@@ -37332,8 +37389,7 @@ let backgroundState = {
                             leftBlock.isBackground = true;
                             leftBlock.visited = true;
                         }
-                        
-                        // 右边缘
+
                         const rightKey = `${gridWidth - 1},${gy}`;
                         const rightBlock = blockColors.get(rightKey);
                         if (rightBlock && isWhiteCandidate(rightBlock.r, rightBlock.g, rightBlock.b)) {
@@ -37342,97 +37398,72 @@ let backgroundState = {
                             rightBlock.visited = true;
                         }
                     }
-                    
-                    console.log(`[Nova] 找到 ${queue.length} 个边缘种子点`);
-                    
-                    // BFS洪水填充：只有与边缘连通的白色区域才是真背景
+
                     let processedCount = 0;
                     while (queue.length > 0) {
                         const [gx, gy] = queue.shift();
                         const neighbors = getNeighbors(gx, gy);
-                        
+
                         neighbors.forEach(([nx, ny]) => {
                             const neighborKey = `${nx},${ny}`;
                             const neighborBlock = blockColors.get(neighborKey);
-                            
+
                             if (neighborBlock && !neighborBlock.visited) {
-                                // 只有白色候选且未访问的才继续扩展
                                 if (isWhiteCandidate(neighborBlock.r, neighborBlock.g, neighborBlock.b)) {
                                     neighborBlock.isBackground = true;
                                     neighborBlock.visited = true;
                                     queue.push([nx, ny]);
                                     processedCount++;
                                 } else {
-                                    // 非白色块标记为已访问但不是背景
                                     neighborBlock.visited = true;
                                 }
                             }
                         });
                     }
-                    
                     console.log(`[Nova] 连通性分析完成，共处理 ${processedCount} 个背景块`);
                 }
 
-                // 执行连通性分析
                 floodFillFromBorders();
 
-                // 统计结果
                 let backgroundCount = 0;
-                let characterCount = 0;
-                let protectedWhiteCount = 0;
 
-                // 第二步：应用处理结果
                 blockColors.forEach((block, key) => {
                     const { r, g, b, a, x, y, gx, gy, isBackground } = block;
-                    
+
                     let r_fill = Math.round(r);
                     let g_fill = Math.round(g);
                     let b_fill = Math.round(b);
                     let a_fill = Math.round(a);
-                    
+
                     if (isBackground) {
-                        // 这是与边缘连通的背景区域，设置为透明
                         a_fill = 0;
                         backgroundCount++;
                     } else {
-                        // 这是人物区域（包括内部的白色部分如皮肤、衣服等）
-                        if (isWhiteCandidate(r, g, b)) {
-                            // 这是被保护的人物内部白色区域
-                            protectedWhiteCount++;
-                           // console.log(`[Nova] 💎 保护人物内部白色区域: (${gx},${gy}) RGB(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)})`);
-                            
-                            // 轻微增强对比度，让像素化效果更明显
-                            // const enhanceFactor = 0.92;
-                            // r_fill = Math.round(r * enhanceFactor);
-                            // g_fill = Math.round(g * enhanceFactor);
-                            // b_fill = Math.round(b * enhanceFactor);
-                        } else {
-                            characterCount++;
-                        }
-                        
-                        // 对于人物区域的边缘像素进行轻微锐化
-                        const neighbors = getNeighbors(gx, gy);
-                        let hasBackgroundNeighbor = false;
-                        
-                        neighbors.forEach(([nx, ny]) => {
-                            const neighborBlock = blockColors.get(`${nx},${ny}`);
-                            if (neighborBlock && neighborBlock.isBackground) {
-                                hasBackgroundNeighbor = true;
+                        // 修改点 4: 只有在真正开启像素化模式时，才进行锐化或对比度增强等艺术处理
+                        // 如果是高清模式，我们希望尽可能保留原图色彩
+                        if (enablePixelation) {
+                            const neighbors = getNeighbors(gx, gy);
+                            let hasBackgroundNeighbor = false;
+
+                            neighbors.forEach(([nx, ny]) => {
+                                const neighborBlock = blockColors.get(`${nx},${ny}`);
+                                if (neighborBlock && neighborBlock.isBackground) {
+                                    hasBackgroundNeighbor = true;
+                                }
+                            });
+
+                            if (hasBackgroundNeighbor) {
+                                const sharpenFactor = 0.95;
+                                r_fill = Math.round(r_fill * sharpenFactor);
+                                g_fill = Math.round(g_fill * sharpenFactor);
+                                b_fill = Math.round(b_fill * sharpenFactor);
                             }
-                        });
-                        
-                        if (hasBackgroundNeighbor) {
-                            // 这是边缘像素，轻微加深以增强轮廓
-                            const sharpenFactor = 0.95;
-                            r_fill = Math.round(r_fill * sharpenFactor);
-                            g_fill = Math.round(g_fill * sharpenFactor);
-                            b_fill = Math.round(b_fill * sharpenFactor);
                         }
                     }
 
                     // 应用到实际像素
-                    for (let dy = 0; dy < pixelSize && y + dy < canvas.height; dy++) {
-                        for (let dx = 0; dx < pixelSize && x + dx < canvas.width; dx++) {
+                    for (let dy = 0; dy < blockSize && y + dy < canvas.height; dy++) {
+                        for (let dx = 0; dx < blockSize && x + dx < canvas.width; dx++) {
                             const idx = ((y + dy) * canvas.width + (x + dx)) * 4;
                             data[idx] = r_fill;
                             data[idx + 1] = g_fill;
@@ -37443,10 +37474,7 @@ let backgroundState = {
                 });
 
                 ctx.putImageData(imageData, 0, 0);
-                console.log(`[Nova] ✨ 连通区域分析完成！`);
-                console.log(`[Nova] 📊 处理统计: 背景块 ${backgroundCount}, 人物块 ${characterCount}, 保护的内部白色块 ${protectedWhiteCount}`);
-                console.log(`[Nova] 🎯 完美解决！人物内部白色区域得到完全保护，只有真正的外部背景被移除！`);
-                
+
                 resolve(canvas.toDataURL('image/png'));
             } catch (error) {
                 console.error('[Nova] 在施展连通区域分析魔法时出现了意料之外的波动:', error);
@@ -37461,7 +37489,7 @@ let backgroundState = {
         img.src = imageUrl;
     });
 }
- 
+
 /**
  * ★ 修正后的：设置网格背景
  * 现在它会优雅地淡出现有图片，然后显示网格
@@ -51089,6 +51117,66 @@ const config = {
     // 启动
     init();
 })();
+
+
+
+// 默认值
+    const DEFAULT_ENABLED = false;
+    const DEFAULT_HEIGHT = 300;
+    const DEFAULT_SIZE = 1;
+
+    // 获取元素
+    const toggleBtn = document.getElementById('pixelation-toggle');
+    const heightSlider = document.getElementById('chara-height-slider');
+    const heightValueSpan = document.getElementById('chara-height-value');
+    const sizeSlider = document.getElementById('pixel-size-slider');
+    const sizeValueSpan = document.getElementById('pixel-size-value');
+
+    // 1. 初始化像素化开关状态
+    const initialEnabled = localStorage.getItem('setting_chara_pixelate_enabled') === 'true';
+    toggleBtn.setAttribute('data-state', initialEnabled ? 'on' : 'off');
+    toggleBtn.textContent = initialEnabled ? '开启' : '关闭';
+
+    // 2. 初始化目标高度滑块
+    const initialHeight = localStorage.getItem('setting_chara_pixelate_height') || DEFAULT_HEIGHT;
+    heightSlider.value = initialHeight;
+    heightValueSpan.textContent = `${initialHeight}px`;
+
+    // 3. 初始化像素点大小滑块
+    const initialSize = localStorage.getItem('setting_chara_pixelate_size') || DEFAULT_SIZE;
+    sizeSlider.value = initialSize;
+    sizeValueSpan.textContent = `${initialSize}px`;
+
+    // --- 绑定事件监听器 ---
+
+    // 像素化开关事件
+    toggleBtn.addEventListener('click', () => {
+        const isEnabled = toggleBtn.getAttribute('data-state') === 'on';
+        const newState = !isEnabled;
+        
+        toggleBtn.setAttribute('data-state', newState ? 'on' : 'off');
+        toggleBtn.textContent = newState ? '开启' : '关闭';
+        
+        // 更新 localStorage
+        localStorage.setItem('setting_chara_pixelate_enabled', newState.toString());
+        // 可以选择在这里重新加载或重绘图片
+    });
+
+    // 目标高度滑块事件
+    heightSlider.addEventListener('input', (e) => {
+        const value = e.target.value;
+        heightValueSpan.textContent = `${value}px`;
+        // 更新 localStorage
+        localStorage.setItem('setting_chara_pixelate_height', value);
+    });
+
+    // 像素点大小滑块事件
+    sizeSlider.addEventListener('input', (e) => {
+        const value = e.target.value;
+        sizeValueSpan.textContent = `${value}px`;
+        // 更新 localStorage
+        localStorage.setItem('setting_chara_pixelate_size', value);
+    });
 
 
 });
