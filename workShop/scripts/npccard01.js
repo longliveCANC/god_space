@@ -515,8 +515,546 @@
     background: rgba(0, 250, 255, 0.1); /* 用一个特别的背景色来区分 */
     color: var(--primary-color);
 }
+
+/* ============================================================
+   NOVA MEMORY GALLERY - IMMERSIVE EDITION (v2.0)
+   Add/Replace this in your style.textContent
+   ============================================================ */
+
+/* 1. 快速入口按钮 (Hover 球体时显示) */
+.mod01-quick-btn {
+    position: fixed;
+    top: 110px; /* 对齐悬浮球 */
+    left: 75px; /* 球体右侧 */
+    padding: 5px 15px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    cursor: pointer;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none; /* 默认不可点 */
+    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%);
+    box-shadow: 0 0 10px var(--glow-color);
+}
+.mod01-quick-btn.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.mod01-quick-btn:hover {
+    background: var(--primary-color);
+    color: #000;
+    padding-left: 20px; /* 动效 */
+}
+
+/* 2. 全屏画廊容器 */
+.mod01-gallery-panel {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #050505; /* 纯黑底色 */
+    z-index: 20000; /* 最高层级 */
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    overflow: hidden; /* 内部拖拽，外部不滚动 */
+    cursor: grab; /* 抓手光标 */
+}
+.mod01-gallery-panel.active {
+    display: block;
+    opacity: 1;
+}
+.mod01-gallery-panel:active {
+    cursor: grabbing;
+}
+
+/* 顶部工具栏 (Tabs & Close) */
+.mod01-gallery-ui {
+    position: absolute;
+    top: 0; left: 0; width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 20010; /* 在遮罩之上 */
+    pointer-events: none; /* 让鼠标能穿透空白区域拖拽 */
+}
+.mod01-gallery-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    pointer-events: auto; /* Tab可点 */
+    max-width: 80%;
+}
+    .mod01-gallery-tab {
+    font-size: 10px;
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: monospace;
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%); /* 梯形纸片 */
+}
+
+.mod01-gallery-tab:hover, .mod01-gallery-tab.active {
+    background: var(--primary-color);
+    color: var(--container-bg-color);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px var(--glow-color);
+}
+.mod01-gallery-close {
+    font-family: monospace;
+    font-size: 24px;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: color 0.3s;
+    text-shadow: 0 0 5px #000;
+}
+.mod01-gallery-close:hover { color: var(--primary-color); }
+
+/* 3. 视觉暗角 (Vignette) - 营造沉浸感 */
+.mod01-vignette {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 20005;
+    background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.8) 90%, #000 100%);
+    box-shadow: inset 0 0 100px #000;
+}
+
+/* 4. 可拖拽画布 */
+.mod01-gallery-canvas {
+    position: absolute;
+    /* 宽高由 JS 动态设定，通常很大 */
+    top: 50%; left: 50%; /* 初始居中 */
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s linear; /* 拖拽时的平滑度 */
+    /* 背景网格 */
+    background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+/* 5. 记忆卡片优化 */
+.mod01-mem-card {
+    position: absolute;
+    width: 200px;
+    padding: 15px;
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid rgba(255,255,255,0.1); /* 默认边框淡化 */
+    color: var(--text-color);
+    font-size: 13px;
+    line-height: 1.6;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), z-index 0s;
+    border-radius: 2px;
+    user-select: none; /* 防止拖拽时选中文字 */
+}
+
+.mod01-mem-card:hover {
+    z-index: 1000 !important;
+    transform: scale(1.15) rotate(0deg) !important;
+    background: rgba(10, 10, 10, 0.95);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 30px var(--glow-color);
+}
+
+/* Icon 样式 */
+.mod01-mem-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    color: var(--secondary-color);
+    opacity: 0.9;
+    text-align: center;
+    display: block;
+    text-shadow: 0 0 10px rgba(255,255,255,0.1);
+}
+
+/* Tag 样式 [欣喜] */
+.mod01-mem-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 5px;
+    margin: 2px;
+    border-radius: 3px;
+    background: var(--primary-color);
+    color: #000;
+    font-weight: bold;
+    transform: translateY(-1px);
+    box-shadow: 0 0 5px var(--glow-color);
+}
+
+.mod01-mem-bg-text {
+    position: absolute;
+    font-family: 'Impact', sans-serif;
+    font-weight: bold;
+    color: var(--primary-color);
+    opacity: 0.12; /* 稍微降低透明度 */
+    z-index: 0;
+    white-space: nowrap;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    filter: blur(4px); /* <--- 增加模糊度，制造潜意识感 */
+    user-select: none;
+}
+
+/* === 变体美化 (Variants) === */
+/* 移除之前的 glitch 动画，改为静态故障风 */
+.mod01-variant-glitch {
+    border-left: 3px solid var(--primary-color);
+    border-right: 3px solid red;
+    background: rgba(10, 0, 0, 0.7);
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0% 100%);
+}
+.mod01-variant-burn {
+    background: radial-gradient(circle, rgba(50,40,30,0.8), #1a1a1a);
+    border: 1px dashed #8b4513;
+    color: #d2b48c;
+}
+.mod01-variant-code {
+    font-family: monospace;
+    color: var(--primary-color); /* 修正为主题色 */
+    border: 1px solid var(--primary-color);
+    background: rgba(0, 0, 0, 0.8);
+}
+.mod01-variant-dream {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    border-radius: 10px;
+}
+
         `;
         document.head.appendChild(style);
+    }
+    // --- 2.5 记忆回廊管理器 (全屏沉浸版 v2.0) ---
+    class NovaMemoryGallery {
+        constructor(system) {
+            this.system = system;
+            this.panel = null;
+            this.canvas = null;
+            this.tabsContainer = null;
+            this.activeNpc = null;
+            this.memoryData = {};
+            this.isVisible = false;
+
+            // 随机 Icon 库
+            this.randomIcons = [
+                'fa-feather-alt', 'fa-snowflake', 'fa-fire-alt', 'fa-moon', 'fa-star',
+                'fa-heart-broken', 'fa-fingerprint', 'fa-eye', 'fa-key', 'fa-music',
+                'fa-ghost', 'fa-puzzle-piece', 'fa-hourglass-half', 'fa-infinity', 'fa-chess-pawn'
+            ];
+
+            // 拖拽相关状态
+            this.isDragging = false;
+            this.startX = 0; this.startY = 0;
+            this.currentX = 0; this.currentY = 0; // 画布偏移量
+
+            this.initUI();
+        }
+
+        initUI() {
+            // 全屏容器
+            this.panel = document.createElement('div');
+            this.panel.className = 'mod01-gallery-panel';
+            this.panel.innerHTML = `
+                <div class="mod01-vignette"></div>
+                <div class="mod01-gallery-ui">
+                    <div class="mod01-gallery-tabs"></div>
+                    <div class="mod01-gallery-close"><i class="fas fa-times"></i></div>
+                </div>
+                <div class="mod01-gallery-canvas"></div>
+            `;
+            document.body.appendChild(this.panel);
+
+            this.tabsContainer = this.panel.querySelector('.mod01-gallery-tabs');
+            this.canvas = this.panel.querySelector('.mod01-gallery-canvas');
+
+            // 关闭按钮
+            this.panel.querySelector('.mod01-gallery-close').onclick = () => this.hide();
+
+            // 绑定拖拽事件
+            this.bindDragEvents();
+        }
+
+        bindDragEvents() {
+            const container = this.panel;
+
+            const startDrag = (e) => {
+                // 如果点在UI上，不拖拽
+                if (e.target.closest('.mod01-gallery-ui') || e.target.closest('.mod01-mem-card')) return;
+
+                this.isDragging = true;
+                const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+                this.startX = clientX - this.currentX;
+                this.startY = clientY - this.currentY;
+                container.style.cursor = 'grabbing';
+            };
+
+            const doDrag = (e) => {
+                if (!this.isDragging) return;
+                e.preventDefault();
+
+                const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+                this.currentX = clientX - this.startX;
+                this.currentY = clientY - this.startY;
+
+                // 应用 Transform
+                this.updateCanvasTransform();
+            };
+
+            const endDrag = () => {
+                this.isDragging = false;
+                container.style.cursor = 'grab';
+            };
+
+            container.addEventListener('mousedown', startDrag);
+            container.addEventListener('mousemove', doDrag);
+            container.addEventListener('mouseup', endDrag);
+            container.addEventListener('mouseleave', endDrag);
+
+            // 触摸屏支持
+            container.addEventListener('touchstart', startDrag);
+            container.addEventListener('touchmove', doDrag);
+            container.addEventListener('touchend', endDrag);
+        }
+
+        updateCanvasTransform() {
+            // 加上初始的 -50% 居中偏移
+            this.canvas.style.transform = `translate(calc(-50% + ${this.currentX}px), calc(-50% + ${this.currentY}px))`;
+        }
+
+      collectMemories() {
+            this.memoryData = {};
+            let hasData = false;
+
+            this.system.allItems.forEach(item => {
+                const mems = item.data.关键记忆;
+                if (mems && typeof mems === 'object') {
+                    const parsedMems = [];
+                    Object.entries(mems).forEach(([key, val]) => {
+                        if (key.startsWith('_')) return;
+
+                        let content = "";
+                        let icon = "";
+                        let bgText = "";
+                        let tags = [];
+
+                        // 1. 解析内容与Icon
+                        if (Array.isArray(val)) {
+                            content = String(val[0] || "");
+                            icon = val[1] || "";
+                        } else {
+                            content = String(val);
+                            // 随机 Icon 策略
+                            icon = this.randomIcons[Math.floor(Math.random() * this.randomIcons.length)];
+                        }
+
+                        // 2. 解析 Tag [xxx/yyy] -> 分割为多个 Tag
+                        const tagRegex = /\[(.*?)\]/g;
+                        let match;
+                        while ((match = tagRegex.exec(content)) !== null) {
+                            // match[1] 是 "安心/被接纳/喜悦"
+                            // 我们用 / 切割它，并去除空白
+                            const rawTags = match[1].split(/[\\/]/); // 支持 / 或 \ 切割
+                            rawTags.forEach(t => {
+                                if(t.trim()) tags.push(t.trim());
+                            });
+                        }
+                        // 移除正文中的 Tag 部分
+                        content = content.replace(tagRegex, '').trim();
+
+                        // 3. 解析 Key (背景字) - 严格过滤
+                        // 逻辑：不是纯数字 且 不包含数字 (如 "Stage 1" 也会被过滤，只保留纯文字概念)
+                        // 如果你希望保留 "Stage 1" 但过滤 "123"，请改用 !/^\d+$/.test(key)
+                        // 这里按你的要求"过滤掉含有数字的内容"：
+                        if (!/\d/.test(key)) {
+                            if (key.includes('/')) {
+                                const parts = key.split('/');
+                                bgText = parts[parts.length - 1];
+                            } else {
+                                bgText = key;
+                            }
+                        }
+
+                        parsedMems.push({
+                            key: key,
+                            content: content,
+                            icon: icon,
+                            bgText: bgText,
+                            tags: tags,
+                            variant: Math.floor(Math.random() * 5)
+                        });
+                    });
+
+                    if (parsedMems.length > 0) {
+                        this.memoryData[item.name] = parsedMems;
+                        hasData = true;
+                    }
+                }
+            });
+            return hasData;
+        }
+
+        renderTabs() {
+            this.tabsContainer.innerHTML = '';
+            const npcs = Object.keys(this.memoryData);
+            if (npcs.length === 0) return;
+
+            npcs.forEach(name => {
+                const tab = document.createElement('div');
+                tab.className = 'mod01-gallery-tab';
+                tab.textContent = name;
+                tab.onclick = (e) => {
+                    e.stopPropagation();
+                    this.switchNpc(name, tab);
+                };
+                this.tabsContainer.appendChild(tab);
+            });
+            if (npcs.length > 0) this.switchNpc(npcs[0], this.tabsContainer.firstChild);
+        }
+
+        switchNpc(name, tabEl) {
+            this.panel.querySelectorAll('.mod01-gallery-tab').forEach(t => t.classList.remove('active'));
+            if(tabEl) tabEl.classList.add('active');
+
+            // 重置画布位置
+            this.currentX = 0;
+            this.currentY = 0;
+            this.updateCanvasTransform();
+
+            this.renderCanvas(this.memoryData[name]);
+        }
+
+        renderCanvas(memories) {
+            this.canvas.innerHTML = '';
+
+            // 动态画布大小：保证足够大以容纳分散的记忆
+            // 基础大小 2000px，每多一个记忆稍微增加一点
+            const canvasSize = 2000 + (memories.length * 50);
+            this.canvas.style.width = canvasSize + 'px';
+            this.canvas.style.height = canvasSize + 'px';
+
+            const placedRects = [];
+            const centerOffset = canvasSize / 2;
+
+            memories.forEach(mem => {
+                // 创建卡片
+                const card = document.createElement('div');
+                const variants = ['', 'mod01-variant-burn', 'mod01-variant-glitch', 'mod01-variant-dream', 'mod01-variant-code'];
+                card.className = `mod01-mem-card ${variants[mem.variant]}`;
+
+                // 构建内容 HTML
+                let html = '';
+                if (mem.icon) {
+                    if (mem.icon.startsWith('fa')) html += `<i class="fas ${mem.icon} mod01-mem-icon"></i>`;
+                    else html += `<div class="mod01-mem-icon">${mem.icon}</div>`;
+                }
+
+                html += `<div>${mem.content}</div>`;
+
+                // 添加 Tags
+                if (mem.tags.length > 0) {
+                    html += `<div style="margin-top:8px;">`;
+                    mem.tags.forEach(t => {
+                        html += `<span class="mod01-mem-tag">${t}</span>`;
+                    });
+                    html += `</div>`;
+                }
+
+                card.innerHTML = html;
+
+                // 随机位置算法 (以中心为原点的高斯分布倾向)
+                const cardW = 200;
+                const cardH = 150;
+                let finalX, finalY;
+
+                // 尝试多次寻找不重叠位置
+                for(let i=0; i<30; i++) {
+                    // 随机范围：中心点周围 800px 范围
+                    const range = 800 + (memories.length * 5);
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * range;
+
+                    const x = centerOffset + (Math.cos(angle) * radius) - (cardW/2);
+                    const y = centerOffset + (Math.sin(angle) * radius) - (cardH/2);
+
+                    // 简单的碰撞检测
+                    let overlap = false;
+                    for(const r of placedRects) {
+                        if (x < r.x + r.w && x + cardW > r.x &&
+                            y < r.y + r.h && y + cardH > r.y) {
+                            overlap = true;
+                            break;
+                        }
+                    }
+
+                    if(!overlap || i === 29) { // 实在找不到位置就叠放
+                        finalX = x; finalY = y;
+                        break;
+                    }
+                }
+
+                placedRects.push({x:finalX, y:finalY, w:cardW, h:cardH});
+
+                card.style.left = finalX + 'px';
+                card.style.top = finalY + 'px';
+
+                // 随机旋转
+                const rot = (Math.random() * 16) - 8;
+                card.style.transform = `rotate(${rot}deg)`;
+
+                this.canvas.appendChild(card);
+
+                // 创建背景字 (Key)
+                if (mem.bgText) {
+                    const bg = document.createElement('div');
+                    bg.className = 'mod01-mem-bg-text';
+                    bg.innerText = mem.bgText;
+
+                    // 随机大小和位置，更加密集和随机
+                    const fontSize = 60 + Math.random() * 80; // 更大
+                    bg.style.fontSize = fontSize + 'px';
+
+                    // 背景字位置稍微偏离卡片
+                    bg.style.left = (finalX - 100 + Math.random() * 150) + 'px';
+                    bg.style.top = (finalY - 50 + Math.random() * 100) + 'px';
+                    bg.style.transform = `rotate(${rot * -2}deg)`;
+
+                    this.canvas.appendChild(bg); // 放在卡片同级，但 z-index 低
+                }
+            });
+        }
+
+        show() {
+            this.system.refreshData();
+            if(!this.collectMemories()) {
+                alert("暂无记忆碎片..."); // 简单提示
+                return;
+            }
+            this.renderTabs();
+            this.panel.classList.add('active');
+            this.isVisible = true;
+        }
+
+        hide() {
+            this.panel.classList.remove('active');
+            this.isVisible = false;
+        }
     }
 
     // --- 3. 核心逻辑类 ---
@@ -586,22 +1124,57 @@
         }
 
         // ============ 构建 UI ============
-        init() {
-            // 悬浮球
+   init() {
+            // 1. 悬浮球
             this.floater = document.createElement('div');
             this.floater.className = 'mod01-floater';
-            this.floater.innerHTML = 'NPC'; // 简短有力
-            this.floater.onclick = () => this.toggle();
-            document.body.appendChild(this.floater);
+            this.floater.innerHTML = '<i class="fas fa-brain"></i> NPC'; // 脑子图标
 
-            // 主界面
+            // 2. 快速进入按钮 (新增)
+            this.quickBtn = document.createElement('div');
+            this.quickBtn.className = 'mod01-quick-btn';
+            this.quickBtn.innerHTML = '<i class="fas fa-project-diagram"></i> 记忆回廊';
+
+            document.body.appendChild(this.floater);
+            document.body.appendChild(this.quickBtn);
+
+            // 3. 事件绑定
+            // Hover 逻辑：显示快速入口
+            let hideTimer;
+            const showBtn = () => {
+                clearTimeout(hideTimer);
+                this.quickBtn.classList.add('visible');
+            };
+            const hideBtn = () => {
+                hideTimer = setTimeout(() => {
+                    this.quickBtn.classList.remove('visible');
+                }, 300); // 留一点时间给鼠标移动过去
+            };
+
+            this.floater.addEventListener('mouseenter', showBtn);
+            this.floater.addEventListener('mouseleave', hideBtn);
+
+            this.quickBtn.addEventListener('mouseenter', showBtn); // 移到按钮上也不消失
+            this.quickBtn.addEventListener('mouseleave', hideBtn);
+
+            // Click 逻辑
+            this.floater.onclick = () => this.toggle(); // 点击球 -> 主界面
+            this.quickBtn.onclick = () => {             // 点击按钮 -> 记忆回廊
+                if(this.memoryGallery) this.memoryGallery.show();
+            };
+
+            // 4. 主界面 (保持原有结构)
             this.container = document.createElement('div');
             this.container.className = 'mod01-overlay';
             this.container.innerHTML = `
                 <div class="mod01-window">
                     <div class="mod01-header">
                         <div class="mod01-title">CHARACTER ARCHIVES</div>
-                        <div class="mod01-close">[CLOSE]</div>
+
+                        <div style="display:flex; gap:15px;">
+                             <div class="mod01-mem-toggle" style="cursor:pointer; opacity:0.7; font-size:12px;">[ENTER GALLERY]</div>
+                             <div class="mod01-close">[CLOSE]</div>
+                        </div>
                     </div>
                     <div class="mod01-body">
                         <div class="mod01-sidebar" id="mod01-list-root"></div>
@@ -611,11 +1184,17 @@
             `;
             document.body.appendChild(this.container);
 
-            // 事件绑定
             this.container.querySelector('.mod01-close').onclick = () => this.toggle();
+            this.container.querySelector('.mod01-mem-toggle').onclick = () => {
+                this.toggle();
+                if(this.memoryGallery) this.memoryGallery.show();
+            };
             this.container.onclick = (e) => {
                 if(e.target === this.container) this.toggle();
             };
+
+            // 5. 初始化记忆回廊
+            this.memoryGallery = new NovaMemoryGallery(this);
         }
 
         toggle() {
@@ -1013,7 +1592,7 @@
                box.appendChild(st);
             }
             // 3. 其他字段 (行为链、目标等)
-            const ignores = ['当前想法', '当前状态',"想法","人物状态"];
+            const ignores = ['当前想法', '当前状态',"想法","人物"];
             Object.keys(evtData).forEach(k => {
                 if(ignores.includes(k) || k.startsWith('_')) return;
                 const row = document.createElement('div');
