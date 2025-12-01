@@ -993,7 +993,12 @@
                 p.textContent = evtData.当前想法;
                 box.appendChild(p);
             }
-
+  if(evtData.想法) {
+                const p = document.createElement('div');
+                p.className = 'mod01-event-thought';
+                p.textContent = evtData.想法;
+                box.appendChild(p);
+            }
             // 2. 核心：当前状态 (Tag样式)
             if(evtData.当前状态) {
                const st = document.createElement('div');
@@ -1001,9 +1006,14 @@
                st.style.marginBottom = '10px';
                box.appendChild(st);
             }
-
+         if(evtData.人物状态) {
+               const st = document.createElement('div');
+               st.innerHTML = `<span style="font-size:12px; margin-right:5px; opacity:0.7;">STATUS:</span> <span class="mod01-event-status">${evtData.人物状态}</span>`;
+               st.style.marginBottom = '10px';
+               box.appendChild(st);
+            }
             // 3. 其他字段 (行为链、目标等)
-            const ignores = ['当前想法', '当前状态'];
+            const ignores = ['当前想法', '当前状态',"想法","人物状态"];
             Object.keys(evtData).forEach(k => {
                 if(ignores.includes(k) || k.startsWith('_')) return;
                 const row = document.createElement('div');

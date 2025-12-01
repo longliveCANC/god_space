@@ -14098,6 +14098,102 @@ pointer-events: auto;
                     <button id="force-update-regex-btn" class="control-btn-special" style="margin-left: 10px;">强制更新正则</button>
                 </div>
                 
+
+                <div class="setting-item-column" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+    <div class="setting-item" style="margin-bottom: 10px;">
+        <label>启用第二API (后台专用)</label>
+        <div class="switch-container">
+            <button id="enable-custom-api-toggle" class="switch-btn" data-state="off">关闭</button>
+        </div>
+    </div>
+
+    <div id="custom-api-settings-container" style="display: none; padding: 15px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid var(--border-color);">
+        <p style="font-size: 0.9em; color: var(--text-secondary-color); margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+            配置用于总结、重构等后台任务的独立API通道。
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+
+            <div style="grid-column: span 2;">
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">API 源类型 (Source)</label>
+                <select id="api-source-select" class="control-btn" style="width: 100%; text-align: left; padding: 8px;">
+
+                </select>
+            </div>
+
+
+            <div style="grid-column: span 2;">
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">API 地址 (Endpoint URL)</label>
+                <input type="text" id="api-url-input" placeholder="https://api.openai.com/v1"
+                    style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px; border-radius: 4px; font-family: monospace; font-size: 13px;">
+            </div>
+
+
+            <div style="grid-column: span 2;">
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">API 密钥 (Key)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="password" id="api-key-input" placeholder="sk-..."
+                        style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px; border-radius: 4px; font-family: monospace;">
+                    <button id="toggle-key-visibility-btn" class="control-btn" style="width: 40px;" title="显示/隐藏">👁️</button>
+                </div>
+            </div>
+
+
+            <div style="grid-column: span 2;">
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">模型名称 (Model)</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 5px;">
+                    <select id="fetched-models-select" class="control-btn" style="flex: 1; display: none;">
+                        <option value="" disabled selected>选择模型...</option>
+                    </select>
+                    <input type="text" id="api-model-input" placeholder="gpt-3.5-turbo"
+                        style="flex: 2; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 8px; border-radius: 4px; font-family: monospace;">
+                    <button id="fetch-models-btn" class="control-btn" style="white-space: nowrap;">📡 获取模型列表</button>
+                </div>
+                <div id="fetch-status-msg" style="font-size: 11px; color: var(--text-secondary-color); height: 1.2em;"></div>
+            </div>
+
+
+            <div>
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">Max Tokens</label>
+                <input type="number" id="api-max-tokens-input" placeholder="0 (无限制)"
+                    style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+            </div>
+
+            <div>
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">Temperature</label>
+                <input type="number" step="0.1" id="api-temp-input" placeholder="1.0"
+                    style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+            </div>
+
+            <div>
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">Top P</label>
+                <input type="number" step="0.05" id="api-top-p-input" placeholder="1.0"
+                    style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+            </div>
+
+            <div>
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">Freq Penalty</label>
+                <input type="number" step="0.1" id="api-freq-pen-input" placeholder="0"
+                    style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+            </div>
+
+             <div>
+                <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">Pres Penalty</label>
+                <input type="number" step="0.1" id="api-pres-pen-input" placeholder="0"
+                    style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+            </div>
+        </div>
+
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="test-api-connection-btn" class="control-btn" style="flex: 1;">🔌 测试连接</button>
+            <button id="save-custom-api-btn" class="control-btn" style="flex: 1; border-color: var(--success-color); color: var(--success-color);">💾 保存配置</button>
+        </div>
+        <div id="api-test-result-log" style="margin-top: 10px; font-size: 12px; font-family: monospace; color: var(--text-secondary-color); white-space: pre-wrap; display: none; padding: 5px; background: rgba(0,0,0,0.3); border-radius: 4px;"></div>
+    </div>
+</div>
+
             </div>
         </div>
 
@@ -30765,10 +30861,7 @@ function throttle(func, limit) {
     }
 }
 async function handleSend(options = {}) {
-     await TavernHelper.insertOrAssignVariables(
-            { checklock: 'false' },
-            { type: 'chat' }
-  );
+
    setTimeout(() => console.log('等待锁释放'), 50);
     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
 
@@ -30800,9 +30893,13 @@ async function handleSend(options = {}) {
 if(isContinuationVar){
  await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
 batches = 2;
-}
  
- // 从 localStorage 读取自定义 API 设置 (名称暂定为 nova_custom_api_settings)
+}else{
+     await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+batches = 1;
+}
+  
+ 
     let customApiSettings = null;
     try {
         const storedApiSettings = localStorage.getItem('nova_custom_api_settings');
@@ -30814,8 +30911,11 @@ batches = 2;
         console.warn("[Nova's API Manager] 读取自定义API配置失败:", e);
     }
 
+   await TavernHelper.insertOrAssignVariables(
+            { checklock: 'false' },
+            { type: 'chat' }
+  );
  
-    // 根据你的描述：“第二次发送的时候，依旧需要通过一个true/false类型的值确认是否应用自定义api”
     const applyCustomApi = (isContinuationVar === true && localStorage.getItem('enable_custom_api_v2') === 'true'); // 假设开关名
     const activeCustomApi = applyCustomApi ? customApiSettings : undefined;
 
@@ -31491,7 +31591,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
             if (isContinuation && continuationText) {
                 eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
                     generate_data.prompt.push({ role: 'user', content: continuationText });
-                    console.log(`[Nova's Whisper] 注入成功！continuationText: ${continuationText}`);
+                    //console.log(`[Nova's Whisper] 注入成功！continuationText: ${continuationText}`);
                 });
             }
             eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, streamListener);
@@ -31505,15 +31605,14 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
   
  
 
-                if (isContinuationVar && enable_preset_2nd_pass !== 'true') {
+                if (isContinuationVar) {
 
-                        const rawModePreset = buildRawPreset();
-                    console.log("[Nova] 触发第二次生成 (Raw Mode with World Info)");
-                    aiFullResponse = await generateRaw({
+                        // const rawModePreset = buildRawPreset();
+                    console.log("[Nova] 触发变量生成");
+                  aiFullResponse = await generate({
                         ...commonConfig,
-                        custom_api: activeCustomApi,
-                        overrides: { chat_history: { prompts: [] } },
-                        ordered_prompts: rawModePreset // ❤️ 注入我们完整的剧本！
+                          custom_api: activeCustomApi,
+                        overrides: { chat_history: { prompts: [] } }
                     });
                 } else {
                     console.log("[Nova] 触发标准生成 (Preset Enabled)");
@@ -31605,15 +31704,21 @@ if (isContinuation) {
 
  
 
-                if (isContinuationVar && enable_preset_2nd_pass !== 'true') {
-                      const rawModePreset = buildRawPreset();
-                     console.log("[Nova] 触发第二次生成 (Raw Mode with World Info)");
-                     aiFullResponse = await generateRaw({
-                        ...commonConfig,
+                // if (isContinuationVar && enable_preset_2nd_pass !== 'true') {
+                   if (isContinuationVar) {
+                    //   const rawModePreset = buildRawPreset();
+                     console.log("[Nova] 触发变量生成 ");
+                    //  aiFullResponse = await generateRaw({
+                    //     ...commonConfig,
                         
-                           custom_api: activeCustomApi,
-                           overrides: { chat_history: { prompts: [] } },
-                           ordered_prompts: rawModePreset // ❤️ 注入我们完整的剧本！
+                    //        custom_api: activeCustomApi,
+                    //        overrides: { chat_history: { prompts: [] } },
+                    //        ordered_prompts: rawModePreset  
+                    // });
+                       aiFullResponse = await generate({
+                        ...commonConfig,
+                          custom_api: activeCustomApi,
+                        overrides: { chat_history: { prompts: [] } }
                     });
                 } else {
                      console.log("[Nova] 触发标准生成 (Preset Enabled)");
@@ -50575,6 +50680,290 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('[Nova] 提示词查看器事件绑定完成');
 
     NovaWorkshop.init();
+
+ // --- 第二API设置逻辑 (Nova 4.0 Final - Tavern API Bridge) ---
+(function initCustomApiSettings() {
+    // 1. 定义源常量 (与酒馆同步)
+    const CHAT_COMPLETION_SOURCES = {
+        OPENAI: 'openai',
+        CLAUDE: 'claude',
+        OPENROUTER: 'openrouter',
+        AI21: 'ai21',
+        MAKERSUITE: 'makersuite', // Gemini 的旧称
+        VERTEXAI: 'vertexai',
+        MISTRALAI: 'mistralai',
+        CUSTOM: 'custom',
+        COHERE: 'cohere',
+        PERPLEXITY: 'perplexity',
+        GROQ: 'groq',
+        ZEROONEAI: '01ai',
+        NANOGPT: 'nanogpt',
+        DEEPSEEK: 'deepseek',
+        AIMLAPI: 'aimlapi',
+        XAI: 'xai',
+        POLLINATIONS: 'pollinations',
+    };
+
+    // 默认 API 地址映射
+    const DEFAULT_API_URLS = {
+        [CHAT_COMPLETION_SOURCES.OPENAI]: 'https://api.openai.com/v1',
+        [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'https://generativelanguage.googleapis.com/v1beta', // Gemini
+        [CHAT_COMPLETION_SOURCES.OPENROUTER]: 'https://openrouter.ai/api/v1',
+        [CHAT_COMPLETION_SOURCES.DEEPSEEK]: 'https://api.deepseek.com',
+        [CHAT_COMPLETION_SOURCES.MISTRALAI]: 'https://api.mistral.ai/v1',
+        [CHAT_COMPLETION_SOURCES.GROQ]: 'https://api.groq.com/openai/v1',
+        [CHAT_COMPLETION_SOURCES.ZEROONEAI]: 'https://api.01.ai/v1',
+        [CHAT_COMPLETION_SOURCES.AIMLAPI]: 'https://api.aimlapi.com',
+        [CHAT_COMPLETION_SOURCES.XAI]: 'https://api.x.ai/v1',
+        [CHAT_COMPLETION_SOURCES.CUSTOM]: '',
+    };
+
+    // DOM 元素获取 (与之前相同)
+    const els = {
+        toggle: document.getElementById('enable-custom-api-toggle'),
+        container: document.getElementById('custom-api-settings-container'),
+        saveBtn: document.getElementById('save-custom-api-btn'),
+        testBtn: document.getElementById('test-api-connection-btn'),
+        fetchBtn: document.getElementById('fetch-models-btn'),
+        toggleKeyBtn: document.getElementById('toggle-key-visibility-btn'),
+        sourceSelect: document.getElementById('api-source-select'),
+        modelSelect: document.getElementById('fetched-models-select'),
+        msgLabel: document.getElementById('fetch-status-msg'),
+        testLog: document.getElementById('api-test-result-log'),
+        inputs: {
+            apiurl: document.getElementById('api-url-input'),
+            key: document.getElementById('api-key-input'),
+            model: document.getElementById('api-model-input'),
+            max_tokens: document.getElementById('api-max-tokens-input'),
+            temperature: document.getElementById('api-temp-input'),
+            top_p: document.getElementById('api-top-p-input'),
+            frequency_penalty: document.getElementById('api-freq-pen-input'),
+            presence_penalty: document.getElementById('api-pres-pen-input')
+        }
+    };
+
+    // --- 核心功能逻辑 (重构) ---
+
+    // 获取模型列表 - **通过酒馆后端API**
+    async function fetchModels() {
+        const url = els.inputs.apiurl.value.trim();
+        const key = els.inputs.key.value.trim();
+        const source = els.sourceSelect.value;
+
+        if (!url || !key) {
+            showStatus('❌ 请先填写 API 地址和密钥', 'var(--danger-color)');
+            return;
+        }
+
+        showStatus('⏳ 正在通过酒馆后端获取模型...', 'var(--secondary-color)');
+        els.fetchBtn.disabled = true;
+
+        try {
+            // 这是酒馆内部用于获取模型列表的API端点
+            const apiUrl = `/api/v1/extras/model/list`;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    apiKey: key,
+                    url: url,
+                    api: source, // 告诉酒馆后端我们请求的是哪种类型的源
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+
+            const models = await response.json();
+
+            if (models && models.length > 0) {
+                // 假设返回的格式是 {id: string}[]
+                updateModelSelect(models.map(m => ({ id: m.id || m })));
+                showStatus(`✅ 成功获取 ${models.length} 个模型`, 'var(--success-color)');
+            } else {
+                throw new Error('返回列表为空或格式不正确');
+            }
+        } catch (e) {
+            console.error(e);
+            showStatus(`❌ 获取失败: ${e.message}. 请检查酒馆控制台日志。`, 'var(--danger-color)');
+        } finally {
+            els.fetchBtn.disabled = false;
+        }
+    }
+
+    // 测试连接 - **通过酒馆的 generate 函数**
+    async function testConnection() {
+        const customApiConfig = buildCustomApiConfig();
+
+        if (!customApiConfig.apiurl || !customApiConfig.key || !customApiConfig.model) {
+            alert("请确保地址、密钥和模型名称都已填写。");
+            return;
+        }
+
+        els.testLog.style.display = 'block';
+        els.testLog.textContent = "正在通过酒馆后端发送测试请求...";
+        els.testLog.style.color = "var(--text-secondary-color)";
+        els.testBtn.disabled = true;
+
+        try {
+            // 使用 generate 函数，它会通过酒馆后端处理一切
+            const result = await generate({
+                user_input: 'Say "Hello, Nova!"', // 一个简单的测试指令
+                max_chat_history: 0,
+                overrides: { chat_history: { prompts: [] } },
+                custom_api: {
+                    ...customApiConfig,
+                    max_tokens: 10 // 限制回复长度
+                }
+            });
+
+            if (result) {
+                els.testLog.textContent = `✅ 连接成功!\n模型响应: "${result}"`;
+                els.testLog.style.color = "var(--success-color)";
+            } else {
+                throw new Error("模型返回了空内容。");
+            }
+
+        } catch (e) {
+            console.error("测试连接失败:", e);
+            els.testLog.textContent = `❌ 连接失败:\n${e.message || '未知错误，请检查酒馆服务器控制台日志以获取详细信息。'}`;
+            els.testLog.style.color = "var(--danger-color)";
+        } finally {
+            els.testBtn.disabled = false;
+        }
+    }
+
+    // --- 辅助与初始化函数 (部分调整) ---
+
+    // 构建配置对象
+    function buildCustomApiConfig() {
+        const config = { source: els.sourceSelect.value };
+        Object.keys(els.inputs).forEach(key => {
+            const val = els.inputs[key].value.trim();
+            if (val === '') return;
+            if (['max_tokens', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty'].includes(key)) {
+                config[key] = Number(val);
+            } else {
+                config[key] = val;
+            }
+        });
+        return config;
+    }
+
+    // 保存配置
+    function saveSettings() {
+        const config = buildCustomApiConfig();
+        localStorage.setItem('nova_custom_api_settings', JSON.stringify(config));
+        const originalText = els.saveBtn.textContent;
+        els.saveBtn.textContent = "✅ 配置已保存";
+        setTimeout(() => els.saveBtn.textContent = originalText, 2000);
+        console.log("[Nova API Manager] Saved:", config);
+    }
+
+    // (其余的 populateSourceSelect, loadSettings, updateToggleState, handleSourceChange, updateModelSelect, showStatus 等函数保持不变)
+    // ... 将上一版中未改变的函数粘贴到这里 ...
+    // ... 为保证完整性，我将它们也一并附上 ...
+
+    function init() {
+        populateSourceSelect();
+        loadSettings();
+        bindEvents();
+    }
+
+    function populateSourceSelect() {
+        els.sourceSelect.innerHTML = '';
+        Object.keys(CHAT_COMPLETION_SOURCES).forEach(key => {
+            const value = CHAT_COMPLETION_SOURCES[key];
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = key + (value === 'custom' ? ' (自定义)' : (value === 'makersuite' ? ' (Gemini)' : ''));
+            els.sourceSelect.appendChild(option);
+        });
+    }
+
+    function loadSettings() {
+        const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+        updateToggleState(isEnabled);
+        try {
+            const stored = localStorage.getItem('nova_custom_api_settings');
+            if (stored) {
+                const config = JSON.parse(stored);
+                if (config.source) els.sourceSelect.value = config.source;
+                Object.keys(els.inputs).forEach(key => {
+                    if (config[key] !== undefined && els.inputs[key]) {
+                        els.inputs[key].value = config[key];
+                    }
+                });
+            } else {
+                els.sourceSelect.value = 'openai';
+                els.inputs.apiurl.value = DEFAULT_API_URLS['openai'];
+            }
+        } catch (e) { console.error("加载配置出错:", e); }
+    }
+
+    function updateToggleState(isEnabled) {
+        els.toggle.dataset.state = isEnabled ? 'on' : 'off';
+        els.toggle.textContent = isEnabled ? '开启' : '关闭';
+        els.toggle.style.background = isEnabled ? 'var(--primary-color)' : 'transparent';
+        els.toggle.style.color = isEnabled ? 'var(--background-color)' : 'var(--text-color)';
+        els.container.style.display = isEnabled ? 'block' : 'none';
+    }
+
+    function handleSourceChange() {
+        const source = els.sourceSelect.value;
+        const defaultUrl = DEFAULT_API_URLS[source];
+        if (defaultUrl !== undefined) {
+             const currentUrl = els.inputs.apiurl.value.trim();
+             const isDefaultUrl = Object.values(DEFAULT_API_URLS).includes(currentUrl);
+             if (currentUrl === '' || isDefaultUrl) {
+                 els.inputs.apiurl.value = defaultUrl;
+             }
+        }
+    }
+
+    function updateModelSelect(models) {
+        els.modelSelect.innerHTML = '<option value="" disabled selected>-- 选择模型 --</option>';
+        models.sort((a, b) => a.id.localeCompare(b.id)); // 排序
+        models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.id;
+            els.modelSelect.appendChild(opt);
+        });
+        els.modelSelect.style.display = 'block';
+        els.modelSelect.onchange = () => {
+            els.inputs.model.value = els.modelSelect.value;
+        };
+    }
+
+    function showStatus(text, color) {
+        els.msgLabel.textContent = text;
+        els.msgLabel.style.color = color;
+    }
+
+    function bindEvents() {
+        els.toggle.addEventListener('click', () => {
+            const newState = els.toggle.dataset.state !== 'on';
+            localStorage.setItem('enable_custom_api_v2', newState);
+            updateToggleState(newState);
+        });
+        els.sourceSelect.addEventListener('change', handleSourceChange);
+        els.fetchBtn.addEventListener('click', (e) => { e.preventDefault(); fetchModels(); });
+        els.toggleKeyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const type = els.inputs.key.type;
+            els.inputs.key.type = type === 'password' ? 'text' : 'password';
+        });
+        els.testBtn.addEventListener('click', (e) => { e.preventDefault(); testConnection(); });
+        els.saveBtn.addEventListener('click', saveSettings);
+    }
+
+    // 启动
+    init();
+})();
+
 });
  
 window.GameAPI = {
