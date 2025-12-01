@@ -1043,7 +1043,7 @@
         show() {
             this.system.refreshData();
             if(!this.collectMemories()) {
-                alert("暂无记忆碎片..."); // 简单提示
+                worldHelper.showNovaAlert("暂无记忆碎片..."); // 简单提示
                 return;
             }
             this.renderTabs();
