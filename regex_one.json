@@ -12499,7 +12499,8 @@ pointer-events: auto;
           <div class="mod-tab" data-for="time-on" data-name="time-mode" data-off-id="time-off" >强调时间</div>
           <div class="mod-tab" data-for="spacialdate-on" data-name="spacialdate-mode" data-off-id="spacialdate-off" >特殊日期</div>
             <div class="mod-tab" data-for="danmu-on" data-name="danmu-mode" data-off-id="danmu-off" >b站弹幕</div>
-                   <div class="mod-tab" data-for="bgm-on" data-name="bgm-mode" data-off-id="bgm-off" >bgm</div>
+           <div class="mod-tab" data-for="bgm-on" data-name="bgm-mode" data-off-id="bgm-off" >bgm</div>
+            <div class="mod-tab" data-for="doubleapi-on" data-name="doubleapi-mode" data-off-id="doubleapi-off" >异步更新</div>
     </div>
 
    <div class="sidebar-trigger right">
@@ -12606,7 +12607,9 @@ pointer-events: auto;
      <input type="radio" id="bgm-on" name="bgm-mode" value="on" checked> 
         <input type="radio" id="bgm-off" name="bgm-mode" value="off" >
 
-                <input type="radio" id="behavior-on" name="behavior-mode" value="52" checked>
+             <input type="radio" id="doubleapi-on" name="doubleapi-mode" value="on" > 
+        <input type="radio" id="doubleapi-off" name="doubleapi-mode" value="off" checked>
+doubleapi-mode                 <input type="radio" id="behavior-on" name="behavior-mode" value="52" checked>
         <input type="radio" id="behavior-off" name="behavior-mode" value="53">
              <input type="radio" id="cg-on" name="cg-mode" value="45" checked>
         <input type="radio" id="cg-off" name="cg-mode" value="46">
@@ -14101,7 +14104,7 @@ pointer-events: auto;
 
                 <div class="setting-item-column" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
     <div class="setting-item" style="margin-bottom: 10px;">
-        <label>启用第二API (后台专用)</label>
+        <label>启用第二API (没做完，这个没用，第二api还是只能默认主api，且使用原预设、原世界书)</label>
         <div class="switch-container">
             <button id="enable-custom-api-toggle" class="switch-btn" data-state="off">关闭</button>
         </div>
@@ -14109,7 +14112,7 @@ pointer-events: auto;
 
     <div id="custom-api-settings-container" style="display: none; padding: 15px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid var(--border-color);">
         <p style="font-size: 0.9em; color: var(--text-secondary-color); margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
-            配置用于总结、重构等后台任务的独立API通道。
+            配置用于变量更新的后台任务的独立API通道。
         </p>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -21250,7 +21253,8 @@ async function handleModeSelection() {
         const danmuvalue = getSafeValue('danmu-mode', 'on');
        // HTML: value="on" checked -- 注意这个默认是开启的
         const bgmvalue = getSafeValue('bgm-mode', 'on');
-    
+           const apivalue = getSafeValue('doubleapi-mode', 'off');
+ 
         // HTML: value="52" checked (对应 id="behavior-on")
         const behaviorValue = getSafeValue('behavior-mode', '52');
 
@@ -21318,6 +21322,12 @@ async function handleModeSelection() {
      if(bgmvalue === 'on'){
                 uidsToEnable.push(88);
             }
+     if(apivalue === 'on'){
+                uidsToEnable.push(35);
+            }else{
+                 uidsToEnable.push(40);
+            }
+            
   if (npcLOVEmode === 'on') {
                 uidsToEnable.push(65,64);
             }
@@ -21345,7 +21355,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -31798,7 +31808,7 @@ if (isContinuation) {
 
             // 确保我们有可以修改的消息，并且时间信息不为空
             // systemMessage/aiMessage 引用的是 conversationHistory 里的同一个对象，修改它就等于修改了历史
-            if (aiMessage && aiMessage.content && timeString.trim() !== '') {
+            if (aiMessage && aiMessage.content && timeString.trim() !== '' && batches !== 2) {
                 aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
                 console.log(`[Nova's Time Stamp] (Pre-Save) 已为这条回应添加了时间的印记 -> ${timeString}`);
 
@@ -40479,7 +40489,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -40502,7 +40512,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -40586,6 +40596,8 @@ const reconfigurableMods = [
     { name: '场景图关', uid: 46, group: 'cg' },
      { name: '强调时间开', uid: 78, group: 'time' },
     { name: '强调时间关', uid: 79, group: 'time' },
+     { name: '异步变量更新开', uid: 35,group: 'api'  },
+       { name: '异步变量更新关', uid: 40,group: 'api'  },
     { name: 'npc立绘开', uid: 48, group: 'npccg' },
     { name: 'npc立绘关', uid: 'npccg-off-sentinel', group: 'npccg' },
     { name: '极简npc', uid: 44, group: 'npc-info' },
@@ -40601,7 +40613,8 @@ const reconfigurableMods = [
     { name: '分阶段好感', uid: 65 },
     { name: '弹幕', uid: 85 },
     { name: 'bgm', uid: 88 },
-    { name: '特殊日期', uid: 42 }
+    { name: '特殊日期', uid: 42 },
+    
 ];
 
  function createWorldviewItems() {
@@ -50702,22 +50715,25 @@ document.addEventListener('DOMContentLoaded', function() {
         AIMLAPI: 'aimlapi',
         XAI: 'xai',
         POLLINATIONS: 'pollinations',
+        PROXY_OPENAI: 'proxy-openai', // OpenAI 格式反代
+        PROXY_GEMINI: 'proxy-gemini', // Gemini 格式反代
+            GEMINI_SECONDARY: 'gemini-secondary' // <--- 添加这个新的自定义源
     };
 
-    // 默认 API 地址映射
-    const DEFAULT_API_URLS = {
-        [CHAT_COMPLETION_SOURCES.OPENAI]: 'https://api.openai.com/v1',
-        [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'https://generativelanguage.googleapis.com/v1beta', // Gemini
-        [CHAT_COMPLETION_SOURCES.OPENROUTER]: 'https://openrouter.ai/api/v1',
-        [CHAT_COMPLETION_SOURCES.DEEPSEEK]: 'https://api.deepseek.com',
-        [CHAT_COMPLETION_SOURCES.MISTRALAI]: 'https://api.mistral.ai/v1',
-        [CHAT_COMPLETION_SOURCES.GROQ]: 'https://api.groq.com/openai/v1',
-        [CHAT_COMPLETION_SOURCES.ZEROONEAI]: 'https://api.01.ai/v1',
-        [CHAT_COMPLETION_SOURCES.AIMLAPI]: 'https://api.aimlapi.com',
-        [CHAT_COMPLETION_SOURCES.XAI]: 'https://api.x.ai/v1',
-        [CHAT_COMPLETION_SOURCES.CUSTOM]: '',
-    };
-
+ const DEFAULT_API_URLS = {
+    [CHAT_COMPLETION_SOURCES.OPENAI]: 'https://api.openai.com/v1',
+    [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'https://generativelanguage.googleapis.com/v1beta', // Gemini
+    [CHAT_COMPLETION_SOURCES.OPENROUTER]: 'https://openrouter.ai/api/v1',
+    [CHAT_COMPLETION_SOURCES.DEEPSEEK]: 'https://api.deepseek.com',
+    [CHAT_COMPLETION_SOURCES.MISTRALAI]: 'https://api.mistral.ai/v1',
+    [CHAT_COMPLETION_SOURCES.GROQ]: 'https://api.groq.com/openai/v1',
+    [CHAT_COMPLETION_SOURCES.ZEROONEAI]: 'https://api.01.ai/v1',
+    [CHAT_COMPLETION_SOURCES.AIMLAPI]: 'https://api.aimlapi.com',
+    [CHAT_COMPLETION_SOURCES.XAI]: 'https://api.x.ai/v1',
+    [CHAT_COMPLETION_SOURCES.PROXY_OPENAI]: 'http://127.0.0.1:8888/v1', // 加上 /v1
+    [CHAT_COMPLETION_SOURCES.PROXY_GEMINI]: 'http://127.0.0.1:8888/v1beta', // 加上 /v1beta
+    [CHAT_COMPLETION_SOURCES.CUSTOM]: '',
+};
     // DOM 元素获取 (与之前相同)
     const els = {
         toggle: document.getElementById('enable-custom-api-toggle'),
@@ -50744,114 +50760,221 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- 核心功能逻辑 (重构) ---
 
-    // 获取模型列表 - **通过酒馆后端API**
-    async function fetchModels() {
-        const url = els.inputs.apiurl.value.trim();
-        const key = els.inputs.key.value.trim();
-        const source = els.sourceSelect.value;
+    // 获取模型列表 - **直接调用 API 或通过酒馆后端**
+ async function fetchModels() {
+    const url = els.inputs.apiurl.value.trim();
+    const key = els.inputs.key.value.trim();
+    const source = els.sourceSelect.value;
 
-        if (!url || !key) {
-            showStatus('❌ 请先填写 API 地址和密钥', 'var(--danger-color)');
-            return;
-        }
+    if (!url || !key) {
+        showStatus('❌ 请先填写 API 地址和密钥', 'var(--danger-color)');
+        return;
+    }
 
-        showStatus('⏳ 正在通过酒馆后端获取模型...', 'var(--secondary-color)');
-        els.fetchBtn.disabled = true;
+    showStatus('⏳ 正在获取模型列表...', 'var(--secondary-color)');
+    els.fetchBtn.disabled = true;
 
+    try {
+        let models = [];
+        
+        // 尝试多种获取方式
+        // 方式1: 尝试酒馆的端点
         try {
-            // 这是酒馆内部用于获取模型列表的API端点
-            const apiUrl = `/api/v1/extras/model/list`;
-            const response = await fetch(apiUrl, {
+            const tavernResponse = await fetch('/api/backends/chat-completions/models', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    apiKey: key,
-                    url: url,
-                    api: source, // 告诉酒馆后端我们请求的是哪种类型的源
+                    api_url: url,
+                    api_key: key,
+                    api_type: source,
                 }),
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP ${response.status}`);
-            }
-
-            const models = await response.json();
-
-            if (models && models.length > 0) {
-                // 假设返回的格式是 {id: string}[]
-                updateModelSelect(models.map(m => ({ id: m.id || m })));
-                showStatus(`✅ 成功获取 ${models.length} 个模型`, 'var(--success-color)');
-            } else {
-                throw new Error('返回列表为空或格式不正确');
+            
+            if (tavernResponse.ok) {
+                const data = await tavernResponse.json();
+                models = data.data || data.models || data;
             }
         } catch (e) {
-            console.error(e);
-            showStatus(`❌ 获取失败: ${e.message}. 请检查酒馆控制台日志。`, 'var(--danger-color)');
-        } finally {
-            els.fetchBtn.disabled = false;
-        }
-    }
-
-    // 测试连接 - **通过酒馆的 generate 函数**
-    async function testConnection() {
-        const customApiConfig = buildCustomApiConfig();
-
-        if (!customApiConfig.apiurl || !customApiConfig.key || !customApiConfig.model) {
-            alert("请确保地址、密钥和模型名称都已填写。");
-            return;
+            console.log('酒馆端点尝试失败，切换到直接调用');
         }
 
-        els.testLog.style.display = 'block';
-        els.testLog.textContent = "正在通过酒馆后端发送测试请求...";
-        els.testLog.style.color = "var(--text-secondary-color)";
-        els.testBtn.disabled = true;
-
-        try {
-            // 使用 generate 函数，它会通过酒馆后端处理一切
-            const result = await generate({
-                user_input: 'Say "Hello, Nova!"', // 一个简单的测试指令
-                max_chat_history: 0,
-                overrides: { chat_history: { prompts: [] } },
-                custom_api: {
-                    ...customApiConfig,
-                    max_tokens: 10 // 限制回复长度
-                }
+        // 方式2: 如果酒馆端点失败，直接调用 API
+        if (!models || models.length === 0) {
+            let modelsEndpoint = '';
+            let headers = { 'Content-Type': 'application/json' };
+            
+            // 根据不同的 API 源使用不同的认证方式
+            if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
+                // Gemini/Google AI 使用 URL 参数认证
+                // 确保 URL 已经包含完整路径 (如 http://127.0.0.1:8888/v1beta)
+                const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+                modelsEndpoint = `${baseUrl}/models?key=${key}`;
+            } else {
+                // 其他 API 使用 Bearer token
+                modelsEndpoint = `${url}/models`;
+                headers['Authorization'] = `Bearer ${key}`;
+            }
+            
+            const directResponse = await fetch(modelsEndpoint, {
+                method: 'GET',
+                headers: headers,
             });
 
-            if (result) {
-                els.testLog.textContent = `✅ 连接成功!\n模型响应: "${result}"`;
-                els.testLog.style.color = "var(--success-color)";
-            } else {
-                throw new Error("模型返回了空内容。");
+            if (!directResponse.ok) {
+                throw new Error(`HTTP ${directResponse.status}: ${directResponse.statusText}`);
             }
 
-        } catch (e) {
-            console.error("测试连接失败:", e);
-            els.testLog.textContent = `❌ 连接失败:\n${e.message || '未知错误，请检查酒馆服务器控制台日志以获取详细信息。'}`;
-            els.testLog.style.color = "var(--danger-color)";
-        } finally {
-            els.testBtn.disabled = false;
+            const data = await directResponse.json();
+            models = data.data || data.models || data;
         }
+
+        if (models && models.length > 0) {
+            const modelList = models.map(m => ({ 
+                id: typeof m === 'string' ? m : (m.id || m.model || m.name) 
+            }));
+            updateModelSelect(modelList);
+            showStatus(`✅ 成功获取 ${modelList.length} 个模型`, 'var(--success-color)');
+        } else {
+            throw new Error('未找到可用模型');
+        }
+    } catch (e) {
+        console.error('获取模型列表失败:', e);
+        showStatus(`❌ 获取失败: ${e.message}`, 'var(--danger-color)');
+    } finally {
+        els.fetchBtn.disabled = false;
+    }
+}
+ // 测试连接 - **直接发送 API 请求**
+async function testConnection() {
+    const url = els.inputs.apiurl.value.trim();
+    const key = els.inputs.key.value.trim();
+    const model = els.inputs.model.value.trim();
+    const source = els.sourceSelect.value;
+
+    if (!url || !key || !model) {
+        alert("请确保地址、密钥和模型名称都已填写。");
+        return;
     }
 
-    // --- 辅助与初始化函数 (部分调整) ---
+    els.testLog.style.display = 'block';
+    els.testLog.textContent = "正在发送测试请求...";
+    els.testLog.style.color = "var(--text-secondary-color)";
+    els.testBtn.disabled = true;
 
-    // 构建配置对象
-    function buildCustomApiConfig() {
-        const config = { source: els.sourceSelect.value };
-        Object.keys(els.inputs).forEach(key => {
-            const val = els.inputs[key].value.trim();
-            if (val === '') return;
-            if (['max_tokens', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty'].includes(key)) {
-                config[key] = Number(val);
-            } else {
-                config[key] = val;
-            }
+    try {
+        let endpoint = '';
+        let headers = { 'Content-Type': 'application/json' };
+        let body = {};
+
+        // 确保 URL 没有尾部斜杠
+        const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+
+        // 根据不同 API 源构建请求
+        if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
+            // Gemini API
+            endpoint = `${baseUrl}/${model}:generateContent?key=${key}`;
+            body = {
+                contents: [{
+                    role: 'user',  // 添加 role 字段
+                    parts: [{ text: 'Say "Hello, Nova!" in 5 words or less.' }]
+                }],
+                generationConfig: {
+                    maxOutputTokens: 20,
+                    temperature: 0.7
+                }
+            };
+        } else {
+            // OpenAI 兼容 API
+            endpoint = `${baseUrl}/chat/completions`;
+            headers['Authorization'] = `Bearer ${key}`;
+            body = {
+                model: model,
+                messages: [{ role: 'user', content: 'Say "Hello, Nova!" in 5 words or less.' }],
+                max_tokens: 20,
+                temperature: 0.7
+            };
+        }
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(body)
         });
-        return config;
-    }
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+        }
+
+        const data = await response.json();
+        let responseText = '';
+
+        // 解析不同 API 的响应格式
+        if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
+            responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '未获取到响应内容';
+        } else {
+            responseText = data.choices?.[0]?.message?.content || '未获取到响应内容';
+        }
+
+        els.testLog.textContent = `✅ 连接成功!\n模型响应: "${responseText.trim()}"`;
+        els.testLog.style.color = "var(--success-color)";
+
+    } catch (e) {
+        console.error("测试连接失败:", e);
+        els.testLog.textContent = `❌ 连接失败:\n${e.message}`;
+        els.testLog.style.color = "var(--danger-color)";
+    } finally {
+        els.testBtn.disabled = false;
+    }
+}
+    // 构建配置对象
+ function buildCustomApiConfig() {
+    // 这个映射表是关键，它将我们输入框的ID/键名“翻译”成后端API期望的格式
+    const keyMap = {
+        apiurl: 'api_url',          // 关键修改：'apiurl' -> 'api_url'
+        key: 'api_key',             // 关键修改：'key' -> 'api_key'
+        model: 'model',
+        max_tokens: 'max_tokens',
+        temperature: 'temperature',
+        top_p: 'top_p',
+        frequency_penalty: 'frequency_penalty',
+        presence_penalty: 'presence_penalty'
+    };
+    const selectedSource = els.sourceSelect.value;
+let finalApiType = selectedSource;
+
+if (selectedSource === 'gemini-secondary') {
+    finalApiType = 'makersuite'; // 或者 'makersuite'，取决于你的代理后端期望的类型
+}
+const config = {
+    // 'source' 字段我们保留自定义名称，用来“欺骗”后端
+    source: selectedSource,
+    // 'api_type' 字段我们使用翻译后的真实名称，让后端知道如何处理它
+    api_type: finalApiType
+};
+    Object.keys(els.inputs).forEach(inputKey => {
+        const val = els.inputs[inputKey].value.trim();
+
+        // 如果输入值为空，则跳过，让后端使用默认值
+        if (val === '') return;
+
+        // 从映射表中找到后端期望的键名
+        const backendKey = keyMap[inputKey];
+
+        // 如果在映射表中找不到对应的键，也跳过
+        if (!backendKey) return;
+
+        // 对需要是数字的字段进行转换
+        if (['max_tokens', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty'].includes(inputKey)) {
+            config[backendKey] = Number(val);
+        } else {
+            config[backendKey] = val;
+        }
+    });
+
+    console.log("[Nova API Manager] Generated custom_api config for backend:", config);
+    return config;
+}
     // 保存配置
     function saveSettings() {
         const config = buildCustomApiConfig();
@@ -50862,10 +50985,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("[Nova API Manager] Saved:", config);
     }
 
-    // (其余的 populateSourceSelect, loadSettings, updateToggleState, handleSourceChange, updateModelSelect, showStatus 等函数保持不变)
-    // ... 将上一版中未改变的函数粘贴到这里 ...
-    // ... 为保证完整性，我将它们也一并附上 ...
-
     function init() {
         populateSourceSelect();
         loadSettings();
@@ -50874,11 +50993,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateSourceSelect() {
         els.sourceSelect.innerHTML = '';
+        const specialNames = {
+            'custom': ' (自定义)',
+            'makersuite': ' (Gemini)',
+            'proxy-openai': ' 🔄 (OpenAI格式反代)',
+            'proxy-gemini': ' 🔄 (Gemini格式反代)',
+              'gemini-secondary': ' (Gemini 备用)'
+        };
         Object.keys(CHAT_COMPLETION_SOURCES).forEach(key => {
             const value = CHAT_COMPLETION_SOURCES[key];
             const option = document.createElement('option');
             option.value = value;
-            option.textContent = key + (value === 'custom' ? ' (自定义)' : (value === 'makersuite' ? ' (Gemini)' : ''));
+            option.textContent = key + (specialNames[value] || '');
             els.sourceSelect.appendChild(option);
         });
     }
@@ -50963,6 +51089,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 启动
     init();
 })();
+
 
 });
  
