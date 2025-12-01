@@ -31953,7 +31953,7 @@ batches = 1;
      } finally {
      
 
-         if ((double_api !== 'true' || (double_api === 'true' &&batches ===2))&& isDirty && originalWorldInfo) {
+         if (isDirty && originalWorldInfo) {
             await initDisplay();
              await  handleNotificationsFromBatch();
             // 使用 setTimeout 保持原来的后台恢复行为
