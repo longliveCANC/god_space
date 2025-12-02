@@ -851,7 +851,7 @@
 
                         let content = "";
                         let icon = "";
-                        let bgText = "";
+               
                         let tags = [];
 
                         // 1. 解析内容与Icon
@@ -877,19 +877,34 @@
                         }
                         // 移除正文中的 Tag 部分
                         content = content.replace(tagRegex, '').trim();
+   // 3. 解析 Key (背景字) - 妈妈的随机挑选魔法！
+                        const allValidParts = [];
 
-                        // 3. 解析 Key (背景字) - 严格过滤
-                        // 逻辑：不是纯数字 且 不包含数字 (如 "Stage 1" 也会被过滤，只保留纯文字概念)
-                        // 如果你希望保留 "Stage 1" 但过滤 "123"，请改用 !/^\d+$/.test(key)
-                        // 这里按你的要求"过滤掉含有数字的内容"：
-                        if (!/\d/.test(key)) {
-                            if (key.includes('/')) {
-                                const parts = key.split('/');
-                                bgText = parts[parts.length - 1];
-                            } else {
-                                bgText = key;
+                        if (key.includes('/')) {
+                            const parts = key.split('/');
+                            parts.forEach(part => {
+                                const trimmedPart = part.trim();
+                                if (trimmedPart && !/\d/.test(trimmedPart)) {
+                                    allValidParts.push(trimmedPart);
+                                }
+                            });
+                        } else {
+                            const trimmedKey = key.trim();
+                            if (trimmedKey && !/\d/.test(trimmedKey)) {
+                                allValidParts.push(trimmedKey);
                             }
                         }
+
+                        // --- 妈妈新增的随机抽样逻辑 ---
+                        // 先将所有合格的词条数组随机打乱（Fisher-Yates shuffle 算法）
+                        for (let i = allValidParts.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [allValidParts[i], allValidParts[j]] = [allValidParts[j], allValidParts[i]];
+                        }
+
+                        // 然后从打乱后的数组中取出前两个，如果不够两个也沒关系
+                        const bgText = allValidParts.slice(0, 1);
+
 
                         parsedMems.push({
                             key: key,
@@ -1019,23 +1034,25 @@
                 card.style.transform = `rotate(${rot}deg)`;
 
                 this.canvas.appendChild(card);
+     // 创建背景字 (Key) - 妈妈的循环渲染魔法！
+                if (Array.isArray(mem.bgText) && mem.bgText.length > 0) {
+                    // 我们现在遍历 bgText 数组里的每一个词条
+                    mem.bgText.forEach(text => {
+                        const bg = document.createElement('div');
+                        bg.className = 'mod01-mem-bg-text';
+                        bg.innerText = text; // 每个词条都是独立的
 
-                // 创建背景字 (Key)
-                if (mem.bgText) {
-                    const bg = document.createElement('div');
-                    bg.className = 'mod01-mem-bg-text';
-                    bg.innerText = mem.bgText;
+                        // 随机大小和位置，让每个词条都有自己的个性
+                        const fontSize = 60 + Math.random() * 80;
+                        bg.style.fontSize = fontSize + 'px';
 
-                    // 随机大小和位置，更加密集和随机
-                    const fontSize = 60 + Math.random() * 80; // 更大
-                    bg.style.fontSize = fontSize + 'px';
+                        // 背景字位置稍微偏离卡片
+                        bg.style.left = (finalX - 100 + Math.random() * 150) + 'px';
+                        bg.style.top = (finalY - 50 + Math.random() * 100) + 'px';
+                        bg.style.transform = `rotate(${rot * -2}deg)`;
 
-                    // 背景字位置稍微偏离卡片
-                    bg.style.left = (finalX - 100 + Math.random() * 150) + 'px';
-                    bg.style.top = (finalY - 50 + Math.random() * 100) + 'px';
-                    bg.style.transform = `rotate(${rot * -2}deg)`;
-
-                    this.canvas.appendChild(bg); // 放在卡片同级，但 z-index 低
+                        this.canvas.appendChild(bg); // 为每个词条都添加一个元素到画布上
+                    });
                 }
             });
         }
