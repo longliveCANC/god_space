@@ -17869,7 +17869,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
     // 1. 两参数且路径以'.事件'结尾：memory('global_lore.npc.母亲.事件', '{...}')
     // 2. 三参数且第二个参数是'event'或'事件'：memory('world_lore.npc.用户', 'event', '{...}')
     // 3. 三参数且路径以'.事件'结尾 + '当前状态'/'当前想法'：memory('global_lore.npc.不死川玄弥.事件', '当前状态', '...')
-    commandPattern: /\bmemory\s*\(\s*['"]([^'"]+)['"]\s*,\s*(?:(['"](?:event|事件|当前状态|当前想法|情绪基调)['"])\s*,\s*)?['"]([^'"]*(?:\{[\s\S]*?\})?[^'"]*)['"]\s*\)/,
+    commandPattern: /\bmemory\s*\(\s*['"]([^'"]+)['"]\s*,\s*(?:(['"](?:event|事件|当前状态|当前想法|情绪基调|想法|人物状态|姿势)['"])\s*,\s*)?['"]([^'"]*(?:\{[\s\S]*?\})?[^'"]*)['"]\s*\)/,
     action: (matches) => {
     const pathOrObjectName = matches[1];
     const middleParam = matches[2]; // 可能是 undefined、"'event'"、"'事件'"、"'当前状态'" 等
@@ -17883,7 +17883,8 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
          middleParam.includes('状态') ||
            middleParam.includes('想法') ||
               middleParam.includes('人物状态') ||
-        middleParam.includes('当前想法') ||
+               middleParam.includes('人物状态') ||
+        middleParam.includes('姿势') ||
         middleParam.includes('情绪基调') // 👈 确保这里有情绪基调
     );
 
@@ -29339,7 +29340,7 @@ function handleNotificationsFromBatch(operations) {
                 showUpdateNotification(`${npcName} 的好感度变为 ${value}`);
             }
             // 📅 规则：事件追踪 (generic-event-tracker)
-               else if (path.endsWith('.事件') || key === 'event' || key === '事件' || ['当前状态', '当前想法', '情绪基调'].includes(key)) {
+               else if (path.endsWith('.事件') || key === 'event' || key === '事件' || ['当前状态', '当前想法', '情绪基调','状态','想法','穿着','姿势'].includes(key)) {
                 // 1. 智能提取名字
                 // 如果路径以 .事件 结尾，名字在倒数第二位 (npc.Name.事件)
                 // 否则假设路径本身就是名字 (这种情况比较少见，但为了兼容保留逻辑)
@@ -31128,7 +31129,7 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
         }
         if(isContinuationVar){
   userText = `中断写作任务，按照最新要求执行`;
-        continuationText = `[中断写作任务，新任务：遵循之前的对话中，user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循memory_update_meta_rules(将以下文本当作你'本轮输出的正文')，确保不输出任何新的正文，只专注memory更新: \nuser:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n请直接从<statusAnalyze>开始。]`;
+        continuationText = `[中断写作任务，新任务：遵循之前的对话中，user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循memory_update_meta_rules(将以下文本当作你'本轮输出的正文')，确保不输出任何新的正文，只专注memory更新: \nuser:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n请直接从<statusAnalyze>开始。summary的更新是重中之重，不得遗忘！]`;
         console.log("[Nova's Whisper] 正在请求重新生成变量...");
       
         }else{
