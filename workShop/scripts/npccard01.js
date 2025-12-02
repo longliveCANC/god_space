@@ -1592,7 +1592,7 @@
                box.appendChild(st);
             }
             // 3. 其他字段 (行为链、目标等)
-            const ignores = ['当前想法', '当前状态',"想法","人物"];
+            const ignores = ['当前想法', '当前状态',"想法","人物状态"];
             Object.keys(evtData).forEach(k => {
                 if(ignores.includes(k) || k.startsWith('_')) return;
                 const row = document.createElement('div');
