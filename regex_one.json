@@ -14827,6 +14827,7 @@ let isEmphasizeTime = "false";
 let is_simple_stream = "false";
 let noBackup = "false";
 let is_restore_prompt = "true";
+let weneedshop = "false";
 let is_show_notifications = "true";
 let ifScanMemory = "false";
 let bookItemSettings = null;
@@ -37696,6 +37697,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
          checkMemoryOk = String(chatdata.checklock||'true');
          worldAttitudeData = chatdata.跨世界声望说明;
         characterStatusData = chatdata.当前人物状态;
+     
         lasttoken = globaldata?.LAST_SEND_TOKENS || 0;
     userPoints = parseInt(SafeGetValue(playCharacterData.货币段.积分) || 0, 10);
    userPlots =  playCharacterData.货币段.支线剧情 || { D: [0], C: [0], B: [0], A: [0], S: [0] };
@@ -37707,6 +37709,7 @@ const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 is_simple_stream =  String(chatdata.is_simple_stream||'false');
 is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
+   weneedshop = String(chatdata.we_need_shop||'false');
 is_show_notifications = String(chatdata.is_show_notifications||'true');
 double_api = String(chatdata.double_api||'false');
 batches = Number(chatdata.batches||1);
@@ -37778,6 +37781,10 @@ if(isThingsRecord ==="true"){
          document.getElementById('page-task-orb').style.display = 'flex';
     document.getElementById('shop-wrapper-orb').style.display = 'flex';
           
+        }
+
+        if(weneedshop ==='true'){
+                document.getElementById('shop-wrapper-orb').style.display = 'flex';
         }
 
         if (!currentGameData || !assaSettingsData || !playCharacterData) {
