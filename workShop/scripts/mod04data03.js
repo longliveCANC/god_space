@@ -67,6 +67,7 @@
         .mod04-quick-btn {
             position: fixed;
             padding: 8px 20px;
+            right:70px;
             background: rgba(0, 0, 0, 0.85);
             border: 1px solid var(--mod04-primary);
             border-right: 4px solid var(--mod04-primary);
