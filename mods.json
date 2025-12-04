@@ -135,7 +135,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["脚本","通用"],
-    "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的查看界面。",
+    "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的美化查看界面。所有物品美化不可同时开启，开一个就行。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data01.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/imagecopy.png"
@@ -149,5 +149,15 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-物品技能图标评论.json",
     "previewImage": ""
+  } ,{
+    "id": "mod04-data02",
+    "name": "物品美化02-红白街头风",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["脚本","通用"],
+    "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的美化查看界面。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data02.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy.png"
   } 
 ]
