@@ -84,7 +84,7 @@
     "name": "在正文生成美化的物品面板",
     "author": "LushFlower",
     "version": "1.0",
-    "tags": ["主神"],
+    "tags": ["主神","物品格式"],
     "description": "拓展了原本的物品格式，且会在正文生成物品、个人面板等被美化过的信息面板。主神模式专用。",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/信息面板.json",
