@@ -145,7 +145,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["物品格式","通用","可异步"],
-    "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的查看界面。适配所有我创意工坊的物品界面美化mod。非覆盖式，直接挂上或者改进你的自定义格式里就行。",
+    "description": "挂载该世界书后，物品和技能会自带emoji和一个对物品的comment。适配所有我创意工坊的物品界面美化mod。非覆盖式，直接挂上或者改进你的自定义格式里就行。",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-物品技能图标评论.json",
     "previewImage": ""
