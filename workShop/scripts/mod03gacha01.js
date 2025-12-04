@@ -119,7 +119,16 @@
         // ==========================================
         // 3. 逻辑核心 (Three.js + 交互)
         // ==========================================
-
+        const theme = {
+            primary: GameAPI.getThemeVar('--primary-color') || '#00faff',
+            secondary: GameAPI.getThemeVar('--secondary-color') || '#7affff',
+            text: GameAPI.getThemeVar('--text-color') || '#e6f1ff',
+            textSecondary: GameAPI.getThemeVar('--text-secondary-color') || '#a8c0e1',
+            bg: GameAPI.getThemeVar('--container-bg-color') || 'rgba(10, 25, 47, 0.85)',
+            border: GameAPI.getThemeVar('--border-color') || 'rgba(0, 250, 255, 0.3)',
+            glow: GameAPI.getThemeVar('--glow-color') || 'rgba(0, 250, 255, 0.5)',
+            inputBg: 'rgba(0, 0, 0, 0.4)',
+        };
         // 动态导入 Three.js
         import('three').then(async (THREE) => {
             const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
@@ -138,7 +147,7 @@
             let animationFrameId;
 
             const container = document.getElementById('gacha-canvas-container');
-            const defaultAmbientColor = new THREE.Color(0xff4500);
+            const defaultAmbientColor = new THREE.Color(theme.primary);
 
             // --- 初始化场景 ---
             function initScene() {
@@ -217,8 +226,8 @@
      function createGachaCore() {
             // 获取 CSS 变量中的颜色
             const rootStyles = getComputedStyle(document.documentElement);
-            const primaryColor = new THREE.Color(rootStyles.getPropertyValue('--primary-color').trim());
-            const secondaryColor = new THREE.Color(rootStyles.getPropertyValue('--secondary-color').trim());
+            const primaryColor = new THREE.Color(theme.primary);
+            const secondaryColor = new THREE.Color(theme.secondary);
 
             // 创建一个组来容纳所有部件
             gachaCore = new THREE.Group();
@@ -259,7 +268,7 @@
             // 增加哥特式的尖锐感，反向旋转的装饰层
             const outerGeo = new THREE.OctahedronGeometry(2.2, 0);
             const outerMat = new THREE.MeshBasicMaterial({
-                color: new THREE.Color(0xff4500),
+                color: primaryColor,
                 wireframe: true,
                 transparent: true,
                 opacity: 0.3,
