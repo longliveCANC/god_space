@@ -159,5 +159,15 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data02.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy.png"
+  } ,{
+    "id": "mod04-data03",
+    "name": "物品美化03-星空",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["脚本","通用"],
+    "description": "无需多言。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data03.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 2.png"
   } 
 ]
