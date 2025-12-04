@@ -209,5 +209,15 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data07.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 6.png"
+  } ,{
+    "id": "mod04-data08",
+    "name": "物品美化08-黑金",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["脚本","通用"],
+    "description": "无需多言。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data08.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 7.png"
   } 
 ]
