@@ -229,5 +229,15 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data09.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 8.png"
+  } ,{
+    "id": "mod04-data10",
+    "name": "物品美化10-简洁野炊",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["脚本","通用"],
+    "description": "无需多言。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data10.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 9.png"
   } 
 ]
