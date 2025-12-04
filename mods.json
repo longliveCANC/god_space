@@ -129,15 +129,25 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha01.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image.png"
-  } ,  {
+  } ,{
     "id": "mod04-data01",
     "name": "物品美化01-steam库",
     "author": "assa",
     "version": "1.0",
-    "tags": ["脚本","通用","物品格式"],
+    "tags": ["脚本","通用"],
     "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的查看界面。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data01.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/imagecopy.png"
+  }  ,{
+    "id": "x-mod-物品技能图标评论",
+    "name": "给物品技能加上图标评论",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["物品格式","通用","可异步"],
+    "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的查看界面。适配所有我创意工坊的物品界面美化mod。非覆盖式，直接挂上或者改进你的自定义格式里就行。",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-物品技能图标评论.json",
+    "previewImage": ""
   } 
 ]
