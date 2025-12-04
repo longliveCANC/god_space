@@ -179,5 +179,15 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data04.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 3.png"
+  } ,{
+    "id": "mod04-data05",
+    "name": "物品美化05-老式游戏",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["脚本","通用"],
+    "description": "无需多言。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data05.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 4.png"
   } 
 ]
