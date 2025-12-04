@@ -432,7 +432,7 @@
             padding: 25px;
             max-height: 95%;
             width: 90%;
-            box-shadow: 0 0 30px var(--glow-color);
+            /* box-shadow: 0 0 30px var(--glow-color); */
             position: relative;
             animation: modalSlideIn 0.3s ease-out;
               overflow-y: auto;
@@ -1007,7 +1007,7 @@
     opacity: 0.7;
 }
 
-.control-btn,#back-from-shop-btn,#generate-items-btn ,#ten-gacha-btn,#single-gacha-btn,#submit-generation-btn,#skip-generation-btn,#gacha-confirm-btn{
+.control-btn,#back-from-shop-btn,#generate-items-btn , #submit-generation-btn,#skip-generation-btn {
     background: none;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -1019,7 +1019,7 @@
 }
  
 
-.control-btn:hover,#back-from-shop-btn:hover,#ten-gacha-btn:hover,#single-gacha-btn:hover,#generate-items-btn:hover,#gacha-confirm-btn:hover,#submit-generation-btn:hover,#skip-generation-btn:hover {
+.control-btn:hover,#back-from-shop-btn:hover, #generate-items-btn:hover, #submit-generation-btn:hover,#skip-generation-btn:hover {
     color: var(--primary-color);
     background: var(--border-color);
     box-shadow: 0 0 8px var(--glow-color);
@@ -4626,120 +4626,8 @@ opacity: 0.6;
  /*  */
 
  /* 抽奖按钮样式 */
-.gacha-btn {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: var(--background-color);
-    font-weight: bold;
-}
-
-.gacha-btn:hover {
-    box-shadow: 0 0 15px var(--glow-color);
-    transform: translateY(-2px);
-}
-
-/* 抽奖模态框样式 */
-.gacha-modal-content {
-    max-width: 800px;
-    min-height: 400px;
-}
  
-.gacha-animation-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 200px;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.gacha-card {
-    width: 120px;
-    height: 160px;
-    position: relative;
-    perspective: 1000px;
-    margin: 5px;
-}
-
-.gacha-card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: transform 0.8s;
-    transform-style: preserve-3d;
-}
-
-.gacha-card.flipped .gacha-card-inner {
-    transform: rotateY(180deg);
-}
-
-.gacha-card-front, .gacha-card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border-radius: 10px;
-    border: 2px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-    color: var(--text-color);
-}
-
-.gacha-card-front {
-    background: linear-gradient(135deg, var(--container-bg-color), var(--border-color));
-    /* 让问号更清晰一些 */
-    font-size: 48px;
-    color: var(--border-color);
-}
-
-.gacha-card-back {
-    color: var(--background-color);
-    transform: rotateY(180deg);
-    padding: 10px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.gacha-results {
-    margin-top: 20px;
-    text-align: center;
-}
-
-.gacha-result-item {
-    display: inline-block;
-    margin: 5px;
-    padding: 10px 15px;
-    background: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    color: var(--text-color);
-}
-
-/* 不同积分层级的卡片颜色 */
- /* Tier 1: 保持朴素的灰色 */
-.gacha-card-back.tier-1 {
-    background: linear-gradient(135deg, #808080, #a0a0a0);
-    box-shadow: 0 0 8px rgba(128, 128, 128, 0.4);
-}
-
-/* Tier 2: 经典青色光辉 */
-.gacha-card-back.tier-2 {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    box-shadow: 0 0 15px var(--glow-color);
-}
-
-/* Tier 3: 呼吸光晕，光效更明显 */
-.gacha-card-back.tier-3 {
-    background: linear-gradient(135deg, var(--secondary-color), #b0b0b0, var(--primary-color));
-    box-shadow: 0 0 20px var(--glow-color);
-    animation: pulse-glow 3s infinite ease-in-out;
-}
+ 
 
 @keyframes pulse-glow {
     0%, 100% {
@@ -4749,233 +4637,10 @@ opacity: 0.6;
         box-shadow: 0 0 30px var(--glow-color), 0 0 15px var(--secondary-color);
     }
 }
-
-/* Tier 4: 史诗脉冲，边框会一起发光 */
-.gacha-card-back.tier-4 {
-    background: radial-gradient(ellipse at center, var(--secondary-color), var(--primary-color));
-    box-shadow: 0 0 30px var(--glow-color);
-    animation: epic-pulse 2s infinite alternate ease-in-out;
-    border-color: var(--secondary-color);
-}
-
-@keyframes epic-pulse {
-    from {
-        transform: rotateY(180deg) scale(1);
-        box-shadow: 0 0 30px var(--glow-color);
-        border-color: var(--secondary-color);
-    }
-    to {
-        transform: rotateY(180deg) scale(1.02);
-        box-shadow: 0 0 45px var(--primary-color), 0 0 15px var(--secondary-color) inset;
-        border-color: var(--primary-color);
-    }
-}
-
-/* Tier 5: 传奇流彩，真正的炫目效果！ */
-.gacha-card-back.tier-5 {
-    background: linear-gradient(
-        -45deg,
-        var(--danger-color),
-        var(--primary-color),
-        var(--secondary-color),
-        var(--danger-color)
-    );
-    background-size: 400% 400%;
-    box-shadow: 0 0 35px var(--danger-glow-color), 0 0 20px var(--glow-color);
-    animation: legendary-shift 3s ease-in-out infinite, legendary-hue-rotate 4s linear infinite;
-}
-
-@keyframes legendary-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-@keyframes legendary-hue-rotate {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(360deg); }
-}
-
-/* 卡片悬浮动画 */
-.gacha-card.selected {
-    transform: translateY(-10px);
-    transition: transform 0.3s ease;
-}
-
-.gacha-card.selected .gacha-card-back {
-    animation-name: legendary-shift, float;
-    animation-duration: 3s, 2s;
-    animation-timing-function: ease-in-out, ease-in-out;
-    animation-iteration-count: infinite, infinite;
-}
-
-/* float动画本身是正确的，因为它包含了rotateY(180deg) */
-@keyframes float {
-    0%, 100% {
-        transform: rotateY(180deg) translateY(0px);
-    }
-    50% {
-        transform: rotateY(180deg) translateY(-5px);
-    }
-}
-
-/* 确保所有动画在选中时都能正确叠加 */
-.gacha-card.selected .gacha-card-back.tier-3 {
-    animation: pulse-glow 3s infinite ease-in-out, float 2s infinite ease-in-out;
-}
-.gacha-card.selected .gacha-card-back.tier-4 {
-    animation: epic-pulse 2s infinite alternate ease-in-out, float 2s infinite ease-in-out;
-}
-.gacha-card.selected .gacha-card-back.tier-5 {
-     animation: legendary-shift 3s infinite ease-in-out, float 2s infinite ease-in-out;
-}
-/* 详细信息显示 */
-.gacha-card-details {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
-    color: var(--text-color);
-    padding: 10px;
-    border-radius: 10px;
-    font-size: 10px;
-    z-index: 10;
-    transform: rotateY(180deg) scale(0.95);
-    opacity: 0;
-    pointer-events: none; /* 看不见时就不能点 */
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-}
-
-.gacha-card-details.show {
-    transform: rotateY(180deg) scale(1);
-    opacity: 1;
-    pointer-events: auto; /* 看得见时才能点 */
-}
-
-.gacha-card-details-content {
-    height: 100%;
-    overflow-y: auto;
-    padding-right: 5px;
-}
-
-.gacha-card-details-content::-webkit-scrollbar {
-    width: 4px;
-}
-.gacha-card-details-content::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 2px;
-}
-.gacha-card-details-content::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-.gacha-abandon-btn {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: var(--danger-color);
-    color: white;
-    border: none;
-    border-radius: 3px;
-    padding: 2px 6px;
-    font-size: 10px;
-    cursor: pointer;
-    z-index: 11;
-     transform: rotateY(180deg);
-}
-
-.gacha-abandon-btn:hover {
-    background: #ff6666;
-}
-
-
- /* 手机端纵览结果区域样式 */
-.gacha-results-summary {
-    display: none; /* 默认隐藏 */
-    margin: 20px;
-    padding: 15px;
-    background: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    max-height: 150px;
-    overflow-y: auto;
-    text-align: left;
-}
-.gacha-results-summary h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--primary-color);
-    text-align: center;
-}
-.gacha-results-summary div {
-    padding: 2px 5px;
-}
  
-@media (max-width: 800px) {
-    .gacha-modal-content {
-        width: 100%;
-        max-width: 100%;
-        height: 100%;
-        max-height: 100%;
-        margin: 0;
-        border-radius: 0;
-        overflow: hidden;
-    }
-
-    .gacha-animation-container {
-        position: relative;
-        width: 100%;
-        min-height: 250px;
-        perspective: 1000px;
-        margin-top: 50px;
-        cursor: grab; /* 给予可以拖动的视觉提示 */
-    }
-    .gacha-animation-container:active {
-        cursor: grabbing;
-    }
-
-    .gacha-carousel {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        transform-style: preserve-3d;
-        transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1); /* 平滑的吸附动画 */
-    }
-
-    .gacha-card {
-        position: absolute;
-        top: 10%;
-        left: calc(50% - 70px);
-        width: 140px;
-        height: 186px;
-        backface-visibility: hidden;
-        margin: 0;
-        transition: transform 0.5s ease, opacity 0.5s ease; /* 为选中效果增加过渡 */
-    }
-
-    /* 当有卡片被选中时，让其他卡片退后并变暗 */
-    .gacha-carousel.has-selection .gacha-card:not(.selected) {
-        opacity: 0.3;
-        transform: var(--original-transform) scale(0.9); /* var()会在JS中设置 */
-    }
-
-    /* 被选中的卡片会放大，并展示详情 */
-    .gacha-carousel.has-selection .gacha-card.selected {
-        cursor: default;
-    }
-    .gacha-carousel.has-selection .gacha-card.selected .gacha-card-details {
-        transform: rotateY(180deg) scale(1);
-        opacity: 1;
-        pointer-events: auto;
-    }
-     .gacha-carousel.has-selection .gacha-card.selected .gacha-abandon-btn {
-        display: block;
-    }
-}
-
-
+  
+ 
+ 
 /* 设置模态框样式 */
 .settings-container {
     padding: 10px 20px 20px 20px;
@@ -13677,8 +13342,8 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
            <header class="shop-header">
                 <h1 class="shop-title">兑换中心</h1>
                 <div class="shop-header-controls">
-                     <button id="single-gacha-btn" class="control-btn gacha-btn" style="margin-right: 8px;">单抽 (160积分)</button>
-    <button id="ten-gacha-btn" class="control-btn gacha-btn" style="margin-right: 8px;">十连抽 (1440积分)</button>
+ 
+        <button id="enter-gacha01-btn" class="control-btn gacha-btn" style="margin-right: 8px; display: none;">进入抽卡</button>
                     <button id="generate-items-btn" class="control-btn" style="margin-right: 8px;">生成</button>
                     <input type="text" id="shop-search-input" placeholder="搜索名称、效果、描述…">
                     <button id="back-from-shop-btn">← 返回终端</button>
@@ -13776,22 +13441,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
         </div>
     </div>
 
-    <!-- 抽奖模态框 -->
-<div id="gacha-modal" class="modal">
-    <div class="modal-content gacha-modal-content">
-        <button class="modal-close">&times;</button>
-        <div id="gacha-modal-title" class="modal-title">抽奖结果</div>
-        <div id="gacha-animation-container" class="gacha-animation-container">
-            
-            <!-- 抽奖动画区域 -->
-        </div>
-        <div id="gacha-results-summary" class="gacha-results-summary"></div>
-        <div id="gacha-results" class="gacha-results">
-            <!-- 抽奖结果显示 -->
-        </div>
-        <button id="gacha-confirm-btn" class="control-btn" style="display: none;">确认</button>
-    </div>
-</div>
+ 
 
     <!-- ========== 新增：商店界面容器 (结束) ========== -->
 <div id="roll-result-modal" class="modal">
@@ -14801,7 +14451,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.21';
+let current_game_version = '3.3.22';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -25340,7 +24990,7 @@ function cleanupGlobalUIState() {
     chatDisplayArea.appendChild(finalBubble);
 
     // 处理AI消息中可能包含的特殊模块（选项、论坛等）
-    processSpecialModulesInMessage(finalMessage.content);
+  await  processSpecialModulesInMessage(finalMessage.content);
 
     if (isScrolledToBottom) {
         chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
@@ -26110,7 +25760,7 @@ if (autoPlayTrigger) {
 // 【彻底替换】旧的 manageBattleLifecycle 函数
 
 
- function processSpecialModulesInMessage(content) {
+ async function processSpecialModulesInMessage(content) {
     
     try {
         if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
@@ -26220,44 +25870,89 @@ if (autoPlayTrigger) {
 
     // --- 商店 ---
     const allShopMatches = [...cleanedContent.matchAll(/<shop_item>([\s\S]*?)<\/shop_item>/gs)];
-    if (allShopMatches.length > 0) {
-        const lastShopMatch = allShopMatches[allShopMatches.length - 1];
-        let shopData = lastShopMatch[1].trim();
-        
-        const shopOrb = document.getElementById('shop-wrapper-orb');
-        if (shopOrb && shopData) {
-            shopOrb.classList.add('orb-flash');
-            //console.log("item:", shopData);
-            
-            try {
-                // 第2步:检查文本是否已经是一个合法的JSON数组格式
-                if (!shopData.startsWith('[')) {
-                    // 如果不是,我们才手动为它加上外层的括号
-                    shopData = `[${shopData}]`;
-                }
+  if (allShopMatches.length > 0) {
+    const lastShopMatch = allShopMatches[allShopMatches.length - 1];
+    let shopData = lastShopMatch[1].trim();
 
-                // 第3步:直接尝试解析处理后的文本
-                const parsedData = tryParseJson(shopData);
-                const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+    const shopOrb = document.getElementById('shop-wrapper-orb');
+    if (shopOrb && shopData) {
+        shopOrb.classList.add('orb-flash');
 
-                if (!Array.isArray(newItems) || newItems.length === 0) {
-                    showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-                    return;
-                }
-
-                // 替换现有随机商店物品
-                randomItems = newItems;
-                // 将新生成的物品存入 localStorage
-                localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
-                renderShopSection('random');
-            } catch (error) {
-                console.error("[Shop] 解析商店数据失败:", error);
-                showModal('shop-modal', '解析失败', '商店数据格式错误。');
+        try {
+            // 第1步: 清理和解析JSON (这部分逻辑不变)
+            if (!shopData.startsWith('[')) {
+                shopData = `[${shopData}]`;
             }
-            
-            shopOrb.addEventListener('animationend', () => {
-                shopOrb.classList.remove('orb-flash');
-            }, { once: true });
+            const parsedData = tryParseJson(shopData);
+            const itemsAsArrays = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+
+            if (!Array.isArray(itemsAsArrays) || itemsAsArrays.length === 0) {
+                showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
+                return;
+            }
+
+            // --- 核心修改：将数组转换为对象 ---
+            // 第2步: 将每个内部数组映射为一个结构化对象
+            const newItems = itemsAsArrays.map(itemArray => {
+                // 进行简单的校验，防止AI返回格式不完整的数组导致错误
+                if (!Array.isArray(itemArray) || itemArray.length < 6) {
+                    console.warn('Skipping malformed shop item array:', itemArray);
+                    return null; // 返回null，后续会过滤掉
+                }
+                return {
+                    name: itemArray[0],
+                    price: itemArray[1],
+                    type: itemArray[2],
+                    rank: itemArray[3],
+                    effect: itemArray[4],
+                    description: itemArray[5]
+                };
+            }).filter(item => item !== null); // 过滤掉所有格式不正确的项
+
+            // 如果转换后没有有效的商品，则中止
+            if (newItems.length === 0) {
+                showModal('shop-modal', '解析失败', 'AI返回的数据格式不符合商品结构要求。');
+                return;
+            }
+
+            // --- 后续逻辑现在可以无缝衔接，因为 newItems 已经是正确的对象数组格式 ---
+
+            // 第3步：获取已存在于数据库中的商品
+            const existingItems = await getRandomShopItems();
+            const existingItemNames = new Set(existingItems.map(item => item.name));
+
+            // 第4步：计算新增和更新的数量
+            const trulyNewItems = newItems.filter(item => !existingItemNames.has(item.name));
+            const updatedItemsCount = newItems.length - trulyNewItems.length;
+
+            // 第5步：将新生成的商品（对象格式）存入 IndexedDB
+            await randomShopDB.addOrUpdateItems(newItems);
+
+            // 第6步：从数据库重新获取完整的、最新的商品列表
+            randomItems = await getRandomShopItems();
+
+            // 第7步：提供用户反馈
+            let successMessage = `成功处理了 ${newItems.length} 个商品。<br>`;
+            if (trulyNewItems.length > 0) {
+                successMessage += `新增了 ${trulyNewItems.length} 个商品。<br>`;
+            }
+            if (updatedItemsCount > 0) {
+                successMessage += `更新了 ${updatedItemsCount} 个同名商品的信息。<br>`;
+            }
+            successMessage += '随机商店已刷新并永久保存！';
+            showModal('shop-modal', '生成成功', successMessage);
+
+            // 第8步：重新渲染商店
+            renderShopSection('random');
+
+        } catch (error) {
+            console.error("[Shop] 解析或存储商店数据失败:", error);
+            showModal('shop-modal', '处理失败', '商店数据格式错误或存储失败。');
+        }
+
+        shopOrb.addEventListener('animationend', () => {
+            shopOrb.classList.remove('orb-flash');
+        }, { once: true });
         }
     }
 }
@@ -26411,7 +26106,7 @@ async function renderHistory(is_entry = false) {
                 if (is_entry) {
                     chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
                 }
-                processFinalMessageModules();
+             await   processFinalMessageModules();
 
                 // ✨ 通过对讲机报告：“全部完成！”
                 resolve();
@@ -26429,7 +26124,7 @@ async function renderHistory(is_entry = false) {
     });
 }
 
-function processFinalMessageModules() {
+async function processFinalMessageModules() {
     // 1. 先获取最后一条消息，这是我们布置的“原材料”
     const lastMessage = conversationHistory.length > 0 ? conversationHistory[conversationHistory.length - 1] : null;
 
@@ -26442,7 +26137,7 @@ function processFinalMessageModules() {
     // 3. ✨ 再布置！如果原材料存在，就开始创建新的标签和模块 ✨
     if (lastMessage && lastMessage.role === 'assistant') {
         const content = lastMessage.content;
-        processSpecialModulesInMessage(content);
+       await processSpecialModulesInMessage(content);
         if(is_show_notifications === 'true'){
         handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
         //    handleNotificationsFromBatch();
@@ -39133,7 +38828,7 @@ const fixedItems = [
             random: { currentCategory: 'all', currentSort: 'asc', currentPage: 1, selectedItem: null }
         };
 
-
+ 
     // 抽奖相关配置
 const GACHA_CONFIG = {
     singleCost: 160,
@@ -39146,24 +38841,132 @@ const GACHA_CONFIG = {
         { min: 8000, max: 20000, probability: 0.01 }  
     ]
 };
-function getRandomShopItems() {
+
+const randomShopDB = {
+    DB_NAME: 'NOVARandomShopDB',
+    STORE_NAME: 'items',
+    DB_VERSION: 1,
+    db: null,
+
+    // 初始化/打开数据库
+    async initDB() {
+        // 如果已经连接，直接返回
+        if (this.db) {
+            return Promise.resolve(this.db);
+        }
+
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+
+            request.onerror = (event) => {
+                console.error('IndexedDB error:', event.target.error);
+                reject('Database error');
+            };
+
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve(this.db);
+            };
+
+            // 当数据库版本更新时（包括首次创建）调用
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                // 检查对象仓库是否已存在
+                if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                    // 创建对象仓库，并指定 'name' 字段作为主键
+                    // 这对于自动去重至关重要！
+                    db.createObjectStore(this.STORE_NAME, { keyPath: 'name' });
+                }
+            };
+        });
+    },
+
+    // 添加或更新多个商品（叠加存储和去重）
+    async addOrUpdateItems(items) {
+        if (!Array.isArray(items)) {
+            return Promise.reject('Items must be an array.');
+        }
+        const db = await this.initDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(this.STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(this.STORE_NAME);
+
+            // 计数成功添加的商品
+            let successCount = 0;
+
+            items.forEach(item => {
+                // 使用 put 方法：如果主键(name)已存在，则更新；如果不存在，则添加。
+                const request = store.put(item);
+                request.onsuccess = () => {
+                    successCount++;
+                };
+            });
+
+            transaction.oncomplete = () => {
+                console.log(`Successfully added/updated ${successCount} items.`);
+                resolve();
+            };
+
+            transaction.onerror = (event) => {
+                console.error('Transaction error:', event.target.error);
+                reject('Transaction error');
+            };
+        });
+    },
+
+    // 获取所有商品
+    async getAllItems() {
+        const db = await this.initDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(this.STORE_NAME, 'readonly');
+            const store = transaction.objectStore(this.STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                resolve(request.result || []); // 如果没有数据，返回空数组
+            };
+
+            request.onerror = (event) => {
+                console.error('Error fetching items:', event.target.error);
+                reject('Error fetching items');
+            };
+        });
+    }
+};
+
+ async function getRandomShopItems() {
     try {
-        const itemsJson = localStorage.getItem('randomShopItems');
-        // If itemsJson is null or undefined, return an empty array.
-        if (!itemsJson) {
-            console.warn('No randomShopItems found in localStorage.');
+        // 第1步：从数据库获取商品数据（这是对象数组）
+        const itemsAsObjects = await randomShopDB.getAllItems();
+
+        if (!itemsAsObjects || itemsAsObjects.length === 0) {
             return [];
         }
-        const items = JSON.parse(itemsJson);
-        // Ensure the parsed data is an array.
-        return Array.isArray(items) ? items : [];
+
+        // 第2步：将对象数组转换回数组的数组格式
+        const itemsAsArrays = itemsAsObjects.map(itemObject => {
+            // 必须严格按照你的原始数据顺序来排列！
+            return [
+                itemObject.name,
+                itemObject.price,
+                itemObject.type,
+                itemObject.rank,
+                itemObject.effect,
+                itemObject.description
+            ];
+        });
+
+        console.log('Loaded and converted items from IndexedDB:', itemsAsArrays);
+
+        // 第3步：返回应用程序期望的格式
+        return itemsAsArrays;
+
     } catch (error) {
-        console.error('Failed to parse randomShopItems from localStorage:', error);
-        // Return an empty array in case of a parsing error to ensure the application doesn't crash.
+        console.error('Failed to get or convert randomShopItems from IndexedDB:', error);
+        // 在出错的情况下返回一个空数组，以确保应用程序的健壮性。
         return [];
     }
 }
-
 function getRandomPrizeRange() {
     const random = Math.random();
     let cumulativeProbability = 0;
@@ -39186,8 +38989,8 @@ function getRandomPrizeRange() {
  * @param {number} max - The maximum price of the range.
  * @returns {Array} An array of items that fall within the specified price range.
  */
-function getItemsInPriceRange(min, max) {
-    const randomItems = getRandomShopItems();
+async function getItemsInPriceRange(min, max) {
+    const randomItems =  await getRandomShopItems();
     // Combine fixed and random items into a single pool for selection.
     const allItems = [...fixedItems, ...randomItems];
 
@@ -39198,11 +39001,11 @@ function getItemsInPriceRange(min, max) {
     });
 }
 
-function performGacha(count) {
+async function performGacha(count) {
     const results = [];
     for (let i = 0; i < count; i++) {
         const prizeRange = getRandomPrizeRange();
-        const availableItems = getItemsInPriceRange(prizeRange.min, prizeRange.max);
+        const availableItems = await getItemsInPriceRange(prizeRange.min, prizeRange.max);
         
         if (availableItems.length > 0) {
             const randomItem = availableItems[Math.floor(Math.random() * availableItems.length)];
@@ -39211,212 +39014,7 @@ function performGacha(count) {
     }
     return results;
 }
- // 全新的抽卡动画函数
- // 全新的抽卡动画函数，支持手机端拖动和点击
-function showGachaAnimation(results, callback) {
-    const container = document.getElementById('gacha-animation-container');
-    const summaryContainer = document.getElementById('gacha-results-summary');
-    container.innerHTML = '';
-    summaryContainer.innerHTML = '';
-    summaryContainer.style.display = 'none';
-
-    const isMobileView = window.innerWidth <= 800;
-
-    if (isMobileView) {
-        // --- 手机端：可交互的3D圆筒动画 ---
-        const carousel = document.createElement('div');
-        carousel.className = 'gacha-carousel';
-        container.appendChild(carousel);
-
-        const cardCount = results.length;
-        const angle = 360 / cardCount;
-        const radius = Math.round((140 / 2) / Math.tan(Math.PI / cardCount));
-
-        let currentAngle = 0;
-        let startX = 0;
-        let startAngle = 0;
-        let isDragging = false;
-        let dragThreshold = 5; // 移动超过5像素才算拖动
-
-        results.forEach((item, index) => {
-            const price = item[1];
-            let tierClass = 'tier-1';
-            if (price >= 8000) tierClass = 'tier-5';
-            else if (price >= 1000) tierClass = 'tier-4';
-            else if (price >= 200) tierClass = 'tier-3';
-            else if (price >= 80) tierClass = 'tier-2';
-
-            const card = document.createElement('div');
-            card.className = 'gacha-card';
-            card.dataset.index = index;
-            const originalTransform = `rotateY(${index * angle}deg) translateZ(${radius}px)`;
-            card.style.transform = originalTransform;
-            card.style.setProperty('--original-transform', originalTransform);
-
-            card.innerHTML = `
-                <div class="gacha-card-inner">
-                    <div class="gacha-card-front">?</div>
-                    <div class="gacha-card-back ${tierClass}">
-                        <div>${item[0]}</div>
-                        <div style="font-size: 12px; margin-top: 5px;">${item[1]}积分</div>
-                    </div>
-                    <div class="gacha-card-details">
-                        <div class="gacha-card-details-content">
-                            <div><strong>${item[0]}</strong></div>
-                            <div>价值: ${item[1]}积分</div>
-                            <div>分类: ${item[2]}</div>
-                            <div>效果: ${item[4]}</div>
-                            <div>描述: ${item[5]}</div>
-                            <div style="height: 50px;"></div>
-                        </div>
-                    </div>
-                    <button class="gacha-abandon-btn" style="display: none;">放弃</button>
-                </div>
-            `;
-            carousel.appendChild(card);
-
-            card.addEventListener('click', () => {
-                if (isDragging) return; // 如果是拖动，则不触发点击
-
-                const selectedCard = carousel.querySelector('.gacha-card.selected');
-                if (selectedCard === card) { // 如果再次点击已选中的卡片，则取消选中
-                    card.classList.remove('selected');
-                    carousel.classList.remove('has-selection');
-                } else {
-                    if(selectedCard) selectedCard.classList.remove('selected');
-                    card.classList.add('selected');
-                    carousel.classList.add('has-selection');
-                    currentAngle = -index * angle;
-                    carousel.style.transform = `rotateY(${currentAngle}deg)`;
-                }
-            });
-
-            card.querySelector('.gacha-abandon-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                results[index] = null;
-                card.style.opacity = '0.2';
-                card.style.pointerEvents = 'none';
-            });
-        });
-
-        // 拖动事件
-        container.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].pageX;
-            startAngle = currentAngle;
-            isDragging = false;
-            carousel.style.transition = 'none'; // 拖动时移除平滑过渡
-        }, { passive: true });
-
-        container.addEventListener('touchmove', (e) => {
-            const x = e.touches[0].pageX;
-            const deltaX = x - startX;
-            if (Math.abs(deltaX) > dragThreshold) {
-                isDragging = true;
-            }
-            if(isDragging) {
-                const sensitivity = 0.5; // 调整拖动灵敏度
-                currentAngle = startAngle + deltaX * sensitivity;
-                carousel.style.transform = `rotateY(${currentAngle}deg)`;
-            }
-        }, { passive: true });
-
-        container.addEventListener('touchend', () => {
-            carousel.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
-            const cardIndex = Math.round(-currentAngle / angle);
-            const snappedAngle = -cardIndex * angle;
-            currentAngle = snappedAngle;
-            carousel.style.transform = `rotateY(${currentAngle}deg)`;
-
-            // 确保touchend后isDragging状态复位
-            setTimeout(() => { isDragging = false; }, 50);
-        });
-
-        // 初始入场动画
-        setTimeout(() => {
-            const finalAngle = 360 * 3;
-            carousel.style.transition = 'transform 3s cubic-bezier(0.25, 1, 0.5, 1)';
-            carousel.style.transform = `rotateY(-${finalAngle}deg)`;
-        }, 100);
-
-        setTimeout(() => {
-            carousel.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
-            carousel.querySelectorAll('.gacha-card').forEach(c => c.classList.add('flipped'));
-            let summaryHTML = '<h4>本轮收获</h4>';
-            results.forEach(item => { summaryHTML += `<div>${item[0]} - ${item[1]}积分</div>`; });
-            summaryContainer.innerHTML = summaryHTML;
-            summaryContainer.style.display = 'block';
-            if (callback) callback();
-        }, 3500);
-
-    } else {
-        // --- 电脑端：平面翻牌动画 (保持原样，无需修改) ---
-        results.forEach((item, index) => {
-            const price = item[1];
-            let tierClass = 'tier-1';
-            if (price >= 8000) tierClass = 'tier-5';
-            else if (price >= 1000) tierClass = 'tier-4';
-            else if (price >= 200) tierClass = 'tier-3';
-            else if (price >= 80) tierClass = 'tier-2';
-
-            const card = document.createElement('div');
-             card.className = 'gacha-card';
-             card.dataset.itemIndex = index;
-             card.innerHTML = `
-                 <div class="gacha-card-inner">
-                     <div class="gacha-card-front">?</div>
-                     <div class="gacha-card-back ${tierClass}">
-                         <div>${item[0]}</div>
-                         <div style="font-size: 12px; margin-top: 5px;">${item[1]}积分</div>
-                     </div>
-                     <div class="gacha-card-details">
-                         <div class="gacha-card-details-content">
-                             <div><strong>${item[0]}</strong></div>
-                             <div>价值: ${item[1]}积分</div>
-                             <div>分类: ${item[2]}</div>
-                             <div>效果: ${item[4]}</div>
-                             <div>描述: ${item[5]}</div>
-                             <div style="height: 50px;"></div>
-                         </div>
-                     </div>
-                     <button class="gacha-abandon-btn" style="display: none;">放弃</button>
-                 </div>
-             `;
-            container.appendChild(card);
-
-            setTimeout(() => card.classList.add('flipped'), index * 200 + 500);
-
-            card.addEventListener('click', () => {
-                 if (!card.classList.contains('flipped')) return;
-                 const isSelected = card.classList.contains('selected');
-                 container.querySelectorAll('.gacha-card').forEach(c => {
-                     c.classList.remove('selected');
-                     c.querySelector('.gacha-card-details').classList.remove('show');
-                     c.querySelector('.gacha-abandon-btn').style.display = 'none';
-                 });
-                 if (!isSelected) {
-                     card.classList.add('selected');
-                     card.querySelector('.gacha-card-details').classList.add('show');
-                     card.querySelector('.gacha-abandon-btn').style.display = 'block';
-                 }
-            });
-
-            card.querySelector('.gacha-abandon-btn').addEventListener('click', (e) => {
-                 e.stopPropagation();
-                 results[index] = null;
-                 card.style.opacity = '0.5';
-                 card.style.pointerEvents = 'none';
-            });
-        });
-
-        setTimeout(() => {
-            if (callback) callback();
-        }, results.length * 200 + 1500);
-    }
-}
-
-
-
-async function processGachaRewards(results) {
+ async function processGachaRewards(results) {
     // 过滤掉被放弃的物品
     const validResults = results.filter(item => item !== null);
     
@@ -39454,50 +39052,25 @@ async function processGachaRewards(results) {
     // 扣除抽奖费用
     const cost = results.length === 1 ? GACHA_CONFIG.singleCost : GACHA_CONFIG.tenCost;
     updateMemoryCommands.push(`set_attribute('货币段.${currentTheme.currency}', '${playCharacterData.货币段.积分[0]}', '${playCharacterData.货币段.积分[0] - cost}');`);
-    
+    playCharacterData.货币段.积分[0] = playCharacterData.货币段.积分[0] - cost;
     if (updateMemoryCommands.length > 0) {
+         let finalCommand2 = ``;
+      
         let finalCommand = `<updateMemory>\n${[...new Set(updateMemoryCommands)].join('\n')}\n</updateMemory>\n`;
         if (userMessages.length > 0) {
-            finalCommand += `<(货币已扣除，禁止重复扣除，奖品已交付，禁止重复交付，禁止描写价格)${currentGameData.user.name}通过抽奖获得了以下物品：${userMessages.join("，")}。>`;
+           finalCommand2= `<(货币已扣除，禁止重复扣除，奖品已交付，禁止重复交付，禁止描写价格)${currentGameData.user.name}通过抽奖获得了以下物品：${userMessages.join("，")}。>`;
         }
-        await triggerassa(`/setinput ${finalCommand}`);
+        console.log("指令：",finalCommand);
+        await worldHelper.processUpdateMemoryCommands(finalCommand,'1');
+        await triggerassa(`/setinput ${finalCommand2}`);
     }
 }
-
-function startGacha(count) {
-    const cost = count === 1 ? GACHA_CONFIG.singleCost : GACHA_CONFIG.tenCost;
+window.performGacha = performGacha;
+window.processGachaRewards = processGachaRewards;
  
-  
-    if (playCharacterData.货币段.积分[0] < cost) {
-        showModal('shop-modal', "积分不足", `您需要 ${cost} 积分才能进行${count === 1 ? '单抽' : '十连抽'}。`);
-        return;
-    }
-    
-    const results = performGacha(count);
-    if (results.length === 0) {
-        showModal('shop-modal', "抽奖失败", "没有可抽取的物品。");
-        return;
-    }
-    
-    // 显示抽奖模态框
-    showModal('gacha-modal');
-    document.getElementById('gacha-modal-title').textContent = 
-        count === 1 ? '单抽结果' : '十连抽结果';
-    document.getElementById('gacha-confirm-btn').style.display = 'none';
-    
-    // 开始动画
-    showGachaAnimation(results, () => {
-        // 动画完成后显示确认按钮
-        document.getElementById('gacha-confirm-btn').style.display = 'inline-block';
-        document.getElementById('gacha-confirm-btn').onclick = async () => {
-            await processGachaRewards(results);
-            hideModal('gacha-modal');
-            showModal('shop-modal', "抽奖完成", `成功获得 ${results.length} 件物品！数据将在下次刷新时更新。`);
-            playCharacterData.货币段.积分[0] = playCharacterData.货币段.积分[0] - cost;
-        };
-    });
-}
 
+
+ 
           // ========== 新增：妈妈为你添加的全局变量和核心计算函数 ==========
         const plotLevels = ['D', 'C', 'B', 'A', 'S'];
  /**
@@ -40014,8 +39587,10 @@ function showItemDetails(section, item) {
         
         case '血统': {
             const currentBloodline = playCharacterData?.能力段?.名称?.[0];
+            //血统保护
+            
             if (currentBloodline && currentBloodline !== "_") {
-                return `set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')`;
+                return `set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')//你已有血统，不做替换，货币返还一半`;
             }
             
             const commands = [];
@@ -42442,13 +42017,7 @@ document.getElementById('char-display-name').addEventListener('click', () => {
 setupGeneratorButton(); // 调用生成器按钮的设置函数
 
 // 抽奖按钮事件监听
-document.getElementById('single-gacha-btn').addEventListener('click', () => {
-    startGacha(1);
-});
-
-document.getElementById('ten-gacha-btn').addEventListener('click', () => {
-    startGacha(10);
-});
+ 
     // ==============================================
     // ========== 新增：世界之书功能 (开始) ==========
     // ==============================================
@@ -44185,56 +43754,12 @@ otherSkillSelections.forEach(skillInput => {
     }
 }
 
-        // 在商店事件监听之后，也调用我们新的世界之书事件监听
+  // 在商店事件监听之后，也调用我们新的世界之书事件监听
 setupWorldBookEventListeners();
 setupSkillChoicePanel();
 
 
-     // 解析AI返回的文本并更新、存储随机商店
-    const processApiResponse = (responseText) => {
-        if (!responseText) {
-            showModal('shop-modal', '生成失败', '未能从AI获取有效内容。');
-            return;
-        }
-          try {
-        // 第1步：移除所有Markdown代码块标记和不必要的空格
-        let cleanedText = responseText.replace(/```json|```/g, '').trim();
-
-        // 第2步：检查文本是否已经是一个合法的JSON数组格式
-        if (!cleanedText.startsWith('[')) {
-            // 如果不是，我们才手动为它加上外层的括号
-            cleanedText = `[${cleanedText}]`;
-        }
-
-        // 第3步：直接尝试解析处理后的文本
-        const parsedData = JSON.parse(cleanedText);
-
-        // 第4步：这一步是关键！检查解析后的数据是不是 "数组的数组"
-        // 如果是 [ [], [], [] ] 格式，parsedData[0]就会是第一个内部数组，且 length > 0
-        const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
-
-        if (!Array.isArray(newItems) || newItems.length === 0) {
-             showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-             return;
-        }
-
-        // 替换现有随机商店物品
-        randomItems = newItems;
-        // 将新生成的物品存入 localStorage
-        localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
-
-        showModal('shop-modal', '生成成功', `已成功生成 ${newItems.length} 个新商品，并刷新、保存了随机商店！`);
-
-        // 重新渲染随机商店以显示新物品
-        renderShopSection('random');
-
-    } catch (e) {
-        console.error("解析AI响应时出错:", e);
-        console.error("原始响应文本:", responseText);
-        showModal('shop-modal', '解析错误', '无法解析AI返回的数据格式，请检查控制台获取更多信息。');
-    }
-};
-
+ 
  /**
  * 新增：设置AI生成商品按钮的功能 (V5 - 持久化与关键词版)
  */
@@ -44343,51 +43868,82 @@ function setupGeneratorButton() {
         }
     };
 
-    // 解析AI返回的文本并更新、存储随机商店
-    const processApiResponse = (responseText) => {
-        if (!responseText) {
-            showModal('shop-modal', '生成失败', '未能从AI获取有效内容。');
-            return;
-        }
-          try {
-        // 第1步：移除所有Markdown代码块标记和不必要的空格
+ const processApiResponse = async (responseText) => { // <--- 1. 改为 async 函数
+    if (!responseText) {
+        showModal('shop-modal', '生成失败', '未能从AI获取有效内容。');
+        return;
+    }
+    try {
+        // 第1步：清理和解析AI返回的数据（这部分逻辑保持不变）
         let cleanedText = responseText.replace(/```json|```/g, '').trim();
-
-        // 第2步：检查文本是否已经是一个合法的JSON数组格式
         if (!cleanedText.startsWith('[')) {
-            // 如果不是，我们才手动为它加上外层的括号
             cleanedText = `[${cleanedText}]`;
         }
-
-        // 第3步：直接尝试解析处理后的文本
         const parsedData = JSON.parse(cleanedText);
+ 
+ 
+                 // --- 核心修改：将数组转换为对象 ---
+            // 第2步: 将每个内部数组映射为一个结构化对象
+            const newItems = parsedData.map(itemArray => {
+                // 进行简单的校验，防止AI返回格式不完整的数组导致错误
+                if (!Array.isArray(itemArray) || itemArray.length < 6) {
+                    console.warn('Skipping malformed shop item array:', itemArray);
+                    return null; // 返回null，后续会过滤掉
+                }
+                return {
+                    name: itemArray[0],
+                    price: itemArray[1],
+                    type: itemArray[2],
+                    rank: itemArray[3],
+                    effect: itemArray[4],
+                    description: itemArray[5]
+                };
+            }).filter(item => item !== null); // 过滤掉所有格式不正确的项
 
-        // 第4步：这一步是关键！检查解析后的数据是不是 "数组的数组"
-        // 如果是 [ [], [], [] ] 格式，parsedData[0]就会是第一个内部数组，且 length > 0
-        const newItems = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+            // 如果转换后没有有效的商品，则中止
+            if (newItems.length === 0) {
+                showModal('shop-modal', '解析失败', 'AI返回的数据格式不符合商品结构要求。');
+                return;
+            }
 
-        if (!Array.isArray(newItems) || newItems.length === 0) {
-             showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-             return;
-        }
+            // --- 后续逻辑现在可以无缝衔接，因为 newItems 已经是正确的对象数组格式 ---
 
-        // 替换现有随机商店物品
-        randomItems = newItems;
-        // 将新生成的物品存入 localStorage
-        localStorage.setItem('randomShopItems', JSON.stringify(randomItems));
+            // 第3步：获取已存在于数据库中的商品
+            const existingItems = await getRandomShopItems();
+            const existingItemNames = new Set(existingItems.map(item => item.name));
 
-        showModal('shop-modal', '生成成功', `已成功生成 ${newItems.length} 个新商品，并刷新、保存了随机商店！`);
+            // 第4步：计算新增和更新的数量
+            const trulyNewItems = newItems.filter(item => !existingItemNames.has(item.name));
+            const updatedItemsCount = newItems.length - trulyNewItems.length;
 
-        // 重新渲染随机商店以显示新物品
-        renderShopSection('random');
+            // 第5步：将新生成的商品（对象格式）存入 IndexedDB
+            await randomShopDB.addOrUpdateItems(newItems);
+
+            // 第6步：从数据库重新获取完整的、最新的商品列表
+            randomItems = await getRandomShopItems();
+
+            // 第7步：提供用户反馈
+            let successMessage = `成功处理了 ${newItems.length} 个商品。<br>`;
+            if (trulyNewItems.length > 0) {
+                successMessage += `新增了 ${trulyNewItems.length} 个商品。<br>`;
+            }
+            if (updatedItemsCount > 0) {
+                successMessage += `更新了 ${updatedItemsCount} 个同名商品的信息。<br>`;
+            }
+            successMessage += '随机商店已刷新并永久保存！';
+            showModal('shop-modal', '生成成功', successMessage);
+
+            // 第8步：重新渲染商店
+            renderShopSection('random');
+
+        // --- 核心修改逻辑结束 ---
 
     } catch (e) {
-        console.error("解析AI响应时出错:", e);
+        console.error("解析或存储AI响应时出错:", e);
         console.error("原始响应文本:", responseText);
-        showModal('shop-modal', '解析错误', '无法解析AI返回的数据格式，请检查控制台获取更多信息。');
+        showModal('shop-modal', '处理错误', '无法解析或存储AI返回的数据，请检查控制台获取更多信息。');
     }
 };
-
     // 真正的生成执行函数
     const executeGeneration = async (keywords = "") => {
          hideModal("keyword-modal"); // 使用正确的函数名
@@ -51196,20 +50752,7 @@ window.GameAPI = {
         return assaSettingsData;
     },
          getThemeVar: function(varName) {
-//    --modal-content-bg: none; /* 默认透明 */
-//             --primary-color: #00faff;
-//             --secondary-color: #7affff;
-//    --base-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* 默认字体 */
-//             --container-bg-color: rgba(10, 25, 47, 0.75);
-//             --border-color: rgba(0, 250, 255, 0.3);
-//             --glow-color: rgba(0, 250, 255, 0.5);
-//             --text-color: #e6f1ff;
-//             --text-secondary-color: #a8c0e1;
-//             --background-color: rgba(10, 25, 47);
-//             --danger-color: #ff4d4d;
-//             --danger-glow-color: rgba(255, 77, 77, 0.5);
-//              --success-color: #4dff88;
-//             --success-glow-color: rgba(77, 255, 136, 0.5);
+ 
         return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
     },
     get statData() {
@@ -51235,6 +50778,27 @@ window.GameAPI = {
     get conversationHistory() {
  
         return conversationHistory;
+    },
+    performGacha: function(...args) {
+        // 修改：优先查找 window.performGacha
+        if (typeof window.performGacha === 'function') {
+            return window.performGacha(...args);
+        } else if (typeof performGacha === 'function') {
+            return performGacha(...args);
+        } else {
+            console.error("performGacha 函数未定义");
+            return [];
+        }
+    },
+    processGachaRewards: function(...args) {
+        // 修改：优先查找 window.processGachaRewards
+        if (typeof window.processGachaRewards === 'function') {
+            return window.processGachaRewards(...args);
+        } else if (typeof processGachaRewards === 'function') {
+            return processGachaRewards(...args);
+        } else {
+            console.error("processGachaRewards 函数未定义");
+        }
     },
  triggerassa: function(...args) {
        
