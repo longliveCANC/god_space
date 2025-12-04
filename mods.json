@@ -141,7 +141,7 @@
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/imagecopy.png"
   }  ,{
     "id": "x-mod-物品技能图标评论",
-    "name": "给物品技能加上图标评论",
+    "name": "给物品技能加上图标和评论",
     "author": "assa",
     "version": "1.0",
     "tags": ["物品格式","通用","可异步"],
