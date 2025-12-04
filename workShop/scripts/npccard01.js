@@ -1111,33 +1111,39 @@
 
         // ============ 主题引擎 ============
         syncTheme() {
-           try {
-               let idx = 0;
-               const useCustom = localStorage.getItem('useCustomTheme') === 'true';
-               if (useCustom) {
-                   // 如果开启自定义但我们没办法轻易读取复杂的自定义对象（假设只存了开关），暂时回退到 index
-                  const savedIdx = localStorage.getItem('terminalThemeIndex');
-                  idx = savedIdx ? parseInt(savedIdx, 10) : 0;
-               } else {
-                  const savedIdx = localStorage.getItem('terminalThemeIndex');
-                  idx = savedIdx ? parseInt(savedIdx, 10) : 0;
-               }
+            // 确保 GameAPI 可用
+            if (!window.GameAPI || typeof window.GameAPI.getThemeVar !== 'function') return;
 
-               // 范围判定
-               if(idx < 0 || idx >= THEMES.length) idx = 0;
-               const theme = THEMES[idx];
+            // 获取动态颜色，如果获取失败则使用默认兜底色
+            const currentTheme = {
+                '--primary-color': window.GameAPI.getThemeVar('--primary-color') || '#00faff',
+                '--secondary-color': window.GameAPI.getThemeVar('--secondary-color') || '#7affff',
+                '--text-color': window.GameAPI.getThemeVar('--text-color') || '#e6f1ff',
+                '--text-secondary-color': window.GameAPI.getThemeVar('--text-secondary-color') || '#a8c0e1',
+                '--container-bg-color': window.GameAPI.getThemeVar('--container-bg-color') || 'rgba(10, 25, 47, 0.85)',
+                '--border-color': window.GameAPI.getThemeVar('--border-color') || 'rgba(0, 250, 255, 0.3)',
+                '--glow-color': window.GameAPI.getThemeVar('--glow-color') || 'rgba(0, 250, 255, 0.5)',
+                '--background-color': window.GameAPI.getThemeVar('--background-color') || '#0a192f'
+            };
 
-               // 应用变量到 document.documentElement 或者仅应用于 容器
-               // 建议应用到容器 scope 以免影响游戏本体，但为了彻底同步，我们设置到 inline style
-               const root = this.container || document.documentElement;
-               // 为了不污染全局，我优先设置在 container 本身
-               if(this.container) {
-                   Object.keys(theme).forEach(k => {
-                       this.container.style.setProperty(k, theme[k]);
-                       this.floater.style.setProperty(k, theme[k]);
-                   });
-               }
-           } catch(e) { } // 默默地失败，不打扰孩子
+            // 应用样式到各个独立容器
+            const applyTo = (element) => {
+                if (!element) return;
+                Object.entries(currentTheme).forEach(([key, val]) => {
+                    element.style.setProperty(key, val);
+                });
+            };
+
+            // 1. 应用到主窗口
+            applyTo(this.container);
+
+            // 2. 应用到悬浮球
+            applyTo(this.floater);
+
+            // 3. 应用到记忆回廊 (因为它是独立的 DOM 节点)
+            if (this.memoryGallery && this.memoryGallery.panel) {
+                applyTo(this.memoryGallery.panel);
+            }
         }
 
         // ============ 构建 UI ============
