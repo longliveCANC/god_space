@@ -39579,9 +39579,9 @@ function showItemDetails(section, item) {
             const currentBloodline = playCharacterData?.能力段?.名称?.[0];
             //血统保护
             
-            if (currentBloodline && currentBloodline !== "_") {
-                return `set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')//你已有血统，不做替换，货币返还一半`;
-            }
+            // if (currentBloodline && currentBloodline !== "_") {
+            //     return `set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')//你已有血统，不做替换，货币返还一半`;
+            // }
             
             const commands = [];
             const processedDescription = description.replace(/\r?\n/g, '\\n');
