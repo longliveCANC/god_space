@@ -14482,7 +14482,7 @@ let is_simple_stream = "false";
 let noBackup = "false";
 let is_restore_prompt = "true";
 let weneedshop = "false";
-let is_show_notifications = "false";
+let is_show_notifications = "true";
 let ifScanMemory = "false";
 let bookItemSettings = null;
 let batches = 1;
@@ -22972,8 +22972,7 @@ window.addEventListener('message', function(event) {
 function getChatConfig(key, defaultValue) {
     try {
         const chatVars = TavernHelper.getVariables({ type: 'chat' });
-        // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
-        // 这比 chatVars.assa_data.config[key] 更安全
+ 
         const value = _.get(chatVars, `assa_data.config.${key}`);
         return value !== undefined ? value : defaultValue;
     } catch (e) {
@@ -26099,9 +26098,9 @@ async function renderHistory(is_entry = false) {
             if (chunk.length === 0) {
                 // 所有消息都渲染完了！
                 if (is_entry) {
-                          if(is_show_notifications === 'true'){
+                       
    chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
-        }
+        
                   
                 }
              await   processFinalMessageModules();
