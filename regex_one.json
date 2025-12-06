@@ -1,4 +1,4 @@
-
+ 
 ```text
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -24919,7 +24919,7 @@ async function renderNewMessages(newMessages) {
     }
 
     // 清理旧消息
-    const hideLatestCount = getChatConfig('show_latest_count', 2) * 2;
+    const hideLatestCount = getChatConfig('hide_latest_count', 2) * 2;
     while (chatDisplayArea.children.length > hideLatestCount) {
         chatDisplayArea.removeChild(chatDisplayArea.firstChild);
     }
@@ -26086,7 +26086,7 @@ async function renderHistory(is_entry = false) {
     };
 
     // ❤️ 计算并设置我们初次渲染的范围
-    const hideLatestCount = getChatConfig('show_latest_count', 2) * 2;
+    const hideLatestCount = getChatConfig('hide_latest_count', 2) * 2;
     earliestMessageIndexRendered = Math.max(0, conversationHistory.length - hideLatestCount);
     const messagesToDisplay = conversationHistory.slice(earliestMessageIndexRendered);
    // 我们将返回一个新的 Promise，这就是我们的“对讲机”
@@ -26522,7 +26522,7 @@ function getChatConfig(key, defaultValue) {
     try {
         const chatVars = TavernHelper.getVariables({ type: 'chat' });
        
-        const value = _.get(chatVars, `assa_data.config.${key}`);
+        const value = Number(_.get(chatVars, `assa_data.config.${key}`));
         return value !== undefined ? value : defaultValue;
     } catch (e) {
         console.warn(`获取聊天配置 "${key}" 失败，使用默认值: ${defaultValue}`, e);
