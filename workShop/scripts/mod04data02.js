@@ -612,24 +612,24 @@
                         ${iconDisplay}
                     </div>
                     <div>
-                        <div><span class="mod04-label">TYPE</span> ${item.type}</div>
-                        <div><span class="mod04-label">QUALITY</span> ${item.quality}</div>
+                        <div><span class="mod04-label">种类</span> ${item.type}</div>
+                        <div><span class="mod04-label">品质</span> ${item.quality}</div>
                     </div>
                 </div>
 
                 <div class="mod04-detail-row">
-                    <span class="mod04-label">INFO</span><br>
+                    <span class="mod04-label">简介</span><br>
                     <div style="margin-top:5px; color:#ccc;">${item.info}</div>
                 </div>
 
                 ${item.effect ? `
                 <div class="mod04-detail-row">
-                    <span class="mod04-label">EFFECT / PARAMETERS</span>
+                    <span class="mod04-label">效果</span>
                     <span class="mod04-effect-text">${effectHtml}</span>
                 </div>` : ''}
 
-                ${item.level ? `<div class="mod04-detail-row"><span class="mod04-label">LEVEL</span> ${item.level}</div>` : ''}
-                ${item.num ? `<div class="mod04-detail-row"><span class="mod04-label">QUANTITY</span> ${item.num}</div>` : ''}
+                ${item.level ? `<div class="mod04-detail-row"><span class="mod04-label">等级</span> ${item.level}</div>` : ''}
+                ${item.num ? `<div class="mod04-detail-row"><span class="mod04-label">数量</span> ${item.num}</div>` : ''}
 
                 ${commentHtml}
 
