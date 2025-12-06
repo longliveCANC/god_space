@@ -76,7 +76,7 @@
 
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    box-shadow: 0 0 8px var(--glow-color), inset 0 0 5px var(--border-color);
+    /* box-shadow: 0 0 8px var(--glow-color), inset 0 0 5px var(--border-color); */
     overflow: hidden;
     font-size: 16px;
     display: flex;
@@ -29703,6 +29703,36 @@ if (typeof finalValue === 'string' && finalValue.startsWith('_')) {
              }
          }
     }
+    // === 审查1：路径与key去重 ===
+ 
+const lastPathSegment = pathParts[pathParts.length - 1];
+if (lastPathSegment === keyArg) {
+    console.log(`[Core] 💖 智能审查(去重): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${keyArg}' 重复，自动去重`);
+    path = pathParts.slice(0, -1).join('.');
+    console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
+}
+
+ // === 审查2：事件字段展平 ===
+if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
+    console.log(`[Core] 💖 智能审查(事件展平): 检测到事件路径下赋值对象，自动去除中间层级`);
+    console.log(`[Core] 原 Path: '${path}', Key: '${keyArg}'`);
+    
+    // 直接将 keyArg 的内容展开到事件下，去掉 keyArg 这一层
+    // 方法：将 finalValue 中的所有字段直接挂到事件下
+    const pathToEvent = path; // path 应该已经到 '事件' 这一层了
+    
+    // 遍历 finalValue 的所有字段，逐个挂载
+    for (const innerKey in finalValue) {
+        if (finalValue.hasOwnProperty(innerKey)) {
+            assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, pathToEvent, innerKey, finalValue[innerKey]);
+        }
+    }
+    
+    console.log(`[Core] ✨ 已将对象内容直接展开到事件下`);
+    
+ 
+    continue; // 跳过后面的 AssaOps._memoryOperation
+}
 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
   collectedBatchOps.push({
                                type: 'memory',
@@ -29832,8 +29862,36 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
  
 
  
-                             const finalValue = tryParseJson(path2Str);
-                             assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
+              // === 审查1：路径与key去重 ===
+const pathParts = path.split('.');
+const lastPathSegment = pathParts[pathParts.length - 1];
+if (lastPathSegment === key) {
+    console.log(`[Core] 💖 智能审查(去重-两参数): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${key}' 重复，自动去重`);
+    path = pathParts.slice(0, -1).join('.');
+    console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
+}
+
+ 
+ // === 审查2：事件字段展平 ===
+if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
+    console.log(`[Core] 💖 智能审查(事件展平-两参数): 检测到事件路径下赋值对象，自动去除中间层级`);
+    console.log(`[Core] 原 Path: '${path}', Key: '${key}'`);
+    
+    // 直接将 key 的内容展开到事件下
+    const pathToEvent = path;
+    
+    // 遍历 finalValue 的所有字段，逐个挂载
+    for (const innerKey in finalValue) {
+        if (finalValue.hasOwnProperty(innerKey)) {
+            assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, pathToEvent, innerKey, finalValue[innerKey]);
+        }
+    }
+    
+    console.log(`[Core] ✨ 已将对象内容直接展开到事件下`);
+ 
+    continue; // 跳过后面的 AssaOps._memoryOperation
+}
+                          assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
                         collectedBatchOps.push({
                                type: 'memory',
                                path: path,
