@@ -1,4 +1,4 @@
- 
+
 ```text
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -14020,7 +14020,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
              <div style="flex: 1;">
             <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">界面显示楼层数</span>
-            <input type="number" id="setting-show-latest" placeholder="10" style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+            <input type="number" id="setting-show-latest" placeholder="2" style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
         </div>
         <div style="flex: 1;">
             <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">小总结隐藏最新数</span>
@@ -14455,7 +14455,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.23';
+let current_game_version = '3.3.24';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -24919,7 +24919,7 @@ async function renderNewMessages(newMessages) {
     }
 
     // 清理旧消息
-    const hideLatestCount = getChatConfig('hide_latest_count', 2) * 2;
+    const hideLatestCount = getChatConfig('show_latest_count', 2) * 2;
     while (chatDisplayArea.children.length > hideLatestCount) {
         chatDisplayArea.removeChild(chatDisplayArea.firstChild);
     }
@@ -26086,7 +26086,7 @@ async function renderHistory(is_entry = false) {
     };
 
     // ❤️ 计算并设置我们初次渲染的范围
-    const hideLatestCount = getChatConfig('hide_latest_count', 2) * 2;
+    const hideLatestCount = getChatConfig('show_latest_count', 2) * 2;
     earliestMessageIndexRendered = Math.max(0, conversationHistory.length - hideLatestCount);
     const messagesToDisplay = conversationHistory.slice(earliestMessageIndexRendered);
    // 我们将返回一个新的 Promise，这就是我们的“对讲机”
@@ -30448,9 +30448,9 @@ const inputHide = document.getElementById('setting-hide-latest');
             const hVal = parseInt(inputHide.value, 10);
             const sVal = parseInt(inputSmall.value, 10);
             const bVal = parseInt(inputBig.value, 10);
-   const shVal = parseInt(inputShow.value, 5);
+           const shVal = parseInt(inputShow.value, 10);
 
-            if (!hVal || !sVal || !bVal) {
+            if (!hVal || !sVal || !bVal || !shVal) {
                 toastr.warning('所有配置项都不能为空');
                 return;
             }
@@ -48584,7 +48584,7 @@ createItemSkillEntry(name, data, type) {
             dp_bonus: this.playerTempBonuses.dp_bonus + value,
             desc: name
         };
-        this.logCombatEvent(`你在本次行动中${value > 0 ? '获得' : '受到'}${Math.abs(value)}点骰池加成！请选择你的主要行动。`, "log-success");
+        this.log(`你在本次行动中${value > 0 ? '获得' : '受到'}${Math.abs(value)}点骰池加成！请选择你的主要行动。`, "log-success");
         this.showNotification(`获得骰池加成: ${value > 0 ? '+' : ''}${value}`, "success");
     }
     // ✨ 关键升级：无论是HP还是MP变化，都进入目标选择 ✨
