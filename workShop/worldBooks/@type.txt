@@ -180,3 +180,83 @@ window.GameAPI = {
         showNovaAlert:showNovaAlert,//例：showNovaAlert("已处理");
         processUpdateMemoryCommands:processUpdateMemoryCommands,//直接从酒馆修改变量。例：await processUpdateMemoryCommands("一长串string，有指令就行", -1)
   }
+
+  //示例使用：
+
+ 帮我实现我的背包物品和技能展示的美化，以立刻执行函数的方式，我要作为脚本加载。不要小看这个任务！我们除了能支持官方已有的字段外，可能还会有其他奇怪的嵌套或者字段，或者缺失某些字段，我们都是要兼容的！比如技能就没有num。设置我们物品的数据来源是assaData.global_lore.背包{"item":{}...}，技能的路径是assaData.global_lore.其他技能{"name":"..."}，你可以直接使用gameapi而不是写死数据。
+
+我们的数据格式：
+keys:['info','effect','type','quality','num','level']//兼容其汉化版，如字段可能是数量、种类。其value没有固定格式，我们需要小心。对于我们能识别的key，如果是英文，一律汉化为中文，如info汉化为简介。
+以下是具体标准格式：
+skill:{
+keys:['info','effect','level'],
+effect'sprefix:"【dp+${num};能量池-${num}】/【hp±${num};能量池-${num}】"
+},
+items:{
+keys:['info','effect','type','quality','num'],
+effect'sprefix:"【属性段/技能段/防御/hp/mp±${num}】"//例：【力量+1;白刃+1】或者【hp+50】。mp意味增加能量池当前值。
+}
+我们的物品和技能是全屏，点击右上角的X退出。 quality、type和num需要标签化。要求使用unpkg源以确保加载成功；过滤掉所有_开头的字段不予显示;已经特殊美化过的字段不再多余的显示。
+兼容文本可能过长；兼容可能json object嵌套；兼容数据过多，分页的设计；兼容如果有"icon"字段，则使用该字段作为其物品的图形展示，其value可能是   'fa-feather-alt', 'fa-snowflake', 这种和外部icon库（这是哪个库来着？）联动的string格式字段，也可能是emoji，这两种要做好兼容，如果没有这个字段，就用第一个字；可能会有"comment"字段，作为一种幽默的标注，若有，也需要额外的美化，达到彩蛋的效果。 
+点击的时候要能查看完整信息，无论是抽屉式、弹窗式还是右侧展示式都行，有设计感就行。一定要能够点击空白退出物品详情界面。必须考虑到手机端的关闭。而且，物品详情界面内部要能**支持滑动**，以免内容太长看不到内容。
+ 
+我们的css必须以mod04开头。
+ 
+window.GameAPI = {
+    // 定义一个属性 'settings'
+    get assaData() {
+        // GameAPI.assaData 
+        return assaSettingsData;
+    },
+         getThemeVar: function(varName) {
+ 
+        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    },
+  
+ 
+}
+assaData格式：{"global_lore": {  "背包": {},"其他技能": {} ...}}
+
+我要求其界面要这么触发：找到id为page-character-orb的orb，电脑上，鼠标悬浮，在orb的左侧显示一个快捷进入按钮；在手机上，长按显示一个按钮，滑动到左边打开。其按钮样式类似于：
+/* 1. 快速入口按钮 (Hover 球体时显示) */
+      .mod04-quick-btn {
+            position: fixed;
+            padding: 8px 20px;
+            right:70px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--mod04-primary);
+            border-right: 4px solid var(--mod04-primary);
+            color: var(--mod04-primary);
+            font-family: var(--mod04-font);
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            cursor: pointer;
+            z-index: 99999;
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%);
+            box-shadow: -5px 0 15px rgba(0, 250, 255, 0.2);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .mod04-quick-btn.visible {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+        .mod04-quick-btn:hover {
+            background: var(--mod04-primary);
+            color: #000;
+            padding-right: 30px;
+            box-shadow: 0 0 20px var(--mod04-primary);
+        }
+但是只能是相对位置，因为我们的orb的位置是变化的。
+
+美化要求：
+- 使用html/css进行大胆有趣的视觉设计 
+- 视觉风格使用  塞尔达-荒野之息 ，要大胆设计，别具一格，让用户眼前一亮！
+- 支持pc和移动端布局
+- 对于特殊字段，我们要有特殊美化，如num\effect等。
