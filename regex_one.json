@@ -14018,8 +14018,12 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     <label style="color: var(--primary-color); margin-bottom: 10px;">世界模型摘要配置 & 核心操作</label>
     
     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+             <div style="flex: 1;">
+            <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">界面显示楼层数</span>
+            <input type="number" id="setting-show-latest" placeholder="10" style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
+        </div>
         <div style="flex: 1;">
-            <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">隐藏最新数</span>
+            <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">小总结隐藏最新数</span>
             <input type="number" id="setting-hide-latest" placeholder="10" style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px;">
         </div>
         <div style="flex: 1;">
@@ -14451,7 +14455,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.22';
+let current_game_version = '3.3.23';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -14478,7 +14482,7 @@ let is_simple_stream = "false";
 let noBackup = "false";
 let is_restore_prompt = "true";
 let weneedshop = "false";
-let is_show_notifications = "true";
+let is_show_notifications = "false";
 let ifScanMemory = "false";
 let bookItemSettings = null;
 let batches = 1;
@@ -24916,7 +24920,7 @@ async function renderNewMessages(newMessages) {
     }
 
     // 清理旧消息
-    const hideLatestCount = getChatConfig('hide_latest_count', 5) * 2;
+    const hideLatestCount = getChatConfig('show_latest_count', 2) * 2;
     while (chatDisplayArea.children.length > hideLatestCount) {
         chatDisplayArea.removeChild(chatDisplayArea.firstChild);
     }
@@ -25006,16 +25010,7 @@ function cleanupGlobalUIState() {
 initDisplay();
  
 
- function delayedUpdate(content) {
-    // handleUpdateNotifications(content);
-    // handleNotificationsFromBatch();
  
-}
-if(is_show_notifications === 'true'){
- 
-            delayedUpdate(finalMessage.content);
-           
-}
       
 // 调用时传入 content
 
@@ -26092,7 +26087,7 @@ async function renderHistory(is_entry = false) {
     };
 
     // ❤️ 计算并设置我们初次渲染的范围
-    const hideLatestCount = getChatConfig('hide_latest_count', 5) * 2;
+    const hideLatestCount = getChatConfig('show_latest_count', 2) * 2;
     earliestMessageIndexRendered = Math.max(0, conversationHistory.length - hideLatestCount);
     const messagesToDisplay = conversationHistory.slice(earliestMessageIndexRendered);
    // 我们将返回一个新的 Promise，这就是我们的“对讲机”
@@ -26104,7 +26099,10 @@ async function renderHistory(is_entry = false) {
             if (chunk.length === 0) {
                 // 所有消息都渲染完了！
                 if (is_entry) {
-                    chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+                          if(is_show_notifications === 'true'){
+   chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+        }
+                  
                 }
              await   processFinalMessageModules();
 
@@ -26524,8 +26522,7 @@ window.addEventListener('click', () => {
 function getChatConfig(key, defaultValue) {
     try {
         const chatVars = TavernHelper.getVariables({ type: 'chat' });
-        // 使用 _.get 可以安全地访问深层嵌套的属性，如果路径不存在，则返回 undefined
-        // 这比 chatVars.assa_data.config[key] 更安全
+       
         const value = _.get(chatVars, `assa_data.config.${key}`);
         return value !== undefined ? value : defaultValue;
     } catch (e) {
@@ -29717,19 +29714,18 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
     console.log(`[Core] 💖 智能审查(事件展平): 检测到事件路径下赋值对象，自动去除中间层级`);
     console.log(`[Core] 原 Path: '${path}', Key: '${keyArg}'`);
     
-    // 直接将 keyArg 的内容展开到事件下，去掉 keyArg 这一层
-    // 方法：将 finalValue 中的所有字段直接挂到事件下
-    const pathToEvent = path; // path 应该已经到 '事件' 这一层了
+ 
+    const pathToEvent = path;  
     
     // 遍历 finalValue 的所有字段，逐个挂载
     for (const innerKey in finalValue) {
         if (finalValue.hasOwnProperty(innerKey)) {
+ 
             assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, pathToEvent, innerKey, finalValue[innerKey]);
         }
     }
     
     console.log(`[Core] ✨ 已将对象内容直接展开到事件下`);
-    
  
     continue; // 跳过后面的 AssaOps._memoryOperation
 }
@@ -29871,27 +29867,8 @@ if (lastPathSegment === key) {
     console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
 }
 
- 
- // === 审查2：事件字段展平 ===
-if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
-    console.log(`[Core] 💖 智能审查(事件展平-两参数): 检测到事件路径下赋值对象，自动去除中间层级`);
-    console.log(`[Core] 原 Path: '${path}', Key: '${key}'`);
-    
-    // 直接将 key 的内容展开到事件下
-    const pathToEvent = path;
-    
-    // 遍历 finalValue 的所有字段，逐个挂载
-    for (const innerKey in finalValue) {
-        if (finalValue.hasOwnProperty(innerKey)) {
-            assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, pathToEvent, innerKey, finalValue[innerKey]);
-        }
-    }
-    
-    console.log(`[Core] ✨ 已将对象内容直接展开到事件下`);
- 
-    continue; // 跳过后面的 AssaOps._memoryOperation
-}
-                          assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
+       const finalValue = tryParseJson(path2Str);
+     assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
                         collectedBatchOps.push({
                                type: 'memory',
                                path: path,
@@ -30433,7 +30410,7 @@ if (keywords.some(keyword => trimmedLine.includes(keyword))) {
 
 
 //调试器的代码
-
+const inputShow = document.getElementById('setting-show-latest');
 const inputHide = document.getElementById('setting-hide-latest');
     const inputSmall = document.getElementById('setting-small-cycle');
     const inputBig = document.getElementById('setting-big-cycle');
@@ -30449,7 +30426,7 @@ const inputHide = document.getElementById('setting-hide-latest');
             // 获取当前变量状态以填充输入框
             const vars = await getVariables({ type: 'chat' });
             const config = vars?.assa_data?.config || {};
-            
+            inputShow.value = config.show_latest_count ?? 2;
             inputHide.value = config.hide_latest_count ?? 10;
             inputSmall.value = config.small_to_big_count ?? 50;
             inputBig.value = config.clean_big_count ?? 20;
@@ -30472,6 +30449,7 @@ const inputHide = document.getElementById('setting-hide-latest');
             const hVal = parseInt(inputHide.value, 10);
             const sVal = parseInt(inputSmall.value, 10);
             const bVal = parseInt(inputBig.value, 10);
+   const shVal = parseInt(inputShow.value, 5);
 
             if (!hVal || !sVal || !bVal) {
                 toastr.warning('所有配置项都不能为空');
@@ -30486,6 +30464,8 @@ const inputHide = document.getElementById('setting-hide-latest');
                 *.memory('config', 'hide_latest_count', ${hVal});
                 *.memory('config', 'small_to_big_count', ${sVal});
                 *.memory('config', 'clean_big_count', ${bVal});
+                *.memory('config', 'show_latest_count', ${shVal});
+                
             `.trim();
 
             try {
