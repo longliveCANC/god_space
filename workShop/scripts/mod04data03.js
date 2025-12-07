@@ -734,9 +734,16 @@
 
         function setupOrbEvents(orb, btn) {
             // PC: Hover
-            orb.addEventListener('mouseenter', showBtn);
-            orb.addEventListener('mouseleave', hideBtn);
-            btn.addEventListener('mouseleave', hideBtn);
+            // PC: Hover - 添加 mouseenter 保持显示
+    orb.addEventListener('mouseenter', showBtn);
+    orb.addEventListener('mouseleave', hideBtn);
+    
+    // 按钮本身的 hover 事件 - 强制保持显示
+    btn.addEventListener('mouseenter', () => {
+        clearTimeout(hideTimer);
+        btn.classList.add('visible');
+    });
+    btn.addEventListener('mouseleave', hideBtn);
 
             // Mobile: Long Press / Touch
             let touchTimer;
