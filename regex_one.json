@@ -8954,7 +8954,7 @@ input:checked + .slider:before {
 }
 .nova-alert.info {
     background-color: var(--primary-color);
-    // text-shadow: 0 0 5px #000;
+    text-shadow: 0 0 5px #000;
 }
 .nova-alert.danger {
     background-color: var(--danger-color);
@@ -18076,6 +18076,13 @@ const themeConfig = {
         currency: '积分',
         plot: '支线剧情',
         exp: '经验值'
+    }, 
+    '2':{
+        mainSystem: '主神空间',
+         player: '轮回者',
+        currency: '奖励点数',
+        plot: '支线剧情',
+        exp: '经验值'
     },
     // 版本3的特殊词语
     '3': {
@@ -22978,9 +22985,8 @@ window.addEventListener('message', function(event) {
 
 function getChatConfig(key, defaultValue) {
     try {
-        const chatVars = TavernHelper.getVariables({ type: 'chat' });
  
-        const value = _.get(chatVars, `assa_data.config.${key}`);
+        const value = _.get(assaSettingsData, `config.${key}`);
         return value !== undefined ? value : defaultValue;
     } catch (e) {
         console.warn(`获取聊天配置 "${key}" 失败，使用默认值: ${defaultValue}`, e);
@@ -27788,7 +27794,7 @@ function findAllFilterPaths(obj, currentPath = '') {
 
  // --- 妈妈为你准备的货币“白名单” ---
 const currencyAliases = {
-    "积分": ["乐园币", "主神点", "源点","游戏币","货币"],
+    "积分": ["乐园币", "主神点", "源点","游戏币","货币","奖励点数"],
     "支线剧情": ["灵魂结晶", "因果点","攻略点","时空碎片","能量结晶","灵魂碎片"],
     "经验值": ["属性点", "历练点"]
  
