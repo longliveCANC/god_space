@@ -48,6 +48,7 @@
             --mod04-border: rgba(0, 250, 255, 0.2);
             --mod04-glow: 0 0 10px rgba(0, 250, 255, 0.3);
             --mod04-font: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+               --mod04-canvas-bg: ${window.GameAPI?.getThemeVar('--container-bg-color') || '#020c1b'};
         }
 
         /* 触发按钮 */
@@ -653,12 +654,16 @@
             }
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-            const material = new THREE.PointsMaterial({
-                size: 0.05,
-                color: 0x00faff,
-                transparent: true,
-                opacity: 0.6
-            });
+  // 获取主题色并转换为十六进制数值
+const primaryColor = window.GameAPI?.getThemeVar('--primary-color') || '#00faff';
+const hexColor = parseInt(primaryColor.replace('#', ''), 16);
+
+const material = new THREE.PointsMaterial({
+    size: 0.05,
+    color: hexColor,
+    transparent: true,
+    opacity: 0.6
+});
 
             const particles = new THREE.Points(geometry, material);
             scene.add(particles);

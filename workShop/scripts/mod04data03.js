@@ -61,6 +61,7 @@
             --mod04-text-dim: ${getVar('--text-secondary-color', '#a8c0e1')};
             --mod04-danger: ${getVar('--danger-color', '#ff4d4d')};
             --mod04-font: 'Rajdhani', -apple-system, BlinkMacSystemFont, sans-serif;
+            
         }
 
         /* 触发按钮样式 */
