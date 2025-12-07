@@ -8312,7 +8312,7 @@ input:checked + .slider:before {
     left: 0;
     right: 0;  /* 用 right: 0 替代 width: 100% */
     bottom: 0; /* 用 bottom: 0 替代 height: 100% */
-    background-color: rgba(200, 200, 200, 0.4);
+    background-color: transparent;
     z-index: 10;
     display: none;
     cursor: wait;
@@ -10929,26 +10929,33 @@ input:checked + .slider:before {
     pointer-events: all;
 }
 
-#stop-generation-btn {
+ #stop-generation-btn {
     display: none; /* 默认隐藏 */
     width: 80%;
     height: 80%;
     border-radius: 50%;
-     color: var(--background-color); /* 按钮上的图标用深色，形成对比 */
-    color: white;
-     font-size: var(--base-font-size);
-    
+    color: var(--background-color);
+    font-size: var(--base-font-size);
     text-align: center;
-    border: 2px solid white;
+    border: 2px solid var(--background-color);
     cursor: pointer;
-    box-shadow: 0 0 15px var(--secondary-color); /* 同样是温柔的光晕 */
+ 
     transition: transform 0.2s, background-color 0.2s;
-
-       display: flex;
-    justify-content: center; /* 水平居中 */
-    align-items: center;     /* 垂直居中 */
-    line-height: 1; /* 配合 flex 使用，确保图标不会有奇怪的偏移 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    position: relative; /* 为伪元素定位 */
 }
+
+/* 用伪元素绘制实心正方形 */
+/* #stop-generation-btn::before {
+    content: '';
+    width: 40%;  
+    height: 40%;
+    background-color: var(--background-color);  
+    display: block;
+} */
 
 #stop-generation-btn:hover {
     transform: scale(1.1);
@@ -13073,7 +13080,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
        <textarea id="user-input" rows="2" placeholder="在这里输入你的行动..."></textarea>
     <div id="button-container-send">
           <div id="action-blocker-overlay">
-             <button id="stop-generation-btn" title="中断生成">⏹</button>
+            <button id="stop-generation-btn" title="中断生成"></button>
 
           </div>
     <button id="send-button" class="action-button zero-level-btn">➔</button>
@@ -14455,7 +14462,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.24';
+let current_game_version = '3.3.25';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -26521,11 +26528,18 @@ window.addEventListener('click', () => {
 function getChatConfig(key, defaultValue) {
     try {
         const chatVars = TavernHelper.getVariables({ type: 'chat' });
-       
-        const value = Number(_.get(chatVars, `assa_data.config.${key}`));
-        return value !== undefined ? value : defaultValue;
+        const value = _.get(chatVars, `assa_data.config.${key}`);
+        
+        // 如果值不存在或不是数字，返回默认值
+        if (value === undefined || value === null || value === '') {
+            return defaultValue;
+        }
+        
+        const numValue = Number(value);
+        // 检查转换后是否为有效数字
+        return !isNaN(numValue) ? numValue : defaultValue;
     } catch (e) {
-        console.warn(`获取聊天配置 "${key}" 失败，使用默认值: ${defaultValue}`, e);
+        console.warn(`获取聊天配置 "${key}" 失败,使用默认值: ${defaultValue}`, e);
         return defaultValue;
     }
 }
