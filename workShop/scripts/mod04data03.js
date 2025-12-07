@@ -420,7 +420,7 @@
             background: rgba(255, 0, 255, 0.05);
         }
         .mod04-comment::after {
-            content: "USER_NOTE //";
+            content: "NOTE //";
             position: absolute;
             top: -10px;
             left: 10px;
