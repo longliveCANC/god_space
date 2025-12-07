@@ -35,7 +35,7 @@
     "author": "assa",
     "version": "2.0",
     "tags": ["美化脚本"],
-    "description": "开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。",
+    "description": "[跟随主题]开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/mod01.png"
@@ -135,7 +135,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "开启该脚本后，在商店的顶上可以进入抽卡界面。3d的消耗性能比较大，但是为了炫酷，一切都是值得的！需要游戏版本是3.3.22及以上。 ",
+    "description": "[跟随主题]开启该脚本后，在商店的顶上可以进入抽卡界面。3d的消耗性能比较大，但是为了炫酷，一切都是值得的！需要游戏版本是3.3.22及以上。 ",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha01.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image.png"
@@ -145,7 +145,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的美化查看界面。所有物品美化不可同时开启，开一个就行。",
+    "description": "[半跟随主题]开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的美化查看界面。所有物品美化不可同时开启，开一个就行。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data01.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/imagecopy.png"
@@ -165,7 +165,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的美化查看界面。",
+    "description": "[半跟随主题]开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的美化查看界面。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data02.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy.png"
@@ -175,7 +175,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data03.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 2.png"
@@ -185,7 +185,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data04.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 3.png"
@@ -195,7 +195,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data05.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 4.png"
@@ -205,7 +205,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[半跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data06.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 5.png"
@@ -215,7 +215,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data07.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 6.png"
@@ -225,7 +225,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[不跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data08.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 7.png"
@@ -235,7 +235,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[不跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data09.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 8.png"
@@ -245,7 +245,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "无需多言。",
+    "description": "[不跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data10.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 9.png"
