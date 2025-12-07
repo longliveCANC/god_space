@@ -8954,7 +8954,7 @@ input:checked + .slider:before {
 }
 .nova-alert.info {
     background-color: var(--primary-color);
-    text-shadow: 0 0 5px #000;
+    // text-shadow: 0 0 5px #000;
 }
 .nova-alert.danger {
     background-color: var(--danger-color);
