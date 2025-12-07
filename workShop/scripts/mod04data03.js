@@ -78,7 +78,7 @@
             font-weight: bold;
             letter-spacing: 2px;
             cursor: pointer;
-            z-index: 99999;
+            z-index: 9;
             opacity: 0;
             transform: translateX(-20px);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -695,7 +695,7 @@
     function initTrigger() {
         const btn = document.createElement('div');
         btn.className = 'mod04-quick-btn';
-        btn.innerText = 'OPEN DATABASE';
+        btn.innerText = 'DATABASE';
         document.body.appendChild(btn);
 
         let orb = null;
