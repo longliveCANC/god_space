@@ -535,7 +535,7 @@
                     <div id="mod04-canvas-bg"></div>
                     <div class="mod04-layout">
                         <div class="mod04-sidebar">
-                            <div class="mod04-logo"><i class="fas fa-database"></i> ASSA ARCHIVE</div>
+                            <div class="mod04-logo"><i class="fas fa-database"></i>ARCHIVE</div>
                             <div class="mod04-nav-item active" data-tab="items"><i class="fas fa-box-open"></i> 物品背包</div>
                             <div class="mod04-nav-item" data-tab="skills"><i class="fas fa-bolt"></i> 技能列表</div>
                         </div>

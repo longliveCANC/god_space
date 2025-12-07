@@ -513,7 +513,7 @@ function parseEffectText(text) {
         // HTML 结构
         overlay.innerHTML = `
             <div class="${MOD_PREFIX}-header">
-                <div class="${MOD_PREFIX}-title">CYBER_INVENTORY</div>
+                <div class="${MOD_PREFIX}-title">INVENTORY</div>
                 <div class="${MOD_PREFIX}-close">×</div>
             </div>
             <div class="${MOD_PREFIX}-tabs">
