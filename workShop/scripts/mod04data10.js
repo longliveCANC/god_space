@@ -61,7 +61,7 @@
             font-weight: bold;
             letter-spacing: 2px;
             cursor: pointer;
-            z-index: 99999;
+            z-index: 9;
             opacity: 0;
             transform: translateX(-20px);
             transition: opacity 0.3s, transform 0.3s;

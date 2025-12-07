@@ -46,7 +46,7 @@
         /* ==================== 触发按钮 (Orb Trigger) ==================== */
         .${MOD_PREFIX}-trigger-btn {
             position: fixed;
-            z-index: 9999;
+            z-index: 9;
             background: var(--${MOD_PREFIX}-bg);
             border: 1px solid var(--${MOD_PREFIX}-primary);
             color: var(--${MOD_PREFIX}-primary);

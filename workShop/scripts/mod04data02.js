@@ -56,7 +56,7 @@
             border: 2px solid var(--mod04-black);
             clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
             cursor: pointer;
-            z-index: 9999;
+            z-index:9;
             opacity: 0;
             transform: translateX(20px) skew(-10deg);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);

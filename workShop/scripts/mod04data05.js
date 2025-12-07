@@ -54,7 +54,7 @@
             font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            z-index: 99999;
+            z-index: 9;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s, transform 0.3s;

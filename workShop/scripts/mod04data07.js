@@ -72,7 +72,7 @@
             font-weight: 900;
             letter-spacing: 2px;
             cursor: pointer;
-            z-index: 99999;
+            z-index:9;
             opacity: 0;
             transform: translateX(-20px) skewX(-10deg);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);

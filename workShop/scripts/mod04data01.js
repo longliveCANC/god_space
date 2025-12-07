@@ -64,7 +64,7 @@
             font-weight: 700;
             letter-spacing: 2px;
             cursor: pointer;
-            z-index: 99999;
+            z-index: 9;
             opacity: 0;
             transform: translateX(20px); /* 从右往左 */
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

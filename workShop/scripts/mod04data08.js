@@ -60,7 +60,7 @@
             font-weight: bold;
             letter-spacing: 2px;
             cursor: pointer;
-            z-index: var(--mod04-z-index);
+            z-index: 9;
             opacity: 0;
             transform: translateX(-20px);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
