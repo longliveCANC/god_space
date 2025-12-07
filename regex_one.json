@@ -3291,7 +3291,7 @@ box-shadow: 0 0 8px var(--glow-color);
         .tag { font-family: var(--base-font-family), serif; background-color: var(--secondary-color); color: var(--background-color); padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; box-shadow: 0 0 8px var(--glow-color); transition: all 0.3s ease; }
         .choice-card.focused .tag { background-color: var(--primary-color);  }
 
-        .description { margin: 0;  font-size: var(--base-font-size, 16px);  line-height: 1.8; color: var(--text-color); transition: color 0.3s ease; }
+        .description { margin: 0;  font-size: var(--base-font-size, 16px);  line-height: 1.8; color: var(--text-primary-color); transition: color 0.3s ease; }
         .choice-card.focused .description { color: #ffffff; }
         
         .choice-card.disabled .description { color: #888; }
