@@ -186,6 +186,25 @@
             .mod06-btn { flex: 1; justify-content: center; font-size: 0.8em; }
             .mod06-theme-name-input { width: 100%; }
         }
+
+              .mod06-bg-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding-top: 15px;
+            margin-top: 15px;
+            border-top: 1px solid var(--border-color);
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        .mod06-bg-toolbar label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            color: var(--text-secondary-color);
+        }
     `;
     document.head.appendChild(style);
  
@@ -250,7 +269,70 @@
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 2000);
     }
+   const BG_STORAGE_KEY = 'mod06_customBackground';
+    const BG_TARGET_SELECTOR = '.status-container, body'; // 优先选择 .status-container，若不存在则作用于 body
 
+ 
+     function applyCustomBackground(imageUrl, showNotification = true) {
+        const target = document.querySelector(BG_TARGET_SELECTOR);
+        if (!target) {
+            console.error('MOD06: 未找到背景目标容器。');
+            return;
+        }
+        target.style.backgroundImage = `url('${imageUrl}')`;
+        target.style.backgroundSize = 'cover';
+        target.style.backgroundPosition = 'center';
+        target.style.backgroundRepeat = 'no-repeat';
+        target.style.setProperty('--after-opacity', '0');
+
+        // ============================================================
+        // [新增/修改] 伪造场景图效果：强制容器背景透明
+        // ============================================================
+        // 将容器背景设置为低透明度 (例如 0.2)，以便看清背景图
+        // 你可以根据喜好调整这个 rgba 值的透明度
+        document.documentElement.style.setProperty('--container-bg-color', 'rgba(0, 0, 0, 0.2)');
+      document.documentElement.style.setProperty('--background-color', 'rgba(0, 0, 0, 0.2)');
+
+        localStorage.setItem(BG_STORAGE_KEY, imageUrl);
+        if (showNotification) {
+            showToast('背景已设置 (容器已透明化)');
+        }
+    }
+
+    /**
+     * 清除自定义背景图
+     */
+    function clearCustomBackground() {
+        const target = document.querySelector(BG_TARGET_SELECTOR);
+        if (!target) return;
+        target.style.backgroundImage = '';
+        target.style.backgroundSize = '';
+        target.style.backgroundPosition = '';
+        target.style.backgroundRepeat = '';
+
+        // ============================================================
+        // [新增/修改] 恢复容器背景颜色
+        // ============================================================
+        try {
+            // 从 localStorage 获取当前正在使用的主题颜色配置
+            const savedThemeStr = localStorage.getItem('customTerminalTheme');
+            if (savedThemeStr) {
+                const colors = JSON.parse(savedThemeStr);
+                if (colors['--container-bg-color']) {
+                    // 恢复为用户设定的主题色
+                    document.documentElement.style.setProperty('--container-bg-color', colors['--container-bg-color']);
+                }
+            } else {
+                // 如果没有保存的主题，恢复到一个默认的安全值
+                document.documentElement.style.setProperty('--container-bg-color', 'rgba(0, 0, 0, 0.85)');
+            }
+        } catch (e) {
+            console.error('MOD06: 恢复背景色失败', e);
+        }
+
+        localStorage.removeItem(BG_STORAGE_KEY);
+        showToast('背景已清除');
+    }
     // ==========================================================================
     // 4. IndexedDB 管理
     // ==========================================================================
@@ -313,7 +395,7 @@
         overlay.innerHTML = `
             <div class="mod06-modal">
                 <div class="mod06-header">
-                    <div class="mod06-title">自定义主题拓展</div>
+                    <div class="mod06-title">自定义主题</div>
                     <button class="mod06-close-btn">×</button>
                 </div>
                 <div class="mod06-body">
@@ -337,6 +419,20 @@
                             <button class="mod06-btn" id="mod06-btn-import">📥 导入JSON</button>
                             <input type="file" id="mod06-file-input" style="display:none" accept=".json">
                         </div>
+
+                         <div class="mod06-bg-toolbar">
+                            <button class="mod06-btn" id="mod06-btn-set-bg">🖼️ 设置背景</button>
+                            <button class="mod06-btn" id="mod06-btn-clear-bg">🗑️ 清除背景</button>
+                            <label>
+                                <input type="checkbox" id="mod06-pixelate-bg">
+                                像素化 (大图较慢)
+                            </label>
+                            <input type="file" id="mod06-bg-input" style="display:none" accept="image/*">
+                        </div>
+
+
+
+
                         <div id="mod06-color-grid" class="mod06-color-grid"></div>
                     </div>
                 </div>
@@ -589,19 +685,63 @@
             };
             reader.readAsText(file);
         };
+
+         // START: 添加的代码
+        // --- 背景设置 ---
+        const bgFileInput = document.getElementById('mod06-bg-input');
+        const setBgBtn = document.getElementById('mod06-btn-set-bg');
+        const clearBgBtn = document.getElementById('mod06-btn-clear-bg');
+        const pixelateCheckbox = document.getElementById('mod06-pixelate-bg');
+
+        setBgBtn.onclick = () => bgFileInput.click();
+        clearBgBtn.onclick = clearCustomBackground;
+
+        bgFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const originalUrl = event.target.result;
+                try {
+                    if (pixelateCheckbox.checked) {
+                        showToast('正在像素化背景...');
+                        // 调用您提供的 createPixelatedImage 函数
+                        const pixelatedUrl = await createPixelatedImage(originalUrl, 8); // 像素大小设为8，可调整
+                        applyCustomBackground(pixelatedUrl);
+                    } else {
+                        applyCustomBackground(originalUrl);
+                    }
+                } catch (err) {
+                    alert('背景处理失败: ' + err);
+                    console.error(err);
+                }
+                bgFileInput.value = ''; // 重置input以便再次选择相同文件
+            };
+            reader.readAsDataURL(file);
+        };
+        // END: 添加的代码
     }
 
     // ==========================================================================
     // 6. 初始化与劫持
     // ==========================================================================
 
-    async function init() {
+     async function init() {
         // 1. 初始化DB
         await dbHelper.init();
         savedThemes = await dbHelper.getAllThemes();
 
         // 2. 创建UI结构
         createModal();
+
+        // START: 添加的代码
+        // 2.5. 应用持久化的背景
+        const savedBg = localStorage.getItem(BG_STORAGE_KEY);
+        if (savedBg) {
+            applyCustomBackground(savedBg, false); // false 表示不在加载时显示提示
+        }
+        // END: 添加的代码
 
         // 3. 劫持按钮
         const oldBtn = document.getElementById('edit-custom-theme-btn');
