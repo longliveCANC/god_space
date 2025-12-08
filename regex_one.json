@@ -23710,7 +23710,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
             // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
@@ -29739,7 +29739,12 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
     // 遍历 finalValue 的所有字段，逐个挂载
     for (const innerKey in finalValue) {
         if (finalValue.hasOwnProperty(innerKey)) {
- 
+   collectedBatchOps.push({
+                               type: 'memory',
+                               path: pathToEvent,
+                               key: innerKey,
+                               value: finalValue[innerKey]
+                           });
             assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, pathToEvent, innerKey, finalValue[innerKey]);
         }
     }
@@ -29747,6 +29752,48 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
     console.log(`[Core] ✨ 已将对象内容直接展开到事件下`);
  
     continue; // 跳过后面的 AssaOps._memoryOperation
+}
+
+// === 审查3：NPC重复检查与路径自动切换 ===
+if (path.includes('global_lore.npc') || path.includes('world_lore.npc')) {
+    console.log(`[Core] 💖 智能审查(NPC去重): 检测到NPC路径 '${path}.${keyArg}'，开始检查重复...`);
+    
+    // 提取NPC名称
+    const npcName = keyArg;
+    
+    // 定义需要检查的所有可能路径
+    const pathsToCheck = [
+        'global_lore.npc',
+        'global_lore.小队信息',
+        'world_lore.npc'
+    ];
+    
+    // 排除当前路径，只检查其他路径
+    const otherPaths = pathsToCheck.filter(p => p !== path);
+    
+    // 检查是否在其他路径下存在同名NPC
+    for (const checkPath of otherPaths) {
+        const pathParts = checkPath.split('.');
+        let targetObj = assaDataToUpdate;
+        
+        // 导航到目标路径
+        for (const part of pathParts) {
+            if (targetObj && targetObj.hasOwnProperty(part)) {
+                targetObj = targetObj[part];
+            } else {
+                targetObj = null;
+                break;
+            }
+        }
+        
+        // 如果找到了同名NPC
+        if (targetObj && targetObj.hasOwnProperty(npcName)) {
+            console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于 '${checkPath}'，自动切换路径`);
+            path = checkPath;
+            console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
+            break; // 找到第一个就停止检查
+        }
+    }
 }
 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
   collectedBatchOps.push({
@@ -29886,6 +29933,41 @@ if (lastPathSegment === key) {
     console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
 }
 
+// === 审查2：NPC重复检查与路径自动切换（两参数版本） ===
+if (path.includes('global_lore.npc') || path.includes('world_lore.npc')) {
+    console.log(`[Core] 💖 智能审查(NPC去重-两参数): 检测到NPC路径 '${path}.${key}'，开始检查重复...`);
+    
+    const npcName = key;
+    
+    const pathsToCheck = [
+        'global_lore.npc',
+        'global_lore.小队信息',
+        'world_lore.npc'
+    ];
+    
+    const otherPaths = pathsToCheck.filter(p => p !== path);
+    
+    for (const checkPath of otherPaths) {
+        const pathParts = checkPath.split('.');
+        let targetObj = assaDataToUpdate;
+        
+        for (const part of pathParts) {
+            if (targetObj && targetObj.hasOwnProperty(part)) {
+                targetObj = targetObj[part];
+            } else {
+                targetObj = null;
+                break;
+            }
+        }
+        
+        if (targetObj && targetObj.hasOwnProperty(npcName)) {
+            console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于 '${checkPath}'，自动切换路径`);
+            path = checkPath;
+            console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
+            break;
+        }
+    }
+}
        const finalValue = tryParseJson(path2Str);
      assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
                         collectedBatchOps.push({
@@ -32112,7 +32194,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
         
         };
 
