@@ -12,35 +12,18 @@
     const EDITABLE_VARS = [
         { var: '--primary-color', label: '主色调 (Primary)' },
         { var: '--secondary-color', label: '副色调 (Secondary)' },
-        { var: '--text-color', label: '主要文本 (Text)' },
-        { var: '--text-secondary-color', label: '次要文本 (Sub-Text)' },
-        { var: '--container-bg-color', label: '容器背景 (Container BG)' },
-        { var: '--background-color', label: '全局背景 (Global BG)' },
-        { var: '--border-color', label: '边框颜色 (Border)' },
-        { var: '--glow-color', label: '光晕颜色 (Glow)' },
+        { var: '--text-color', label: '主要文本' },
+        { var: '--text-secondary-color', label: '次要文本' },
+        { var: '--container-bg-color', label: '容器背景' },
+        { var: '--background-color', label: '次要背景' },
+        { var: '--border-color', label: '边框颜色' },
+        { var: '--glow-color', label: '光晕颜色' },
  
     ];
 
     // 预设主题
     const PRESETS = [
-        {
-            id: 'preset_default',
-            name: '默认赛博 (Default)',
-            isPreset: true,
-            colors: {
-                '--primary-color': '#00faff',
-                '--secondary-color': '#7affff',
-                '--text-color': '#e6f1ff',
-                '--text-secondary-color': '#a8c0e1',
-                '--container-bg-color': 'rgba(10, 25, 47, 0.75)',
-                '--background-color': 'rgba(10, 25, 47, 1)',
-                '--border-color': 'rgba(0, 250, 255, 0.3)',
-                '--glow-color': 'rgba(0, 250, 255, 0.5)',
-                '--danger-color': '#ff4d4d',
-                '--danger-glow-color': 'rgba(255, 77, 77, 0.5)'
-            }
-        },
-              // 需求3：新增羊皮纸主题
+        
         {
             id: 'preset_parchment',
             name: '古老羊皮纸 (Parchment)',
@@ -58,7 +41,7 @@
                 '--danger-glow-color': 'rgba(139, 0, 0, 0.3)'
             }
         },
-        // 需求3：新增茂密森林主题
+        
         {
             id: 'preset_forest',
             name: '茂密森林 (Dense Forest)',
@@ -81,9 +64,8 @@
     // ==========================================================================
     // 2. CSS 样式注入 (Mod06)
     // ==========================================================================
-    const style = document.createElement('style');
+ const style = document.createElement('style');
     style.textContent = `
-        /* 需求4：隐藏原有的应用按钮 */
         #apply-custom-theme-btn { display: none !important; }
 
         .mod06-overlay {
@@ -95,7 +77,7 @@
         }
         .mod06-modal {
             width: 900px; height: 80vh;
-            max-width: 95vw; max-height: 90vh; /* 手机端适配 */
+            max-width: 95vw; max-height: 90vh;
             background: var(--container-bg-color);
             border: 1px solid var(--border-color);
             box-shadow: 0 0 20px var(--glow-color);
@@ -121,7 +103,17 @@
             display: flex; flex-direction: column; background: rgba(0,0,0,0.1);
             flex-shrink: 0;
         }
-        .mod06-list-container { flex: 1; overflow-y: auto; padding: 10px; }
+        .mod06-list-container { overflow-y: auto; padding: 10px; }
+
+        /* 新增：为桌面端恢复布局 */
+        #mod06-preset-list {
+            flex: 0 0 auto; /* 预设列表高度由内容决定 */
+            max-height: 45%; /* 防止预设过多时挤占下方空间 */
+        }
+        #mod06-saved-list {
+            flex: 1; /* 我的主题列表占据剩余空间 */
+        }
+
         .mod06-list-header { padding: 10px; font-size: 0.9em; color: var(--text-secondary-color); text-transform: uppercase; letter-spacing: 1px; }
 
         .mod06-theme-card {
@@ -146,7 +138,7 @@
 
         .mod06-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
         .mod06-btn {
-            padding: 8px 12px; border: 1px solid var(--border-color); /* 增加触控区域 */
+            padding: 8px 12px; border: 1px solid var(--border-color);
             background: rgba(0, 250, 255, 0.1); color: var(--text-color);
             cursor: pointer; font-size: 0.9em; display: flex; align-items: center; gap: 5px;
         }
@@ -162,8 +154,8 @@
         .mod06-label-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9em; }
         .mod06-controls-row { display: flex; align-items: center; gap: 10px; }
 
-        input[type="color"] { -webkit-appearance: none; border: none; width: 40px; height: 40px; padding: 0; background: none; } /* 加大色块方便点击 */
-        .mod06-alpha-slider { flex: 1; height: 20px; /* 加高滑块轨道方便拖动 */ }
+        input[type="color"] { -webkit-appearance: none; border: none; width: 40px; height: 40px; padding: 0; background: none; }
+        .mod06-alpha-slider { flex: 1; height: 20px; }
 
         .mod06-toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -173,19 +165,29 @@
         }
         .mod06-toast.show { opacity: 1; }
 
-        /* 需求1：手机端适配 (断点 768px) */
+        /* 手机端适配 (断点 768px) */
         @media (max-width: 768px) {
             .mod06-body { flex-direction: column; }
             .mod06-sidebar {
-                width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--border-color);
+                width: 100%;
+                height: 200px; /* 稍微增加一点高度 */
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                overflow-y: auto; /* 关键修复：让侧边栏本身滚动 */
+            }
+            /* 关键修复：移除内部元素的滚动和flex-grow */
+            .mod06-list-container {
+                flex: none;
+                overflow-y: visible;
             }
             .mod06-editor { padding: 10px; }
-            .mod06-color-grid { grid-template-columns: 1fr; } /* 手机上一行一个 */
+            .mod06-color-grid { grid-template-columns: 1fr; }
             .mod06-toolbar { gap: 5px; }
             .mod06-btn { flex: 1; justify-content: center; font-size: 0.8em; }
             .mod06-theme-name-input { width: 100%; }
         }
     `;
+    document.head.appendChild(style);
  
     document.head.appendChild(style);
 
@@ -317,7 +319,7 @@
                 <div class="mod06-body">
                     <div class="mod06-sidebar">
                         <div class="mod06-list-header">预设主题</div>
-                        <div id="mod06-preset-list" class="mod06-list-container" style="flex:0 0 auto;"></div>
+                       <div id="mod06-preset-list" class="mod06-list-container"></div>
                         <div class="mod06-list-header" style="border-top:1px solid var(--border-color);">我的主题</div>
                         <div id="mod06-saved-list" class="mod06-list-container"></div>
                     </div>
