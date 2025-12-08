@@ -14464,7 +14464,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.26';
+let current_game_version = '3.3.25';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -14472,7 +14472,7 @@ let currentChapterIndex = 0;
 let isReadingModeOpen = false;
 
     // 全局变量存储数据
-    let currentMapData = null;
+  
     let currentGameData = null;
    // --- 全局变量和数据获取 ---
         let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
@@ -36178,14 +36178,14 @@ if (toggleEditBtn) {
         if (window.mapEditMode) {
             console.log("✏️ 编辑模式已开启");
             // 重新渲染以应用编辑功能
-            const currentMapData = assaSettingsData.map;
-            renderMap(currentMapData);
+            
+            renderMap(assaSettingsData.map);
         } else {
             console.log("👁️ 编辑模式已关闭");
             deselectShape();
             // 重新渲染以移除编辑功能
-            const currentMapData = assaSettingsData.map;
-            renderMap(currentMapData);
+           
+            renderMap(assaSettingsData.map);
         }
     };
 }
@@ -36966,14 +36966,14 @@ function deleteLocation(locationName) {
 
   /**
   * --- MODIFIED ---: 显示地图
-  * 不再需要异步获取数据，直接使用已加载的 currentMapData
+ 
   */
   function showMap() { // 不再是 async 函数
     document.getElementById('world-info-content').style.display = 'none';
     document.getElementById('map-view').style.display = 'block';
 
     // 直接使用全局缓存的地图数据进行渲染
-     renderMap(currentMapData, updateDetails.mapUpdates);
+     renderMap(assaSettingsData.map, updateDetails.mapUpdates);
   }
 
 
@@ -37653,18 +37653,17 @@ if (!worldAttitudeData || !characterStatusData) {
     // 我们可以让它即使缺少这些新数据也能继续运行
     console.warn("部分非核心数据(跨世界声望说明, 当前人物状态)缺失，但不影响主要功能。");
 }
-
-        // 1. 填充非角色页面的数据
-        populateGeneralData(currentGameData, assaSettingsData,playCharacterData);
 userName = currentGameData.user.name || '用户';
-        // 2. 填充全新的角色页面
+     
+        populateGeneralData(currentGameData, assaSettingsData,playCharacterData);
+     
         populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
 
    // 3. 缓存地图数据
         if (assaSettingsData && assaSettingsData.map) {
-            currentMapData = assaSettingsData.map;
+            
                     if(is_first){
-renderMap(currentMapData, updateDetails.mapUpdates);
+renderMap(assaSettingsData.map, updateDetails.mapUpdates);
         }
                         
         } else {
@@ -44590,11 +44589,19 @@ function showRollResultModal() {
                         .filter(l => checkedAttrs.includes(l.name))
                         .map(l => `<li><span class="label">地点 (${l.name})</span><span class="value">${l.value > 0 ? '+' : ''}${l.value}</span></li>`)
                         .join('');
+
+                        
                     const equipmentHtml = (components.equipment_bonuses || [])
                         .filter(e => checkedAttrs.includes(e.name)) // 修复：e.bonus_type -> e.name
                         .map(e => `<li><span class="label">装备 (${e.name})</span><span class="value">${e.value > 0 ? '+' : ''}${e.value}</span></li>`)
                         .join('');
-                     return statusHtml + locationHtml + equipmentHtml;
+        const otherSkillHtml = (components.other_skill_bonuses || [])
+    .filter(o => checkedAttrs.includes(o.name))
+    .map(o => `<li><span class="label" style="color:var(--info-color);">被动技能 (${o.name})</span><span class="value" style="color:var(--info-color);">${o.value > 0 ? '+' : ''}${o.value}</span></li>`)
+    .join('');
+
+ // UPDATE THE RETURN STATEMENT
+ return statusHtml + locationHtml + equipmentHtml + otherSkillHtml;
                 })()}
                 ${(modifiers.custom_modifier && modifiers.custom_modifier[0] !== 0) ? `<li><span class="label">修正 (${modifiers.custom_modifier[1]})</span><span class="value">${modifiers.custom_modifier[0] > 0 ? '+' : ''}${modifiers.custom_modifier[0]}</span></li>` : ''}
                 ${(modifiers.prestige_bonus && modifiers.prestige_bonus !== 0) ? `<li><span class="label">声望加权</span><span class="value">${modifiers.prestige_bonus > 0 ? '+' : ''}${modifiers.prestige_bonus}</span></li>` : ''}
@@ -44668,7 +44675,14 @@ ${(player_check.components.npc_checks || []).map(n => `<li><span class="label">$
                         .filter(e => checkedAttrs.includes(e.name)) // 修复：e.bonus_type -> e.name
                         .map(e => `<li><span class="label">装备 (${e.name})</span><span class="value">${e.value > 0 ? '+' : ''}${e.value}</span></li>`)
                         .join('');
-                    return statusHtml + locationHtml + equipmentHtml;
+                    // ADD THIS NEW VARIABLE
+const otherSkillHtml = (player_check.components.other_skill_bonuses || [])
+    .filter(o => checkedAttrs.includes(o.name))
+    .map(o => `<li><span class="label" style="color:var(--info-color);">被动技能 (${o.name})</span><span class="value" style="color:var(--info-color);">${o.value > 0 ? '+' : ''}${o.value}</span></li>`)
+    .join('');
+
+// UPDATE THE RETURN STATEMENT
+return statusHtml + locationHtml + equipmentHtml + otherSkillHtml;
                 })()} 
                 ${(player_check.modifiers.custom_modifier && player_check.modifiers.custom_modifier[0] !== 0) ? `<li><span class="label">修正 (${player_check.modifiers.custom_modifier[1]})</span><span class="value">${player_check.modifiers.custom_modifier[0] > 0 ? '+' : ''}${player_check.modifiers.custom_modifier[0]}</span></li>` : ''}
                 ${(player_check.modifiers.prestige_bonus && player_check.modifiers.prestige_bonus !== 0) ? `<li><span class="label">声望加权</span><span class="value">${player_check.modifiers.prestige_bonus > 0 ? '+' : ''}${player_check.modifiers.prestige_bonus}</span></li>` : ''}
