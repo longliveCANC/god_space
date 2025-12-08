@@ -30474,47 +30474,61 @@ async function rebuildWorldFromHistory(toastMessage, triggerSource = "Manual") {
         console.log(`[Rebuild] 开始基于0层历史记录整合，共 ${totalTurns} 轮。`);
  let allCommands = "/* 由整合重构功能自动生成 */\n";
 let hasSummarySmall = false; // 添加这个标志
+    for (let i = 0; i < totalTurns; i++) {
+        const turnData = conversationHistory[i];
+        const progressText = `正在整合第 ${i + 1} / ${totalTurns} 条历史记录...`;
+        if (toastInstance) toastInstance.find('.toast-message').text(progressText);
+        if (!turnData) continue;
 
-for (let i = 0; i < totalTurns; i++) {
-    const turnData = conversationHistory[i];
-    const progressText = `正在整合第 ${i + 1} / ${totalTurns} 条历史记录...`;
-    if (toastInstance) toastInstance.find('.toast-message').text(progressText);
-    if (!turnData) continue;
+        const messageText = turnData.content || '';
 
-    const messageText = turnData.content || '';
-    const lines = messageText.split('\n');
-    for (const line of lines) {
-        const trimmedLine = line.trim();
+        // =========== 🔽 修改开始 🔽 ===========
 
-        // 当发现 summary.big 时，清空之前收集到的所有 summary.small 指令
-        if (trimmedLine.includes("summary.big")) {
-            if (hasSummarySmall) {
-                // 重新构建 allCommands，过滤掉所有 summary.small 指令
-                const commandLines = allCommands.split('\n');
-                allCommands = "/* 由整合重构功能自动生成 */\n";
-                for (const cmd of commandLines) {
-                    if (!cmd.includes("summary.small") && cmd.trim() !== "") {
-                        allCommands += cmd + '\n';
+        // 1. 💖 核心修改：先拍扁文本，去除换行符，就像 processUpdateMemoryCommands 做的那样
+        const sanitizedText = messageText.replace(/[\r\n\t]+/g, ' ').trim();
+
+        // 2. 💖 使用正则断句，而不是简单的 split('\n')
+        // 这样可以确保跨行的 memory({ ... }) 指令被作为一个整体捕获
+        const commandChunks = sanitizedText.split(/(?=memory\(|delete\(|set_status\(|set_attribute\(|updateMapMemo\(|deleteMapMemo\(|insertMapMemo\()/);
+
+        // 3. 过滤无效片段
+        const lines = commandChunks.map(line => line.trim()).filter(line => line && !line.startsWith('//'));
+
+        for (const trimmedLine of lines) {
+            // 注意：这里的 trimmedLine 现在是一个完整的指令字符串（不含换行符）
+
+            // 当发现 summary.big 时，清空之前收集到的所有 summary.small 指令
+            if (trimmedLine.includes("summary.big")) {
+                if (hasSummarySmall) {
+                    // 重新构建 allCommands，过滤掉所有 summary.small 指令
+                    const commandLines = allCommands.split('\n');
+                    allCommands = "/* 由整合重构功能自动生成 */\n";
+                    for (const cmd of commandLines) {
+                        if (!cmd.includes("summary.small") && cmd.trim() !== "") {
+                            allCommands += cmd + '\n';
+                        }
                     }
+                    console.log(`[Rebuild] 发现 summary.big，已清空之前的 summary.small 指令`);
+                    hasSummarySmall = false;
                 }
-                console.log(`[Rebuild] 发现 summary.big，已清空之前的 summary.small 指令`);
-                hasSummarySmall = false;
             }
-             
-        }
 
-        // 记录是否有 summary.small 指令
-        if (trimmedLine.includes("summary.small")) {
-            hasSummarySmall = true;
-        }
-         let foundCommands = false;
- const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
-if (keywords.some(keyword => trimmedLine.includes(keyword))) {
-    allCommands += trimmedLine + '\n';
-    foundCommands = true;
-}
-    }
+            // 记录是否有 summary.small 指令
+            if (trimmedLine.includes("summary.small")) {
+                hasSummarySmall = true;
+            }
 
+            let foundCommands = false;
+            const keywords = ['set_status', 'memory', 'delete', 'set_attribute', 'updateMapMemo', 'deleteMapMemo', 'insertMapMemo']; // 💖 顺便补全了地图命令关键字
+
+            // 检查是否包含关键字（现在 trimmedLine 是完整的指令，匹配更准确）
+            // 注意：这里使用 startsWith 或正则匹配会更严谨，但沿用 includes 也能工作
+            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
+                allCommands += trimmedLine + '\n';
+                foundCommands = true;
+            }
+        }
+        // =========== 🔼 修改结束 🔼 ===========
             const variableRegex = /<updateVariable>([\s\S]*?)<\/updateVariable>/gi;
             let variableMatch;
             while ((variableMatch = variableRegex.exec(messageText)) !== null) {
