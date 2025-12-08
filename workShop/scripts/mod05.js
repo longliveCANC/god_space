@@ -831,7 +831,7 @@ memory.load('${pathPrefix}', {
                 .substring(0, 20);
         }
 
-         // ==================== 加载书签配置 ====================
+       // ==================== 加载书签配置 ====================
         const charWorldbooks = getCharWorldbookNames('current');
         const allBoundWorldbooks = [
             ...new Set([
@@ -847,18 +847,45 @@ memory.load('${pathPrefix}', {
         }
 
         const bookmarkConfigs = [];
-        
+
+        // 🟢 新增：一个容错的解析辅助函数
+        const parseLooseJson = (content) => {
+            if (!content || !content.trim()) return [];
+            
+            // 1. 尝试作为标准 JSON 解析 (处理单个对象 或 标准数组)
+            try {
+                const parsed = JSON.parse(content);
+                return Array.isArray(parsed) ? parsed : [parsed];
+            } catch (e) {
+                // 忽略错误，进入容错模式
+            }
+
+            // 2. 容错模式：处理并列的对象 (例如: {...} {...} 或 {...},{...})
+            try {
+                // 正则解释：匹配 "}" 后跟 "任意空白或逗号" 后跟 "{"
+                // 将其替换为 "},{" 以构造合法的 JSON 数组字符串
+                // 警告：如果 json 字符串内部的值包含 "} {" 可能会误判，但作为配置文件概率极低
+                const fixedContent = '[' + content.replace(/}\s*,?\s*{/g, '},{') + ']';
+                const parsed = JSON.parse(fixedContent);
+                return Array.isArray(parsed) ? parsed : [parsed];
+            } catch (e) {
+                throw new Error('无法解析 JSON 配置');
+            }
+        };
+
         for (const worldbookName of allBoundWorldbooks) {
             try {
                 const allEntries = await getLorebookEntries(worldbookName);
                 const configEntries = allEntries.filter(entry => 
                     entry.comment === "[bookmarkconfig]" && entry.content
                 );
-                
+
                 for (const entry of configEntries) {
                     try {
-                        const config = JSON.parse(entry.content);
-                        bookmarkConfigs.push(config);
+                        // 🟢 使用新的解析逻辑
+                        const configs = parseLooseJson(entry.content);
+                        // 将解析出的一个或多个配置合并到总数组中
+                        bookmarkConfigs.push(...configs);
                     } catch (parseError) {
                         console.warn(`解析世界书 "${worldbookName}" 中的 [bookmarkconfig] 失败:`, parseError);
                     }
@@ -876,6 +903,7 @@ memory.load('${pathPrefix}', {
         // 合并去重
         const uniqueConfigs = new Map();
         for (const config of bookmarkConfigs) {
+            // 兼容不同的字段名
             const key = config['data-tab'] || config.tab;
             if (key && !uniqueConfigs.has(key)) {
                 uniqueConfigs.set(key, {
@@ -902,13 +930,13 @@ memory.load('${pathPrefix}', {
         }
 
         const firstBookmark = bookmarksContainer.querySelector('.bookmark');
-        
+
         sortedConfigs.forEach(config => {
             const newBookmark = document.createElement('div');
             newBookmark.className = 'bookmark';
             newBookmark.setAttribute('data-tab', config.tab);
             newBookmark.textContent = config.text;
-            
+
             if (firstBookmark) {
                 bookmarksContainer.insertBefore(newBookmark, firstBookmark);
             } else {
@@ -922,4 +950,7 @@ memory.load('${pathPrefix}', {
     } catch (error) {
         console.error('初始化书签配置系统时出错:', error);
     }
+
+
+
 })();
