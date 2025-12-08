@@ -311,7 +311,7 @@
         overlay.innerHTML = `
             <div class="mod06-modal">
                 <div class="mod06-header">
-                    <div class="mod06-title">高级主题编辑器 (MOD06)</div>
+                    <div class="mod06-title">自定义主题拓展</div>
                     <button class="mod06-close-btn">×</button>
                 </div>
                 <div class="mod06-body">

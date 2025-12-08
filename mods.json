@@ -260,5 +260,16 @@
     "worldBookUrl": "",
  "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 10.png"
  
+  }  ,  {
+    "id": "mod06-自定义背景拓展",
+    "name": "自定义书背景拓展",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["功能脚本"],
+    "description": " 开启该脚本后，点击设置界面的显示设置的自定义主题的编辑,可以存储更多的自定义主题,且支持调整颜色的透明度",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod06.js",
+    "worldBookUrl": "",
+ "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 11.png"
+ 
   } 
 ]
