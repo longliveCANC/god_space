@@ -42504,7 +42504,7 @@ function getEntryPath(tab) {
         return `global_lore.${globalTabKey}`;
     }else   if (tab.startsWith('world_')){
  const globalTabKey = tab.replace('world_', '');
-        return `wolrd_lore.${globalTabKey}`;
+        return `world_lore.${globalTabKey}`;
 
     }
     // 默认是世界设定
