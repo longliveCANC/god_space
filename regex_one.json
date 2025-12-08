@@ -14464,7 +14464,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.25';
+let current_game_version = '3.3.26';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -37455,7 +37455,8 @@ function togglePixelatedEffect(containerSelector = '.status-container', enable =
         updateContainerBackground(currentGameData, containerSelector);
     }
 }
- async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层版') {
+
+async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层版') {
     toastr.info(`正在确认与「${worldbookName}」的链接...`);
 
     try {
