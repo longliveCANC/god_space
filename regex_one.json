@@ -36231,7 +36231,7 @@ function initMapEditor(svgCanvas, geoUnits, parentMap) {
             
                 const cleanedData = roundNumbers(assaSettingsData.map.主要地点表);
 
-                     triggerassa(`/setinput <updateMemory>\nmemory('map.主要地点表',${JSON.stringify(cleanedData)})</updateMemory>`);
+                     triggerassa(`/setinput <updateMemory>\nmemory('map.主要地点表',${JSON.stringify(assaSettingsData.map.主要地点表)})</updateMemory>`);
         
                 console.log('✅ 所有修改已保存');
        window.mapEditMode = false;
@@ -36241,8 +36241,8 @@ function initMapEditor(svgCanvas, geoUnits, parentMap) {
                     toggleEditBtn.style.color = 'var(--text-color)';
                 }
                 deselectShape();
-                             const currentMapData = parseMap(currentGameData.地图);
-                renderMap(currentMapData);
+                            
+                renderMap(assaSettingsData.map);
                 window.applyMapTransform();
       
         };
@@ -36257,8 +36257,8 @@ function initMapEditor(svgCanvas, geoUnits, parentMap) {
                 }
                 deselectShape();
                 // 重新渲染地图
-                const currentMapData = parseMap(currentGameData.地图);
-                renderMap(currentMapData);
+                
+                renderMap(assaSettingsData.map);
                 window.applyMapTransform();
         
         };
