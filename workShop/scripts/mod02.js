@@ -700,7 +700,7 @@
         }
 
         console.log("【Nova的爱心脚本】注入完成，已准备就绪。");
-        worldHelper.showNovaAlert("数据编辑器已上线");
+        // worldHelper.showNovaAlert("数据编辑器已上线");
     }
 
 })();

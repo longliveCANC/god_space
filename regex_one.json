@@ -4223,6 +4223,7 @@ opacity: 0.6;
         label { margin-bottom: 0.5rem; font-size: 0.85em; color: var(--text-secondary-color); letter-spacing: 1px; }
 
           .custom-select, input[type="text"], input[type="number"] {
+             width:100%;
             font-family: inherit;
             background-color: var(--background-color);
             color: var(--text-color);
