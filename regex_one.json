@@ -14464,7 +14464,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.26';
+let current_game_version = '3.3.27';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -29731,13 +29731,59 @@ if (typeof finalValue === 'string' && finalValue.startsWith('_')) {
     }
     // === 审查1：路径与key去重 ===
  
-const lastPathSegment = pathParts[pathParts.length - 1];
+ const lastPathSegment = pathParts[pathParts.length - 1];
+
+// 智能判断是否重复：支持普通字符串和数组索引
+let isDuplicate = false;
+let duplicateReason = '';
+
 if (lastPathSegment === keyArg) {
-    console.log(`[Core] 💖 智能审查(去重): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${keyArg}' 重复，自动去重`);
+    // 情况1: 完全相同的字符串
+    isDuplicate = true;
+    duplicateReason = '完全匹配';
+} else if (!isNaN(lastPathSegment) && !isNaN(keyArg) && lastPathSegment === String(keyArg)) {
+    // 情况2: 都是数字字符串（数组索引）
+    isDuplicate = true;
+    duplicateReason = '数组索引匹配';
+} else if (lastPathSegment === String(keyArg) || String(lastPathSegment) === keyArg) {
+    // 情况3: 类型不同但值相同（如数字1和字符串"1"）
+    isDuplicate = true;
+    duplicateReason = '值匹配（类型转换）';
+}
+
+if (isDuplicate) {
+    console.log(`[Core] 💖 智能审查(去重): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${keyArg}' 重复（${duplicateReason}），自动去重`);
     path = pathParts.slice(0, -1).join('.');
     console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
 }
 
+// === 审查1.5：value对象key与参数key去重 ✨新增✨ ===
+if (typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
+    const valueKeys = Object.keys(finalValue);
+    
+    // 检查 value 对象是否只有一个 key，且这个 key 和 keyArg 相同
+    if (valueKeys.length === 1 && valueKeys[0] === String(keyArg)) {
+        console.log(`[Core] 💖 智能审查(value展开): 检测到 value 对象只有一个 key '${valueKeys[0]}'，与参数 key '${keyArg}' 相同，自动展平`);
+        
+        // 提取内层的真实值
+        const innerValue = finalValue[valueKeys[0]];
+        
+        console.log(`[Core] ✨ 原 Value:`, finalValue);
+        console.log(`[Core] ✨ 展开后 Value:`, innerValue);
+        
+        // 直接用内层值替换
+        assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, innerValue);
+        
+        collectedBatchOps.push({
+            type: 'memory',
+            path: path,
+            key: keyArg,
+            value: innerValue
+        });
+        
+        continue; // 跳过后续的正常赋值逻辑
+    }
+}
  // === 审查2：事件字段展平 ===
 if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
     console.log(`[Core] 💖 智能审查(事件展平): 检测到事件路径下赋值对象，自动去除中间层级`);
