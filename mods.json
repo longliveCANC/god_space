@@ -255,7 +255,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["功能脚本"],
-    "description": "开启该脚本后，识小球左上角可以自定义书签,支持生成文本或者直接变成世界书.内容你是完全可以自定义的,不必按照我提供的默认格式来.同时,开启该脚本后,可以自动扫描世界书的特定条目并识别,达到自动增加分类的目的.总之,燃尽了",
+    "description": "[需求版本是3.3.26及以上]开启该脚本后，识小球左上角可以自定义书签,支持生成文本或者直接变成世界书.内容你是完全可以自定义的,不必按照我提供的默认格式来.同时,开启该脚本后,可以自动扫描世界书的特定条目并识别,达到自动增加分类的目的.总之,燃尽了",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod05.js",
     "worldBookUrl": "",
  "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 10.png"
