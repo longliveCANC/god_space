@@ -215,15 +215,18 @@
         }
 
         /* 内容区域 (Grid) */
-        .mod04-content {
-            flex: 1;
-            padding: 30px 40px;
-            overflow-y: auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            align-content: start;
-        }
+  .mod04-content {
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+    overflow-x: hidden;  /* 新增:防止横向溢出 */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-auto-rows: min-content;  /* 新增:让每行自适应内容高度 */
+    gap: 20px;
+    align-content: start;
+    max-height: 100%;  /* 新增:确保不超过父容器 */
+}
         /* 滚动条美化 */
         .mod04-content::-webkit-scrollbar { width: 6px; }
         .mod04-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
