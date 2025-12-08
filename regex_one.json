@@ -1859,6 +1859,7 @@ display: flex; /* 新增：让它成为一个flex容器，为了更好地控制�
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    overflow:auto;
 }
 
 .book-bookmarks {
@@ -13538,14 +13539,14 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
             <button class="book-close-btn"> </button>
             <div class="book-left-page">
                 <div class="book-bookmarks">
-
+              
                     <div class="bookmark" data-tab="global_npc">全局人物</div>
                     <div class="bookmark" data-tab="global_settings">全局设定</div>
                     <div class="bookmark" data-tab="global_背包">你的背包</div>
                     <div class="bookmark" data-tab="global_其他技能">你的技能</div>
                     <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>
-                     <div class="bookmark" data-tab="npc" id="world_npc_bookmark">世界人物</div>
-                    <div class="bookmark active" data-tab="settings" id="world_settings_bookmark">世界设定</div>
+                     <div class="bookmark" data-tab="world_npc" id="world_npc_bookmark">世界人物</div>
+                    <div class="bookmark active" data-tab="world_settings" id="world_settings_bookmark">世界设定</div>
                     <div class="bookmark" data-tab="global_备忘录" id="things_bookmark">备忘录</div>
                      <div class="bookmark" data-tab="the_created" id="the_created_bookmark">$#%</div> 
                    
@@ -22465,13 +22466,12 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
         return finalCommand;
     }
 
- 
- /* 💖 妈妈为你设计的、简洁而强大的指令官（脱离酒馆环境版） 💖 */
+  /* 💖 妈妈为你设计的、简洁而强大的指令官（脱离酒馆环境版） 💖 */
 async function sendCommand(command, button, successText, showWarning) {
     // 禁用按钮，防止重复点击
-    initButton.disabled = true;
-    godSpaceButton.disabled = true;
-    if (customActionButton) customActionButton.disabled = true;
+    // initButton.disabled = true;
+    // godSpaceButton.disabled = true;
+    // if (customActionButton) customActionButton.disabled = true;
     button.textContent = `[ 指令发送中... ]`;
 
     try {
@@ -22490,7 +22490,7 @@ async function sendCommand(command, button, successText, showWarning) {
         }
 
  try{
-        // 1. 获取角色卡绑定的世界书
+        
         const charWorldbooks = getCharWorldbookNames('current');
         const charAllWorldbooks = [
             ...(charWorldbooks.primary ? [charWorldbooks.primary] : []),
@@ -22509,8 +22509,9 @@ async function sendCommand(command, button, successText, showWarning) {
             await rebindGlobalWorldbooks(newGlobalWorldbooks);
             toastr.info(`已取消全局世界书 "${targetWorldbook}" 的绑定(因角色卡已绑定)`);
         }
-        }catch{
+        }catch(e){
             toastr.warning("检查世界书出错"+e);
+            console.warn("检查世界书出错"+e);
         }
 
   if(sendMode === 'manual'){
@@ -22520,10 +22521,15 @@ async function sendCommand(command, button, successText, showWarning) {
 
          
  try{
-        const allBoundWorldbooks = [...new Set([...getGlobalWorldbookNames()])];
-        
- 
+ const charWorldbooks = getCharWorldbookNames('current');
 
+const allBoundWorldbooks = [
+  ...new Set([
+    ...getGlobalWorldbookNames(),
+    ...charWorldbooks.additional,
+    getChatWorldbookName('current')
+  ].filter(Boolean))
+];
         if (allBoundWorldbooks.length > 0) {
             for (const worldbookName of allBoundWorldbooks) {
                 try {
@@ -22542,8 +22548,9 @@ async function sendCommand(command, button, successText, showWarning) {
                 }
             }
         }
-              }catch{
+              }catch(e){
             toastr.warning("获取全局世界书的时候出错"+e);
+             console.warn("获取全局世界书的时候出错"+e);
         }
         // 6. 如果没找到[开局]词条,使用原来的默认提示
         if (!foundOpening) {
@@ -22565,12 +22572,14 @@ async function sendCommand(command, button, successText, showWarning) {
         if (customActionButton) customActionButton.disabled = false;
     }
 }
+
+
 initButton.addEventListener('click', async () => {
     playSound(clickSound, 0.8);
     initButton.textContent = '[ 指令生成中.. ]';
     // 明确传递 null 作为 customText
     const finalCommand = await generateFullCommand(true, null);
-    sendCommand(finalCommand, initButton, '[ 数据上传中 ]', false);
+    sendCommand(finalCommand, initButton, '[ 数据已上传 ]', false);
 });
 
 godSpaceButton.addEventListener('click', async () => {
@@ -42329,9 +42338,14 @@ function renderWorldBook() {
             if (typeof assaSettingsData !== 'undefined' && assaSettingsData.global_lore && assaSettingsData.global_lore[globalTabKey]) {
                 sourceData = assaSettingsData.global_lore[globalTabKey];
             }
-        } else {
-            if (typeof assaSettingsData !== 'undefined' && assaSettingsData.world_lore && assaSettingsData.world_lore[currentTab]) {
-                sourceData = assaSettingsData.world_lore[currentTab];
+        } else if (currentTab.startsWith('world_')){
+            const worldTabKey = currentTab.replace('world_', '');
+            if (typeof assaSettingsData !== 'undefined' && assaSettingsData.world_lore && assaSettingsData.world_lore[worldTabKey]) {
+                sourceData = assaSettingsData.world_lore[worldTabKey];
+            }
+        }else{
+             if (typeof assaSettingsData !== 'undefined' && assaSettingsData[currentTab]  ) {
+                sourceData = assaSettingsData[currentTab];
             }
         }
 
@@ -42502,9 +42516,13 @@ function getEntryPath(tab) {
     if (tab.startsWith('global_')) {
         const globalTabKey = tab.replace('global_', '');
         return `global_lore.${globalTabKey}`;
+    }else   if (tab.startsWith('wolrd_')){
+ const globalTabKey = tab.replace('wolrd_', '');
+        return `wolrd_lore.${globalTabKey}`;
+
     }
     // 默认是世界设定
-    return `world_lore.${tab}`;
+    return `${tab}`;
 }
 
 
