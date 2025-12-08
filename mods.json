@@ -160,7 +160,7 @@
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 13.png"
   } ,{
-    "id": "mod03-抽卡01",
+    "id": "mod03-抽卡04",
     "name": "抽卡美化04-苏联工业",
     "author": "assa",
     "version": "1.0",
@@ -169,6 +169,26 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha04.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 14.png"
+  },{
+    "id": "mod03-抽卡05",
+    "name": "抽卡美化05-超市大促销",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["美化脚本"],
+    "description": "[跟随主题]开启该脚本后，在商店的顶上可以进入抽卡界面。 需要游戏版本是3.3.22及以上。 ",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha05.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 15.png"
+  },{
+    "id": "mod03-抽卡06",
+    "name": "抽卡美化06-野生宝箱",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["美化脚本"],
+    "description": "[跟随主题]开启该脚本后，在商店的顶上可以进入抽卡界面。 需要游戏版本是3.3.22及以上。 ",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha06.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 16.png"
   },{
     "id": "mod04-data01",
     "name": "物品美化01-steam库",
