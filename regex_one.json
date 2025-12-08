@@ -37079,11 +37079,7 @@ function deleteLocation(locationName) {
     });
 }
  
-
  
-
-/* 新增一个全局变量来管理背景状态，避免重复加载 */
-// 全局状态保持不变，它依然很有用
 let backgroundState = {
     currentScene: null,
     isPixelated: false,
@@ -37326,51 +37322,8 @@ function createPixelatedCharaImage(imageUrl, targetHeight = 300, pixelSize = 10,
     });
 }
 
-/**
- * ★ 修正后的：设置网格背景
- * 现在它会优雅地淡出现有图片，然后显示网格
- * @param {HTMLElement} container - 容器元素
- */
-function setGridBackground(container) {
-    if (backgroundState.currentBgType === 'grid' || backgroundState.isTransitioning) {
-        return;
-    }
-    console.log('正在平滑切换到网格背景...');
-    backgroundState.isTransitioning = true;
-    backgroundState.currentScene = null;
 
-    // 1. 让上方的 ::after 图层变透明，实现已有图片的淡出
-    container.style.setProperty('--after-opacity', '0');
-
-    // 2. 等待淡出动画完成
-    setTimeout(() => {
-        // 3. 将网格背景的指令写入 ::before
-        // 注意：CSS变量里不能直接写多个值，我们可以在CSS里预定义
-        // 更好的做法是直接用JS设置
-        const gridImage = `
-            linear-gradient(90deg, var(--border-color) 1px, transparent 1px),
-            linear-gradient(var(--border-color) 1px, transparent 1px)
-        `;
-        container.style.setProperty('--before-bg-image', gridImage);
-        // 如果网格有特殊size，也要一并设置
-        // 但我们已经把size写在CSS里了，只要background-image变化就会生效。
-
-        // 4. 清除可能残留的图片
-        container.style.removeProperty('--after-bg-image');
-
-        // 5. 更新状态
-        backgroundState.currentBgType = 'grid';
-        backgroundState.isTransitioning = false;
-        console.log('已切换到美丽的网格背景');
-    }, 800); // 必须与CSS中的transition时间一致
-}
-
-/**
- * ★ 修正后的：设置图片背景
- * 这个函数现在更加完美了！
- * @param {HTMLElement} container - 容器元素
- * @param {string} sceneImage - 场景名称
- */
+ 
 async function setImageBackground(container, sceneImage) {
     const isPixelated = container.dataset.pixelated === 'true';
 
@@ -37389,8 +37342,7 @@ async function setImageBackground(container, sceneImage) {
     console.log(`开始准备背景切换: ${sceneImage}, 像素化: ${isPixelated}`);
 
     try {
-        // ✨ 新的逻辑 ✨
-        // 我们不再自己处理任何图片，而是直接把“藏宝图”交给画师
+  
         let finalImageUrl;
 
         if (isPixelated) {
@@ -37401,8 +37353,7 @@ async function setImageBackground(container, sceneImage) {
                 finalImageUrl = imageUrl;
              }
         } else {
-             // 如果不需要像素画，我们只需要确保它在缓存里，然后还是用藏宝图URL
-             // 我们可以写一个简单的ensureCached函数，或者直接用原始URL，让浏览器自己决定
+            
              finalImageUrl = imageUrl;
         }
 
@@ -37454,6 +37405,40 @@ function togglePixelatedEffect(containerSelector = '.status-container', enable =
     if (typeof currentGameData !== 'undefined') {
         updateContainerBackground(currentGameData, containerSelector);
     }
+}
+ 
+function setGridBackground(container) {
+    if (backgroundState.currentBgType === 'grid' || backgroundState.isTransitioning) {
+        return;
+    }
+    console.log('正在平滑切换到网格背景...');
+    backgroundState.isTransitioning = true;
+    backgroundState.currentScene = null;
+
+    // 1. 让上方的 ::after 图层变透明，实现已有图片的淡出
+    container.style.setProperty('--after-opacity', '0');
+
+    // 2. 等待淡出动画完成
+    setTimeout(() => {
+        // 3. 将网格背景的指令写入 ::before
+        // 注意：CSS变量里不能直接写多个值，我们可以在CSS里预定义
+        // 更好的做法是直接用JS设置
+        const gridImage = `
+            linear-gradient(90deg, var(--border-color) 1px, transparent 1px),
+            linear-gradient(var(--border-color) 1px, transparent 1px)
+        `;
+        container.style.setProperty('--before-bg-image', gridImage);
+        // 如果网格有特殊size，也要一并设置
+        // 但我们已经把size写在CSS里了，只要background-image变化就会生效。
+
+        // 4. 清除可能残留的图片
+        container.style.removeProperty('--after-bg-image');
+
+        // 5. 更新状态
+        backgroundState.currentBgType = 'grid';
+        backgroundState.isTransitioning = false;
+        console.log('已切换到美丽的网格背景');
+    }, 800); // 必须与CSS中的transition时间一致
 }
 
 async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层版') {
@@ -42517,8 +42502,8 @@ function getEntryPath(tab) {
     if (tab.startsWith('global_')) {
         const globalTabKey = tab.replace('global_', '');
         return `global_lore.${globalTabKey}`;
-    }else   if (tab.startsWith('wolrd_')){
- const globalTabKey = tab.replace('wolrd_', '');
+    }else   if (tab.startsWith('world_')){
+ const globalTabKey = tab.replace('world_', '');
         return `wolrd_lore.${globalTabKey}`;
 
     }
@@ -50922,6 +50907,7 @@ window.GameAPI = {
  
         return currentGameData;
     },
+    
       get playCharacterData() {
  
         return playCharacterData;
@@ -50942,6 +50928,8 @@ window.GameAPI = {
  
         return conversationHistory;
     },
+ 
+    
     performGacha: function(...args) {
         // 修改：优先查找 window.performGacha
         if (typeof window.performGacha === 'function') {
