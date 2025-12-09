@@ -2852,18 +2852,21 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .message-bubble {
+    white-space: pre-line;  
+      line-height: var(--base-line-height, 1.6);
+       font-size: var(--base-font-size, 16px);
     max-width: 93%;
     min-width:93%;
     padding: 15px 20px;
     border-radius: 20px;
     margin-bottom: 15px;
-    
+  
     border: 1px solid var(--border-color);
     /* box-shadow: 
         inset 0 0 15px var(--glow-color),
         0 2px 20px var(--border-color); */
     /* animation: fadeIn 0.5s ease-in-out, messageGlow 3s ease-in-out infinite; */
-    font-size: var(--base-font-size, 16px);
+   
     position: relative;
     backdrop-filter: blur(5px);
 }
@@ -2882,8 +2885,21 @@ input[type="range"]::-moz-range-thumb {
         transparent 100%);
    animation: leftLineScan 4s linear infinite; */
 }
+ q {
+  
+    quotes: none;
+ 
+     color: var(--text-secondary-color);   
+  
+}
 
+/* 3. 双重保险：强制隐藏伪元素，防止某些浏览器不听话 */
+q::before,
+q::after {
+    content: none !important;
+}
 .message-bubble p {
+    
      font-family: var(--base-font-family); /* 使用CSS变量 */
     margin: 0;
     padding: 0;
@@ -2987,7 +3003,7 @@ input[type="range"]::-moz-range-thumb {
     100% { opacity: 0; transform: translateX(-20px); }
 }
 
-/* AI回复文本美化 */
+ /* AI回复文本美化 */
 .assistant-message b, .assistant-message strong {
     color: var(--text-secondary-color);
     font-weight: bold;
@@ -9931,6 +9947,7 @@ input:checked + .slider:before {
 
 
 #reading-mode-content-wrapper {
+    
       width: 100%;
     flex-grow: 1;
     display: flex;
@@ -9944,8 +9961,10 @@ input:checked + .slider:before {
     height: 100%;
     padding: 30px 60px; /* 增加内边距以留出翻页按钮空间 */
     overflow-y: auto;
-    font-size: 1.1em;
-    line-height: 1.8;
+   
+   white-space: pre-line; /* 保留换行符 */
+     line-height: var(--base-line-height, 1.6);
+       font-size: var(--base-font-size, 16px);
     scrollbar-width: thin;
     scrollbar-color: var(--primary-color) var(--container-bg-color);
 }
@@ -13730,20 +13749,29 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                     <label>记忆上一次的模组配置</label>
                     <input type="checkbox" id="remember-mod-choice" style="width: auto; cursor: pointer;" checked>
                 </div>
-                               <div class="setting-item">
-                    <label for="streaming-toggle">流式传输</label>
+                            <div class="setting-item">
+                    <label for="streaming-toggle">
+                        <span id="streaming-status-indicator" style="font-weight: bold;"></span> 流式传输
+                    </label>
                     <div class="switch-container">
                         <button id="streaming-toggle" class="switch-btn" data-state="on">开启</button>
                     </div>
                 </div>
+
+                <div id="simple-streaming-options" class="setting-item" style="display: none; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px; margin-left: 20px;">
+                    <label for="simple-streaming-toggle">启用简易流式</label>
+                    <input type="checkbox" id="simple-streaming-toggle" style="width: auto; cursor: pointer;">
+                </div>
+
                 <div class="setting-item">
                     <label>自定义绿灯扫描楼层</label>
                     <input type="checkbox" id="remember-scan-floors" style="width: auto; cursor: pointer;">
                 </div>
- <div class="setting-item">
-    <label>扫描楼层数 <span id="current-scan-floors" style="color: var(--accent-color); font-weight: bold;">(未设置)</span></label>
-    <button id="set-scan-floors-btn" class="control-btn-special">设置楼层</button>
-</div>
+
+                <div class="setting-item" id="scan-floors-setting-container" style="display: none;">
+                    <label>扫描楼层数 <span id="current-scan-floors" style="color: var(--accent-color); font-weight: bold;">(未设置)</span></label>
+                    <button id="set-scan-floors-btn" class="control-btn-special">设置楼层</button>
+                </div>
 <div class="setting-item">
     <label>自动设置NPC为绿灯</label>
     <input type="checkbox" id="auto-set-npc-filter" style="width: auto; cursor: pointer;">
@@ -13905,12 +13933,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                         <span id="line-height-value">1.6</span>
                     </div>
                 </div>
-                <div class="setting-item">
-                    <label for="line-height-more">段落换行</label>
-                    <div class="switch-container">
-                        <button id="line-height-more" class="switch-btn" data-state="on">开启</button>
-                    </div>
-                </div>
+ 
                 <div class="setting-item">
                     <label for="transparent-toggle">消息背景透明</label>
                     <div class="switch-container">
@@ -14464,7 +14487,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.28';
+let current_game_version = '3.3.29';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -22713,16 +22736,36 @@ async function loadPreviousMessages() {
         if (loadMoreBtn) loadMoreBtn.style.display = 'none'; // 如果已经到顶了，就隐藏
     }
 }
-// ✨ 一个全新的，专门为阅读模式打造的渲染魔法 ✨
-async function renderReadingModeChapter(msg) {
-    const bubble = document.createElement('div'); // 我们仍然需要一个临时的容器来处理DOM
+ async function renderReadingModeChapter(msg) {
+    // 使用一个临时的 div 元素来辅助 DOM 操作，最终返回其 innerHTML
+    const bubble = document.createElement('div');
     let processedContent = msg.content;
 
-    // --- 以下逻辑与 createMessageBubble 非常相似，但为阅读模式做了简化和优化 ---
-
-    // 1. 保护和抽离 HTML/代码块
+    // 初始化所有占位符对象
     const htmlPlaceholders = {};
     let placeholderIndex = 0;
+    const msgPlaceholders = {};
+    let msgPlaceholderIndex = 0;
+    const groupChatPlaceholders = {};
+    let groupChatPlaceholderIndex = 0;
+
+    // 步骤1：提前处理引号、Markdown 并进行通用格式化 (与 createMessageBubble 对齐)
+    processedContent = processedContent
+        .replace(/“/g, '<span class="dialogue-quote">“')
+        .replace(/”/g, '”</span>')
+        .replace(/「/g, '<span class="dialogue-quote">「')
+        .replace(/」/g, '」</span>')
+        .replace(/\*\*(.+?)\*\*/g, (match, p1) => `<strong>${p1}</strong>`)
+        .replace(/\*(.+?)\*/g, (match, p1) => `<em>${p1}</em>`);
+
+    processedContent = formatAsTavernRegexedString(
+        processedContent,
+        'ai_output',
+        'display',
+        { depth: -1 } // 阅读模式固定深度为 -1
+    );
+
+    // 步骤2：保护 HTML 和代码块
     let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
         const placeholder = `HTMLREADINGPLACEHOLDER${placeholderIndex}`;
         const rawContent = htmlBlock || markdownBlock;
@@ -22731,176 +22774,142 @@ async function renderReadingModeChapter(msg) {
         placeholderIndex++;
         return placeholder;
     });
-// ✨【新增：私聊 <msg> 占位符机制初始化】✨
-    const msgPlaceholders = {}; 
-    let msgPlaceholderIndex = 0;
-const groupChatPlaceholders = {}; 
-    let groupChatPlaceholderIndex = 0;
-    // 2. 清理内容，但保留所有非交互性标签
-    // 步骤 2.1：解析 <msg> 标签并替换为占位符
+
+    // 步骤3.1：解析 <msg> 标签并替换为占位符
     let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
         const userNickname = currentGameData?.user?.nick_name || '你';
-        
-        // 将消息内容渲染成 HTML（使用外部的辅助函数）
-        const renderedMsgHtml = worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname);
-        
-        // 生成占位符
-        const placeholder = `MSGREADINGPLACEHOLDER${msgPlaceholderIndex}`;
+        // 注意：在阅读模式下，is_from_render 通常为 false 或不传递
+        const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, false);
+        const placeholder = `{{MSGREADINGPLACEHOLDER${msgPlaceholderIndex}}}`;
         msgPlaceholders[placeholder] = renderedMsgHtml;
         msgPlaceholderIndex++;
         return placeholder;
     });
-const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
-let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
-    const userNickname = currentGameData?.user?.nick_name || '你';
-    let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
-    
-    // 逐行解析消息
-    if (typeof chatContent === 'string') {
-        const lines = chatContent.trim().split('\n');
-        for (const line of lines) {
-            const cleanedLine = line.trim();
-            if (!cleanedLine || cleanedLine.startsWith('summary|')) {
-                continue; 
-            }
-            const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
-            if (messageMatch) {
-                const sender = messageMatch[1].trim();
-                const content = messageMatch[2].trim();
-                // ⚠️ 使用外部的 renderGroupChatToHtml 函数
-                groupChatHtml += worldHelper.renderGroupChatToHtml(sender, content, userNickname);
-            }
-        }
-    }
 
-    // 3. 生成占位符
-    const placeholder = `GROUPCHATREADINGPLACEHOLDER${groupChatPlaceholderIndex}`;
-    groupChatPlaceholders[placeholder] = groupChatHtml;
-    groupChatPlaceholderIndex++;
-    return placeholder;
-});
+    // 步骤3.2：解析 <group_chat> 标签并替换为占位符
+    const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
+    let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
+        const userNickname = currentGameData?.user?.nick_name || '你';
+        let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
 
-
-  // 步骤 2.3：清理其他不相关标签 (使用 contentWithGroupChatPlaceholder)
-  let renderedHtml = contentWithGroupChatPlaceholder // !!! 使用最新的 string// !!! 使用新的 contentWithMsgPlaceholder
-        .replace(/<(battle|guide|options|forum_threads|shop_item|表现总结)>[\s\S]*?<\/\1>/gs, '')
-        .replace(/<group_chat\b[^>]*>(?:(?!<group_chat\b)[\s\S])*?<\/group_chat>/gs, '');
-        // 3. 应用酒馆正则，深度固定为-1
-  // 3. 应用酒馆正则，深度固定为-1
-    const pureContent = formatAsTavernRegexedString(
-        renderedHtml, // !!! 对清理后的内容应用正则
-        'ai_output',
-        'display',
-        { depth: -1 }
-    );
-    renderedHtml = pureContent; // 重新赋值给 renderedHtml
-
-
-    // 4. 对处理后可能产生的新HTML块进行二次抽离
-    const additionalHtmlPlaceholders = {};
-    let additionalPlaceholderIndex = 1000;
-    renderedHtml = renderedHtml.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, codeBlock) => {
-        const placeholder = `ADDITIONALHTMLREADINGPLACEHOLDER${additionalPlaceholderIndex}`;
-        const rawContent = htmlBlock || codeBlock;
-        if (!rawContent) return match;
-        additionalHtmlPlaceholders[placeholder] = rawContent;
-        additionalPlaceholderIndex++;
-        return placeholder;
-    });
-    Object.assign(htmlPlaceholders, additionalHtmlPlaceholders);
-
-    // 5. 格式化段落和引号
-    const protectedContent = renderedHtml
-        .replace(/“/g, 'NOVA_LQ').replace(/”/g, 'NOVA_RQ')
-        .replace(/「/g, 'NOVA_LA').replace(/」/g, 'NOVA_RA')
-        .replace(/\n/g, 'NOVA_BR');
-
-    const specialBlocks = {};
-    let blockIndex = 0;
-    let contentWithDetailsPlaceholder = protectedContent.replace(/<details>[\s\S]*?<\/details>/gs, (match) => {
-        const placeholder = `READINGSPECIALBLOCK${blockIndex++}`;
-        specialBlocks[placeholder] = match;
-        return placeholder;
-    });
-
-    const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
-    const styledParagraphs = paragraphs.map(p_content => {
-        if (p_content.startsWith('READINGSPECIALBLOCK')) return p_content;
-        if (p_content.trim() === '') return '<p> </p>';
-        let baseHtml = formatAsDisplayedMessage(p_content);
-        const textWithQuotes = baseHtml
-            .replace(/NOVA_LQ/g, '<span class="dialogue-quote">“').replace(/NOVA_RQ/g, '”</span>')
-            .replace(/NOVA_LA/g, '<span class="dialogue-quote">「').replace(/NOVA_RA/g, '」</span>');
-        return `<p>${textWithQuotes}</p>`;
-    });
-
-    let finalHtml = styledParagraphs.join('');
-    // ✨【新增：替换 <msg> 占位符】✨
-    for (const placeholder in msgPlaceholders) {
-        // 在 finalHtml 中替换占位符
-        finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
-    }
-    for (const placeholder in groupChatPlaceholders) {
-    // 替换群聊 HTML
-finalHtml = finalHtml.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), groupChatPlaceholders[placeholder]); // <-- 替换时需要转义
-    }
-    for (const placeholder in specialBlocks) {
-        const cleanBlock = specialBlocks[placeholder]
-            .replace(/NOVA_LQ/g, '“').replace(/NOVA_RQ/g, '”')
-            .replace(/NOVA_LA/g, '「').replace(/NOVA_RA/g, '」')
-            .replace(/NOVA_BR/g, '<br>');
-        finalHtml = finalHtml.replace(placeholder, cleanBlock);
-    }
- if (typeof memeImageMap !== 'undefined' && memeImageMap) {
-            finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
-                if (memeImageMap[memeName]) {
-                    return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+        if (typeof chatContent === 'string') {
+            const lines = chatContent.trim().split('\n');
+            for (const line of lines) {
+                const cleanedLine = line.trim();
+                if (!cleanedLine || cleanedLine.startsWith('summary|')) {
+                    continue;
                 }
-                return match;
-            });
+                const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/);
+                if (messageMatch) {
+                    const sender = messageMatch[1].trim();
+                    const content = messageMatch[2].trim();
+                    groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+                }
+            }
         }
+
+        const placeholder = `{{GROUPCHATREADINGPLACEHOLDER${groupChatPlaceholderIndex}}}`;
+        groupChatPlaceholders[placeholder] = groupChatHtml;
+        groupChatPlaceholderIndex++;
+        return placeholder;
+    });
+
+    // 步骤4：移除其他结构化标签 (不再需要特殊处理 <details>)
+    const pureContent = contentWithGroupChatPlaceholder
+        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
+        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
+        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
+        .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
+        .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
+        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
+
+    // 步骤5：替换占位符（正确的累积替换）
+    let finalHtml = pureContent;
+
+    // 替换 msg 占位符
+    for (const placeholder in msgPlaceholders) {
+        const escapedPlaceholder = placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        finalHtml = finalHtml.replace(new RegExp(escapedPlaceholder, 'g'), msgPlaceholders[placeholder]);
+    }
+
+    // 替换 group_chat 占位符
+    for (const placeholder in groupChatPlaceholders) {
+        const escapedPlaceholder = placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        finalHtml = finalHtml.replace(new RegExp(escapedPlaceholder, 'g'), groupChatPlaceholders[placeholder]);
+    }
+
+    // 步骤6：替换表情包图片
+    if (typeof memeImageMap !== 'undefined' && memeImageMap) {
+        finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
+            if (memeImageMap[memeName]) {
+                return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+            }
+            return match;
+        });
+    }
+
     bubble.innerHTML = finalHtml;
 
-    // 6. ✨ 使用稳定可靠的 srcdoc 方法处理 iframe ✨
+    // 步骤7：替换 HTML 内容占位符为 iframe (与 createMessageBubble 完全对齐)
     for (const placeholder in htmlPlaceholders) {
         const walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
         let node;
-        let nodesToReplace = [];
         while (node = walker.nextNode()) {
             if (node.nodeValue.includes(placeholder)) {
-                nodesToReplace.push(node);
-            }
-        }
+                const rawHtmlContent = htmlPlaceholders[placeholder];
 
-        for (const nodeToReplace of nodesToReplace) {
-             if (!nodeToReplace.parentNode) continue; // 安全检查
+                const iframe = document.createElement('iframe');
+                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+                iframe.style.width = '100%';
+                iframe.style.resize = 'vertical';
+                iframe.style.overflow = 'auto';
 
-            const rawHtmlContent = htmlPlaceholders[placeholder];
-            const iframe = document.createElement('iframe');
-            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-            iframe.style.width = '100%';
-            
-            // iframe.style.border = '1px solid #ccc';
-            iframe.style.resize = 'vertical';
-            iframe.style.overflow = 'auto';
+                const frameId = 'reader-scroll-' + Date.now() + Math.random();
+                iframe.id = frameId;
 
-            const frameId = 'reader-scroll-' + Date.now() + Math.random();
-            iframe.id = frameId;
+                const parentNode = node.parentNode;
+                const remainingText = node.nodeValue.replace(placeholder, '');
 
- // 1. 先准备好我们完整的画卷内容
-const fullHtmlContent = `<!DOCTYPE html>
+                if (remainingText) {
+                    node.nodeValue = remainingText;
+                    parentNode.insertBefore(iframe, node.nextSibling);
+                } else {
+                    parentNode.replaceChild(iframe, node);
+                }
+
+                window.addEventListener('message', function(event) {
+                    if(event.data.frameId === frameId && event.data.height) {
+                        iframe.style.height = (event.data.height + 20) + 'px';
+                    }
+                }, false);
+
+                const detailsParent = iframe.closest('details');
+                if (detailsParent) {
+                    detailsParent.addEventListener('toggle', function() {
+                        if (detailsParent.open) {
+                            setTimeout(() => {
+                                iframe.contentWindow.postMessage({
+                                    action: 'recalculateHeight',
+                                    frameId: frameId
+                                }, '*');
+                            }, 50);
+                        }
+                    });
+                }
+
+                const fullHtmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        /* 妈妈把样式里的 --base-font-family 替换为具体值，因为 iframe 可能无法直接继承 CSS 变量 */
         body {
-           font-family: var(--base-font-family);
+            font-family: var(--base-font-family);
             color: black;
-            background-color: transparent;  
             margin: 0;
             padding: 0px;
             box-sizing: border-box;
+            background-color: transparent;
         }
         body::-webkit-scrollbar { width: 8px; }
         body::-webkit-scrollbar-track { background: rgba(200, 200, 200, 0.2); }
@@ -22912,85 +22921,52 @@ const fullHtmlContent = `<!DOCTYPE html>
     ${rawHtmlContent}
     <script>
         function reportHeight() {
-            // 在 requestAnimationFrame 中报告高度，可以避免布局抖动，获取更准确的值
-            requestAnimationFrame(() => {
-                const height = document.body.scrollHeight;
-                window.parent.postMessage({
-                    frameId: "${frameId}",
-                    height: height
-                }, '*');
-            });
+            const height = document.body.scrollHeight;
+            window.parent.postMessage({
+                frameId: "${frameId}",
+                height: height
+            }, '*');
         }
 
-        // 使用 DOMContentLoaded 会比 window.onload 更快触发
-        document.addEventListener('DOMContentLoaded', reportHeight);
+        window.onload = reportHeight;
+        setTimeout(reportHeight, 100);
+        setTimeout(reportHeight, 500);
 
-        // onload 作为后备，确保所有资源（如图片）加载完后再次检查高度
-        window.addEventListener('load', () => {
-             reportHeight();
-             // 额外增加延迟检查，应对一些复杂的异步加载内容
-             setTimeout(reportHeight, 300);
-             setTimeout(reportHeight, 1000);
-        });
-
-        // 对图片加载的监听保持不变
         Array.from(document.getElementsByTagName('img')).forEach(img => {
             if (!img.complete) {
                 img.addEventListener('load', reportHeight);
             }
         });
 
-        // 监听父页面的消息，保持不变
-window.addEventListener('message', function(event) {
-   
-    if(event.data.frameId === frameId && event.data.height && event.data.height > 20) {
-        iframe.style.height = (event.data.height + 20) + 'px';
-    }
-}, false);
+        window.addEventListener('message', function(event) {
+            if (event.data.action === 'recalculateHeight' && event.data.frameId === '${frameId}') {
+                reportHeight();
+            }
+        });
     <\/script>
 </body>
 </html>`;
-            iframe.onload = function() {
-                try {
-                    iframe.contentWindow.postMessage({ action: 'recalculateHeight', frameId: frameId }, '*');
-                } catch(e) {}
-            };
 
-            try {
-                iframe.srcdoc = fullHtmlContent;
-            } catch (error) {
-                iframe.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(fullHtmlContent);
-            }
-            // --------------------------------------------------------
+                iframe.onload = function() {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        iframeDoc.open();
+                        iframeDoc.write(fullHtmlContent);
+                        iframeDoc.close();
+                    } catch (error) {
+                        console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
+                        iframe.srcdoc = fullHtmlContent;
+                    }
+                };
 
-            const parentNode = nodeToReplace.parentNode;
-            const remainingText = nodeToReplace.nodeValue.replace(placeholder, '');
-            if (remainingText) {
-                nodeToReplace.nodeValue = remainingText;
-                parentNode.insertBefore(iframe, nodeToReplace.nextSibling);
-            } else {
-                parentNode.replaceChild(iframe, nodeToReplace);
-                setTimeout(() => {
-    try {
-        if (iframe.contentWindow) {
-             iframe.contentWindow.postMessage({
-                action: 'recalculateHeight',
-                frameId: frameId
-            }, '*');
-        }
-    } catch(e) {
-        console.warn("向新创建的画卷问好失败了，不过别担心，它自己会报告的。");
-    }
-}, 500); // 延迟500毫秒，给 iframe 足够的时间去加载初始内容
+                iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>加载中...</body></html>`;
             }
         }
     }
 
-    // 7. 返回渲染好的纯净 HTML 字符串
+    // 步骤8：返回最终渲染的 HTML 字符串
     return bubble.innerHTML;
 }
- 
- 
  
 
 function getChatConfig(key, defaultValue) {
@@ -25403,290 +25379,200 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     </div>`;
 }
 
-async function createMessageBubble(msg, mode = 'chat',is_from_render = false) { 
+  async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
     let content = msg.content;
    
     const originalIndex = conversationHistory.indexOf(msg);
     if (originalIndex === -1) return document.createElement('div'); // 安全保护
 
-    // 以下所有代码，都是从你原来的 renderHistory 的 forEach 循环中“复制粘贴”过来的！
-    // 几乎一模一样，只是它现在专注于只处理一条消息。
     const bubble = document.createElement('div');
     bubble.classList.add('message-bubble');
     bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
 
- 
     let processedContent = content;
-        const htmlPlaceholders = {};
-        let placeholderIndex = 0;
+    const htmlPlaceholders = {};
+    let placeholderIndex = 0;
 
-     const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
-   
-       processedContent = formatAsTavernRegexedString(
-            processedContent,
-            msg.role === 'user' ? 'user_input' : 'ai_output',
-            'display',
-            { depth: depth }
-        );
-        // 这一步必须在所有其他结构性处理之前！
-        let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
-            const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
-            const rawContent = htmlBlock || markdownBlock;
-            if (!rawContent) return match;
-            htmlPlaceholders[placeholder] = rawContent;
-            placeholderIndex++;
-            return placeholder;
-        });
+    const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
+       // 步骤4：处理引号和格式化
+ processedContent = processedContent
+            .replace(/“/g, '<span class="dialogue-quote">“')
+            .replace(/”/g, '”</span>')
+            .replace(/「/g, '<span class="dialogue-quote">「')
+            .replace(/」/g, '」</span>') 
+     .replace(/\*\*(.+?)\*\*/g, function(match, p1) { 
+        return '<strong>' + p1 + '</strong>'; 
+    })
+    .replace(/\*(.+?)\*/g, function(match, p1) { 
+        return '<em>' + p1 + '</em>'; 
+    });
+    processedContent = formatAsTavernRegexedString(
+        processedContent,
+        msg.role === 'user' ? 'user_input' : 'ai_output',
+        'display',
+        { depth: depth }
+    );
 
+    // 步骤1：保护 HTML 和代码块
+    let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
+        const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
+        const rawContent = htmlBlock || markdownBlock;
+        if (!rawContent) return match;
+        htmlPlaceholders[placeholder] = rawContent;
+        placeholderIndex++;
+        return placeholder;
+    });
 
-const msgPlaceholders = {}; // 新增：用于存储 <msg> 标签生成的 HTML 
-        let msgPlaceholderIndex = 0; // 新增：<msg> 占位符索引
-const groupChatPlaceholders = {}; // 用于存储 <group_chat> 标签生成的 HTML 
-let groupChatPlaceholderIndex = 0; // <group_chat> 占位符索引
-        // 步骤 2.1：首先解析 <msg> 标签并替换为占位符
-        let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
-            const userNickname = currentGameData?.user?.nick_name || '你';
-            
-            // 2. 将消息内容渲染成 HTML
-            const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname,is_from_render);
-            
-            // 3. 生成占位符
-           const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
-            msgPlaceholders[placeholder] = renderedMsgHtml;
-            msgPlaceholderIndex++;
-            return placeholder;
-        });
+    const msgPlaceholders = {};
+    let msgPlaceholderIndex = 0;
+    const groupChatPlaceholders = {};
+    let groupChatPlaceholderIndex = 0;
+
+    // 步骤2.1：解析 <msg> 标签并替换为占位符
+    let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
+        const userNickname = currentGameData?.user?.nick_name || '你';
+        const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, is_from_render);
+        const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
+        msgPlaceholders[placeholder] = renderedMsgHtml;
+        msgPlaceholderIndex++;
+        return placeholder;
+    });
         
-// ✨ 步骤 2.2：解析 <group_chat> 标签并替换为占位符
-const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
-let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
-    const userNickname = currentGameData?.user?.nick_name || '你';
-    let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
-    
-    // 逐行解析消息
-    if (typeof chatContent === 'string') {
-        const lines = chatContent.trim().split('\n');
-        for (const line of lines) {
-            const cleanedLine = line.trim();
-            
-            // 忽略空的行、summary行
-            if (!cleanedLine || cleanedLine.startsWith('summary|')) {
-                continue; 
-            }
-
-            // 匹配 发送人|消息内容
-            const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
-            if (messageMatch) {
-                const sender = messageMatch[1].trim();
-                const content = messageMatch[2].trim();
+    // 步骤2.2：解析 <group_chat> 标签并替换为占位符
+    const groupChatRegex = /<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs;
+    let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupChatRegex, (match, groupName, chatContent) => {
+        const userNickname = currentGameData?.user?.nick_name || '你';
+        let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
+ 
+        // 逐行解析消息
+        if (typeof chatContent === 'string') {
+            const lines = chatContent.trim().split('\n');
+            for (const line of lines) {
+                const cleanedLine = line.trim();
                 
-                // ⚠️ 使用前面提供的 renderGroupChatToHtml 函数
-                groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+                // 忽略空行和 summary 行
+                if (!cleanedLine || cleanedLine.startsWith('summary|')) {
+                    continue; 
+                }
+
+                // 匹配 发送人|消息内容
+                const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/); 
+                if (messageMatch) {
+                    const sender = messageMatch[1].trim();
+                    const content = messageMatch[2].trim();
+                    groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+                }
             }
         }
-    }
 
-    // 3. 生成占位符
-  const placeholder = `{{GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}}}`; // <-- 修改为花括号形式
-    groupChatPlaceholders[placeholder] = groupChatHtml;
-    groupChatPlaceholderIndex++;
-    return placeholder;
-});
+        const placeholder = `{{GROUPCHATPLACEHOLDER${groupChatPlaceholderIndex}}}`;
+        groupChatPlaceholders[placeholder] = groupChatHtml;
+        groupChatPlaceholderIndex++;
+        return placeholder;
+    });
 
-// ⚠️ 修正：现在我们应该使用 contentWithGroupChatPlaceholder
-  const pureContent = contentWithGroupChatPlaceholder // !!! 使用新的 contentWithGroupChatPlaceholder
-       .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+    // 步骤3：移除其他结构化标签
+    const pureContent = contentWithGroupChatPlaceholder
+        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
         .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
         .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
         .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
-        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '')
-      
-        .replace(/<group_chat\b[^>]*>(?:(?!<group_chat\b)[\s\S])*?<\/group_chat>/gs, '');
-   
-     // 魔法第三步：我们应用酒馆正则和深度规则
-        // const depth = Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
-        let renderedHtml = formatAsTavernRegexedString(
-            pureContent,
-            msg.role === 'user' ? 'user_input' : 'ai_output',
-            'display',
-            { depth: depth }
-        );
+        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
-        // 魔法第四步：我们就不需要在这里再次处理 HTML 占位符了，因为它已经在第一步完成了。
-        // renderedHtml = renderedHtml.replace(/<html>.../gs, ...); // <--- 删除这一整块
-// ✨ 魔法第四点五步：处理经过 formatAsTavernRegexedString 后新产生的 HTML 内容 ✨
-const additionalHtmlPlaceholders = {};
-let additionalPlaceholderIndex = 1000; // 使用不同的起始索引避免冲突
 
-renderedHtml = renderedHtml.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, codeBlock) => {
-    const placeholder = `ADDITIONALHTMLPLACEHOLDER${additionalPlaceholderIndex}`;
-    const rawContent = htmlBlock || codeBlock;
-    if (!rawContent) return match;
+
+    // 步骤5：替换占位符（修复：正确的累积替换）
+    let finalHtml = pureContent;
     
+    // 替换 msg 占位符
+    for (const placeholder in msgPlaceholders) {
+        // 转义特殊字符以安全地用于正则表达式
+        const escapedPlaceholder = placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        finalHtml = finalHtml.replace(new RegExp(escapedPlaceholder, 'g'), msgPlaceholders[placeholder]);
+    }
+    
+    // 替换 group_chat 占位符
+    for (const placeholder in groupChatPlaceholders) {
+        const escapedPlaceholder = placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        finalHtml = finalHtml.replace(new RegExp(escapedPlaceholder, 'g'), groupChatPlaceholders[placeholder]);
+    }
+
+    // 步骤6：替换表情包图片
+    if (typeof memeImageMap !== 'undefined' && memeImageMap) {
+        finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
+            if (memeImageMap[memeName]) {
+                return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+            }
+            return match;
+        });
+    }
+//  finalHtml = formatAsDisplayedMessage(finalHtml);
+      bubble.innerHTML =    finalHtml;
  
-    
-    additionalHtmlPlaceholders[placeholder] = rawContent;
-    additionalPlaceholderIndex++;
-    return placeholder;
-});
 
-// 将新的占位符合并到原有的占位符对象中
-Object.assign(htmlPlaceholders, additionalHtmlPlaceholders);
+    // 步骤7：替换 HTML 内容占位符为 iframe
+    for (const placeholder in htmlPlaceholders) {
+        const walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while (node = walker.nextNode()) {
+            if (node.nodeValue.includes(placeholder)) {
+                const rawHtmlContent = htmlPlaceholders[placeholder];
 
-        const protectedContent = renderedHtml
-            .replace(/“/g, 'NOVA_LQ')
-            .replace(/”/g, 'NOVA_RQ')
-            .replace(/「/g, 'NOVA_LA')
-            .replace(/」/g, 'NOVA_RA')
-            .replace(/\n/g, 'NOVA_BR');
+                // 创建 iframe
+                const iframe = document.createElement('iframe');
+                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+                iframe.style.width = '100%';
+                iframe.style.resize = 'vertical';
+                iframe.style.overflow = 'auto';
 
-        
-        const specialBlocks = {};
-        let blockIndex = 0;
-        let contentWithDetailsPlaceholder = protectedContent.replace(/<details>[\s\S]*?<\/details>/gs, (match) => {
-            const placeholder = `SPECIALBLOCKPLACEHOLDER${blockIndex}`;
-        
-            specialBlocks[placeholder] = match;
-            blockIndex++;
-            return placeholder;
-        });
+                const frameId = 'magic-scroll-' + Date.now() + Math.random();
+                iframe.id = frameId;
 
-         // 首先，将 NOVA_BR 替换为 <br>，然后根据换行符分割成段落
-// const contentWithBr = contentWithDetailsPlaceholder.replace(/NOVA_BR/g, '<br>');
-const paragraphs = contentWithDetailsPlaceholder.split('NOVA_BR');
-         const styledParagraphs = paragraphs.map(p_content => {
-            if (p_content.startsWith('SPECIALBLOCKPLACEHOLDER')) {
-                return p_content;
-            }
-                let currentlineHeightState = localStorage.getItem('lineHeightMore') || 'on';
-    if (currentlineHeightState === 'on') {
-       if (p_content.trim() === '') {
-                return '<p> </p><br>';
-            }
-    } else {
-        if (p_content.trim() === '') {
-                return '<p> </p>';
-            }
-    }
-            
-            let baseHtml = formatAsDisplayedMessage(p_content);
-            const textWithQuotes = baseHtml
-                .replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
-                .replace(/NOVA_RQ/g, '”</span>')
-                .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
-                .replace(/NOVA_RA/g, '」</span>')
-                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
-    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
-            return `<p>${textWithQuotes}</p>`;
-        });
+                const parentNode = node.parentNode;
+                const remainingText = node.nodeValue.replace(placeholder, '');
 
-
-        // 将所有美丽的段落重新组合起来
-        let finalHtml = styledParagraphs.join('');
-// ✨【新增：替换 <msg> 占位符】✨
-        for (const placeholder in msgPlaceholders) {
-     
-            finalHtml = finalHtml.replace(new RegExp(placeholder, 'g'), msgPlaceholders[placeholder]);
-        }
-        for (const placeholder in groupChatPlaceholders) {
-      // 替换群聊 HTML
-      finalHtml = finalHtml.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), groupChatPlaceholders[placeholder]); // <-- 替换时需要转义
-    }
-        // 最后，将我们保护好的 <details> 结构原封不动地替换回去
-          for (const placeholder in specialBlocks) {
-            const cleanBlock = specialBlocks[placeholder].replace(/NOVA_LQ/g, '<span class="dialogue-quote">“')
-                .replace(/NOVA_RQ/g, '”</span>')
-                .replace(/NOVA_LA/g, '<span class="dialogue-quote">「')
-                .replace(/NOVA_RA/g, '」</span>')
-                .replace(/NOVA_BR/g, '<br>')
-                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
-    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
-            finalHtml = finalHtml.replace(placeholder, cleanBlock);
-        }
-        if (typeof memeImageMap !== 'undefined' && memeImageMap) {
-            finalHtml = finalHtml.replace(/\[([^\]]+)\]/g, (match, memeName) => {
-                if (memeImageMap[memeName]) {
-                    return `<img src="${memeImageMap[memeName]}" alt="${memeName}" class="meme-image" style="max-width: 200px; max-height: 200px; vertical-align: middle; margin: 4px;" />`;
+                // 替换节点
+                if (remainingText) {
+                    node.nodeValue = remainingText;
+                    parentNode.insertBefore(iframe, node.nextSibling);
+                } else {
+                    parentNode.replaceChild(iframe, node);
                 }
-                return match;
-            });
-        }
 
-        bubble.innerHTML = finalHtml;
-        // 步骤3：在气泡中寻找“画卷”占位符，并用安全的“魔法结界”(iframe)替换它们
-        for (const placeholder in htmlPlaceholders) {
-            // 我们不能直接替换innerHTML，因为那样会重新解析整个气泡，导致事件监听器等丢失
-            // 我们需要找到包含占位符的文本节点并替换它
-            const walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            while (node = walker.nextNode()) {
-                if (node.nodeValue.includes(placeholder)) {
-                    const rawHtmlContent = htmlPlaceholders[placeholder];
+                // 监听高度变化消息
+                window.addEventListener('message', function(event) {
+                    if(event.data.frameId === frameId && event.data.height) {
+                        iframe.style.height = (event.data.height + 20) + 'px';
+                    }
+                }, false);
 
-                                      // 创建我们的魔法结界 iframe
-                   // 创建我们的魔法结界 iframe
-const iframe = document.createElement('iframe');
-iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-iframe.style.width = '100%';
- 
-// iframe.style.border = '1px solid #ccc';
-iframe.style.resize = 'vertical';
-iframe.style.overflow = 'auto';
+                // 处理 details 标签展开事件
+                const detailsParent = iframe.closest('details');
+                if (detailsParent) {
+                    detailsParent.addEventListener('toggle', function() {
+                        if (detailsParent.open) {
+                            setTimeout(() => {
+                                iframe.contentWindow.postMessage({
+                                    action: 'recalculateHeight',
+                                    frameId: frameId
+                                }, '*');
+                            }, 50);
+                        }
+                    });
+                }
 
-// 我们给它一个唯一的"名字"，方便画卷找到它
-const frameId = 'magic-scroll-' + Date.now() + Math.random();
-iframe.id = frameId;
-
-const parentNode = node.parentNode;
-const remainingText = node.nodeValue.replace(placeholder, '');
-
-// 用iframe替换掉占位符
-if (remainingText) {
-    node.nodeValue = remainingText;
-    parentNode.insertBefore(iframe, node.nextSibling);
-} else {
-    parentNode.replaceChild(iframe, node);
-}
-
-// 这是我们的"身高倾听者"，它耐心等待画卷的报告
-window.addEventListener('message', function(event) {
-    if(event.data.frameId === frameId && event.data.height) {
-        iframe.style.height = (event.data.height + 20) + 'px';
-    }
-}, false);
-
-const detailsParent = iframe.closest('details');
-if (detailsParent) {
-    detailsParent.addEventListener('toggle', function() {
-        if (detailsParent.open) {
-            setTimeout(() => {
-                iframe.contentWindow.postMessage({
-                    action: 'recalculateHeight',
-                    frameId: frameId
-                }, '*');
-            }, 50);
-        }
-    });
-}
-
-// ✨ 新的安全内容插入方法 ✨
-iframe.onload = function() {
-    try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        
-        // 直接设置完整的HTML文档内容
-        const fullHtmlContent = `<!DOCTYPE html>
+                // 准备完整的 HTML 内容（移到外面以便 catch 块也能访问）
+                const fullHtmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
         body {
             font-family: var(--base-font-family);
-             
-             color: black;
+            color: black;
             margin: 0;
             padding: 0px;
             box-sizing: border-box;
@@ -25710,7 +25596,7 @@ iframe.onload = function() {
 
         window.onload = reportHeight;
         setTimeout(reportHeight, 100);
-        setTimeout(reportHeight, 500); // 额外延迟确保字体加载
+        setTimeout(reportHeight, 500);
         
         Array.from(document.getElementsByTagName('img')).forEach(img => {
             if (!img.complete) { 
@@ -25727,61 +25613,52 @@ iframe.onload = function() {
 </body>
 </html>`;
 
-        iframeDoc.open();
-        iframeDoc.write(fullHtmlContent);
-        iframeDoc.close();
-        
-    } catch (error) {
-        console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
-        // 降级到srcdoc方法
-        iframe.srcdoc = fullHtmlContent;
-    }
-};
+                // 设置 iframe 内容
+                iframe.onload = function() {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        iframeDoc.open();
+                        iframeDoc.write(fullHtmlContent);
+                        iframeDoc.close();
+                    } catch (error) {
+                        console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
+                        iframe.srcdoc = fullHtmlContent;
+                    }
+                };
 
-// 先设置一个基础的srcdoc作为备选
-iframe.srcdoc = `<!DOCTYPE html>
+                // 设置初始 srcdoc 作为备选
+                iframe.srcdoc = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
 <body>加载中...</body>
 </html>`;
-
-                    // break; // 处理完一个占位符就跳出循环，因为DOM结构已经改变
-                    // 为了处理多个placeholder，我们不能简单地break，需要重新开始遍历或采用更复杂的替换策略
-                    // 但对于单条消息内多个HTML块的场景，当前逻辑足以应对大多数情况
-                    // 如果需要更鲁棒的处理，可能需要将替换过程放在循环外进行
-                }
             }
         }
+    }
 
+    // 步骤8：处理音乐自动播放
+    const autoPlayTrigger = bubble.querySelector('.js-music-autoplay-trigger');
+    if (autoPlayTrigger) {
+        const song = autoPlayTrigger.getAttribute('data-song');
+        const artist = autoPlayTrigger.getAttribute('data-artist');
+        const domId = autoPlayTrigger.getAttribute('data-dom-id');
 
- const autoPlayTrigger = bubble.querySelector('.js-music-autoplay-trigger');
-if (autoPlayTrigger) {
-    const song = autoPlayTrigger.getAttribute('data-song');
-    const artist = autoPlayTrigger.getAttribute('data-artist');
-    const domId = autoPlayTrigger.getAttribute('data-dom-id');
+        console.log('检测到 BGM 自动播放请求:', song);
 
-    console.log('检测到 BGM 自动播放请求:', song);
+        setTimeout(() => {
+            if (window.GlobalChatAudio) {
+                window.GlobalChatAudio.playMusic(song, artist, domId, true);
+            }
+        }, 100);
+    }
 
-    // 为了确保 DOM 完全渲染后再播放，稍微延迟一点点
-    setTimeout(() => {
-        if (window.GlobalChatAudio) {
-            window.GlobalChatAudio.playMusic(song, artist, domId, true);
-        }
-    }, 100);
-}
-        // 我们不再需要单独处理 script 的逻辑，因为iframe已经完美地处理了所有事情
-         if (mode === 'chat') { // ❤️ 只在聊天模式下添加右键菜单
-            bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
-         }
+    // 步骤9：添加右键菜单（仅聊天模式）
+    if (mode === 'chat') {
+        bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
+    }
 
- 
-    // 粘贴完成后，在最后加上这一句，把创建好的气泡交出去
     return bubble;
 }
-
-
-// 【彻底替换】旧的 manageBattleLifecycle 函数
-
 
  async function processSpecialModulesInMessage(content) {
     
@@ -25823,7 +25700,7 @@ if (autoPlayTrigger) {
  
     // 先移除thinking/think/guide标签内容
     const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking))>/gs, '');
- const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>([\s\S]*?)<\/danmu>/gs)];
+const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S])*?)<\/danmu>/gs)];
   if (allDanmuMatches.length > 0) {
     const lastDanmuMatch = allDanmuMatches[allDanmuMatches.length - 1];
     const danmuData = lastDanmuMatch[1].trim();
@@ -25839,7 +25716,7 @@ if (autoPlayTrigger) {
     }
   }
     // --- 调度"选项区" 
-    const allOptionsMatches = [...cleanedContent.matchAll(/<options>([\s\S]*?)<\/options>/gs)];
+    const allOptionsMatches = [...cleanedContent.matchAll(/<options>((?:(?!<options>)[\s\S])*?)<\/options>/gs)];
     if (allOptionsMatches.length > 0) {
         const lastOptionsMatch = allOptionsMatches[allOptionsMatches.length - 1];
         const optionsData = lastOptionsMatch[1].trim();
@@ -25854,7 +25731,7 @@ if (autoPlayTrigger) {
     }
 
     // --- 全新的"论坛"处理逻辑 ---
-    const allForumMatches = [...cleanedContent.matchAll(/<forum_threads>([\s\S]*?)<\/forum_threads>/gs)];
+    const allForumMatches = [...cleanedContent.matchAll(/<forum_threads>((?:(?!<forum_threads>)[\s\S])*?)<\/forum_threads>/gs)];
     if (allForumMatches.length > 0) {
         // 我们不再显示论坛,而是让小球闪烁
         const forumOrb = document.getElementById('forum-orb-button');
@@ -25868,7 +25745,7 @@ if (autoPlayTrigger) {
     }
 
     // --- 表现总结 ---
-    const allSummaryMatches = [...cleanedContent.matchAll(/<表现总结>([\s\S]*?)<\/表现总结>/gs)];
+    const allSummaryMatches = [...cleanedContent.matchAll(/<表现总结>((?:(?!<表现总结>)[\s\S])*?)<\/表现总结>/gs)];
     if (allSummaryMatches.length > 0) {
         const summaryOrb = document.getElementById('task-summary-orb-button');
         if (summaryOrb) {
@@ -25880,7 +25757,7 @@ if (autoPlayTrigger) {
     }
 
     // --- 群聊 ---
-    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat([\s\S]*?)<\/group_chat>/gs)];
+    const allGroupChatMatches = [...cleanedContent.matchAll(/<group_chat((?:(?!<group_chat)[\s\S])*?)<\/group_chat>/gs)];
     if (allGroupChatMatches.length > 0) {
         const chatOrb = document.getElementById('group-chat-orb-button');
         if (chatOrb) {
@@ -25892,7 +25769,7 @@ if (autoPlayTrigger) {
     }
 
     // --- 商店 ---
-    const allShopMatches = [...cleanedContent.matchAll(/<shop_item>([\s\S]*?)<\/shop_item>/gs)];
+    const allShopMatches = [...cleanedContent.matchAll(/<shop_item>((?:(?!<shop_item>)[\s\S])*?)<\/shop_item>/gs)];
   if (allShopMatches.length > 0) {
     const lastShopMatch = allShopMatches[allShopMatches.length - 1];
     let shopData = lastShopMatch[1].trim();
@@ -31549,9 +31426,22 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 renderThrottler = setTimeout(() => {
                     renderThrottler = null;
                     if(typeof is_simple_stream !== 'undefined' && is_simple_stream === 'true'){
-                        aiResponseBubble.innerHTML = text.replace(/\n/g, '<br>');
+                        aiResponseBubble.innerHTML = text;
                     } else {
-                        aiResponseBubble.innerHTML = formatAsDisplayedMessage(text);
+                       text = text.replace(/“/g, '<span class="dialogue-quote">“')
+                .replace(/”/g, '”</span>')
+                .replace(/「/g, '<span class="dialogue-quote">「')
+                .replace(/」/g, '」</span>')
+                // .replace(/NOVA_BR/g, '<br>')
+                 .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
+    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
+                            aiResponseBubble.innerHTML = formatAsTavernRegexedString(
+            text,
+              'ai_output',
+            'display',
+            { depth: -1 }
+        );
+                        // aiResponseBubble.innerHTML = formatAsDisplayedMessage(text);
                     }
                 }, 100);
             };
@@ -32543,34 +32433,11 @@ document.addEventListener('fullscreenchange', () => {
         }
     });
 
-const lineHeightMoreButton = document.getElementById('line-height-more');
+ 
+ 
 
-// 2. 定义一个函数来根据存储的设置更新按钮的样子
-function updatelineHeightMore() {
-    // 从本地存储里读取设置，如果找不到，就默认是'on'（开启）
-    const state = localStorage.getItem('lineHeightMore') || 'on';
-    if (state === 'on') {
-        lineHeightMoreButton.textContent = '开启';
-        lineHeightMoreButton.dataset.state = 'on';
-    } else {
-        lineHeightMoreButton.textContent = '关闭';
-        lineHeightMoreButton.dataset.state = 'off';
-    }
-}
-
-// 3. 给按钮加上点击事件
-lineHeightMoreButton.addEventListener('click', () => {
-    // 检查当前状态并切换
-    let currentlineHeightState = localStorage.getItem('lineHeightMore') || 'on';
-    if (currentlineHeightState === 'on') {
-        localStorage.setItem('lineHeightMore', 'off');
-    } else {
-        localStorage.setItem('lineHeightMore', 'on');
-    }
-    // 更新按钮的显示
-    updatelineHeightMore();
-});
-updatelineHeightMore();
+ 
+ 
 
     
 const rollCardToggleButton = document.getElementById('roll-card-toggle');
@@ -32601,13 +32468,32 @@ rollCardToggleButton.addEventListener('click', () => {
     updateRollCardToggleVisual();
 });
 updateRollCardToggleVisual();
-// --- 流式传输切换 ---
+ // --- 流式传输设置 ---
 const streamingToggle = document.getElementById('streaming-toggle');
+const streamingStatusIndicator = document.getElementById('streaming-status-indicator');
+const simpleStreamingOptions = document.getElementById('simple-streaming-options');
+const simpleStreamingToggle = document.getElementById('simple-streaming-toggle');
 
 function updateStreamingToggleState() {
     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-    streamingToggle.dataset.state = isStreamingEnabled ? 'on' : 'off';
-    streamingToggle.textContent = isStreamingEnabled ? '开启' : '关闭';
+    if (isStreamingEnabled) {
+        streamingToggle.dataset.state = 'on';
+        streamingToggle.textContent = '开启';
+        streamingStatusIndicator.textContent = '(开)';
+        streamingStatusIndicator.style.color = 'var(--success-color, #4CAF50)'; // 绿色
+        simpleStreamingOptions.style.display = 'flex'; // 显示简易流式选项
+    } else {
+        streamingToggle.dataset.state = 'off';
+        streamingToggle.textContent = '关闭';
+        streamingStatusIndicator.textContent = '(关)';
+        streamingStatusIndicator.style.color = 'var(--error-color, #F44336)'; // 红色
+        simpleStreamingOptions.style.display = 'none'; // 隐藏简易流式选项
+    }
+}
+
+function updateSimpleStreamingState() {
+    const isSimpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') === 'true';
+    simpleStreamingToggle.checked = isSimpleStreamingEnabled;
 }
 
 streamingToggle.addEventListener('click', () => {
@@ -32616,8 +32502,10 @@ streamingToggle.addEventListener('click', () => {
     updateStreamingToggleState();
 });
 
-// 初始化
-updateStreamingToggleState();
+simpleStreamingToggle.addEventListener('change', () => {
+    localStorage.setItem('simpleStreamingEnabled', simpleStreamingToggle.checked);
+});
+
 function updateScanFloorsDisplay() {
     const currentFloors = localStorage.getItem('scanFloorsCount');
     const displayElement = document.getElementById('current-scan-floors');
@@ -32627,8 +32515,8 @@ function updateScanFloorsDisplay() {
         } else {
             displayElement.textContent = '(未设置)';
         }
-    }
-    
+    } 
+
     // 初始化 checkbox 状态
     const rememberCheckbox = document.getElementById('remember-scan-floors');
     console.log('rememberCheckbox element:', rememberCheckbox); // 检查元素是否找到
@@ -32638,6 +32526,8 @@ function updateScanFloorsDisplay() {
         rememberCheckbox.checked = rememberValue === 'true' || rememberValue === true;
         console.log('checkbox.checked set to:', rememberCheckbox.checked); // 检查设置结果
     }
+
+
 }
 updateScanFloorsDisplay();
 function updateFavorabilitySpeedDisplay() {
@@ -32657,6 +32547,12 @@ updateFavorabilitySpeedDisplay();
 // 设置按钮点击事件
  // 监听 checkbox 变化，实时保存
 document.getElementById('remember-scan-floors')?.addEventListener('change', (e) => {
+        const scanFloorsSettingContainer = document.getElementById('scan-floors-setting-container');
+        if (e.target.checked) {
+        scanFloorsSettingContainer.style.display = 'flex';
+    } else {
+        scanFloorsSettingContainer.style.display = 'none';
+    }
     localStorage.setItem('rememberScanFloors', e.target.checked ? 'true' : 'false');
 });
 document.getElementById('set-favorability-speed-btn')?.addEventListener('click', () => {
@@ -37597,7 +37493,8 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
-is_simple_stream =  String(chatdata.is_simple_stream||'false');
+const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
+ is_simple_stream = String(simpleStreamingEnabled);
 is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
    weneedshop = String(chatdata.we_need_shop||'false');
 is_show_notifications = String(chatdata.is_show_notifications||'true');
