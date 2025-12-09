@@ -32473,23 +32473,39 @@ const streamingToggle = document.getElementById('streaming-toggle');
 const streamingStatusIndicator = document.getElementById('streaming-status-indicator');
 const simpleStreamingOptions = document.getElementById('simple-streaming-options');
 const simpleStreamingToggle = document.getElementById('simple-streaming-toggle');
-
-function updateStreamingToggleState() {
+ function updateStreamingToggleState() {
     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
     if (isStreamingEnabled) {
         streamingToggle.dataset.state = 'on';
         streamingToggle.textContent = '开启';
         streamingStatusIndicator.textContent = '(开)';
-        streamingStatusIndicator.style.color = 'var(--success-color, #4CAF50)'; // 绿色
-        simpleStreamingOptions.style.display = 'flex'; // 显示简易流式选项
+        streamingStatusIndicator.style.color = 'var(--success-color, #4CAF50)';
+        simpleStreamingOptions.style.display = 'flex';
+
+        // --- 关键修复点 ---
+        // 当流式选项可见时，立即从localStorage加载并设置其状态
+        const isSimpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') === 'true';
+        simpleStreamingToggle.checked = isSimpleStreamingEnabled;
+
     } else {
         streamingToggle.dataset.state = 'off';
         streamingToggle.textContent = '关闭';
         streamingStatusIndicator.textContent = '(关)';
-        streamingStatusIndicator.style.color = 'var(--error-color, #F44336)'; // 红色
-        simpleStreamingOptions.style.display = 'none'; // 隐藏简易流式选项
+        streamingStatusIndicator.style.color = 'var(--error-color, #F44336)';
+        simpleStreamingOptions.style.display = 'none';
     }
 }
+
+streamingToggle.addEventListener('click', () => {
+    let isEnabled = streamingToggle.dataset.state === 'on';
+    localStorage.setItem('streamingEnabled', !isEnabled);
+    updateStreamingToggleState();
+});
+
+// 当“简易流式”复选框状态改变时，保存到localStorage
+simpleStreamingToggle.addEventListener('change', () => {
+    localStorage.setItem('simpleStreamingEnabled', simpleStreamingToggle.checked);
+});
 
 function updateSimpleStreamingState() {
     const isSimpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') === 'true';
@@ -32503,7 +32519,7 @@ streamingToggle.addEventListener('click', () => {
 });
 
 simpleStreamingToggle.addEventListener('change', () => {
-    localStorage.setItem('simpleStreamingEnabled', simpleStreamingToggle.checked);
+    localStorage.setItem('simpleStreamingEnabled', String(simpleStreamingToggle.checked));
 });
 
 function updateScanFloorsDisplay() {
@@ -37495,6 +37511,7 @@ const isThingsRecord = String(chatdata.things_record||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);
+ console.log('111',is_simple_stream);
 is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
    weneedshop = String(chatdata.we_need_shop||'false');
 is_show_notifications = String(chatdata.is_show_notifications||'true');
