@@ -13372,6 +13372,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                 <div class="shop-header-controls">
  
         <button id="enter-gacha01-btn" class="control-btn gacha-btn" style="margin-right: 8px; display: none;">进入抽卡</button>
+         <button id="clear-items-btn" class="control-btn" style="margin-right: 8px;">清空</button>
                     <button id="generate-items-btn" class="control-btn" style="margin-right: 8px;">生成</button>
                     <input type="text" id="shop-search-input" placeholder="搜索名称、效果、描述…">
                     <button id="back-from-shop-btn">← 返回终端</button>
@@ -39022,6 +39023,28 @@ const randomShopDB = {
         });
     },
 
+        // 清空所有商品
+    async clearAllItems() {
+        const db = await this.initDB();
+        return new Promise((resolve, reject) => {
+            // 开启一个读写事务
+            const transaction = db.transaction(this.STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(this.STORE_NAME);
+
+            // 使用 clear() 方法清空整个对象仓库
+            const request = store.clear();
+
+            request.onsuccess = () => {
+                console.log('All items have been cleared from the database.');
+                resolve();
+            };
+
+            request.onerror = (event) => {
+                console.error('Error clearing items:', event.target.error);
+                reject('Error clearing items');
+            };
+        });
+    },
     // 获取所有商品
     async getAllItems() {
         const db = await this.initDB();
@@ -39040,8 +39063,34 @@ const randomShopDB = {
             };
         });
     }
+
 };
 
+
+    // 1. 获取清空按钮的引用
+    const clearButton = document.getElementById('clear-items-btn');
+
+    // 2. 检查按钮是否存在
+    if (clearButton) {
+        // 3. 为按钮添加点击事件监听器
+        clearButton.addEventListener('click', async () => {
+            // 弹出确认框，防止用户误操作
+            if (confirm('您确定要清空所有随机商品吗？此操作不可撤销。')) {
+                try {
+                    // 调用数据库的清空方法
+                    await randomShopDB.clearAllItems();
+                    alert('所有商品已成功清空！');
+                    // 可选：清空后刷新页面或更新UI
+                    // location.reload();
+                } catch (error) {
+                    console.error('Failed to clear items:', error);
+                    alert('清空商品时发生错误，请查看控制台。');
+                }
+            }
+        });
+    } else {
+        console.warn('Button with ID "clear-items-btn" not found.');
+    }
  async function getRandomShopItems() {
     try {
         // 第1步：从数据库获取商品数据（这是对象数组）
@@ -39075,6 +39124,7 @@ const randomShopDB = {
         return [];
     }
 }
+
 function getRandomPrizeRange() {
     const random = Math.random();
     let cumulativeProbability = 0;
@@ -50282,7 +50332,7 @@ document.addEventListener('DOMContentLoaded', function() {
  
 });
 document.addEventListener('DOMContentLoaded', function() {
-    
+   
     const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
     if (viewPromptBtn) {
         viewPromptBtn.addEventListener('click', function(e) {
