@@ -25421,7 +25421,14 @@ async function createMessageBubble(msg, mode = 'chat',is_from_render = false) {
         const htmlPlaceholders = {};
         let placeholderIndex = 0;
 
- 
+     const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
+   
+       processedContent = formatAsTavernRegexedString(
+            processedContent,
+            msg.role === 'user' ? 'user_input' : 'ai_output',
+            'display',
+            { depth: depth }
+        );
         // 这一步必须在所有其他结构性处理之前！
         let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
             const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
@@ -25499,8 +25506,7 @@ let contentWithGroupChatPlaceholder = contentWithMsgPlaceholder.replace(groupCha
       
         .replace(/<group_chat\b[^>]*>(?:(?!<group_chat\b)[\s\S])*?<\/group_chat>/gs, '');
    
-     const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2); // ❤️ 根据 mode 决定 depth
-        // 魔法第三步：我们应用酒馆正则和深度规则
+     // 魔法第三步：我们应用酒馆正则和深度规则
         // const depth = Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
         let renderedHtml = formatAsTavernRegexedString(
             pureContent,
