@@ -27676,7 +27676,7 @@ function findAllFilterPaths(obj, currentPath = '') {
     // 一次性发送所有指令
     if (memoryCommands.length > 0) {
         const messageToSend = `<updateMemory>\n${memoryCommands.join('')}</updateMemory>`;
-        triggerassa(`/setinput ${messageToSend}`);
+         await processUpdateMemoryCommands(messageToSend);
         console.log(`✅ [智能过滤] 已批量更新 ${memoryCommands.length} 个路径的显示状态`);
     }
     
