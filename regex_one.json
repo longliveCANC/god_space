@@ -14487,7 +14487,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.3';
+let current_game_version = '3.4.4';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -22816,7 +22816,7 @@ async function loadPreviousMessages() {
     const groupChatPlaceholders = {};
     let groupChatPlaceholderIndex = 0;
 
-    // 步骤1：提前处理引号、Markdown 并进行通用格式化 (与 createMessageBubble 对齐)
+    // 步骤1：提前处理引号、Markdown 并进行通用格式化
     processedContent = processedContent
         .replace(/“/g, '<span class="dialogue-quote">“')
         .replace(/”/g, '”</span>')
@@ -22845,8 +22845,7 @@ async function loadPreviousMessages() {
     // 步骤3.1：解析 <msg> 标签并替换为占位符
     let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
         const userNickname = currentGameData?.user?.nick_name || '你';
-        // 注意：在阅读模式下，is_from_render 通常为 false 或不传递
-        const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, false);
+        const renderedMsgHtml = worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, false);
         const placeholder = `{{MSGREADINGPLACEHOLDER${msgPlaceholderIndex}}}`;
         msgPlaceholders[placeholder] = renderedMsgHtml;
         msgPlaceholderIndex++;
@@ -22881,7 +22880,7 @@ async function loadPreviousMessages() {
         return placeholder;
     });
 
-    // 步骤4：移除其他结构化标签 (不再需要特殊处理 <details>)
+    // 步骤4：移除其他结构化标签
     const pureContent = contentWithGroupChatPlaceholder
         .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
         .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
@@ -22891,7 +22890,7 @@ async function loadPreviousMessages() {
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
-    // 步骤5：替换占位符（正确的累积替换）
+    // 步骤5：替换占位符
     let finalHtml = pureContent;
 
     // 替换 msg 占位符
@@ -22916,79 +22915,71 @@ async function loadPreviousMessages() {
         });
     }
 
+    // =================================================================
+    // 修复重点：不再使用 TreeWalker，改用与 createMessageBubble 相同的标记替换法
+    // =================================================================
+
+    // 步骤7.1：将 HTML 占位符替换为临时的 span 标记
+    for (const placeholder in htmlPlaceholders) {
+        // 使用特殊的 span 标记占位，确保在 DOM 中能精确定位
+        finalHtml = finalHtml.replace(
+            placeholder,
+            `<span class="reading-mode-iframe-marker" data-placeholder="${placeholder}"></span>`
+        );
+    }
+
+    // 将处理好的 HTML 放入 bubble
     bubble.innerHTML = finalHtml;
 
-    // 步骤7：替换 HTML 内容占位符为 iframe (与 createMessageBubble 完全对齐)
-    for (const placeholder in htmlPlaceholders) {
-        const walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
-        let node;
-        while (node = walker.nextNode()) {
-            if (node.nodeValue.includes(placeholder)) {
-                const rawHtmlContent = htmlPlaceholders[placeholder];
+    // 步骤7.2：查找所有标记并替换为 iframe
+    const markers = bubble.querySelectorAll('.reading-mode-iframe-marker');
 
-                const iframe = document.createElement('iframe');
-                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-                iframe.style.width = '100%';
-                iframe.style.resize = 'vertical';
-                iframe.style.overflow = 'auto';
+    markers.forEach(marker => {
+        const placeholder = marker.getAttribute('data-placeholder');
+        if (!htmlPlaceholders[placeholder]) return;
 
-                const frameId = 'reader-scroll-' + Date.now() + Math.random();
-                iframe.id = frameId;
+        const rawHtmlContent = htmlPlaceholders[placeholder];
 
-                const parentNode = node.parentNode;
-                const remainingText = node.nodeValue.replace(placeholder, '');
+        // 创建 iframe
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+        iframe.style.width = '100%';
+        iframe.style.border = 'none';
+        iframe.style.overflow = 'hidden';
+        iframe.style.display = 'block';
 
-                if (remainingText) {
-                    node.nodeValue = remainingText;
-                    parentNode.insertBefore(iframe, node.nextSibling);
-                } else {
-                    parentNode.replaceChild(iframe, node);
-                }
+        // 生成唯一 ID
+        const frameId = 'reading-scroll-' + Date.now() + Math.random();
+        iframe.id = frameId;
 
-                window.addEventListener('message', function(event) {
-                    if(event.data.frameId === frameId && event.data.height) {
-                        iframe.style.height = (event.data.height + 20) + 'px';
-                    }
-                }, false);
-
-                const detailsParent = iframe.closest('details');
-                if (detailsParent) {
-                    detailsParent.addEventListener('toggle', function() {
-                        if (detailsParent.open) {
-                            setTimeout(() => {
-                                iframe.contentWindow.postMessage({
-                                    action: 'recalculateHeight',
-                                    frameId: frameId
-                                }, '*');
-                            }, 50);
-                        }
-                    });
-                }
-
-                const fullHtmlContent = `<!DOCTYPE html>
+        // 准备完整的 HTML 内容 (包含自动调整高度的脚本)
+        const fullHtmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        body {
-            font-family: var(--base-font-family);
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: var(--base-font-family, sans-serif);
             color: black;
-            margin: 0;
-            padding: 0px;
-            box-sizing: border-box;
             background-color: transparent;
+            overflow: hidden;
+            width: 100%;
         }
-        body::-webkit-scrollbar { width: 8px; }
-        body::-webkit-scrollbar-track { background: rgba(200, 200, 200, 0.2); }
-        body::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        body::-webkit-scrollbar-thumb:hover { background: #555; }
+        body { padding: 5px; }
+        body::-webkit-scrollbar { width: 0px; height: 0px; }
+        img { max-width: 100%; height: auto; }
     </style>
 </head>
 <body>
     ${rawHtmlContent}
     <script>
         function reportHeight() {
-            const height = document.body.scrollHeight;
+            const height = Math.max(
+                document.body.scrollHeight,
+                document.body.offsetHeight,
+                document.documentElement.scrollHeight
+            );
             window.parent.postMessage({
                 frameId: "${frameId}",
                 height: height
@@ -22998,12 +22989,17 @@ async function loadPreviousMessages() {
         window.onload = reportHeight;
         setTimeout(reportHeight, 100);
         setTimeout(reportHeight, 500);
+        setTimeout(reportHeight, 1000);
 
         Array.from(document.getElementsByTagName('img')).forEach(img => {
             if (!img.complete) {
                 img.addEventListener('load', reportHeight);
             }
         });
+
+        // 监听 DOM 变化
+        const observer = new MutationObserver(reportHeight);
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 
         window.addEventListener('message', function(event) {
             if (event.data.action === 'recalculateHeight' && event.data.frameId === '${frameId}') {
@@ -23014,27 +23010,30 @@ async function loadPreviousMessages() {
 </body>
 </html>`;
 
-                iframe.onload = function() {
-                    try {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        iframeDoc.open();
-                        iframeDoc.write(fullHtmlContent);
-                        iframeDoc.close();
-                    } catch (error) {
-                        console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
-                        iframe.srcdoc = fullHtmlContent;
-                    }
-                };
-
-                iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>加载中...</body></html>`;
+        // 监听高度调整消息
+        // 注意：因为此函数返回的是 innerHTML 字符串，这个监听器会挂载在当前的 window 上
+        // 当返回的 HTML 字符串被插入到页面后，iframe 内部的脚本会发送消息到这个 window
+        window.addEventListener('message', function(event) {
+            if(event.data.frameId === frameId && event.data.height) {
+                // 这里我们无法直接操作 iframe 变量（因为它可能已经被序列化成字符串了）
+                // 但我们可以通过 ID 再次查找 DOM 中的元素（如果它已经被插入页面）
+                const activeIframe = document.getElementById(frameId);
+                if (activeIframe) {
+                    activeIframe.style.height = (event.data.height + 20) + 'px';
+                }
             }
-        }
-    }
+        }, false);
+
+        // 关键：将内容直接写入 srcdoc，这样序列化为 innerHTML 字符串时内容会保留
+        iframe.srcdoc = fullHtmlContent;
+
+        // 替换标记
+        marker.replaceWith(iframe);
+    });
 
     // 步骤8：返回最终渲染的 HTML 字符串
     return bubble.innerHTML;
 }
- 
 
 function getChatConfig(key, defaultValue) {
     try {
