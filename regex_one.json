@@ -14487,7 +14487,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.1';
+let current_game_version = '3.4.2';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
