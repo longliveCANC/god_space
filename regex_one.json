@@ -21768,18 +21768,85 @@ function initPage2() {
     };
 
     document.querySelectorAll('.galaxy-system').forEach(g => g.innerHTML = '');
-
-    // 注入属性星星，并传入对应的坐标记录本
-    for (const category in playCharacterData.基础属性) {
-        const targetGalaxyId = galaxyTargets[category];
-        const targetGalaxyEl = document.getElementById(targetGalaxyId);
-        if (targetGalaxyEl) {
-            for (const attr in playCharacterData.基础属性[category]) {
-                const path = `基础属性.${category}.${attr}.基础`;
-                targetGalaxyEl.innerHTML += createPointAllocator(attr, playCharacterData.基础属性[category][attr].基础[1], path, starCoordinates[targetGalaxyId]);
-            }
-        }
+ // fallback 数据定义
+const fallbackCharacterData = {
+  "概念段": {
+    "美德与恶德": {
+      "美德": ["正义", "当角色为正义而冒险时，触发正义，回复所有意志力。"],
+      "恶德": ["愤怒", "当角色无视危险来发泄愤怒时，触发愤怒，回复1点意志力。"]
     }
+  },
+  "基础属性": {
+    "生理属性": {
+      "力量": { "基础": [0, "衡量肌肉强度与爆发力，影响近战伤害与负重"] },
+      "敏捷": { "基础": [0, "衡量身体协调、反应速度与灵活性，影响先攻与闪避"] },
+      "耐力": { "基础": [0, "衡量体质、持久力与恢复力，影响生命值与抵抗力"] }
+    },
+    "心智属性": {
+      "智力": { "基础": [0, "衡量逻辑、记忆、学习与分析能力，影响技能学习与策略"] },
+      "感知": { "基础": [0, "衡量观察力、直觉与五感敏锐度，影响侦查与洞察"] },
+      "决心": { "基础": [0, "衡量意志力、勇气与精神韧性，影响意志值上限"] }
+    },
+    "互动属性": {
+      "风度": { "基础": [0, "衡量个人魅力、气质与第一印象，影响正面社交"] },
+      "操控": { "基础": [0, "衡量说服、诱导与控制他人的能力，影响负面社交"] },
+      "沉着": { "基础": [0, "衡量冷静、自控与抗压能力，影响先攻与意志值上限"] }
+    }
+  },
+  "基础技能": {
+    "生理技能": {
+      "运动": [0, "衡量跑、跳、攀爬等身体活动能力"],
+      "肉搏": [0, "衡量徒手格斗技巧"],
+      "驾驶": [0, "衡量操控地面、水面或空中载具的能力"],
+      "枪械": [0, "衡量使用各类火器的能力"],
+      "手上功夫": [0, "衡量盗窃、开锁等手部精细操作能力"],
+      "隐藏": [0, "衡量潜行、伪装与隐蔽自身的能力"],
+      "求生": [0, "衡量在恶劣环境中生存与追踪的能力"],
+      "白刃": [0, "衡量使用刀剑等冷兵器的能力"],
+      "弓箭": [0, "衡量使用弓弩等抛射武器的能力"]
+    },
+    "心智技能": {
+      "学识": [0, "衡量人文、历史、地理等知识广度"],
+      "电脑": [0, "衡量操作、编程与黑客技术"],
+      "手艺": [0, "衡量制作的知识"],
+      "调查": [0, "衡量搜集线索、分析现场的能力"],
+      "医学": [0, "衡量诊断、治疗与药理知识"],
+      "神秘学": [0, "衡量对超自然现象与魔法的知识"],
+      "科学": [0, "衡量物理、化学、生物等自然科学知识"]
+    },
+    "互动技能": {
+      "动物沟通": [0, "衡量与动物交流和驯服的能力"],
+      "感受": [0, "衡量洞察他人情绪与意图的能力"],
+      "表达": [0, "衡量感染他人的能力"],
+      "胁迫": [0, "衡量通过威胁与恐吓达成目的的能力"],
+      "交际": [0, "衡量社交、礼仪与建立人脉的能力"],
+      "掩饰": [0, "衡量隐藏真相、伪装身份与欺骗他人的能力"]
+    }
+  }
+};
+
+// 检查并使用 fallback 数据
+if (!playCharacterData || !playCharacterData.基础属性 || Object.keys(playCharacterData.基础属性).length === 0) {
+  console.warn('未找到有效的基础属性数据，使用默认数据');
+  playCharacterData = fallbackCharacterData;
+}
+
+// 注入属性星星，并传入对应的坐标记录本
+for (const category in playCharacterData.基础属性) {
+  const targetGalaxyId = galaxyTargets[category];
+  const targetGalaxyEl = document.getElementById(targetGalaxyId);
+  if (targetGalaxyEl) {
+    for (const attr in playCharacterData.基础属性[category]) {
+      const path = `基础属性.${category}.${attr}.基础`;
+      targetGalaxyEl.innerHTML += createPointAllocator(
+        attr,
+        playCharacterData.基础属性[category][attr].基础[1],
+        path,
+        starCoordinates[targetGalaxyId]
+      );
+    }
+  }
+}
 
     // 注入技能星星，并传入对应的坐标记录本
     for (const category in playCharacterData.基础技能) {
@@ -26114,7 +26181,7 @@ async function renderHistory(is_entry = false) {
         if (mainWrapper) mainWrapper.style.display = 'none';
 if (typeof window.initializationDone === 'undefined') {
     // 等待 playCharacterData 有内容
-    while (!playCharacterData || Object.keys(playCharacterData).length === 0) {
+   if (!playCharacterData || !playCharacterData.基础属性 || Object.keys(playCharacterData.基础属性).length === 0) {
         await new Promise(resolve => setTimeout(resolve, 100)); // 每100ms检查一次
     }
     
