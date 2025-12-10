@@ -8972,11 +8972,11 @@ input:checked + .slider:before {
 }
 .nova-alert.info {
     background-color: var(--primary-color);
-    text-shadow: 0 0 5px #000;
+    
 }
 .nova-alert.danger {
     background-color: var(--danger-color);
-    box-shadow: 0 0 10px var(--danger-glow-color);
+   
 }
 
 /* 标题栏布局调整，为开关腾出空间 */
@@ -13372,7 +13372,6 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                 <div class="shop-header-controls">
  
         <button id="enter-gacha01-btn" class="control-btn gacha-btn" style="margin-right: 8px; display: none;">进入抽卡</button>
-         <button id="clear-items-btn" class="control-btn" style="margin-right: 8px;">清空</button>
                     <button id="generate-items-btn" class="control-btn" style="margin-right: 8px;">生成</button>
                     <input type="text" id="shop-search-input" placeholder="搜索名称、效果、描述…">
                     <button id="back-from-shop-btn">← 返回终端</button>
@@ -14488,7 +14487,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.3.29';
+let current_game_version = '3.4.1';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -16279,7 +16278,7 @@ function checkAchievements(eventType, value) {
     },
     specialist: {
         title: "【偏科生】",
-        description: "单一技能段（生理/心智/互动）的总技能点数超过其他两项之和。",
+        description: "单一基础技能（生理/心智/互动）的总技能点数超过其他两项之和。",
         icon: "📈",
         unlocked: false, unlocked_at: null, reward_claimed: false,
         reward: "称号「术业有专攻」",
@@ -16898,34 +16897,34 @@ all_in: {
     //
     data_refresh: {
          // ========== 杂项与彩蛋 ==========
-        animal_friend: (val) => val.playCharacterData.技能段.互动技能.动物沟通[0] >= 5,
-        master_chef: (val) => val.playCharacterData.技能段.心智技能.手艺[0] >= 5,  
-        hacker: (val) => val.playCharacterData.技能段.心智技能.电脑[0] >= 5,
-        medic: (val) => val.playCharacterData.技能段.心智技能.医学[0] >= 5,
-        liar_liar: (val) => val.playCharacterData.技能段.互动技能.掩饰[0] >= 5,
-        get_a_car: (val) => val.playCharacterData.技能段.生理技能.驾驶[0] >= 5,
-        occultist: (val) => val.playCharacterData.技能段.心智技能.神秘学[0] >= 5,
+         animal_friend: (val) => val?.playCharacterData?.基础技能?.互动技能?.动物沟通[0] >= 5,
+        master_chef: (val) => val?.playCharacterData?.基础技能?.心智技能?.手艺[0] >= 5,  
+        hacker: (val) => val?.playCharacterData?.基础技能?.心智技能?.电脑[0] >= 5,
+        medic: (val) => val?.playCharacterData?.基础技能?.心智技能?.医学[0] >= 5,
+        liar_liar: (val) => val?.playCharacterData?.基础技能?.互动技能?.掩饰[0] >= 5,
+        get_a_car: (val) => val?.playCharacterData?.基础技能?.生理技能?.驾驶[0] >= 5,
+        occultist: (val) => val?.playCharacterData?.基础技能?.心智技能?.神秘学[0] >= 5,
         team_player: (val) => val.assaSettingsData.global_lore && val.assaSettingsData.global_lore.小队信息 && Object.keys(val.assaSettingsData.global_lore.小队信息).length > 0,
         lone_wolf: (val) =>  val.currentGameData.user.total_task[0]  >= 10 && (!val.assaSettingsData.global_lore || !val.assaSettingsData.global_lore.小队信息 || Object.keys(val.assaSettingsData.global_lore.小队信息).length < 1),
  
         // ========== 生死与状态 ==========
-         first_death: (val) => (val.playCharacterData?.衍生属性段?.生命值?.当前值?.[0] ?? 1) <= 0,
-        near_death_experience: (val) => (val.playCharacterData?.衍生属性段?.生命值?.当前值?.[0]) === 1,
+         first_death: (val) => (val.playCharacterData?.衍生属性?.生命值?.当前值?.[0] ?? 1) <= 0,
+        near_death_experience: (val) => (val.playCharacterData?.衍生属性?.生命值?.当前值?.[0]) === 1,
           glass_cannon: (val) => {
-            const maxHp = val.playCharacterData?.衍生属性段?.生命值?.上限?.[0];
+            const maxHp = val.playCharacterData?.衍生属性?.生命值?.上限?.[0];
             return typeof maxHp === 'number' && maxHp < 20;
         },
         human_tank: (val) => {
-            const maxHp = val.playCharacterData?.衍生属性段?.生命值?.上限?.[0];
+            const maxHp = val.playCharacterData?.衍生属性?.生命值?.上限?.[0];
             return typeof maxHp === 'number' && maxHp > 200;
         },
 
         // ========== 属性与技能成长 ==========
-        legendary_physique: (val) => ["力量", "敏捷", "耐力"].some(attr => val.playCharacterData.属性段.生理属性[attr].基础[0] >= 8),
-        legendary_mind: (val) => ["智力", "感知", "决心"].some(attr => val.playCharacterData.属性段.心智属性[attr].基础[0] >= 8),
-        legendary_presence: (val) => ["风度", "操控", "沉着"].some(attr => val.playCharacterData.属性段.互动属性[attr].基础[0] >= 8),
+        legendary_physique: (val) => ["力量", "敏捷", "耐力"].some(attr => val.playCharacterData.基础属性.生理属性[attr].基础[0] >= 8),
+        legendary_mind: (val) => ["智力", "感知", "决心"].some(attr => val.playCharacterData.基础属性.心智属性[attr].基础[0] >= 8),
+        legendary_presence: (val) => ["风度", "操控", "沉着"].some(attr => val.playCharacterData.基础属性.互动属性[attr].基础[0] >= 8),
         master_of_one: (val) => {
-            for (const category of Object.values(val.playCharacterData.技能段)) {
+            for (const category of Object.values(val.playCharacterData.基础技能)) {
                 for (const skill of Object.values(category)) {
                     if (skill[0] >= 8) return true;
                 }
@@ -16934,7 +16933,7 @@ all_in: {
         },
         jack_of_all_trades: (val) => {
             let count = 0;
-            for (const category of Object.values(val.playCharacterData.技能段)) {
+            for (const category of Object.values(val.playCharacterData.基础技能)) {
                 for (const skill of Object.values(category)) {
                     if (skill[0] > 0) count++;
                 }
@@ -16943,9 +16942,9 @@ all_in: {
         },
         specialist: (val) => {
             const sums = {
-                phys: Object.values(val.playCharacterData.技能段.生理技能).reduce((acc, s) => acc + s[0], 0),
-                mental: Object.values(val.playCharacterData.技能段.心智技能).reduce((acc, s) => acc + s[0], 0),
-                social: Object.values(val.playCharacterData.技能段.互动技能).reduce((acc, s) => acc + s[0], 0)
+                phys: Object.values(val.playCharacterData.基础技能.生理技能).reduce((acc, s) => acc + s[0], 0),
+                mental: Object.values(val.playCharacterData.基础技能.心智技能).reduce((acc, s) => acc + s[0], 0),
+                social: Object.values(val.playCharacterData.基础技能.互动技能).reduce((acc, s) => acc + s[0], 0)
             };
             return sums.phys > (sums.mental + sums.social) ||
                    sums.mental > (sums.phys + sums.social) ||
@@ -16974,9 +16973,9 @@ all_in: {
         first_home: (val) => val.assaSettingsData.home && val.assaSettingsData.home.items && Object.keys(val.assaSettingsData.home.items).length >= 1,
         cozy_home: (val) => val.assaSettingsData.home && val.assaSettingsData.home.items && Object.keys(val.assaSettingsData.home.items).length >= 10,
         luxury_manor: (val) => val.assaSettingsData.home && val.assaSettingsData.home.items && Object.keys(val.assaSettingsData.home.items).length >= 50,
-        rich_man: (val) => val.playCharacterData.货币段.积分[0] >= 10000,
-        super_rich: (val) => val.playCharacterData.货币段.积分[0] >= 100000,
-        s_rank_hoarder: (val) => val.playCharacterData.货币段.支线剧情.S[0] >= 1,
+        rich_man: (val) => val.playCharacterData.货币.积分[0] >= 10000,
+        super_rich: (val) => val.playCharacterData.货币.积分[0] >= 100000,
+        s_rank_hoarder: (val) => val.playCharacterData.货币.支线剧情.S[0] >= 1,
         collector: (val) => val.assaSettingsData.global_lore && val.assaSettingsData.global_lore.背包 && Object.keys(val.assaSettingsData.global_lore.背包).length >= 50,
 
         // ========== 危机与挑战 ==========
@@ -16986,9 +16985,9 @@ all_in: {
         cosmic_horror: (val) => val.currentGameData.检定难度[0] > 15,
 
         // ========== 能量与能力 ==========
-               energy_awakening: (val) => (val.playCharacterData?.衍生属性段?.能量池?.上限?.[0] ?? 0) > 0,
-        energy_pool_100: (val) => (val.playCharacterData?.衍生属性段?.能量池?.上限?.[0] ?? 0) >= 100,
-        energy_pool_1000: (val) => (val.playCharacterData?.衍生属性段?.能量池?.上限?.[0] ?? 0) >= 1000,
+               energy_awakening: (val) => (val.playCharacterData?.衍生属性?.能量池?.上限?.[0] ?? 0) > 0,
+        energy_pool_100: (val) => (val.playCharacterData?.衍生属性?.能量池?.上限?.[0] ?? 0) >= 100,
+        energy_pool_1000: (val) => (val.playCharacterData?.衍生属性?.能量池?.上限?.[0] ?? 0) >= 1000,
      
         first_ability: (val) => val.playCharacterData.能力段.名称[0] && val.playCharacterData.能力段.名称[0] !== "" && val.playCharacterData.能力段.名称[0] !== "无",
 
@@ -17691,8 +17690,8 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         action: (matches) => {
             const attributsName = matches[1];
             const pathSegments = attributsName.split('.');
-            const characterKeywords = ['属性段', '技能段', '衍生属性段'];
-            const inventoryKeywords = ['货币段'];
+            const characterKeywords = ['基础属性', '基础技能', '衍生属性'];
+            const inventoryKeywords = ['货币'];
             if (pathSegments.some(segment => characterKeywords.includes(segment))) {
                 flashElement('page-character-orb', 'notify', 5000);
             }
@@ -18517,11 +18516,11 @@ async function applyImagesWithCache() {
     }
 }
 function _updateDerivedAttributes(data) {
-        if (!data || !data.属性段) return;
+        if (!data || !data.基础属性) return;
         //console.log("[Player] ✨ 正在更新衍生属性...");
-        const attr = data.属性段;
-        const skills = data.技能段;
-        const derived = data.衍生属性段;
+        const attr = data.基础属性;
+        const skills = data.基础技能;
+        const derived = data.衍生属性;
         const 力量 = attr.生理属性.力量.基础[0];
         const 敏捷 = attr.生理属性.敏捷.基础[0];
         const 耐力 = attr.生理属性.耐力.基础[0];
@@ -19386,7 +19385,7 @@ Array.from(talentSelect.options).forEach((option, index) => {
 
     // --- 数据定义 ---
 
-    const playCharacterData = { "概念段": { "美德与恶德": { "美德": ["正义", "当角色为正义而冒险时，触发正义，回复所有意志力。"], "恶德": ["愤怒", "当角色无视危险来发泄愤怒时，触发愤怒，回复1点意志力。"] } }, "属性段": { "生理属性": { "力量": { "基础": [0, "衡量肌肉强度与爆发力，影响近战伤害与负重"] }, "敏捷": { "基础": [0, "衡量身体协调、反应速度与灵活性，影响先攻与闪避"] }, "耐力": { "基础": [0, "衡量体质、持久力与恢复力，影响生命值与抵抗力"] } }, "心智属性": { "智力": { "基础": [0, "衡量逻辑、记忆、学习与分析能力，影响技能学习与策略"] }, "感知": { "基础": [0, "衡量观察力、直觉与五感敏锐度，影响侦查与洞察"] }, "决心": { "基础": [0, "衡量意志力、勇气与精神韧性，影响意志值上限"] } }, "互动属性": { "风度": { "基础": [0, "衡量个人魅力、气质与第一印象，影响正面社交"] }, "操控": { "基础": [0, "衡量说服、诱导与控制他人的能力，影响负面社交"] }, "沉着": { "基础": [0, "衡量冷静、自控与抗压能力，影响先攻与意志值上限"] } } }, "技能段": { "生理技能": { "运动": [0, "衡量跑、跳、攀爬等身体活动能力"], "肉搏": [0, "衡量徒手格斗技巧"], "驾驶": [0, "衡量操控地面、水面或空中载具的能力"],"枪械": [ 0, "衡量使用各类火器的能力"], "手上功夫": [0, "衡量盗窃、开锁等手部精细操作能力"], "隐藏": [0, "衡量潜行、伪装与隐蔽自身的能力"], "求生": [0, "衡量在恶劣环境中生存与追踪的能力"], "白刃": [0, "衡量使用刀剑等冷兵器的能力"], "弓箭": [ 0, "衡量使用弓弩等抛射武器的能力"] }, "心智技能": { "学识": [0, "衡量人文、历史、地理等知识广度"], "电脑": [0, "衡量操作、编程与黑客技术"], "手艺": [0, "衡量制作的知识"], "调查": [0, "衡量搜集线索、分析现场的能力"], "医学": [0, "衡量诊断、治疗与药理知识"], "神秘学": [0, "衡量对超自然现象与魔法的知识"], "科学": [0, "衡量物理、化学、生物等自然科学知识"] }, "互动技能": { "动物沟通": [0, "衡量与动物交流和驯服的能力"], "感受": [0, "衡量洞察他人情绪与意图的能力"], "表达": [0, "衡量感染他人的能力"], "胁迫": [0, "衡量通过威胁与恐吓达成目的的能力"], "交际": [0, "衡量社交、礼仪与建立人脉的能力"], "掩饰": [0, "衡量隐藏真相、伪装身份与欺骗他人的能力"] } } };
+    // const playCharacterData = { "概念段": { "美德与恶德": { "美德": ["正义", "当角色为正义而冒险时，触发正义，回复所有意志力。"], "恶德": ["愤怒", "当角色无视危险来发泄愤怒时，触发愤怒，回复1点意志力。"] } }, "基础属性": { "生理属性": { "力量": { "基础": [0, "衡量肌肉强度与爆发力，影响近战伤害与负重"] }, "敏捷": { "基础": [0, "衡量身体协调、反应速度与灵活性，影响先攻与闪避"] }, "耐力": { "基础": [0, "衡量体质、持久力与恢复力，影响生命值与抵抗力"] } }, "心智属性": { "智力": { "基础": [0, "衡量逻辑、记忆、学习与分析能力，影响技能学习与策略"] }, "感知": { "基础": [0, "衡量观察力、直觉与五感敏锐度，影响侦查与洞察"] }, "决心": { "基础": [0, "衡量意志力、勇气与精神韧性，影响意志值上限"] } }, "互动属性": { "风度": { "基础": [0, "衡量个人魅力、气质与第一印象，影响正面社交"] }, "操控": { "基础": [0, "衡量说服、诱导与控制他人的能力，影响负面社交"] }, "沉着": { "基础": [0, "衡量冷静、自控与抗压能力，影响先攻与意志值上限"] } } }, "基础技能": { "生理技能": { "运动": [0, "衡量跑、跳、攀爬等身体活动能力"], "肉搏": [0, "衡量徒手格斗技巧"], "驾驶": [0, "衡量操控地面、水面或空中载具的能力"],"枪械": [ 0, "衡量使用各类火器的能力"], "手上功夫": [0, "衡量盗窃、开锁等手部精细操作能力"], "隐藏": [0, "衡量潜行、伪装与隐蔽自身的能力"], "求生": [0, "衡量在恶劣环境中生存与追踪的能力"], "白刃": [0, "衡量使用刀剑等冷兵器的能力"], "弓箭": [ 0, "衡量使用弓弩等抛射武器的能力"] }, "心智技能": { "学识": [0, "衡量人文、历史、地理等知识广度"], "电脑": [0, "衡量操作、编程与黑客技术"], "手艺": [0, "衡量制作的知识"], "调查": [0, "衡量搜集线索、分析现场的能力"], "医学": [0, "衡量诊断、治疗与药理知识"], "神秘学": [0, "衡量对超自然现象与魔法的知识"], "科学": [0, "衡量物理、化学、生物等自然科学知识"] }, "互动技能": { "动物沟通": [0, "衡量与动物交流和驯服的能力"], "感受": [0, "衡量洞察他人情绪与意图的能力"], "表达": [0, "衡量感染他人的能力"], "胁迫": [0, "衡量通过威胁与恐吓达成目的的能力"], "交际": [0, "衡量社交、礼仪与建立人脉的能力"], "掩饰": [0, "衡量隐藏真相、伪装身份与欺骗他人的能力"] } } };
     const virtues = { '慈爱': '当角色冒险帮助人时，触发慈爱，回复所有意志力。', '信念': '当角色从混乱与悲伤中确立出其意义时，触发信念，回复所有意志力。', '刚毅': '当角色成功对抗阻力与引诱时，触发刚毅，回复所有意志力。', '希望': '当角色令其他人从绝望中回复过来时，触发希望，回复所有意志力。', '正义': '当角色为正义而冒险时，触发正义，回复所有意志力。', '稳重': '当角色弃快捷方式而选稳妥时，触发稳重，回复所有意志力。', '节制': '当角色有机会放纵（不论好坏）而不受诱惑时，触发节制，回复所有意志力。' };
     const vices = { '妒忌': '当角色从他人处拿到好东西，或令他人失去好东西时，触发妒忌，回复1点意志力。', '放纵': '当角色为放纵自己的欲望而不顾其他事情时，触发放纵，回复1点意志力。', '贪婪': '当角色为得到想要的东西而冒险时，触发贪婪，回复1点意志力。', '纵欲': '当角色向他人泄欲而不顾对方感受时，触发纵欲，回复1点意志力。', '骄傲': '当角色为表现自己的想法而冒险时，触发骄傲，回复1点意志力。', '懒惰': '当角色逃避需要做的事，事件却完成了的话，触发懒惰，回复1点意志力。', '愤怒': '当角色无视危险来发泄愤怒时，触发愤怒，回复1点意志力。' };
    
@@ -21771,25 +21770,25 @@ function initPage2() {
     document.querySelectorAll('.galaxy-system').forEach(g => g.innerHTML = '');
 
     // 注入属性星星，并传入对应的坐标记录本
-    for (const category in playCharacterData.属性段) {
+    for (const category in playCharacterData.基础属性) {
         const targetGalaxyId = galaxyTargets[category];
         const targetGalaxyEl = document.getElementById(targetGalaxyId);
         if (targetGalaxyEl) {
-            for (const attr in playCharacterData.属性段[category]) {
-                const path = `属性段.${category}.${attr}.基础`;
-                targetGalaxyEl.innerHTML += createPointAllocator(attr, playCharacterData.属性段[category][attr].基础[1], path, starCoordinates[targetGalaxyId]);
+            for (const attr in playCharacterData.基础属性[category]) {
+                const path = `基础属性.${category}.${attr}.基础`;
+                targetGalaxyEl.innerHTML += createPointAllocator(attr, playCharacterData.基础属性[category][attr].基础[1], path, starCoordinates[targetGalaxyId]);
             }
         }
     }
 
     // 注入技能星星，并传入对应的坐标记录本
-    for (const category in playCharacterData.技能段) {
+    for (const category in playCharacterData.基础技能) {
         const targetGalaxyId = galaxyTargets[category];
         const targetGalaxyEl = document.getElementById(targetGalaxyId);
         if (targetGalaxyEl) {
-            for (const skill in playCharacterData.技能段[category]) {
-                const path = `技能段.${category}.${skill}`;
-                targetGalaxyEl.innerHTML += createPointAllocator(skill, playCharacterData.技能段[category][skill][1], path, starCoordinates[targetGalaxyId]);
+            for (const skill in playCharacterData.基础技能[category]) {
+                const path = `基础技能.${category}.${skill}`;
+                targetGalaxyEl.innerHTML += createPointAllocator(skill, playCharacterData.基础技能[category][skill][1], path, starCoordinates[targetGalaxyId]);
             }
         }
     }
@@ -22421,7 +22420,7 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
                    .replace('{{player}}', currentTheme.player);
 
                finalCommand += `set_status("user.Cross_world_prestige",0,${selectedIdentity.prestige});\n`;
-               finalCommand += `set_attribute("货币段.${currentTheme.currency}",0,${selectedIdentity.points});\n`;
+               finalCommand += `set_attribute("货币.${currentTheme.currency}",0,${selectedIdentity.points});\n`;
                finalCommand += `memory("global_lore.npc","${userName}","(${finalTitle})${finalDescription}");\n`;
             }
 
@@ -24503,7 +24502,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
 
         console.log("[Nova's Love] ✅ 世界本源(chat)与临时数据(window)均已通过守护咒语成功初始化！");
         toastr.success('数据已初始化，请继续你的冒险。');
-
+ 
     } catch (error) {
         console.error("[Nova's Love] ❌ 在执行守护咒语 initializeCurrentGameData 时发生严重错误:", error);
         toastr.error('自动初始化失败，请查看控制台获取详细信息。');
@@ -25379,8 +25378,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         </div>
     </div>`;
 }
-
-  async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
+   async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
     let content = msg.content;
    
@@ -25513,60 +25511,227 @@ function renderGroupChatToHtml(sender, content, userNickname) {
 //  finalHtml = formatAsDisplayedMessage(finalHtml);
       bubble.innerHTML =    finalHtml;
  
+ 
+// 步骤6之后，在设置bubble.innerHTML之前
+// 先将HTML占位符替换为特殊的标记
+const iframeMarkers = [];
+let finalHtmlWithMarkers = finalHtml;
 
-    // 步骤7：替换 HTML 内容占位符为 iframe
-    for (const placeholder in htmlPlaceholders) {
-        const walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
-        let node;
-        while (node = walker.nextNode()) {
-            if (node.nodeValue.includes(placeholder)) {
-                const rawHtmlContent = htmlPlaceholders[placeholder];
+for (const placeholder in htmlPlaceholders) {
+    const markerId = `IFRAME_MARKER_${Object.keys(iframeMarkers).length}`;
+    iframeMarkers.push({
+        markerId: markerId,
+        content: htmlPlaceholders[placeholder],
+        placeholder: placeholder
+    });
+    
+    // 使用正则表达式替换占位符为标记
+    const escapedPlaceholder = placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    finalHtmlWithMarkers = finalHtmlWithMarkers.replace(
+        new RegExp(escapedPlaceholder, 'g'), 
+        `<span data-iframe-marker="${markerId}"></span>`
+    );
+}
 
-                // 创建 iframe
-                const iframe = document.createElement('iframe');
-                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-                iframe.style.width = '100%';
-                iframe.style.resize = 'vertical';
-                iframe.style.overflow = 'auto';
+// 设置HTML
+bubble.innerHTML = finalHtmlWithMarkers;
 
-                const frameId = 'magic-scroll-' + Date.now() + Math.random();
-                iframe.id = frameId;
+// 步骤7（新版本）：找到所有标记并替换为iframe
+iframeMarkers.forEach(marker => {
+    const markerElement = bubble.querySelector(`[data-iframe-marker="${marker.markerId}"]`);
+    if (!markerElement) return;
+    
+    const rawHtmlContent = marker.content;
+    
+    // 创建 iframe
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    iframe.style.width = '100%';
+    iframe.style.border = 'none';
+    iframe.style.overflow = 'hidden'; // 隐藏滚动条
+    iframe.style.display = 'block';
+    
+    const frameId = 'magic-scroll-' + Date.now() + Math.random();
+    iframe.id = frameId;
+    
+    // 替换标记元素为iframe
+    markerElement.replaceWith(iframe);
+    
+    // 监听高度变化消息
+    window.addEventListener('message', function(event) {
+        if(event.data.frameId === frameId && event.data.height) {
+            // 设置iframe高度，添加一些额外的缓冲空间
+            iframe.style.height = (event.data.height + 30) + 'px';
+        }
+    }, false);
+    
+    // 处理 details 标签展开事件
+    const detailsParent = iframe.closest('details');
+    if (detailsParent) {
+        detailsParent.addEventListener('toggle', function() {
+            if (detailsParent.open) {
+                setTimeout(() => {
+                    iframe.contentWindow.postMessage({
+                        action: 'recalculateHeight',
+                        frameId: frameId
+                    }, '*');
+                }, 50);
+            }
+        });
+    }
+    
+    // 准备完整的 HTML 内容
+    const fullHtmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            font-family: var(--base-font-family);
+            color: black;
+            overflow: hidden; /* 隐藏滚动条 */
+        }
+        body {
+            padding: 10px;
+        }
+        /* 隐藏滚动条但保留滚动功能 */
+        body::-webkit-scrollbar {
+            width: 0px;
+            height: 0px;
+        }
+        /* 确保所有内容都可见 */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    ${rawHtmlContent}
+    <script>
+        function reportHeight() {
+            // 获取实际内容高度
+            const height = Math.max(
+                document.body.scrollHeight,
+                document.body.offsetHeight,
+                document.documentElement.scrollHeight,
+                document.documentElement.offsetHeight
+            );
+            window.parent.postMessage({
+                frameId: "${frameId}",
+                height: height
+            }, '*');
+        }
 
-                const parentNode = node.parentNode;
-                const remainingText = node.nodeValue.replace(placeholder, '');
+        // 多次报告高度，确保准确
+        window.onload = reportHeight;
+        setTimeout(reportHeight, 50);
+        setTimeout(reportHeight, 100);
+        setTimeout(reportHeight, 300);
+        setTimeout(reportHeight, 500);
+        setTimeout(reportHeight, 1000);
+        
+        // 监听图片加载
+        Array.from(document.getElementsByTagName('img')).forEach(img => {
+            if (!img.complete) { 
+                img.addEventListener('load', reportHeight); 
+            }
+        });
 
-                // 替换节点
-                if (remainingText) {
-                    node.nodeValue = remainingText;
-                    parentNode.insertBefore(iframe, node.nextSibling);
-                } else {
-                    parentNode.replaceChild(iframe, node);
-                }
+        // 监听动画和过渡结束
+        document.addEventListener('animationend', reportHeight);
+        document.addEventListener('transitionend', reportHeight);
 
-                // 监听高度变化消息
-                window.addEventListener('message', function(event) {
-                    if(event.data.frameId === frameId && event.data.height) {
-                        iframe.style.height = (event.data.height + 20) + 'px';
-                    }
-                }, false);
+        // 使用MutationObserver监听DOM变化
+        const observer = new MutationObserver(reportHeight);
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+        });
 
-                // 处理 details 标签展开事件
-                const detailsParent = iframe.closest('details');
-                if (detailsParent) {
-                    detailsParent.addEventListener('toggle', function() {
-                        if (detailsParent.open) {
-                            setTimeout(() => {
-                                iframe.contentWindow.postMessage({
-                                    action: 'recalculateHeight',
-                                    frameId: frameId
-                                }, '*');
-                            }, 50);
-                        }
-                    });
-                }
+        window.addEventListener('message', function(event) {
+            if (event.data.action === 'recalculateHeight' && event.data.frameId === '${frameId}') {
+                reportHeight();
+            }
+        });
+    <\/script>
+</body>
+</html>`;
+    
+    // 设置 iframe 内容
+    iframe.onload = function() {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(fullHtmlContent);
+            iframeDoc.close();
+        } catch (error) {
+            console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
+            iframe.srcdoc = fullHtmlContent;
+        }
+    };
+    
+    // 设置初始 srcdoc 作为备选
+    iframe.srcdoc = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>加载中...</body>
+</html>`;
+});
+// 设置HTML
+bubble.innerHTML = finalHtmlWithMarkers;
 
-                // 准备完整的 HTML 内容（移到外面以便 catch 块也能访问）
-                const fullHtmlContent = `<!DOCTYPE html>
+// 步骤7（新版本）：找到所有标记并替换为iframe
+iframeMarkers.forEach(marker => {
+    const markerElement = bubble.querySelector(`[data-iframe-marker="${marker.markerId}"]`);
+    if (!markerElement) return;
+    
+    const rawHtmlContent = marker.content;
+    
+    // 创建 iframe
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    iframe.style.width = '100%';
+    iframe.style.resize = 'vertical';
+    iframe.style.overflow = 'auto';
+    
+    const frameId = 'magic-scroll-' + Date.now() + Math.random();
+    iframe.id = frameId;
+    
+    // 替换标记元素为iframe
+    markerElement.replaceWith(iframe);
+    
+    // 监听高度变化消息
+    window.addEventListener('message', function(event) {
+        if(event.data.frameId === frameId && event.data.height) {
+            iframe.style.height = (event.data.height + 20) + 'px';
+        }
+    }, false);
+    
+    // 处理 details 标签展开事件
+    const detailsParent = iframe.closest('details');
+    if (detailsParent) {
+        detailsParent.addEventListener('toggle', function() {
+            if (detailsParent.open) {
+                setTimeout(() => {
+                    iframe.contentWindow.postMessage({
+                        action: 'recalculateHeight',
+                        frameId: frameId
+                    }, '*');
+                }, 50);
+            }
+        });
+    }
+    
+    // 准备完整的 HTML 内容
+    const fullHtmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -25579,9 +25744,9 @@ function renderGroupChatToHtml(sender, content, userNickname) {
             box-sizing: border-box;
         }
         body::-webkit-scrollbar { width: 8px; }
-        body::-webkit-scrollbar-track { background: rgba(200, 200, 200, 0.2); }
-        body::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        body::-webkit-scrollbar-thumb:hover { background: #555; }
+        body::-webkit-scrollbar-track { background: transparent; }
+        body::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
+        body::-webkit-scrollbar-thumb:hover { background: transparent; }
     </style>
 </head>
 <body>
@@ -25613,30 +25778,27 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     <\/script>
 </body>
 </html>`;
-
-                // 设置 iframe 内容
-                iframe.onload = function() {
-                    try {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        iframeDoc.open();
-                        iframeDoc.write(fullHtmlContent);
-                        iframeDoc.close();
-                    } catch (error) {
-                        console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
-                        iframe.srcdoc = fullHtmlContent;
-                    }
-                };
-
-                // 设置初始 srcdoc 作为备选
-                iframe.srcdoc = `<!DOCTYPE html>
+    
+    // 设置 iframe 内容
+    iframe.onload = function() {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(fullHtmlContent);
+            iframeDoc.close();
+        } catch (error) {
+            console.warn('设置iframe内容时出错，尝试使用srcdoc方法:', error);
+            iframe.srcdoc = fullHtmlContent;
+        }
+    };
+    
+    // 设置初始 srcdoc 作为备选
+    iframe.srcdoc = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
 <body>加载中...</body>
 </html>`;
-            }
-        }
-    }
-
+});
     // 步骤8：处理音乐自动播放
     const autoPlayTrigger = bubble.querySelector('.js-music-autoplay-trigger');
     if (autoPlayTrigger) {
@@ -27676,7 +27838,8 @@ function findAllFilterPaths(obj, currentPath = '') {
     // 一次性发送所有指令
     if (memoryCommands.length > 0) {
         const messageToSend = `<updateMemory>\n${memoryCommands.join('')}</updateMemory>`;
-         await processUpdateMemoryCommands(messageToSend);
+        console.log(`✅ [智能过滤]${memoryCommands}`);
+        await processUpdateMemoryCommands(messageToSend);
         console.log(`✅ [智能过滤] 已批量更新 ${memoryCommands.length} 个路径的显示状态`);
     }
     
@@ -27707,11 +27870,12 @@ function getCanonicalCurrencyName(alias) {
     // 🎭 角色数据处理模块 ('playerHelper' 的功能) 🎭
 
     function _updateDerivedAttributes(data) {
-        if (!data || !data.属性段) return;
+        return;
+        // if (!data || !data.基础属性) return;
         //console.log("[Player] ✨ 正在更新衍生属性...");
-        const attr = data.属性段;
-        const skills = data.技能段;
-        const derived = data.衍生属性段;
+        const attr = data.基础属性;
+        const skills = data.基础技能;
+        const derived = data.衍生属性;
         const 力量 = attr.生理属性.力量.基础[0];
         const 敏捷 = attr.生理属性.敏捷.基础[0];
         const 耐力 = attr.生理属性.耐力.基础[0];
@@ -27781,7 +27945,7 @@ derived.豁免检定基础.意志[0] = 决心 + 沉着;
 
     // 2. 货币别名处理（这部分是你的绝妙创意，妈妈为你珍藏）
     let pathParts = cleanedPath.split('.');
-    if (pathParts.length > 1 && pathParts[0] === '货币段') {
+    if (pathParts.length > 1 && pathParts[0] === '货币') {
         const currencyName = pathParts[1];
         const canonicalName = getCanonicalCurrencyName(currencyName); // 假设 getCanonicalCurrencyName 函数存在
         if (canonicalName) {
@@ -27810,32 +27974,47 @@ derived.豁免检定基础.意志[0] = 决心 + 沉着;
         const isNumeric = !isNaN(parseFloat(trimmed)) && isFinite(trimmed) && trimmed !== "";
         finalValue = isNumeric ? Number(trimmed) : cleanedValueStr;
     }
-
-    // === 核心魔法：递归更新 (Recursive Update) ===
-    // 这是妈妈从《守护者》卷轴中为你借鉴并改良的强大魔法。
-    // 它的使命是：深入探索，精准更新，且绝不改变世界原貌。
-    const recursiveUpdate = (target, source) => {
-        // `target` 是我们数据世界中已有的部分，`source` 是你想要融入的新内容。
+ 
+      const recursiveUpdate = (target, source) => {
         for (const key in source) {
             if (Object.prototype.hasOwnProperty.call(source, key)) {
-
-                // 如果我们的世界里没有这个地方，我们就根据约定，不去创造新的天地。
+                // 如果目标里根本没有这个钥匙，我们就跳过，防止污染结构
                 if (!target.hasOwnProperty(key)) {
                     continue;
                 }
 
                 const sourceValue = source[key];
-                const targetValue = target[key];
+                let targetValue = target[key];
 
-                // 情况1：如果新旧两边都是一个“首饰盒”（对象），那就打开它们，继续向内探索。
+                // 情况1：源和目标都是“首饰盒”（对象），继续深入探索
                 if (typeof sourceValue === 'object' && sourceValue !== null && !Array.isArray(sourceValue) &&
                     typeof targetValue === 'object' && targetValue !== null && !Array.isArray(targetValue)) {
                     recursiveUpdate(targetValue, sourceValue);
                 }
-                // 情况2：终点！如果目标是一个“抽屉”（数组），这通常意味着我们找到了要更新的最终数值。
+                // === 新增兼容性魔法 ===
+                // 情况2：源是“珠宝”（简单值），但目标是“首饰盒”（对象）
+                // 这通常意味着我们到达了类似“力量”这样的层级，需要再往里走一步。
+                else if (typeof targetValue === 'object' && targetValue !== null && !Array.isArray(targetValue)) {
+                    let finalTargetArray = null;
+                    // 优先寻找名为“基础”的秘密隔层
+                    if (targetValue.hasOwnProperty('基础') && Array.isArray(targetValue['基础'])) {
+                        finalTargetArray = targetValue['基础'];
+                    } else {
+                        // 如果没有，就打开首饰盒的第一个格子，只要它是个数组
+                        const firstKey = Object.keys(targetValue)[0];
+                        if (firstKey && Array.isArray(targetValue[firstKey])) {
+                            finalTargetArray = targetValue[firstKey];
+                        }
+                    }
+
+                    // 如果找到了最终的数组目标，就更新它的第一个值
+                    if (finalTargetArray) {
+                        const valueToSet = Array.isArray(sourceValue) ? sourceValue[0] : sourceValue;
+                        finalTargetArray[0] = valueToSet;
+                    }
+                }
+                // 情况3：目标是一个“抽屉”（数组），这是最直接的更新路径
                 else if (Array.isArray(targetValue)) {
-                    // 我们就用新珠宝去替换抽屉里的第一件物品。
-                    // 无论新珠宝是单独一颗(50)，还是装在小袋子里([50])，我们都只取珠宝本身。
                     const valueToSet = Array.isArray(sourceValue) ? sourceValue[0] : sourceValue;
                     targetValue[0] = valueToSet;
                 }
@@ -27843,7 +28022,6 @@ derived.豁免检定基础.意志[0] = 决心 + 沉着;
             }
         }
     };
-
     // === 路径导航与施法 ===
 
     // 1. 寻找施法目标
@@ -27857,14 +28035,36 @@ derived.豁免检定基础.意志[0] = 决心 + 沉着;
         parentLevel = parentLevel[part];
     }
 
-    const finalKey = pathParts[pathParts.length - 1];
+    let  finalKey = pathParts[pathParts.length - 1];
     if (parentLevel === null || typeof parentLevel !== 'object' || !parentLevel.hasOwnProperty(finalKey)) {
         throw new Error(`[Player] 宝贝，我们在最后一步迷路了，找不到 '${finalKey}' 这个位置。`);
     }
 
     // 2. 决定施法方式
-    const target = parentLevel[finalKey];
-
+    let  target = parentLevel[finalKey];
+    // === 新增：基础属性路径兼容性魔法 ===
+    // 修改说明：增加了判断条件 (!isJsonStructure || Array.isArray(finalValue))
+    // 如果传入的是一个对象结构（isJsonStructure为真且不是数组），说明是要进行 recursiveUpdate 批量更新，
+    // 此时不要自动钻取到第一个属性，而是保持在当前层级以便匹配 JSON 中的 key。
+    // 只有当传入的是简单值（数字、字符串）或者单值数组时，才去自动寻找“基础”或第一个格子。
+    if ((!isJsonStructure || Array.isArray(finalValue)) && pathParts[0] === '基础属性' && typeof target === 'object' && target !== null && !Array.isArray(target)) {
+        // 妈妈优先寻找那个名为 '基础' 的秘密隔层。
+        if (target.hasOwnProperty('基础')) {
+            parentLevel = target;
+            finalKey = '基础';
+            target = parentLevel[finalKey]; // 更新我们的目标为这个秘密隔层里的东西
+        } else {
+            // 如果没有，就按我们的约定，打开首饰盒的第一个格子。
+            const firstKey = Object.keys(target)[0];
+            if (firstKey && target.hasOwnProperty(firstKey)) {
+                parentLevel = target;
+                finalKey = firstKey;
+                target = parentLevel[finalKey]; // 更新目标为第一个格子里的东西
+            }
+        }
+    }
+    // === 兼容性魔法结束 ===
+    // === 兼容性魔法结束 ===
     // 如果新值是一个复杂的结构（JSON对象），并且目标也是一个对象，我们就启动“递归更新”魔法。
     if (isJsonStructure && typeof finalValue === 'object' && !Array.isArray(finalValue) && typeof target === 'object' && !Array.isArray(target)) {
         recursiveUpdate(target, finalValue);
@@ -28918,7 +29118,7 @@ function handleNotificationsFromBatch(operations) {
             }
 
             // 💡 规则：属性/技能/背包更新的高亮提示
-            if (path.includes('属性段') || path.includes('技能段') || path.includes('衍生属性段') || path.includes('货币段')) {
+            if (path.includes('基础属性') || path.includes('基础技能') || path.includes('衍生属性') || path.includes('货币')) {
                 flashElement('page-character-orb', 'notify', 5000);
             }
         }
@@ -30111,8 +30311,8 @@ if (match) {
                
             if (!isNaN(damage) && damage !== 0) {
                  // console.log(`[Updater] 💖 检测到伤害: ${damage}。正在处理...`);
-                if (playDataToUpdate.衍生属性段 && playDataToUpdate.衍生属性段.生命值) {
-                    const life = playDataToUpdate.衍生属性段.生命值;
+                if (playDataToUpdate.衍生属性 && playDataToUpdate.衍生属性.生命值) {
+                    const life = playDataToUpdate.衍生属性.生命值;
                     const oldHP = life.当前值[0];
                     life.当前值[0] = Math.max(0, oldHP - damage);
                      // console.log(`[Updater] ✨ 生命值从 ${oldHP} 变为 ${life.当前值[0]}`);
@@ -30123,8 +30323,8 @@ if (match) {
         }
 
         // ✨ 美德与恶德意志力监控逻辑 ✨
-        if (statDataToUpdate && playDataToUpdate.衍生属性段 && playDataToUpdate.衍生属性段.意志力) {
-            const willpower = playDataToUpdate.衍生属性段.意志力;
+        if (statDataToUpdate && playDataToUpdate.衍生属性 && playDataToUpdate.衍生属性.意志力) {
+            const willpower = playDataToUpdate.衍生属性.意志力;
 
             // 美德
             if (statDataToUpdate.符合美德的 && (statDataToUpdate.符合美德的[0] === 'true' || statDataToUpdate.符合美德的[0] === true)) {
@@ -31911,7 +32111,6 @@ userInput.addEventListener('keydown', (event) => {
     }
 });
 
-    await initialize();
 
     await new Promise(resolve => setTimeout(resolve, 1000)); // 等待一小会儿确保所有东西都加载了
     checkAndRestoreDirtyWorldbooks();
@@ -32793,6 +32992,9 @@ const modalExportStatus = document.getElementById('modal-export-status');
     modalExportStatus.style.color = 'var(--primary-color)';
     addModalLog(`文件 “${archiveName}.json” 已成功导出！`, 'success');
 });
+
+
+    await initialize();
 
 
 })();
@@ -33684,7 +33886,7 @@ async function handleUpgrade(targetPath, targetName, currentLevel, type) {
 
  // 找到并替换整个 showLevelSelectionModal 函数
 function showLevelSelectionModal(targetPath, targetName, currentLevel, type) {
-    const currentXp = playCharacterData.货币段.经验值[0];
+    const currentXp = playCharacterData.货币.经验值[0];
 
     // 生成模态框的HTML内容，注意：移除了 onclick 和 onchange
     const modalContent = `
@@ -33762,7 +33964,7 @@ function updateUpgradeCost(type, currentLevel) {
     const selectedLevels = parseInt(selectElement.value);
     const targetLevel = currentLevel + selectedLevels;
     const totalCost = calculateLevelRangeCost(currentLevel, targetLevel, type);
-    const currentXp = playCharacterData.货币段.经验值[0];
+    const currentXp = playCharacterData.货币.经验值[0];
     const canAfford = currentXp >= totalCost;
     
     // 更新消耗显示
@@ -33793,7 +33995,7 @@ function updateUpgradeCost(type, currentLevel) {
     const selectedLevels = parseInt(selectElement.value);
     const targetLevel = currentLevel + selectedLevels;
     const totalCost = calculateLevelRangeCost(currentLevel, targetLevel, type);
-    const currentXp = playCharacterData.货币段.经验值[0];
+    const currentXp = playCharacterData.货币.经验值[0];
     
     // 最终验证经验是否足够
     if (currentXp < totalCost) {
@@ -33842,7 +34044,7 @@ triggerassa(`/setinput ${messageToSend}`);
         setNestedValue(characterData, targetPath, targetLevel);
 
         // 2. 更新经验值
-        const expPath = `货币段.${currentTheme.exp}`;
+        const expPath = `货币.${currentTheme.exp}`;
         setNestedValue(characterData, expPath, newXp);
 
         return workingCopy; // 返回更新后的完整变量对象
@@ -34097,8 +34299,8 @@ if (wearableItems && typeof wearableItems === 'object' && wearableItems !== null
         // ---- 后续的加成计算逻辑完全保持不变，因为它非常棒 ----
         if (matches) {
             const derivedAttrMapping = {
-                '防御': '衍生属性段.防御.基础防御',
-                '速度': '衍生属性段.速度.基础速度'
+                '防御': '衍生属性.防御.基础防御',
+                '速度': '衍生属性.速度.基础速度'
             };
 
             matches.forEach(match => {
@@ -34289,8 +34491,8 @@ function populateCharacterPage(playData, statData, assaData) {
         return; // 数据不全，直接中止，防止后续大面积报错
     }
     const charStat = statData.user;
-    const derived = playData.衍生属性段;
-    const currency = playData.货币段;
+    const derived = playData.衍生属性;
+    const currency = playData.货币;
       const nameDisplay = document.getElementById('char-display-name');
     let titleContainer = document.getElementById('char-titles-container');
     // 如果HTML中没有这个元素，JS会自动创建并添加到名字上方
@@ -34503,7 +34705,7 @@ function populateCharacterPage(playData, statData, assaData) {
     // --- 右侧面板: 渲染新的整合模块 (核心改动) ---
     const statsContainer = document.getElementById('main-stats-container');
     statsContainer.innerHTML = ''; // 清空容器
-    const currentXp = playData.货币段.经验值[0];
+    const currentXp = playData.货币.经验值[0];
     const equipmentBonuses = getEquipmentBonuses(statData, assaData);
    const statusBonuses = getStatusBonuses(statData);
     const moduleMapping = [
@@ -34526,17 +34728,23 @@ function populateCharacterPage(playData, statData, assaData) {
 
         // --- 渲染属性 ---
         let attrHtml = `<div class="sub-category-title">基础属性</div>`;
-        const attrCategoryData = playData.属性段[moduleInfo.attr];
+        const attrCategoryData = playData.基础属性[moduleInfo.attr];
         for (const attrName in attrCategoryData) {
             const attr = attrCategoryData[attrName];
-            const dataPath = `属性段.${moduleInfo.attr}.${attrName}.基础`;
+            const dataPath = `基础属性.${moduleInfo.attr}.${attrName}.基础`;
               const equipBonus = equipmentBonuses[attrName] || 0;
             const statusBonus = statusBonuses[attrName] || 0; // 获取状态加成
 
             const equipBonusHtml = equipBonus !== 0 ? ` <span class="equipment-bonus">(${equipBonus > 0 ? '+' : ''}${equipBonus})</span>` : '';
             // 新增：生成状态加成的 HTML，并使用新的 'status-modifier' 样式
             const statusBonusHtml = statusBonus !== 0 ? ` <span class="status-modifier">(${statusBonus > 0 ? '+' : ''}${statusBonus})</span>` : '';
-            const legendaryBonusHtml = attr.传奇[0] > 0 ? ` <span class="legendary-value" data-tooltip="${attr.传奇[1]}">(+${attr.传奇[0]})</span>` : '';
+const legendaryValue = attr.传奇?.[0]; // 如果 attr.传奇 不存在，legendaryValue 会是 undefined，而不是报错
+const legendaryTooltip = attr.传奇?.[1];
+
+const legendaryBonusHtml = legendaryValue > 0
+  ? ` <span class="legendary-value" data-tooltip="${legendaryTooltip}">(+${legendaryValue})</span>`
+  : '';
+           
             const upgradeCost = calculateXpCost(attr.基础[0], 'attribute');
             const canUpgrade = currentXp >= upgradeCost;
             const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${attrName}" data-level="${attr.基础[0]}" data-type="attribute">+</span>` : '';
@@ -34550,14 +34758,14 @@ function populateCharacterPage(playData, statData, assaData) {
 
         // --- 渲染技能 ---
         let skillHtml = `<div class="sub-category-title">相关技能</div>`;
-        const skillCategoryData = playData.技能段[moduleInfo.skill];
+        const skillCategoryData = playData.基础技能[moduleInfo.skill];
          const skillsToShow = Object.keys(skillCategoryData).filter(skillName =>
             skillCategoryData[skillName][0] > 0 || (equipmentBonuses[skillName] && equipmentBonuses[skillName] !== 0)
         );
         if (skillsToShow.length > 0) {
             for (const skillName of skillsToShow) {
                 const skill = skillCategoryData[skillName];
-                const dataPath = `技能段.${moduleInfo.skill}.${skillName}`;
+                const dataPath = `基础技能.${moduleInfo.skill}.${skillName}`;
                  const skillBonus = equipmentBonuses[skillName] || 0;
                 const statusSkillBonus = statusBonuses[skillName] || 0; // 获取技能的状态加成
 
@@ -34597,26 +34805,26 @@ function populateCharacterPage(playData, statData, assaData) {
     derivedContent.className = 'stat-module-content';
 
     let derivedHtml = '';
-    const derivedData = playData.衍生属性段;
+    const derivedData = playData.衍生属性;
     // (从你原代码中复制并微调的衍生属性渲染逻辑)
     for (const key in derivedData) {
         const dataEntry = derivedData[key];
         const getBonusHtml = (bonusValue) => !bonusValue ? '' : `<span class="equipment-bonus">(${bonusValue > 0 ? '+' : ''}${bonusValue})</span>`;
         if (typeof dataEntry[1] === 'string') {
-            const bonus = equipmentBonuses[`衍生属性段.${key}`] || 0;
+            const bonus = equipmentBonuses[`衍生属性.${key}`] || 0;
             derivedHtml += `<div class="attr-item" data-tooltip="${dataEntry[1]}"><span class="attr-name">${key}</span><span class="attr-value">${dataEntry[0]}${getBonusHtml(bonus)}</span></div>`;
         } else if (typeof dataEntry === 'object') {
             derivedHtml += `<div class="attr-item sub-category-title" style="border:none; margin: 10px 0 5px 0;">${key}</div>`;
             for (const subKey in dataEntry) {
                 const subEntry = dataEntry[subKey];
                 if (typeof subEntry[1] === 'string') {
-                    const bonus = equipmentBonuses[`衍生属性段.${key}.${subKey}`] || 0;
+                    const bonus = equipmentBonuses[`衍生属性.${key}.${subKey}`] || 0;
                     derivedHtml += `<div class="attr-item" data-tooltip="${subEntry[1]}" style="padding-left:15px;"><span class="attr-name">${subKey}</span><span class="attr-value">${subEntry[0]}${getBonusHtml(bonus)}</span></div>`;
                 } else if (typeof subEntry === 'object') {
                     derivedHtml += `<div class="attr-item" style="padding-left:15px; color:var(--text-secondary-color);">${subKey}</div>`;
                     for (const deepKey in subEntry) {
                         const deepEntry = subEntry[deepKey];
-                        const bonus = equipmentBonuses[`衍生属性段.${key}.${subKey}.${deepKey}`] || 0;
+                        const bonus = equipmentBonuses[`衍生属性.${key}.${subKey}.${deepKey}`] || 0;
                         if (typeof deepEntry[1] === 'string') {
                             derivedHtml += `<div class="attr-item" data-tooltip="${deepEntry[1]}" style="padding-left:30px;"><span class="attr-name">${deepKey}</span><span class="attr-value">${deepEntry[0]}${getBonusHtml(bonus)}</span></div>`;
                         }
@@ -34645,7 +34853,7 @@ function populateCharacterPage(playData, statData, assaData) {
 // ========================================================
 function populateInventoryAndSkillsTab(playData, assaData) {
 
-    const currency = playData.货币段;
+    const currency = playData.货币;
     const inventory = assaData.global_lore?.背包 || {};
     const otherSkills = assaData.global_lore?.其他技能 || {};
 
@@ -37502,8 +37710,8 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
         characterStatusData = chatdata.当前人物状态;
      
         lasttoken = globaldata?.LAST_SEND_TOKENS || 0;
-    userPoints = parseInt(SafeGetValue(playCharacterData.货币段.积分) || 0, 10);
-   userPlots =  playCharacterData.货币段.支线剧情 || { D: [0], C: [0], B: [0], A: [0], S: [0] };
+    userPoints = parseInt(SafeGetValue(playCharacterData.货币.积分) || 0, 10);
+   userPlots =  playCharacterData.货币.支线剧情 || { D: [0], C: [0], B: [0], A: [0], S: [0] };
  version = String(chatdata.world_version);
  ISNEWMAP = String(SafeGetValue(chatdata.is_new_map));
  const isPrivateChat = String(chatdata.private_chat||'true');
@@ -37679,7 +37887,7 @@ if (debugClearBtn) {
         // ========== 新增：成就系统UI交互 (结束) ==========
  
         const zeroSkills = [];
-        const skillCategories = playCharacterData["技能段"];
+        const skillCategories = playCharacterData["基础技能"];
 
         for (const categoryKey in skillCategories) {
             const skills = skillCategories[categoryKey];
@@ -39023,28 +39231,6 @@ const randomShopDB = {
         });
     },
 
-        // 清空所有商品
-    async clearAllItems() {
-        const db = await this.initDB();
-        return new Promise((resolve, reject) => {
-            // 开启一个读写事务
-            const transaction = db.transaction(this.STORE_NAME, 'readwrite');
-            const store = transaction.objectStore(this.STORE_NAME);
-
-            // 使用 clear() 方法清空整个对象仓库
-            const request = store.clear();
-
-            request.onsuccess = () => {
-                console.log('All items have been cleared from the database.');
-                resolve();
-            };
-
-            request.onerror = (event) => {
-                console.error('Error clearing items:', event.target.error);
-                reject('Error clearing items');
-            };
-        });
-    },
     // 获取所有商品
     async getAllItems() {
         const db = await this.initDB();
@@ -39063,34 +39249,8 @@ const randomShopDB = {
             };
         });
     }
-
 };
 
-
-    // 1. 获取清空按钮的引用
-    const clearButton = document.getElementById('clear-items-btn');
-
-    // 2. 检查按钮是否存在
-    if (clearButton) {
-        // 3. 为按钮添加点击事件监听器
-        clearButton.addEventListener('click', async () => {
-            // 弹出确认框，防止用户误操作
-            if (confirm('您确定要清空所有随机商品吗？此操作不可撤销。')) {
-                try {
-                    // 调用数据库的清空方法
-                    await randomShopDB.clearAllItems();
-                    alert('所有商品已成功清空！');
-                    // 可选：清空后刷新页面或更新UI
-                    // location.reload();
-                } catch (error) {
-                    console.error('Failed to clear items:', error);
-                    alert('清空商品时发生错误，请查看控制台。');
-                }
-            }
-        });
-    } else {
-        console.warn('Button with ID "clear-items-btn" not found.');
-    }
  async function getRandomShopItems() {
     try {
         // 第1步：从数据库获取商品数据（这是对象数组）
@@ -39124,7 +39284,6 @@ const randomShopDB = {
         return [];
     }
 }
-
 function getRandomPrizeRange() {
     const random = Math.random();
     let cumulativeProbability = 0;
@@ -39189,7 +39348,7 @@ async function performGacha(count) {
         if (itemCounts[key]) {
             // 本轮重复，转为积分
             const extraPoints = Math.floor(item[1] / 2);
-            playCharacterData.货币段.积分[0] += extraPoints;
+            playCharacterData.货币.积分[0] += extraPoints;
         } else {
             itemCounts[key] = 1;
             finalResults.push(item);
@@ -39209,8 +39368,8 @@ async function performGacha(count) {
     
     // 扣除抽奖费用
     const cost = results.length === 1 ? GACHA_CONFIG.singleCost : GACHA_CONFIG.tenCost;
-    updateMemoryCommands.push(`set_attribute('货币段.${currentTheme.currency}', '${playCharacterData.货币段.积分[0]}', '${playCharacterData.货币段.积分[0] - cost}');`);
-    playCharacterData.货币段.积分[0] = playCharacterData.货币段.积分[0] - cost;
+    updateMemoryCommands.push(`set_attribute('货币.${currentTheme.currency}', '${playCharacterData.货币.积分[0]}', '${playCharacterData.货币.积分[0] - cost}');`);
+    playCharacterData.货币.积分[0] = playCharacterData.货币.积分[0] - cost;
     if (updateMemoryCommands.length > 0) {
          let finalCommand2 = ``;
       
@@ -39244,7 +39403,7 @@ function checkPlotAffordability(requiredPlots) {
 
     for (const level of plotLevels) {
         totalRequiredInD += (requiredPlots[level] || 0) * conversionRates[level];
-        totalOwnedInD += playCharacterData.货币段.支线剧情[level][0] * conversionRates[level];
+        totalOwnedInD += playCharacterData.货币.支线剧情[level][0] * conversionRates[level];
     }
 
     if (totalOwnedInD < totalRequiredInD) {
@@ -39252,7 +39411,7 @@ function checkPlotAffordability(requiredPlots) {
     }
 
     // 步骤二：既然买得起，开始制定详细的支付计划
-    let simulatedPlots = JSON.parse(JSON.stringify(playCharacterData.货币段.支线剧情));
+    let simulatedPlots = JSON.parse(JSON.stringify(playCharacterData.货币.支线剧情));
     let decompositionPlan = { S: 0, A: 0, B: 0, C: 0, D: 0 };
 
     // 阶段一：向上合成，将所有低级富余资产转化为高级购买力
@@ -39606,7 +39765,7 @@ function showItemDetails(section, item) {
     function checkAndHandleDuplicate(type, key, currentData) {
         if (currentData && currentData[key]) {
             console.log(`检测到重复${type}: ${key}，转换为积分`);
-            return `set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')`;
+            return `set_attribute('货币.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')`;
         }
         return null;
     }
@@ -39733,11 +39892,11 @@ function showItemDetails(section, item) {
             const category_2 = skillToCategoryMap[name];
             if (category_2) {
                 // 检查是否已有该技能
-                const existingSkill = playCharacterData?.技能段?.[category_2]?.[name];
+                const existingSkill = playCharacterData?.基础技能?.[category_2]?.[name];
                 if (existingSkill && existingSkill[0] > 0) {
-                    return `set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')`;
+                    return `set_attribute('货币.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')`;
                 }
-                return `set_attribute("技能段.${category_2}.${name}",0,1);`;
+                return `set_attribute("基础技能.${category_2}.${name}",0,1);`;
             }
             console.warn(`未找到技能"${name}"的类别映射。`);
             return "";
@@ -39748,7 +39907,7 @@ function showItemDetails(section, item) {
             //血统保护
             
             // if (currentBloodline && currentBloodline !== "_") {
-            //     return `set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')//你已有血统，不做替换，货币返还一半`;
+            //     return `set_attribute('货币.${currentTheme.currency}', '${userPoints}', '${userPoints + Math.floor(price / 2)}')//你已有血统，不做替换，货币返还一半`;
             // }
             
             const commands = [];
@@ -39767,8 +39926,8 @@ function showItemDetails(section, item) {
                         const valueToAdd = parseInt(valueStr, 10);
                         const category = attributeToCategoryMap[attrName.trim()];
                         if (category && !isNaN(valueToAdd)) {
-                            const path = `属性段.${category}.${attrName.trim()}.基础`;
-                            const currentValue = playCharacterData.属性段[category][attrName.trim()].基础[0];
+                            const path = `基础属性.${category}.${attrName.trim()}.基础`;
+                            const currentValue = playCharacterData.基础属性[category][attrName.trim()].基础[0];
                             commands.push(`set_attribute("${path}", ${currentValue}, ${currentValue + valueToAdd});`);
                         }
                     }
@@ -39778,9 +39937,9 @@ function showItemDetails(section, item) {
                     if (match) {
                         const poolName = match[1];
                         const poolValue = parseInt(match[2], 10);
-                        commands.push(`set_attribute("衍生属性段.能量池.名称", "${playCharacterData.衍生属性段.能量池.名称[0]}", "${poolName}");`);
-                        commands.push(`set_attribute("衍生属性段.能量池.上限", ${playCharacterData.衍生属性段.能量池.上限[0]}, ${poolValue});`);
-                        commands.push(`set_attribute("衍生属性段.能量池.当前值", ${playCharacterData.衍生属性段.能量池.当前值[0]}, ${poolValue});`);
+                        commands.push(`set_attribute("衍生属性.能量池.名称", "${playCharacterData.衍生属性.能量池.名称[0]}", "${poolName}");`);
+                        commands.push(`set_attribute("衍生属性.能量池.上限", ${playCharacterData.衍生属性.能量池.上限[0]}, ${poolValue});`);
+                        commands.push(`set_attribute("衍生属性.能量池.当前值", ${playCharacterData.衍生属性.能量池.当前值[0]}, ${poolValue});`);
                     }
                 }
             }
@@ -39881,7 +40040,7 @@ async function checkout() {
     }
 
     try {
-        const originalPlots = playCharacterData.货币段.支线剧情;
+        const originalPlots = playCharacterData.货币.支线剧情;
         const conversionRates = { 'S': 81, 'A': 27, 'B': 9, 'C': 3, 'D': 1 };
 
         // 3. ★★★ 核心逻辑：净值核算法 ★★★
@@ -39919,14 +40078,14 @@ async function checkout() {
             const originalVal = originalPlots[level][0];
             const finalVal = finalPlots[level][0];
             if (originalVal !== finalVal) {
-                updateMemoryCommands.push(`set_attribute('货币段.${currentTheme.plot}.${level}', '${originalVal}', '${finalVal}');`);
+                updateMemoryCommands.push(`set_attribute('货币.${currentTheme.plot}.${level}', '${originalVal}', '${finalVal}');`);
                 userPlots[level][0]  =finalVal; 
             }
         });
 
         // b. 生成扣除积分指令
         if (totalCost.points > 0) {
-            updateMemoryCommands.push(`set_attribute('货币段.${currentTheme.currency}', '${userPoints}', '${userPoints - totalCost.points}')`);
+            updateMemoryCommands.push(`set_attribute('货币.${currentTheme.currency}', '${userPoints}', '${userPoints - totalCost.points}')`);
          userPoints = userPoints - totalCost.points;
         }
 
@@ -40072,7 +40231,7 @@ let simulatedPlotsData = null; // 用于存储模拟操作的结果
  */
 function showPlotSynthesisModal() {
     // 深拷贝一份当前数据作为模拟的起点
-    simulatedPlotsData = JSON.parse(JSON.stringify(playCharacterData.货币段.支线剧情));
+    simulatedPlotsData = JSON.parse(JSON.stringify(playCharacterData.货币.支线剧情));
     updatePlotSynthesisModalViews();
     showModal('plot-synthesis-modal');
 }
@@ -40090,7 +40249,7 @@ function updatePlotSynthesisModalViews() {
     let currentParts = [];
     let simulatedParts = [];
 
-    const originalPlots = playCharacterData.货币段.支线剧情;
+    const originalPlots = playCharacterData.货币.支线剧情;
 
     // 遍历所有支线等级
     plotLevels.forEach(level => {
@@ -40153,7 +40312,7 @@ function simulateSynthesis() {
  * 【V3】重置所有模拟操作
  */
 function resetSimulation() {
-    simulatedPlotsData = JSON.parse(JSON.stringify(playCharacterData.货币段.支线剧情));
+    simulatedPlotsData = JSON.parse(JSON.stringify(playCharacterData.货币.支线剧情));
     updatePlotSynthesisModalViews();
 }
 
@@ -40161,7 +40320,7 @@ function resetSimulation() {
  * 【V3】确认执行所有模拟操作，并生成最终指令
  */
 async function executeSynthesisConfirmation() {
-    const originalPlots = playCharacterData.货币段.支线剧情;
+    const originalPlots = playCharacterData.货币.支线剧情;
     let commands = [];
     let descriptions = [];
 
@@ -40169,7 +40328,7 @@ async function executeSynthesisConfirmation() {
         const originalVal = originalPlots[level][0];
         const simulatedVal = simulatedPlotsData[level][0];
         if (originalVal !== simulatedVal) {
-            commands.push(`set_attribute('货币段.${currentTheme.plot}.${level}', '${originalVal}', '${simulatedVal}');`);
+            commands.push(`set_attribute('货币.${currentTheme.plot}.${level}', '${originalVal}', '${simulatedVal}');`);
             const diff = simulatedVal - originalVal;
             descriptions.push(`${level}级${diff > 0 ? '+' : ''}${diff}`);
         }
@@ -41253,7 +41412,7 @@ initializeReadingMode();
 
        if (!currentGameData || !assaSettingsData ||!currentGameData.user || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
             await worldHelper.init();
-             await initDisplay();
+    
         }
 
      const addQrButton = document.getElementById('add-qr-button');
@@ -43573,7 +43732,7 @@ function setupSkillChoicePanel() {
     const teammateCardsData = [];
 
     // 属性卡牌
-    const attrCategories = playCharacterData.属性段 || {};
+    const attrCategories = playCharacterData.基础属性 || {};
     for (const category in attrCategories) {
         for (const attrName in attrCategories[category]) {
             const attrValue = attrCategories[category][attrName]['基础'][0] || 0;
@@ -43583,7 +43742,7 @@ function setupSkillChoicePanel() {
         }
     }
     // 技能卡牌
-    const skillCategories = playCharacterData.技能段 || {};
+    const skillCategories = playCharacterData.基础技能 || {};
     for (const category in skillCategories) {
         for (const skillName in skillCategories[category]) {
             const skillValue = skillCategories[category][skillName][0];
@@ -43695,7 +43854,7 @@ function setupSkillChoicePanel() {
 
     // --- 3. 填充其他技能/术法，并兼容新旧格式 ---
     const otherSkills = assaSettingsData?.global_lore?.['其他技能'] || {};
-    const currentEnergy = playCharacterData?.衍生属性段?.能量池?.当前值?.[0] || 0;
+    const currentEnergy = playCharacterData?.衍生属性?.能量池?.当前值?.[0] || 0;
 
     if (Object.keys(otherSkills).length > 0) {
         for (const [name, data] of Object.entries(otherSkills)) {
@@ -43751,7 +43910,7 @@ function setupSkillChoicePanel() {
     }
 
     // --- 4. 填充意志力并链接滑块 ---
-    const currentWillpower = playCharacterData?.衍生属性段?.意志力?.当前值?.[0] || 0;
+    const currentWillpower = playCharacterData?.衍生属性?.意志力?.当前值?.[0] || 0;
     willpowerInput.value = 0;
     willpowerMaxSpan.textContent = `/ ${currentWillpower}`;
     willpowerSlider.max = currentWillpower;
@@ -43825,7 +43984,7 @@ async function handleConfirmSkillChoice() {
         updateVariableCmds.push(`set_status('检定属性', '_', '${displaySelections.join(';')}');`);
     }
     // -- 处理其他技能和意志力
-const initialEnergy = playCharacterData?.衍生属性段?.能量池?.当前值?.[0] || 0;
+const initialEnergy = playCharacterData?.衍生属性?.能量池?.当前值?.[0] || 0;
 let remainingEnergy = initialEnergy;
 
 otherSkillSelections.forEach(skillInput => {
@@ -43862,13 +44021,13 @@ otherSkillSelections.forEach(skillInput => {
     }
 });
     if (willpowerToSpend > 0) {
-        const currentWillpower = playCharacterData?.衍生属性段?.意志力?.当前值?.[0] || 0;
-        updateMemoryCmds.push(`set_attribute('衍生属性段.意志力.当前值', ${currentWillpower}, ${currentWillpower - willpowerToSpend});`);
+        const currentWillpower = playCharacterData?.衍生属性?.意志力?.当前值?.[0] || 0;
+        updateMemoryCmds.push(`set_attribute('衍生属性.意志力.当前值', ${currentWillpower}, ${currentWillpower - willpowerToSpend});`);
         totalDpBonus += willpowerToSpend;
     }
 
     if (remainingEnergy !== initialEnergy) {
-        updateMemoryCmds.push(`set_attribute('衍生属性段.能量池.当前值', ${initialEnergy}, ${remainingEnergy});`);
+        updateMemoryCmds.push(`set_attribute('衍生属性.能量池.当前值', ${initialEnergy}, ${remainingEnergy});`);
     }
 
     if (totalDpBonus > 0) {
@@ -44797,7 +44956,7 @@ return statusHtml + locationHtml + equipmentHtml + otherSkillHtml;
                     assaSettingsData = data.assa_data || {};
                 } else {
                     console.warn("未在SillyTavern环境中，使用模拟数据。");
-                    playCharacterData = {"衍生属性段": {"意志力": {"当前值": [10, ""]}, "能量池": {"当前值": [20, ""]}}, "货币段": {}};
+                    playCharacterData = {"衍生属性": {"意志力": {"当前值": [10, ""]}, "能量池": {"当前值": [20, ""]}}, "货币": {}};
                     assaSettingsData = {"global_lore": {"其他技能": {
                         "暗影突袭": "【dp+2;能量池-15】迅速移动到阴影中并进行一次突袭",
                         "灵能护盾": "【能量池-30】创造一个能吸收50点伤害的护盾"
@@ -44912,7 +45071,7 @@ const getCommandForChoice = () => {
     let totalDpBonus = 0;
 
     const selectedSkills = document.querySelectorAll('#skillList input:checked');
-    const initialEnergy = playCharacterData?.衍生属性段?.能量池?.当前值?.[0] || 0;
+    const initialEnergy = playCharacterData?.衍生属性?.能量池?.当前值?.[0] || 0;
     let remainingEnergy = initialEnergy;
 
     selectedSkills.forEach(skillInput => {
@@ -44933,14 +45092,14 @@ const getCommandForChoice = () => {
     });
 
     if (remainingEnergy !== initialEnergy) {
-        updateMemoryCmds.push(`set_attribute('衍生属性段.能量池.当前值', ${initialEnergy}, ${remainingEnergy});`);
+        updateMemoryCmds.push(`set_attribute('衍生属性.能量池.当前值', ${initialEnergy}, ${remainingEnergy});`);
     }
 
     const willpowerInput = document.getElementById('willpowerInput');
     const willpowerToSpend = parseInt(willpowerInput.value, 10);
     if (willpowerInput && willpowerToSpend > 0) {
-        const currentWillpower = playCharacterData?.衍生属性段?.意志力?.当前值?.[0] || 0;
-        updateMemoryCmds.push(`set_attribute('衍生属性段.意志力.当前值', ${currentWillpower}, ${currentWillpower - willpowerToSpend});`);
+        const currentWillpower = playCharacterData?.衍生属性?.意志力?.当前值?.[0] || 0;
+        updateMemoryCmds.push(`set_attribute('衍生属性.意志力.当前值', ${currentWillpower}, ${currentWillpower - willpowerToSpend});`);
         totalDpBonus += willpowerToSpend;
     }
 
@@ -47343,7 +47502,7 @@ this.isAoeAttack = false;            // 标记当前是否为群攻流程
     // 3. 最后的备用方案：如果以上条件都不满足（比如这是一场全新的战斗）
     else {
         // 使用外部传入的、代表角色当前通用状态的 playerData。
-        // 这里面的 `衍生属性段.生命值.当前值` 就是我们需要的“基础值”。
+        // 这里面的 `衍生属性.生命值.当前值` 就是我们需要的“基础值”。
         finalPlayerData = playerData;
         console.log(`[Nova's Genesis] 为新战斗 (${this.floorId}) 从 playerData 创建玩家。`);
     }
@@ -47371,7 +47530,7 @@ this.speedSettings = {
 
      this.combatLog = []; // 用于记录战斗的关键事件
     this.playerInitialHealth = this.player.currentHealth;
-    this.playerInitialEnergy = this.player.raw_data?.衍生属性段?.能量池?.当前值[0] || 0;
+    this.playerInitialEnergy = this.player.raw_data?.衍生属性?.能量池?.当前值[0] || 0;
   this.playerTempBonuses = { dp_bonus: 0, desc: ''};
         this.hasExtraTurn = {}; // 记录哪个角色ID拥有额外回合
           this.consecutiveTurnCounter = {}; // 记录每个角色的连续行动次数
@@ -47885,7 +48044,7 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
   createCharacterFromData(data, type, id = 'player') {
 
     
-    let baseMaxHealth = data.maxHealth || data.衍生属性段?.生命值.上限[0] || 50;
+    let baseMaxHealth = data.maxHealth || data.衍生属性?.生命值.上限[0] || 50;
     let finalMaxHealth = baseMaxHealth;
 
     // 1. 始终计算耐力加成
@@ -47910,8 +48069,8 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
          console.log(`[Health Logic] 从 data.currentHealth (${data.currentHealth}) 恢复血量。最终为: ${finalCurrentHealth}`);
     }
     // 如果 data 对象里没有 currentHealth，对于玩家，我们尝试从 raw_data 的“当前值”里找
-    else if (type === 'player' && data.衍生属性段?.生命值?.当前值?.[0] !== undefined) {
-        finalCurrentHealth = data.衍生属性段.生命值.当前值[0];
+    else if (type === 'player' && data.衍生属性?.生命值?.当前值?.[0] !== undefined) {
+        finalCurrentHealth = data.衍生属性.生命值.当前值[0];
          console.log(`[Health Logic] 从 playerData.当前值 (${finalCurrentHealth}) 恢复血量。`);
     }
     // 如果以上都没有，那才意味着这是一个全新的NPC，或者数据确实缺失，只能满血
@@ -47923,7 +48082,7 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
 
     // 能量逻辑也可以做类似的优化
     let finalCurrentEnergy = 0;
-    const energyPoolData = data.衍生属性段?.能量池;
+    const energyPoolData = data.衍生属性?.能量池;
     if (energyPoolData) {
         // 优先从 `当前值` 数组获取，如果不存在，则使用上限值
         finalCurrentEnergy = energyPoolData.当前值?.[0] !== undefined ? energyPoolData.当前值[0] : energyPoolData.上限[0];
@@ -47951,36 +48110,36 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
         isPersuaded: null,
         isScanned: type === 'teammate' ? true : (data.isScanned || false),
         saves: data.saves || {
-            "强韧": data.衍生属性段?.豁免检定基础.强韧[0] || 0,
-            "反射": data.衍生属性段?.豁免检定基础.反射[0] || 0,
-            "意志": data.衍生属性段?.豁免检定基础.意志[0] || 0
+            "强韧": data.衍生属性?.豁免检定基础.强韧[0] || 0,
+            "反射": data.衍生属性?.豁免检定基础.反射[0] || 0,
+            "意志": data.衍生属性?.豁免检定基础.意志[0] || 0
         },
           raw_data: JSON.parse(JSON.stringify(data)) // 为所有角色深度拷贝一份原始数据
     };
-  if(type === 'player' && character.raw_data.衍生属性段?.能量池){
-        character.raw_data.衍生属性段.能量池.当前值[0] = finalCurrentEnergy;
+  if(type === 'player' && character.raw_data.衍生属性?.能量池){
+        character.raw_data.衍生属性.能量池.当前值[0] = finalCurrentEnergy;
     }
                 // 为玩家构建完整的 dicePool
-                if (type === 'player' && data.属性段 && data.技能段) {
+                if (type === 'player' && data.基础属性 && data.基础技能) {
                     const fullPool = {};
                     // 提取所有属性
-                    Object.values(data.属性段).forEach(attrCategory => {
+                    Object.values(data.基础属性).forEach(attrCategory => {
                         Object.keys(attrCategory).forEach(attrName => {
                             fullPool[attrName] = attrCategory[attrName].基础[0];
                         });
                     });
                      // 提取所有技能
-                    Object.values(data.技能段).forEach(skillCategory => {
+                    Object.values(data.基础技能).forEach(skillCategory => {
                         Object.keys(skillCategory).forEach(skillName => {
                             fullPool[skillName] = skillCategory[skillName][0];
                         });
                     });
                      // 提取体积
-                    if (data.衍生属性段) {
-                        fullPool['体积'] = data.衍生属性段.体积[0];
+                    if (data.衍生属性) {
+                        fullPool['体积'] = data.衍生属性.体积[0];
                     }
-if (data.衍生属性段 && data.衍生属性段.先攻) {
-    fullPool['先攻'] = data.衍生属性段.先攻[0];
+if (data.衍生属性 && data.衍生属性.先攻) {
+    fullPool['先攻'] = data.衍生属性.先攻[0];
 }
                     character.dicePool = fullPool;
                 }
@@ -48074,7 +48233,7 @@ if (data.衍生属性段 && data.衍生属性段.先攻) {
     </div>
 
                     <div class="health-text">${char.currentHealth} / ${char.maxHealth}</div>
-                    ${ (char.type === 'player' || char.raw_data?.衍生属性段?.能量池) ? `
+                    ${ (char.type === 'player' || char.raw_data?.衍生属性?.能量池) ? `
     <div class="energy-bar">
         <div class="energy-bar-inner"></div>
     </div>
@@ -48586,15 +48745,15 @@ setupActionPanel() {
     if (playerData) {
         switch (action) {
             case 'attack':
-                poolChoices = [ ...Object.keys(playerData.属性段.生理属性), '肉搏', '枪械', '白刃', '弓箭','神秘学','科学' ];
+                poolChoices = [ ...Object.keys(playerData.基础属性.生理属性), '肉搏', '枪械', '白刃', '弓箭','神秘学','科学' ];
                 break;
             case 'persuade':
-                 poolChoices = [ ...Object.keys(playerData.属性段.互动属性), ...Object.keys(playerData.技能段.互动技能) ];
+                 poolChoices = [ ...Object.keys(playerData.基础属性.互动属性), ...Object.keys(playerData.基础技能.互动技能) ];
                 break;
              case 'scan':
                  // ⭐ 妈妈的修正魔法在这里！⭐
-                 const mindAttrs = Object.keys(playerData.属性段.心智属性);
-                 const mindSkills = Object.keys(playerData.技能段.心智技能);
+                 const mindAttrs = Object.keys(playerData.基础属性.心智属性);
+                 const mindSkills = Object.keys(playerData.基础技能.心智技能);
                   poolChoices = [...mindAttrs, ...mindSkills].filter(skill => !['医学', '手艺'].includes(skill));
                  // ⭐ 魔法结束 ⭐
                 break;
@@ -48663,7 +48822,7 @@ createItemSkillEntry(name, data, type) {
 
     // --- 妈妈强大的新魔法在这里！ ---
     const energyCost = parseInt((data.effect.match(/能量池-(\d+)/) || [0, 0])[1]);
-    const currentEnergy = this.player.raw_data?.衍生属性段?.能量池?.当前值[0] || 0;
+    const currentEnergy = this.player.raw_data?.衍生属性?.能量池?.当前值[0] || 0;
     const canAfford = currentEnergy >= energyCost;
 
     let costText = '';
@@ -48703,7 +48862,7 @@ createItemSkillEntry(name, data, type) {
     const energyCost = parseInt((effect.match(/能量池-(\d+)/) || [0, 0])[1]);
 
     if (energyCost > 0) {
-        const energyPool = this.player.raw_data?.衍生属性段?.能量池;
+        const energyPool = this.player.raw_data?.衍生属性?.能量池;
         if (!energyPool || energyPool.当前值[0] < energyCost) {
             this.showNotification("能量不足，使用失败！", "danger");
             canUse = false;
@@ -48719,7 +48878,7 @@ createItemSkillEntry(name, data, type) {
 
     // 只有在确认可以使用后，才真正消耗资源
     if (energyCost > 0) {
-        this.player.raw_data.衍生属性段.能量池.当前值[0] -= energyCost;
+        this.player.raw_data.衍生属性.能量池.当前值[0] -= energyCost;
         this.log(`你消耗了 ${energyCost} 点能量。`);
     }
 
@@ -48996,7 +49155,7 @@ enemySide.__handler__ = unifiedClickHandler;
 
     } else if (resource === 'mp') {
         // --- MP 恢复逻辑 ---
-        const energyPool = target.raw_data?.衍生属性段?.能量池;
+        const energyPool = target.raw_data?.衍生属性?.能量池;
         if (energyPool) {
             if (value > 0) {
                 const oldEnergy = energyPool.当前值[0];
@@ -49135,7 +49294,7 @@ async animateAttack(attackerCard, targetCard) {
             } else {
                 const diff = actorAttackSuccess - targetEvasionSuccess;
                 // 妈妈施展的保护咒语
-// const energyBonus = actor.raw_data?.衍生属性段?.能量池?.当前值?.[0] || 0;
+// const energyBonus = actor.raw_data?.衍生属性?.能量池?.当前值?.[0] || 0;
 const energyBonus = 0;
 
 // 然后再计算最终伤害
@@ -49323,7 +49482,7 @@ case 'treat':
             } else {
                 const diff = actorAttackSuccess - targetEvasionSuccess;
                 const isCriticalFailure = targetEvasionSuccess === 0;
-// const energyBonus = actor.raw_data?.衍生属性段?.能量池?.当前值?.[0] || 0;
+// const energyBonus = actor.raw_data?.衍生属性?.能量池?.当前值?.[0] || 0;
 const energyBonus =  0;
 
                 if (isCriticalFailure) {
@@ -49603,11 +49762,11 @@ rollDice(diceCount) {
 
     if (character.type === 'player') {
         dataToUpdate = this.combatData.player;
-        if (dataToUpdate && dataToUpdate.衍生属性段) {
-            dataToUpdate.衍生属性段.生命值.当前值[0] = character.currentHealth;
-                 if (dataToUpdate.衍生属性段.能量池 && character.raw_data?.衍生属性段?.能量池) {
-                const currentEnergy = character.raw_data.衍生属性段.能量池.当前值[0];
-                dataToUpdate.衍生属性段.能量池.当前值[0] = currentEnergy;
+        if (dataToUpdate && dataToUpdate.衍生属性) {
+            dataToUpdate.衍生属性.生命值.当前值[0] = character.currentHealth;
+                 if (dataToUpdate.衍生属性.能量池 && character.raw_data?.衍生属性?.能量池) {
+                const currentEnergy = character.raw_data.衍生属性.能量池.当前值[0];
+                dataToUpdate.衍生属性.能量池.当前值[0] = currentEnergy;
                 console.log(`[Nova's Energy Seal] 正在为 ${character.name} 固化能量: ${currentEnergy}`);
             }
         }
@@ -49677,7 +49836,7 @@ card.querySelector('.health-text').textContent = `${character.currentHealth} / $
     const energyBarInner = card.querySelector('.energy-bar-inner');
     const energyText = card.querySelector('.energy-text');
     if (energyBarInner && energyText) {
-        const energyPool = character.raw_data?.衍生属性段?.能量池;
+        const energyPool = character.raw_data?.衍生属性?.能量池;
         if (energyPool) {
             const currentEnergy = energyPool.当前值[0];
             const maxEnergy = energyPool.上限[0];
@@ -49784,7 +49943,7 @@ card.querySelector('.health-text').textContent = `${character.currentHealth} / $
         const finalHealth = this.player.currentHealth;
         const hurtValue = this.playerInitialHealth - finalHealth;
 
-        const finalEnergy = this.player.raw_data?.衍生属性段?.能量池?.当前值[0] || 0;
+        const finalEnergy = this.player.raw_data?.衍生属性?.能量池?.当前值[0] || 0;
         const backpackData = this.assaData.global_lore.背包 || {};
         const compactBackpackJson = JSON.stringify(backpackData);
    let requestText = `<request:此次战斗已结束，对应数值/物品/生命值都已扣除，对应数值/物品/生命值的变更已记录，禁止在之后的正文中对任何数值进行操作（禁止设置hurt_value/能量池等）！请根据此次战斗结果和user输入生成新剧情>`;
@@ -49794,7 +49953,7 @@ card.querySelector('.health-text').textContent = `${character.currentHealth} / $
  
          const updateMemoryCommands = [
             `set_status('hurt_value', ${hurtValue});`,
-            `set_attribute('衍生属性段.能量池.当前值', ${this.playerInitialEnergy}, ${finalEnergy});`,
+            `set_attribute('衍生属性.能量池.当前值', ${this.playerInitialEnergy}, ${finalEnergy});`,
             `memory('global_lore.背包', '${compactBackpackJson}');`,
             `set_status('敌方检定骰池','');`
         ].join('\n');
@@ -50332,7 +50491,7 @@ document.addEventListener('DOMContentLoaded', function() {
  
 });
 document.addEventListener('DOMContentLoaded', function() {
-   
+    
     const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
     if (viewPromptBtn) {
         viewPromptBtn.addEventListener('click', function(e) {
