@@ -14487,7 +14487,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.2';
+let current_game_version = '3.4.3';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -26112,10 +26112,15 @@ async function renderHistory(is_entry = false) {
     if (conversationHistory.length === 0) {
         if (initContainer) initContainer.style.display = 'block';
         if (mainWrapper) mainWrapper.style.display = 'none';
-        if (typeof window.initializationDone === 'undefined') {
-            await runInitializationMagic();
-            window.initializationDone = true;
-        }
+if (typeof window.initializationDone === 'undefined') {
+    // 等待 playCharacterData 有内容
+    while (!playCharacterData || Object.keys(playCharacterData).length === 0) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // 每100ms检查一次
+    }
+    
+    await runInitializationMagic();
+    window.initializationDone = true;
+}
         if (typeof applyVersionTheme === 'function') {
             const identitySelect = document.getElementById('user-identity');
             applyVersionTheme(1, identitySelect);
@@ -27871,67 +27876,118 @@ function getCanonicalCurrencyName(alias) {
     return alias;  
 }
     
-    // 🎭 角色数据处理模块 ('playerHelper' 的功能) 🎭
-
-    function _updateDerivedAttributes(data) {
-        return;
-        // if (!data || !data.基础属性) return;
-        //console.log("[Player] ✨ 正在更新衍生属性...");
-        const attr = data.基础属性;
-        const skills = data.基础技能;
-        const derived = data.衍生属性;
-        const 力量 = attr.生理属性.力量.基础[0];
-        const 敏捷 = attr.生理属性.敏捷.基础[0];
-        const 耐力 = attr.生理属性.耐力.基础[0];
-        const 感知 = attr.心智属性.感知.基础[0];
-        const 决心 = attr.心智属性.决心.基础[0];
-        const 沉着 = attr.互动属性.沉着.基础[0];
-        const 体积 = derived.体积[0];
-        const 运动 = skills.生理技能.运动[0];
-        const 求生 = skills.生理技能.求生[0];
-      derived.速度.基础速度[0] = Math.floor((力量 + 敏捷 + 体积) / 3);
-derived.先攻[0] = Math.floor((敏捷 + 沉着) / 2);
-derived.防御.基础防御[0] = Math.min(敏捷, 感知);
-const oldMaxHP = derived.生命值.上限[0];
-derived.生命值.上限[0] = 体积 * 10 + 耐力 * 20;
-if (derived.生命值.上限[0] > oldMaxHP) {
-    derived.生命值.当前值[0] += (derived.生命值.上限[0] - oldMaxHP);
-}
-if (derived.生命值.当前值[0] > derived.生命值.上限[0]) {
-    derived.生命值.当前值[0] = derived.生命值.上限[0];
-}
-derived.意志力.意志值[0] = 决心 + 沉着;
-derived.意志力.上限[0] = derived.意志力.意志值[0];
-derived.感知范围.敏感范围[0] = 感知 * 10;
-derived.感知范围.模糊范围[0] = derived.感知范围.敏感范围[0] * 10;
-derived.豁免检定基础.强韧[0] = Math.floor((耐力 + 求生) / 2);
-derived.豁免检定基础.反射[0] = Math.floor((敏捷 + 运动) / 2);
-derived.豁免检定基础.意志[0] = 决心 + 沉着;
-
-  // --- 基础值获取 ---
-        const 力量_基础 = attr.生理属性.力量.基础[0];
-        const 敏捷_基础 = attr.生理属性.敏捷.基础[0];
-        const 耐力_基础 = attr.生理属性.耐力.基础[0];
-        const 智力_基础 = attr.心智属性.智力.基础[0];
-        const 感知_基础 = attr.心智属性.感知.基础[0];
-        const 决心_基础 = attr.心智属性.决心.基础[0];
-        const 风度_基础 = attr.互动属性.风度.基础[0];
-        const 操控_基础 = attr.互动属性.操控.基础[0];
-        const 沉着_基础 = attr.互动属性.沉着.基础[0];
-
-   // --- 传奇属性计算 ---
-        attr.生理属性.力量.传奇[0] = Math.max(0, 力量_基础 - 8);
-        attr.生理属性.敏捷.传奇[0] = Math.max(0, 敏捷_基础 - 8);
-        attr.生理属性.耐力.传奇[0] = Math.max(0, 耐力_基础 - 8);
-        attr.心智属性.智力.传奇[0] = Math.max(0, 智力_基础 - 8);
-        attr.心智属性.感知.传奇[0] = Math.max(0, 感知_基础 - 8);
-        attr.心智属性.决心.传奇[0] = Math.max(0, 决心_基础 - 8);
-        attr.互动属性.风度.传奇[0] = Math.max(0, 风度_基础 - 8);
-        attr.互动属性.操控.传奇[0] = Math.max(0, 操控_基础 - 8);
-        attr.互动属性.沉着.传奇[0] = Math.max(0, 沉着_基础 - 8);
-      //  console.log("[Player] ✨ 衍生属性更新完毕！");
+ function _updateDerivedAttributes(data) {
+    // 检查基础数据结构是否存在
+    if (!data || !data.基础属性 || !data.衍生属性 || !data.基础技能) return;
+    
+    const attr = data.基础属性;
+    const skills = data.基础技能;
+    const derived = data.衍生属性;
+    
+    // 安全获取基础属性值（使用可选链和默认值）
+    const 力量 = attr.生理属性?.力量?.基础?.[0] ?? 0;
+    const 敏捷 = attr.生理属性?.敏捷?.基础?.[0] ?? 0;
+    const 耐力 = attr.生理属性?.耐力?.基础?.[0] ?? 0;
+    const 智力 = attr.心智属性?.智力?.基础?.[0] ?? 0;
+    const 感知 = attr.心智属性?.感知?.基础?.[0] ?? 0;
+    const 决心 = attr.心智属性?.决心?.基础?.[0] ?? 0;
+    const 风度 = attr.互动属性?.风度?.基础?.[0] ?? 0;
+    const 操控 = attr.互动属性?.操控?.基础?.[0] ?? 0;
+    const 沉着 = attr.互动属性?.沉着?.基础?.[0] ?? 0;
+    
+    // 安全获取技能值
+    const 运动 = skills.生理技能?.运动?.[0] ?? 0;
+    const 求生 = skills.生理技能?.求生?.[0] ?? 0;
+    
+    // 安全获取体积
+    const 体积 = derived.体积?.[0] ?? 0;
+    
+    // 更新衍生属性（确保数据结构存在）
+    if (derived.速度?.基础速度) {
+        derived.速度.基础速度[0] = Math.floor((力量 + 敏捷 + 体积) / 3);
     }
-
+    
+    if (derived.先攻) {
+        derived.先攻[0] = Math.floor((敏捷 + 沉着) / 2);
+    }
+    
+    if (derived.防御?.基础防御) {
+        derived.防御.基础防御[0] = Math.min(敏捷, 感知);
+    }
+    
+    // 生命值计算（保护当前值）
+    if (derived.生命值?.上限) {
+        const oldMaxHP = derived.生命值.上限[0] ?? 0;
+        const newMaxHP = 体积 * 10 + 耐力 * 20;
+        derived.生命值.上限[0] = newMaxHP;
+        
+        if (derived.生命值.当前值) {
+            // 如果上限增加，当前值也相应增加
+            if (newMaxHP > oldMaxHP) {
+                derived.生命值.当前值[0] = (derived.生命值.当前值[0] ?? 0) + (newMaxHP - oldMaxHP);
+            }
+            // 确保当前值不超过上限
+            if (derived.生命值.当前值[0] > newMaxHP) {
+                derived.生命值.当前值[0] = newMaxHP;
+            }
+        }
+    }
+    
+    // 意志力计算
+    if (derived.意志力?.意志值 && derived.意志力?.上限) {
+        const 意志值 = 决心 + 沉着;
+        derived.意志力.意志值[0] = 意志值;
+        derived.意志力.上限[0] = 意志值;
+    }
+    
+    // 感知范围计算
+    if (derived.感知范围?.敏感范围) {
+        derived.感知范围.敏感范围[0] = 感知 * 10;
+        if (derived.感知范围.模糊范围) {
+            derived.感知范围.模糊范围[0] = derived.感知范围.敏感范围[0] * 10;
+        }
+    }
+    
+    // 豁免检定基础计算
+    if (derived.豁免检定基础?.强韧) {
+        derived.豁免检定基础.强韧[0] = Math.floor((耐力 + 求生) / 2);
+    }
+    if (derived.豁免检定基础?.反射) {
+        derived.豁免检定基础.反射[0] = Math.floor((敏捷 + 运动) / 2);
+    }
+    if (derived.豁免检定基础?.意志) {
+        derived.豁免检定基础.意志[0] = 决心 + 沉着;
+    }
+    
+    // 传奇属性计算（确保传奇属性结构存在）
+    if (attr.生理属性?.力量?.传奇) {
+        attr.生理属性.力量.传奇[0] = Math.max(0, 力量 - 8);
+    }
+    if (attr.生理属性?.敏捷?.传奇) {
+        attr.生理属性.敏捷.传奇[0] = Math.max(0, 敏捷 - 8);
+    }
+    if (attr.生理属性?.耐力?.传奇) {
+        attr.生理属性.耐力.传奇[0] = Math.max(0, 耐力 - 8);
+    }
+    if (attr.心智属性?.智力?.传奇) {
+        attr.心智属性.智力.传奇[0] = Math.max(0, 智力 - 8);
+    }
+    if (attr.心智属性?.感知?.传奇) {
+        attr.心智属性.感知.传奇[0] = Math.max(0, 感知 - 8);
+    }
+    if (attr.心智属性?.决心?.传奇) {
+        attr.心智属性.决心.传奇[0] = Math.max(0, 决心 - 8);
+    }
+    if (attr.互动属性?.风度?.传奇) {
+        attr.互动属性.风度.传奇[0] = Math.max(0, 风度 - 8);
+    }
+    if (attr.互动属性?.操控?.传奇) {
+        attr.互动属性.操控.传奇[0] = Math.max(0, 操控 - 8);
+    }
+    if (attr.互动属性?.沉着?.传奇) {
+        attr.互动属性.沉着.传奇[0] = Math.max(0, 沉着 - 8);
+    }
+}
  function _updatePlayerValue(data, path, valueStr) {
     // === 妈妈的魔法准备阶段 ===
 
