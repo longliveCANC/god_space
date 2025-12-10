@@ -94,8 +94,8 @@
     "name": "在正文生成美化的物品面板",
     "author": "LushFlower",
     "version": "1.0",
-    "tags": ["物品格式"],
-    "description": "拓展了原本的物品格式，且会在正文生成物品、个人面板等被美化过的信息面板。",
+    "tags": ["其他"],
+    "description": "会在正文生成物品、个人面板等根据当前剧情来的被美化过的信息面板。可以在里面自定义你的物品格式",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/信息面板.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 17.png"
