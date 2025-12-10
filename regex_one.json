@@ -25585,7 +25585,7 @@ iframeMarkers.forEach(marker => {
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>
+  <style>
         * {
             margin: 0;
             padding: 0;
@@ -25594,17 +25594,21 @@ iframeMarkers.forEach(marker => {
         html, body {
             font-family: var(--base-font-family);
             color: black;
-            overflow: hidden; /* 隐藏滚动条 */
+            overflow: hidden;
+           
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         body {
             padding: 10px;
+            width: 100%; /* 确保body占满宽度 */
         }
-        /* 隐藏滚动条但保留滚动功能 */
         body::-webkit-scrollbar {
             width: 0px;
             height: 0px;
         }
-        /* 确保所有内容都可见 */
         img {
             max-width: 100%;
             height: auto;
