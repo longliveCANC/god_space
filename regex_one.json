@@ -12191,8 +12191,10 @@ pointer-events: auto;
           <div class="mod-tab" data-for="things-on" data-name="things-mode" data-off-id="things-off" style="display: none;">备忘录</div>
           <div class="mod-tab" data-for="time-on" data-name="time-mode" data-off-id="time-off" >强调时间</div>
           <div class="mod-tab" data-for="spacialdate-on" data-name="spacialdate-mode" data-off-id="spacialdate-off" >特殊日期</div>
+
             <div class="mod-tab" data-for="danmu-on" data-name="danmu-mode" data-off-id="danmu-off" >b站弹幕</div>
            <div class="mod-tab" data-for="bgm-on" data-name="bgm-mode" data-off-id="bgm-off" >bgm</div>
+                               <div class="mod-tab" data-for="chuan-on" data-name="chuan-mode" data-off-id="chuan-off" >根基体系</div>
             <div class="mod-tab" data-for="doubleapi-on" data-name="doubleapi-mode" data-off-id="doubleapi-off" >异步更新</div>
     </div>
 
@@ -12293,6 +12295,9 @@ pointer-events: auto;
 
            <input type="radio" id="spacialdate-on" name="spacialdate-mode" value="on" > 
         <input type="radio" id="spacialdate-off" name="spacialdate-mode" value="off" checked>
+
+                   <input type="radio" id="chuan-on" name="chuan-mode" value="on" checked> 
+        <input type="radio" id="chuan-off" name="chuan-mode" value="off" >
 
              <input type="radio" id="danmu-on" name="danmu-mode" value="on" checked> 
         <input type="radio" id="danmu-off" name="danmu-mode" value="off" >
@@ -20995,6 +21000,8 @@ async function handleModeSelection() {
         // HTML: value="off" checked
         const spacialdatevalue = getSafeValue('spacialdate-mode', 'off'); 
 
+             const chuandatevalue = getSafeValue('chuan-mode', 'off'); 
+
         // HTML: value="on" checked -- 注意这个默认是开启的
         const danmuvalue = getSafeValue('danmu-mode', 'on');
        // HTML: value="on" checked -- 注意这个默认是开启的
@@ -21061,6 +21068,10 @@ async function handleModeSelection() {
             if(spacialdatevalue === 'on'){
                 uidsToEnable.push(42, 73);
             }
+            
+              if(chuandatevalue === 'on'){
+                uidsToEnable.push(63);
+            }
 
                     if(danmuvalue === 'on'){
                 uidsToEnable.push(85);
@@ -21101,7 +21112,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -40600,7 +40611,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40 ];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -40623,7 +40634,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40 ];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -40725,7 +40736,7 @@ const reconfigurableMods = [
     { name: '弹幕', uid: 85 },
     { name: 'bgm', uid: 88 },
     { name: '特殊日期', uid: 42 },
-    
+        { name: '根基体系', uid: 63 },
 ];
 
  function createWorldviewItems() {
