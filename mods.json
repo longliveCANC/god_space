@@ -316,10 +316,21 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["功能脚本"],
-    "description": " 开启该脚本后，点击设置界面的显示设置的自定义主题的编辑,可以存储更多的自定义主题,且支持调整颜色的透明度,支持导入导出色卡.且能自定义背景图,要自定义背景图的话就别开哈基米给你设置场景图的那个选项.",
+    "description": "开启该脚本后，点击设置界面的显示设置的自定义主题的编辑,可以存储更多的自定义主题,且支持调整颜色的透明度,支持导入导出色卡.且能自定义背景图,要自定义背景图的话就别开哈基米给你设置场景图的那个选项.",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod06.js",
     "worldBookUrl": "",
  "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 11.png"
+ 
+  } ,  {
+    "id": "x-mod-解锁血量上限",
+    "name": "解锁血量上限",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["功能脚本"],
+    "description": "[需3.4.5版本及以上]开启该脚本并外挂该世界书后，哈基米可以直接修改你的血量上限，而不是由耐力加成。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod07.js",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-解锁血量上限.json",
+ "previewImage": ""
  
   } 
 ]
