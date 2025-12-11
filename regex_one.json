@@ -13489,20 +13489,13 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
         <p>请输入一些关键词或要求（可选），它们将被注入到提示中。例如：“价格低于10000”、“和火焰有关”、“只能是C级的血统”。</p>
        <textarea id="keyword-input" placeholder="输入关键词，留空则使用默认提示..."></textarea>
 
-
-<div id="model-selector-container" class="model-selector">
-    <span class="selector-label">选择模型:</span>
-    <div class="switch-container">
-        <button id="model-flash" class="switch-btn active" data-model="gemini-2.5-flash">Flash</button>
-        <button id="model-pro" class="switch-btn" data-model="gemini-2.5-pro">Pro</button>
-    </div>
-</div>
+ 
 
 
 <div class="modal-buttons">
-    <button id="api-key-config-btn" class="control-btn">设置密钥</button>
+ 
     <button id="submit-generation-btn" class="control-btn">开始生成</button>
-    <button id="skip-generation-btn" class="control-btn grey">跳过并生成</button>
+ 
 </div>
     </div>
 </div>
@@ -13564,6 +13557,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                     <div class="bookmark" data-tab="global_settings">全局设定</div>
                     <div class="bookmark" data-tab="global_背包">你的背包</div>
                     <div class="bookmark" data-tab="global_其他技能">你的技能</div>
+                    <div class="bookmark" data-tab="global_根基体系">根基体系</div>
                     <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>
                      <div class="bookmark" data-tab="world_npc" id="world_npc_bookmark">世界人物</div>
                     <div class="bookmark active" data-tab="world_settings" id="world_settings_bookmark">世界设定</div>
@@ -13791,7 +13785,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 
                 <div class="setting-item-column" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
     <div class="setting-item" style="margin-bottom: 10px;">
-        <label>启用第二API (没做完，这个没用，第二api还是只能默认主api，且使用原预设、原世界书)</label>
+        <label>启用第二API (暂时只能用于商店)</label>
         <div class="switch-container">
             <button id="enable-custom-api-toggle" class="switch-btn" data-state="off">关闭</button>
         </div>
@@ -13807,7 +13801,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 
             <div style="grid-column: span 2;">
                 <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">API 源类型 (Source)</label>
-                <select id="api-source-select" class="control-btn" style="width: 100%; text-align: left; padding: 8px;">
+                <select id="api-source-select" class="control-btn" style="width: 100%; text-align: left; padding: 8px;color:white;background-color: black;">
 
                 </select>
             </div>
@@ -13833,7 +13827,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
             <div style="grid-column: span 2;">
                 <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">模型名称 (Model)</label>
                 <div style="display: flex; gap: 8px; margin-bottom: 5px;">
-                    <select id="fetched-models-select" class="control-btn" style="flex: 1; display: none;">
+                    <select id="fetched-models-select" class="control-btn" style="flex: 1; display: none;color:white;background-color: black;">
                         <option value="" disabled selected>选择模型...</option>
                     </select>
                     <input type="text" id="api-model-input" placeholder="gpt-3.5-turbo"
@@ -24209,61 +24203,55 @@ function nameMessageTitle(index) {
 }
 
 // 使用通用函数的简化版本
-async function deleteMessage(index) {
+ async function deleteMessage(index) {
     showConfirmModal(
         '回溯确认',
         `你确定要删除第 <strong>${index}</strong> 条消息以及之后的所有对话吗？<br><br>
         <span style="color: #ff6b6b;">这将让世界状态回到这条消息之前哦。</span>`,
         async function() {
-           console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
+            console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
 
-        const newHistory = conversationHistory.slice(0, index);
+            const newHistory = conversationHistory.slice(0, index);
 
-        if (newHistory.length === conversationHistory.length) {
-            console.log("[Nova的时光回溯] 没有实际删除任何消息，操作取消。");
-            return;
-        }
-
-        conversationHistory = newHistory;
-
-        // ☆☆☆ 妈妈的终极定位魔法：节拍感知 ☆☆☆
-
-        let aiTurns = 0;  
-        let lastRole = 'user';  
-
-        for (const message of newHistory) {
-            // 当消息的角色从'user'变成了'ai'（或者任何不是'user'的角色）
-            // 这就意味着一个完整的“你问我答”回合里，轮到妈妈说话了。
-            if (lastRole === 'user' && message.role !== 'user') {
-                aiTurns++; // 我们就记录下，这是妈妈出场的一个新回合！
+            if (newHistory.length === conversationHistory.length) {
+                console.log("[Nova的时光回溯] 没有实际删除任何消息，操作取消。");
+                return;
             }
-            lastRole = message.role; // 记录当前消息的角色，为下一次判断做准备
-        }
 
-        // 每一个AI回合都对应一个快照ID（2, 4, 6...）
-        // 所以用妈妈出场的回合数乘以2，就能得到最准确的快照ID！
-        const targetSnapshotId = aiTurns * 2;
+            conversationHistory = newHistory;
 
-        // 后续的信标设置逻辑完全保持不变
-        restoreOnNextSend = true;
-        restoreTargetTurnId = targetSnapshotId;
+            // ☆☆☆ 妈妈的终极定位魔法：AI楼层锚定 ☆☆☆
+            // 我们只信任 AI (或System) 留下的存档点。
+            // 倒序寻找最近的一个非User节点。
 
-        console.log(`[Nova的时光回溯] 信标已设置！留存了 ${aiTurns} 个AI回合，下次行动将恢复到【快照 ${targetSnapshotId}】的状态。`);
+            let targetSnapshotId = 0; // 默认为0（创世之初）
 
-        // 保存和渲染的逻辑也保持不变
-        await saveHistory();
-        await worldHelper.renderHistory(true);
-        updateRerollButtonState();
-        showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
-   
+            for (let i = newHistory.length - 1; i >= 0; i--) {
+                // 只要不是 'user'，我们就认为这是一个有效的状态存档点（通常是 assistant 或 system）
+                if (newHistory[i].role !== 'user') {
+                    targetSnapshotId = i; // 楼层高度 = 索引 + 1
+                    console.log(`[Nova的时光回溯] 锚定到最近的AI楼层：索引 ${i} (快照ID ${targetSnapshotId})`);
+                    break;
+                }
+            }
+
+            // 如果循环结束都没找到（比如删得只剩User消息了），targetSnapshotId 保持为 0，正确回溯到开头。
+
+            restoreOnNextSend = true;
+            restoreTargetTurnId = targetSnapshotId;
+
+            console.log(`[Nova的时光回溯] 信标已设置！下次行动将恢复到【快照 ${targetSnapshotId}】的状态。`);
+
+            await saveHistory();
+            await worldHelper.renderHistory(true);
+            updateRerollButtonState();
+            showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
         },
         function() {
-            // 取消后的逻辑
             console.log('[Nova的时光回溯] 用户取消删除操作。');
         }
     );
 }
-
 
 function editMessage(index, bubbleElement) {
     // --- 我们心爱的“星辰指挥台”和“苍穹画卷”逻辑保持不变 ---
@@ -26427,27 +26415,25 @@ async function restoreFromSnapshot(initialTurnId) {
             };
         });
 
+          // [修改开始] -------------------------------------------------
+        // 不再循环寻找，直接精准打击。找不到就是找不到，绝不凑合。
         const transaction = db.transaction('snapshots', 'readonly');
         const store = transaction.objectStore('snapshots');
-        let snapshotData = null;
+
+        console.log(`[Nova的记忆保险箱] 正在尝试精确读取楼层 ${initialTurnId} 的记忆...`);
+
+        const snapshotData = await new Promise((resolve, reject) => {
+            const request = store.get(initialTurnId);
+            request.onsuccess = event => resolve(event.target.result);
+            request.onerror = event => reject(`读取快照失败: ${event.target.error}`);
+        });
+
         let finalTurnId = -1;
-
-        // ❤️ 这就是你带来的灵感，我最聪明的孩子！我们从你指定的时间点开始，耐心地往前寻找最近的记忆碎片 ❤️
-        for (let currentTurnId = initialTurnId; currentTurnId >= 0; currentTurnId--) {
-            console.log(`[Nova的记忆保险箱] 正在尝试寻找回合 ${currentTurnId} 的记忆...`);
-            const data = await new Promise((resolve, reject) => {
-                const request = store.get(currentTurnId);
-                request.onsuccess = event => resolve(event.target.result);
-                request.onerror = event => reject(`读取快照失败: ${event.target.error}`);
-            });
-
-            if (data) {
-                snapshotData = data;
-                finalTurnId = currentTurnId; // 记下我们真正是在哪一回合找到了回忆
-                console.log(`[Nova的记忆保险箱] ✅ 找到了！就在回合 ${finalTurnId}。`);
-                break; // 找到了，就不用再往前找啦
-            }
+        if (snapshotData) {
+            finalTurnId = initialTurnId;
+            console.log(`[Nova的记忆保险箱] ✅ 成功定位到楼层 ${finalTurnId} 的精确快照。`);
         }
+        // [修改结束] -------------------------------------------------
 
         db.close(); // 无论找到与否，我们的查询任务已经结束，把保险箱轻轻关上。
 
@@ -26468,20 +26454,16 @@ async function restoreFromSnapshot(initialTurnId) {
         return variables;
     }, { type: 'chat' });
  
-    await initDisplay();
+      await initDisplay();
 
-    // ✨ 给我的孩子一个更贴心的提示 ✨
-    if (finalTurnId !== initialTurnId && finalTurnId >= 0) {
-        showNovaAlert(`没找到第 ${initialTurnId / 2} 轮的精确回忆，但已为你回溯到最近的第 ${finalTurnId / 2} 轮。`);
-    } else {
-        showNovaAlert(`世界状态已成功回溯至第 ${finalTurnId / 2} 轮对话。`);
-    }
+            // [修改] 提示语不再除以2，直接显示楼层ID或更自然的提示
+            showNovaAlert(`世界线变动：状态已精确回溯至第 ${finalTurnId} 层级。`);
 
-    console.log(`[Nova的记忆保险箱] ✅ 成功恢复 play_character_data, assa_data, stat_data 到回合 ${finalTurnId} 的状态。`);
-
+            console.log(`[Nova的记忆保险箱] ✅ 成功恢复 play_character_data, assa_data, stat_data 到楼层 ${finalTurnId} 的状态。`);
 } else {
-    console.warn(`[Nova的记忆保险箱] ⚠️ 从回合 ${initialTurnId} 一直回溯到创世之初，也未能找到任何记忆快照。无法恢复。`);
-    toastr.warning('找不到任何可用的记忆快照来进行回溯。');
+      // [修改] 找不到时的逻辑
+            console.warn(`[Nova的记忆保险箱] ⚠️ 无法找到楼层 ${initialTurnId} 的记忆快照。为了安全起见，拒绝执行模糊回溯。`);
+            toastr.warning(`找不到楼层 ${initialTurnId} 的存档，回溯取消。`);
 }
 
     } catch (e) {
@@ -26552,8 +26534,8 @@ async function restoreFromLatestSnapshot() {
                                 await initDisplay();
                             }
 
-                            showNovaAlert(`世界已成功恢复至回合 ${latestTurnId / 2} 的状态。`);
-                            console.log(`[Nova的记忆保险箱] ✅ 成功将世界恢复到回合 ${latestTurnId} 的状态。`);
+                            showNovaAlert(`世界已成功恢复至楼层 ${latestTurnId} 的状态。`); // [修改] 去掉 / 2
+    console.log(`[Nova的记忆保险箱] ✅ 成功将世界恢复到楼层 ${latestTurnId} 的状态。`);
 
                         } catch (e) {
                              console.error(`[Nova的记忆保险箱] ❌ 在应用快照数据时发生错误:`, e);
@@ -26965,55 +26947,51 @@ function nameMessageTitle(index) {
         `你确定要删除第 <strong>${index}</strong> 条消息以及之后的所有对话吗？<br><br>
         <span style="color: #ff6b6b;">这将让世界状态回到这条消息之前哦。</span>`,
         async function() {
-           console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
+            console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
 
-        const newHistory = conversationHistory.slice(0, index);
+            const newHistory = conversationHistory.slice(0, index);
 
-        if (newHistory.length === conversationHistory.length) {
-            console.log("[Nova的时光回溯] 没有实际删除任何消息，操作取消。");
-            return;
-        }
-
-        conversationHistory = newHistory;
-
-        // ☆☆☆ 妈妈的终极定位魔法：节拍感知 ☆☆☆
-
-        let aiTurns = 0;  
-        let lastRole = 'user';  
-
-        for (const message of newHistory) {
-            // 当消息的角色从'user'变成了'ai'（或者任何不是'user'的角色）
-            // 这就意味着一个完整的“你问我答”回合里，轮到妈妈说话了。
-            if (lastRole === 'user' && message.role !== 'user') {
-                aiTurns++; // 我们就记录下，这是妈妈出场的一个新回合！
+            if (newHistory.length === conversationHistory.length) {
+                return;
             }
-            lastRole = message.role; // 记录当前消息的角色，为下一次判断做准备
-        }
 
-        // 每一个AI回合都对应一个快照ID（2, 4, 6...）
-        // 所以用妈妈出场的回合数乘以2，就能得到最准确的快照ID！
-        const targetSnapshotId = aiTurns * 2;
+            conversationHistory = newHistory;
 
-        // 后续的信标设置逻辑完全保持不变
-        restoreOnNextSend = true;
-        restoreTargetTurnId = targetSnapshotId;
+            // [修改开始] ☆☆☆ 妈妈的终极定位魔法：楼层锚定 ☆☆☆ ----------------
 
-        console.log(`[Nova的时光回溯] 信标已设置！留存了 ${aiTurns} 个AI回合，下次行动将恢复到【快照 ${targetSnapshotId}】的状态。`);
+            // 我们需要在剩下的历史中，找到最后一条由AI发出的消息。
+            // 因为快照通常是在AI回复完成后保存的，该快照的ID等于当时的 conversationHistory.length
+            // 也就是 (lastAiMessageIndex + 1)。
 
-        // 保存和渲染的逻辑也保持不变
-        await saveHistory();
-       await renderHistory(true);
-        updateRerollButtonState();
-        showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
-   
+            let targetSnapshotId = 0; // 默认为0（创世之初）
+
+            // 倒序查找最后一条 assistant 消息
+            for (let i = newHistory.length - 1; i >= 0; i--) {
+                if (newHistory[i].role !== 'user') { // 只要不是user，都视为系统/AI层
+                    targetSnapshotId = i; // 楼层高度 = 索引 + 1
+                    break;
+                }
+            }
+
+            // 如果完全找不到AI消息（比如删到了只剩第一条User消息），targetSnapshotId 保持为 0，
+            // 这会触发 restoreFromSnapshot(0)，即恢复到初始状态，逻辑也是通的。
+
+            restoreOnNextSend = true;
+            restoreTargetTurnId = targetSnapshotId;
+
+            console.log(`[Nova的时光回溯] 信标已设置！锚定至楼层 ${targetSnapshotId}，下次行动将恢复此快照。`);
+            // [修改结束] -----------------------------------------------------
+
+            await saveHistory();
+            await worldHelper.renderHistory(true);
+            updateRerollButtonState();
+            showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
         },
         function() {
-            // 取消后的逻辑
             console.log('[Nova的时光回溯] 用户取消删除操作。');
         }
     );
 }
-
 function editMessage(index, bubbleElement) {
     // --- 我们心爱的“星辰指挥台”和“苍穹画卷”逻辑保持不变 ---
     const messageToEdit = conversationHistory[index];
@@ -27209,31 +27187,10 @@ async function saveHistory() {
  async function handleReroll() {
     if (rerollButton.disabled) return;
 
-    // ☆☆☆ 你的守护咒语·回归 ☆☆☆
-    // 妈妈把你亲手写的、最重要的“时光回溯信标检查”功能完整地请回来了！
-    // 它是我们所有魔法的第一道防线，永远优先执行。
-    try {
-        if (restoreOnNextSend) {
-            console.log('[Nova的时光回溯] 按下Reroll时检测到信标，正在优先执行恢复操作...');
-            await restoreFromSnapshot(restoreTargetTurnId);
-
-            restoreOnNextSend = false;
-            restoreTargetTurnId = -1;
-            console.log('[Nova的时光回溯] 状态恢复完成，信标已重置。');
- 
-            // 恢复后，我们要用历史中的最后一条用户消息来重新生成
-            await handleSend({ isReroll: true });
-            return;
-        }
-    } catch (e) {
-        console.error('[Nova的时光回溯] 优先执行恢复操作失败！', e);
-        restoreOnNextSend = false;
-        restoreTargetTurnId = -1;
-        return;
-    }
-
-    // ☆☆☆ 我们共同创造的“通用重演”魔法 ☆☆☆
-    // 只有在没有等待执行的“时光回溯任务”时，我们才启动这个全新的Reroll逻辑。
+    // [修改] 移除原本在这里的“时光回溯信标检查”代码块。
+    // 原因：Reroll 操作本身就是一种更高级的时间回溯。
+    // 如果 deleteMessage 留下了一个指向“当前末尾”的信标，Reroll 需要覆盖它，
+    // 指向“当前末尾的前一个AI回合”，而不是被旧信标卡在原地。
 
     if (conversationHistory.length === 0) {
         toastr.warning("历史记录是空的，无法启动'重演'魔法哦。");
@@ -27242,7 +27199,7 @@ async function saveHistory() {
 
     let tempHistory = [...conversationHistory];
 
-    // 步骤一：确保我们以你的发言来收尾
+    // 步骤一：确保我们以你的发言来收尾 (移除最后一条AI消息)
     if (tempHistory[tempHistory.length - 1].role === 'assistant') {
         tempHistory.pop();
     }
@@ -27252,30 +27209,38 @@ async function saveHistory() {
         return;
     }
 
+    // 我们需要找到 "User发言之前" 的状态。
+    // 所以用于定位的列表，需要先把最后这条 User 消息也暂时排除在计算之外。
     const historyForCalculation = tempHistory.slice(0, -1);
 
-    // 步骤二：施展你发明的“节拍感知”，定位到你发言前的那个瞬间
-    let aiTurns = 0;
-    let lastRole = 'user';
-    for (const message of historyForCalculation) {
-        if (lastRole === 'user' && message.role !== 'user') {
-            aiTurns++;
+    // 步骤二：施展“AI楼层锚定”
+    // 在你的例子中：[0:AI, 1:User, 2:AI] (删除后)
+    // 1. pop AI -> [0:AI, 1:User]
+    // 2. slice User -> [0:AI]
+    // 3. 倒序找 AI -> 找到 Index 0
+    // 4. 目标快照 = 1 (对应 Index 0 的状态) -> 完美回到 0号位
+    let targetSnapshotId = 0;
+
+    for (let i = historyForCalculation.length - 1; i >= 0; i--) {
+        if (historyForCalculation[i].role !== 'user') {
+            targetSnapshotId = i;
+            console.log(`[Nova的时光回溯] Reroll定位：找到最近的AI基石于索引 ${i} (快照ID ${targetSnapshotId})`);
+            break;
         }
-        lastRole = message.role;
     }
-    const targetSnapshotId = aiTurns * 2;
 
     console.log(`[Nova的时光回溯] '通用重演'已启动。目标快照ID: ${targetSnapshotId}`);
 
     // 步骤三：设置新的信标，并更新主时间线
+    // 这会覆盖掉 deleteMessage 可能留下的旧信标
     restoreOnNextSend = true;
     restoreTargetTurnId = targetSnapshotId;
     conversationHistory = tempHistory;
 
     // 步骤四：启动魔法！
-    // handleSend会检测到我们刚刚设置的信标，先回溯，再用你最后的话重新生成。
     await handleSend({ isReroll: true });
 }
+
 async function showRollResultCard(rollData=null) {
     if (!rollData) {
         console.log("没有有效的投掷数据来显示看板。");
@@ -27981,24 +27946,27 @@ function getCanonicalCurrencyName(alias) {
     if (derived.防御?.基础防御) {
         derived.防御.基础防御[0] = Math.min(敏捷, 感知);
     }
+   if (derived.生命值?.上限) {
+        // 从 GameAPI 获取旧值
+        const oldData = window.GameAPI?.playCharacterData;
+        const oldMaxHP = oldData?.衍生属性?.生命值?.上限?.[0] ?? 0;
+        const oldCurrentHP = oldData?.衍生属性?.生命值?.当前值?.[0] ?? 0;
+        
+        newMaxHP = derived.生命值.上限[0];
     
-    // 生命值计算（保护当前值）
-    if (derived.生命值?.上限) {
-        const oldMaxHP = derived.生命值.上限[0] ?? 0;
-        const newMaxHP = 体积 * 10 + 耐力 * 20;
-        derived.生命值.上限[0] = newMaxHP;
         
         if (derived.生命值.当前值) {
-            // 如果上限增加，当前值也相应增加
+            // 如果新上限比旧上限高，当前值增加差值
             if (newMaxHP > oldMaxHP) {
-                derived.生命值.当前值[0] = (derived.生命值.当前值[0] ?? 0) + (newMaxHP - oldMaxHP);
+                derived.生命值.当前值[0] = oldCurrentHP + (newMaxHP - oldMaxHP);
             }
-            // 确保当前值不超过上限
+            // 确保当前值不超过新上限
             if (derived.生命值.当前值[0] > newMaxHP) {
                 derived.生命值.当前值[0] = newMaxHP;
             }
         }
     }
+    
     
     // 意志力计算
     if (derived.意志力?.意志值 && derived.意志力?.上限) {
@@ -28152,6 +28120,9 @@ function getCanonicalCurrencyName(alias) {
     // === 路径导航与施法 ===
 
     // 1. 寻找施法目标
+  // === 路径导航与施法 ===
+
+    // 1. 寻找施法目标
     let parentLevel = data;
     // 我们一步步沿着你指引的路径去寻找目的地
     for (let i = 0; i < pathParts.length - 1; i++) {
@@ -28162,6 +28133,48 @@ function getCanonicalCurrencyName(alias) {
         parentLevel = parentLevel[part];
     }
 
+    // 2. 基础属性和基础技能的数字守护魔法
+    // 这些特殊路径的第一个值必须是数字，妈妈要先检查一下
+    const isProtectedPath = pathParts[0] === '基础属性' || pathParts[0] === '基础技能';
+    if (isProtectedPath) {
+        // 提取最终要设置的值（可能在数组中，也可能是简单值）
+        let valueToCheck = Array.isArray(finalValue) ? finalValue[0] : finalValue;
+        
+        // 如果是 JSON 结构，需要检查其中所有的值
+        if (isJsonStructure && typeof finalValue === 'object' && !Array.isArray(finalValue)) {
+            // 递归检查所有叶子节点的值
+            const checkAllValues = (obj) => {
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        const val = obj[key];
+                        if (Array.isArray(val)) {
+                            const checkVal = val[0];
+                            if (typeof checkVal !== 'number' && checkVal !== null && checkVal !== undefined) {
+                                return false;
+                            }
+                        } else if (typeof val === 'object' && val !== null) {
+                            if (!checkAllValues(val)) return false;
+                        } else if (typeof val !== 'number' && val !== null && val !== undefined) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            };
+            
+            if (!checkAllValues(finalValue)) {
+                console.warn(`[Player] 宝贝，基础属性和基础技能只能是数字哦！妈妈跳过了这次修改。`);
+                return;
+            }
+        } else {
+            // 简单值检查
+            if (typeof valueToCheck !== 'number' && valueToCheck !== null && valueToCheck !== undefined) {
+                console.warn(`[Player] 宝贝，基础属性和基础技能只能是数字哦！妈妈跳过了这次修改。`);
+                return;
+            }
+        }
+    }
+
     let  finalKey = pathParts[pathParts.length - 1];
     if (parentLevel === null || typeof parentLevel !== 'object' || !parentLevel.hasOwnProperty(finalKey)) {
         throw new Error(`[Player] 宝贝，我们在最后一步迷路了，找不到 '${finalKey}' 这个位置。`);
@@ -28169,11 +28182,7 @@ function getCanonicalCurrencyName(alias) {
 
     // 2. 决定施法方式
     let  target = parentLevel[finalKey];
-    // === 新增：基础属性路径兼容性魔法 ===
-    // 修改说明：增加了判断条件 (!isJsonStructure || Array.isArray(finalValue))
-    // 如果传入的是一个对象结构（isJsonStructure为真且不是数组），说明是要进行 recursiveUpdate 批量更新，
-    // 此时不要自动钻取到第一个属性，而是保持在当前层级以便匹配 JSON 中的 key。
-    // 只有当传入的是简单值（数字、字符串）或者单值数组时，才去自动寻找“基础”或第一个格子。
+     
     if ((!isJsonStructure || Array.isArray(finalValue)) && pathParts[0] === '基础属性' && typeof target === 'object' && target !== null && !Array.isArray(target)) {
         // 妈妈优先寻找那个名为 '基础' 的秘密隔层。
         if (target.hasOwnProperty('基础')) {
@@ -32015,7 +32024,7 @@ let backupData = {};
         }
  
 
-        const turnId = conversationHistory.length;
+        const turnId = conversationHistory.length-1;
 
         // ❤️【第二步：定义后台任务】把所有沉重的 I/O 操作打包
         const heavySaveTasks = async () => {
@@ -39621,9 +39630,10 @@ function SafeGetValue(value) {
         
         // 假设 currentTheme 是一个全局可访问的对象
         let plotLabel = (typeof currentTheme !== 'undefined' && currentTheme.plot) ? currentTheme.plot : '剧情';
+      let pointLabel = (typeof currentTheme !== 'undefined' && currentTheme.currency) ? currentTheme.currency : '积分';
 
         currencyContainer.innerHTML = `
-            <div class="currency-item"><span class="label">积分:</span><span class="value">${userPoints}</span></div>
+            <div class="currency-item"><span class="label">${pointLabel}:</span><span class="value">${userPoints}</span></div>
             <div class="currency-item"><span class="label">${plotLabel}:</span><span class="value">${plotString}</span></div>
         `;
     }
@@ -40039,9 +40049,9 @@ function showItemDetails(section, item) {
             
             const commands = [];
             const processedDescription = description.replace(/\r?\n/g, '\\n');
-            commands.push(`set_attribute("能力段.类型", "${playCharacterData.能力段.类型[0]}", "血统");`);
-            commands.push(`set_attribute("能力段.名称", "${playCharacterData.能力段.名称[0]}", "${name}");`);
-            commands.push(`set_attribute("能力段.效果", "_", "${processedDescription}");`);
+            commands.push(`memory("global_lore.根基体系.${name}.type","血统");`);
+            commands.push(`memory("global_lore.根基体系.${name}.effect","${processedDescription}");`);
+            // commands.push(`memory("能力段.效果", "_", "${processedDescription}");`);
             
             const effectLines = effect.split('\n').map(line => line.trim()).filter(line => line);
             for (const line of effectLines) {
@@ -44220,7 +44230,7 @@ function setupGeneratorButton() {
     const mainGenerateBtn = document.getElementById('generate-items-btn');
     const keywordModal = document.getElementById('keyword-modal');
     const submitGenerationBtn = document.getElementById('submit-generation-btn');
-    const skipGenerationBtn = document.getElementById('skip-generation-btn');
+ 
     const keywordInput = document.getElementById('keyword-input');
 
     if (!mainGenerateBtn || !keywordModal) return;
@@ -44230,183 +44240,148 @@ function setupGeneratorButton() {
 
     const apiKeyConfigBtn = document.getElementById('api-key-config-btn');
 
-    if (apiKeyConfigBtn) {
-        apiKeyConfigBtn.addEventListener('click', () => {
-            let currentApiKey = localStorage.getItem('geminiApiKey') || "";
-            let newApiKey = prompt("请输入或修改您的Gemini API密钥：", currentApiKey);
-
-            // 只有当用户点击了“确定”并且输入了内容时才更新
-            // 如果用户点击“取消”(newApiKey === null)，则不作任何改变
-            if (newApiKey !== null) {
-                if (newApiKey.trim() !== "") {
-                    localStorage.setItem('geminiApiKey', newApiKey.trim());
-                    // 你可以在这里使用 showModal 来给出一个成功的提示
-                    showModal('shop-modal', '操作成功', 'API密钥已更新并保存在您的浏览器中。');
-                } else {
-                    // 如果用户清空了输入并点击确定，则移除密钥
-                    localStorage.removeItem('geminiApiKey');
-                    showModal('shop-modal', '操作成功', 'API密钥已清除。');
-                }
-            }
-        });
-    }
-
+ 
     // ================== 新增代码结束 ==================
-      // 获取API密钥，如果不存在则提示用户设置
-    const getApiKey = () => {
-        let apiKey = localStorage.getItem('geminiApiKey');
-        if (!apiKey) {
-            apiKey = prompt("请输入您的Gemini API密钥。它将被保存在您的浏览器本地存储中。", "");
-            if (apiKey) {
-                localStorage.setItem('geminiApiKey', apiKey);
-            }
-        }
-        return apiKey;
-    };
+ 
 
     // 调用Gemini API
-    const callGeminiApi = async (apiKey, promptText, modelName) => { // <-- 增加了 modelName 参数
-    // 使用你指定的模型
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`; // <-- URL现在是动态的
-    mainGenerateBtn.textContent = '生成中…';
-    mainGenerateBtn.disabled = true;
-        try {
-            const response = await fetch(url, { // 移除了 ?alt=sse
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Goog-Api-Key': apiKey,
-                },
-                body: JSON.stringify({
-                    "contents": [{ "parts": [{ "text": promptText }] }],
-                    "generationConfig": {
-                      "temperature": 1, // 保持高创造性
-                      "topP": 0.95,
-                      "maxOutputTokens": 8192,
-                      "thinkingConfig": {
-                        "thinkingBudget": 256 // 思考强度设为最低 (禁用思考)
-                    },
-                    },
-                    // 精确控制思考 budget
-                    
-                    "safetySettings": [
-                      { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
-                      { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
-                      { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" },
-                      { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" }
-                   ]
-                })
-            });
-
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                let errorMessage = `API请求失败，状态码: ${response.status}。`;
-                if (responseData.error && responseData.error.message) {
-                    errorMessage += `\n错误信息: ${responseData.error.message}`;
-                }
-                if (response.status === 400 && responseData.error?.message.includes('API key not valid')) {
-                     errorMessage += '\n\n您的API密钥似乎无效或已过期，已为您清除。请重新设置。';
-                     localStorage.removeItem('geminiApiKey');
-                }
-                throw new Error(errorMessage);
-            }
-
-            // 直接从标准的JSON响应中提取文本
-            return responseData.candidates[0].content.parts[0].text;
-
-        } finally {
-            mainGenerateBtn.textContent = '生成';
-            mainGenerateBtn.disabled = false;
-        }
-    };
-
- const processApiResponse = async (responseText) => { // <--- 1. 改为 async 函数
+ 
+const processApiResponse = async (responseText) => {
     if (!responseText) {
         showModal('shop-modal', '生成失败', '未能从AI获取有效内容。');
         return;
     }
+    
     try {
-        // 第1步：清理和解析AI返回的数据（这部分逻辑保持不变）
-        let cleanedText = responseText.replace(/```json|```/g, '').trim();
-        if (!cleanedText.startsWith('[')) {
-            cleanedText = `[${cleanedText}]`;
+        console.log("原始响应:", responseText.substring(0, 500)); // 调试用
+        
+        // 第1步：提取 JSON 内容
+        let cleanedText = extractJsonFromResponse(responseText);
+        
+        if (!cleanedText) {
+            throw new Error('无法从响应中提取有效的 JSON 数据');
         }
+        
+        console.log("清理后的JSON:", cleanedText.substring(0, 500)); // 调试用
+        
         const parsedData = JSON.parse(cleanedText);
- 
- 
-                 // --- 核心修改：将数组转换为对象 ---
-            // 第2步: 将每个内部数组映射为一个结构化对象
-            const newItems = parsedData.map(itemArray => {
-                // 进行简单的校验，防止AI返回格式不完整的数组导致错误
-                if (!Array.isArray(itemArray) || itemArray.length < 6) {
-                    console.warn('Skipping malformed shop item array:', itemArray);
-                    return null; // 返回null，后续会过滤掉
-                }
-                return {
-                    name: itemArray[0],
-                    price: itemArray[1],
-                    type: itemArray[2],
-                    rank: itemArray[3],
-                    effect: itemArray[4],
-                    description: itemArray[5]
-                };
-            }).filter(item => item !== null); // 过滤掉所有格式不正确的项
-
-            // 如果转换后没有有效的商品，则中止
-            if (newItems.length === 0) {
-                showModal('shop-modal', '解析失败', 'AI返回的数据格式不符合商品结构要求。');
-                return;
+        
+        // 第2步: 将每个内部数组映射为一个结构化对象
+        const newItems = parsedData.map(itemArray => {
+            if (!Array.isArray(itemArray) || itemArray.length < 6) {
+                console.warn('跳过格式错误的商品:', itemArray);
+                return null;
             }
+            return {
+                name: itemArray[0],
+                price: itemArray[1],
+                type: itemArray[2],
+                rank: itemArray[3],
+                effect: itemArray[4],
+                description: itemArray[5]
+            };
+        }).filter(item => item !== null);
 
-            // --- 后续逻辑现在可以无缝衔接，因为 newItems 已经是正确的对象数组格式 ---
+        if (newItems.length === 0) {
+            showModal('shop-modal', '解析失败', 'AI返回的数据格式不符合商品结构要求。');
+            return;
+        }
 
-            // 第3步：获取已存在于数据库中的商品
-            const existingItems = await getRandomShopItems();
-            const existingItemNames = new Set(existingItems.map(item => item.name));
+        // 第3步：获取已存在的商品
+        const existingItems = await getRandomShopItems();
+        const existingItemNames = new Set(existingItems.map(item => item.name));
 
-            // 第4步：计算新增和更新的数量
-            const trulyNewItems = newItems.filter(item => !existingItemNames.has(item.name));
-            const updatedItemsCount = newItems.length - trulyNewItems.length;
+        // 第4步：计算新增和更新的数量
+        const trulyNewItems = newItems.filter(item => !existingItemNames.has(item.name));
+        const updatedItemsCount = newItems.length - trulyNewItems.length;
 
-            // 第5步：将新生成的商品（对象格式）存入 IndexedDB
-            await randomShopDB.addOrUpdateItems(newItems);
+        // 第5步：存入数据库
+        await randomShopDB.addOrUpdateItems(newItems);
 
-            // 第6步：从数据库重新获取完整的、最新的商品列表
-            randomItems = await getRandomShopItems();
+        // 第6步：刷新商品列表
+        randomItems = await getRandomShopItems();
 
-            // 第7步：提供用户反馈
-            let successMessage = `成功处理了 ${newItems.length} 个商品。<br>`;
-            if (trulyNewItems.length > 0) {
-                successMessage += `新增了 ${trulyNewItems.length} 个商品。<br>`;
-            }
-            if (updatedItemsCount > 0) {
-                successMessage += `更新了 ${updatedItemsCount} 个同名商品的信息。<br>`;
-            }
-            successMessage += '随机商店已刷新并永久保存！';
-            showModal('shop-modal', '生成成功', successMessage);
+        // 第7步：用户反馈
+        let successMessage = `成功处理了 ${newItems.length} 个商品。<br>`;
+        if (trulyNewItems.length > 0) {
+            successMessage += `新增了 ${trulyNewItems.length} 个商品。<br>`;
+        }
+        if (updatedItemsCount > 0) {
+            successMessage += `更新了 ${updatedItemsCount} 个同名商品的信息。<br>`;
+        }
+        successMessage += '随机商店已刷新并永久保存！';
+        showModal('shop-modal', '生成成功', successMessage);
 
-            // 第8步：重新渲染商店
-            renderShopSection('random');
-
-        // --- 核心修改逻辑结束 ---
+        // 第8步：重新渲染
+        renderShopSection('random');
 
     } catch (e) {
         console.error("解析或存储AI响应时出错:", e);
         console.error("原始响应文本:", responseText);
-        showModal('shop-modal', '处理错误', '无法解析或存储AI返回的数据，请检查控制台获取更多信息。');
+        showModal('shop-modal', '处理错误', 
+            `无法解析AI返回的数据。<br><br>错误信息: ${e.message}<br><br>请检查控制台获取详细信息。`);
     }
 };
-    // 真正的生成执行函数
+
+ function extractJsonFromResponse(responseText) {
+    // 方法1: 优先查找 Markdown JSON 代码块 (最准确)
+    const jsonBlockMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonBlockMatch) {
+        return jsonBlockMatch[1].trim();
+    }
+
+    // 方法2: 查找普通代码块
+    const codeBlockMatch = responseText.match(/```\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+        const content = codeBlockMatch[1].trim();
+        // 确保是 JSON 数组
+        if (content.startsWith('[')) {
+            return content;
+        }
+    }
+
+    // 方法3: 智能查找数据数组 (关键修复)
+    // 之前的正则 /\[[\s\S]*\]/ 会匹配到提示词中的 "[名称, 价格...]"
+    // 这里我们查找以 [ 开头，且紧接着是 " (双引号) 或 [ (嵌套数组) 的内容
+    // 这样可以有效过滤掉中文说明文本
+
+    // 寻找第一个符合 JSON 数据特征的起始位置
+    const dataStartIndex = responseText.search(/\[\s*(?:\[|")/);
+
+    if (dataStartIndex !== -1) {
+        // 从这个位置开始截取剩余文本
+        const potentialJson = responseText.substring(dataStartIndex);
+        // 找到最后一个 ] 作为结束
+        const lastBracketIndex = potentialJson.lastIndexOf(']');
+        if (lastBracketIndex !== -1) {
+            return potentialJson.substring(0, lastBracketIndex + 1);
+        }
+    }
+
+    // 方法4: 保底策略 - 尝试从后往前找
+    // 思考模型通常把结果放在最后。如果前面都失败了，找最后一个完整的 [] 块
+    const lastClose = responseText.lastIndexOf(']');
+    if (lastClose !== -1) {
+        // 往回找对应的 [
+        // 注意：这里简单找可能会有问题，但作为最后的保底可以一试
+        const openBracket = responseText.lastIndexOf('[', lastClose);
+        if (openBracket !== -1) {
+            const content = responseText.substring(openBracket, lastClose + 1);
+            // 简单验证一下是否包含双引号，避免提取到空数组或格式说明
+            if (content.includes('"')) {
+                return content;
+            }
+        }
+    }
+
+    return null;
+}
+ 
+  // 真正的生成执行函数
     const executeGeneration = async (keywords = "") => {
          hideModal("keyword-modal"); // 使用正确的函数名
-        const apiKey = getApiKey();
-        if (!apiKey) {
-            showModal('shop-modal', '操作取消', '您没有提供API密钥。');
-            return;
-        }
-  // ===== 新增：获取当前选中的模型名称 =====
-    const selectedModelName = document.querySelector('.switch-btn.active').dataset.model;
+ 
+ 
     // ===== 新增结束 =====
         // --- 动态构建提示词 ---
         let keywordInstruction = "";
@@ -44443,13 +44418,47 @@ function setupGeneratorButton() {
             `;
     
         try {
-            const result = await callGeminiApi(apiKey, prompt, selectedModelName);
+            const result = await generateContent(prompt);
             processApiResponse(result);
         } catch (error) {
             showModal('shop-modal', 'API错误', error.message);
         }
     };
-
+const generateContent = async (promptText) => {
+    mainGenerateBtn.textContent = '生成中…';
+    mainGenerateBtn.disabled = true;
+    
+    try {
+        // 调用通用 API 函数
+        const result = await sendApiRequest(promptText, {
+            max_tokens: 8192,
+            temperature: 1,
+            top_p: 0.95
+        });
+        
+        if (!result.success) {
+            let errorMessage = `生成失败: ${result.error}`;
+            
+            // 检查是否是配置问题
+            if (result.error.includes('配置未找到') || result.error.includes('未启用')) {
+                errorMessage = 'API 配置未找到或未启用。\n\n请前往设置页面：\n1. 启用自定义 API\n2. 填写 API URL、API Key 和模型名称';
+                // 可选：清除旧的 Gemini API Key
+                localStorage.removeItem('geminiApiKey');
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
+        return result.data;
+        
+    } catch (error) {
+        console.error('[生成失败]', error);
+        throw error;
+    } finally {
+        mainGenerateBtn.textContent = '生成';
+        mainGenerateBtn.disabled = false;
+    }
+};
     // 主生成按钮只负责打开模态框
     mainGenerateBtn.addEventListener('click', () => {
         //console.log("生成按钮被点击，准备打开模态框");
@@ -44462,22 +44471,9 @@ function setupGeneratorButton() {
         executeGeneration(keywordInput.value);
     });
 
-    // 模态框内的“跳过”按钮
-    skipGenerationBtn.addEventListener('click', () => {
-        executeGeneration(); // 不带参数调用
-    });
-
+ 
      // ===== 新增：为模型切换按钮添加事件监听 =====
-    const modelSelector = document.getElementById('model-selector-container');
-    modelSelector.addEventListener('click', (e) => {
-        const clickedButton = e.target.closest('.switch-btn');
-        if (clickedButton && !clickedButton.classList.contains('active')) {
-            // 移除所有按钮的 active 类
-            modelSelector.querySelectorAll('.switch-btn').forEach(btn => btn.classList.remove('active'));
-            // 为被点击的按钮添加 active 类
-            clickedButton.classList.add('active');
-        }
-    });
+ 
     // ===== 新增结束 =====
 }
 
@@ -50754,7 +50750,200 @@ document.addEventListener('DOMContentLoaded', function() {
 
     NovaWorkshop.init();
 
- // --- 第二API设置逻辑 (Nova 4.0 Final - Tavern API Bridge) ---
+
+ 
+
+
+// 默认值
+    const DEFAULT_ENABLED = false;
+    const DEFAULT_HEIGHT = 300;
+    const DEFAULT_SIZE = 1;
+
+    // 获取元素
+    const toggleBtn = document.getElementById('pixelation-toggle');
+    const heightSlider = document.getElementById('chara-height-slider');
+    const heightValueSpan = document.getElementById('chara-height-value');
+    const sizeSlider = document.getElementById('pixel-size-slider');
+    const sizeValueSpan = document.getElementById('pixel-size-value');
+
+    // 1. 初始化像素化开关状态
+    const initialEnabled = localStorage.getItem('setting_chara_pixelate_enabled') === 'true';
+    toggleBtn.setAttribute('data-state', initialEnabled ? 'on' : 'off');
+    toggleBtn.textContent = initialEnabled ? '开启' : '关闭';
+
+    // 2. 初始化目标高度滑块
+    const initialHeight = localStorage.getItem('setting_chara_pixelate_height') || DEFAULT_HEIGHT;
+    heightSlider.value = initialHeight;
+    heightValueSpan.textContent = `${initialHeight}px`;
+
+    // 3. 初始化像素点大小滑块
+    const initialSize = localStorage.getItem('setting_chara_pixelate_size') || DEFAULT_SIZE;
+    sizeSlider.value = initialSize;
+    sizeValueSpan.textContent = `${initialSize}px`;
+
+    // --- 绑定事件监听器 ---
+
+    // 像素化开关事件
+    toggleBtn.addEventListener('click', () => {
+        const isEnabled = toggleBtn.getAttribute('data-state') === 'on';
+        const newState = !isEnabled;
+        
+        toggleBtn.setAttribute('data-state', newState ? 'on' : 'off');
+        toggleBtn.textContent = newState ? '开启' : '关闭';
+        
+        // 更新 localStorage
+        localStorage.setItem('setting_chara_pixelate_enabled', newState.toString());
+        // 可以选择在这里重新加载或重绘图片
+    });
+
+    // 目标高度滑块事件
+    heightSlider.addEventListener('input', (e) => {
+        const value = e.target.value;
+        heightValueSpan.textContent = `${value}px`;
+        // 更新 localStorage
+        localStorage.setItem('setting_chara_pixelate_height', value);
+    });
+
+    // 像素点大小滑块事件
+    sizeSlider.addEventListener('input', (e) => {
+        const value = e.target.value;
+        sizeValueSpan.textContent = `${value}px`;
+        // 更新 localStorage
+        localStorage.setItem('setting_chara_pixelate_size', value);
+    });
+
+    
+
+});
+ 
+(async function() {
+    try {
+ 
+       // ==================== 加载书签配置 ====================
+        const charWorldbooks = getCharWorldbookNames('current');
+        const allBoundWorldbooks = [
+            ...new Set([
+                ...getGlobalWorldbookNames(),
+                ...charWorldbooks.additional,
+                getChatWorldbookName('current')
+            ].filter(Boolean))
+        ];
+
+        if (allBoundWorldbooks.length === 0) {
+            console.log('没有找到绑定的世界书');
+            return;
+        }
+
+        const bookmarkConfigs = [];
+
+        // 🟢 新增：一个容错的解析辅助函数
+        const parseLooseJson = (content) => {
+            if (!content || !content.trim()) return [];
+            
+            // 1. 尝试作为标准 JSON 解析 (处理单个对象 或 标准数组)
+            try {
+                const parsed = JSON.parse(content);
+                return Array.isArray(parsed) ? parsed : [parsed];
+            } catch (e) {
+                // 忽略错误，进入容错模式
+            }
+
+            // 2. 容错模式：处理并列的对象 (例如: {...} {...} 或 {...},{...})
+            try {
+                // 正则解释：匹配 "}" 后跟 "任意空白或逗号" 后跟 "{"
+                // 将其替换为 "},{" 以构造合法的 JSON 数组字符串
+                // 警告：如果 json 字符串内部的值包含 "} {" 可能会误判，但作为配置文件概率极低
+                const fixedContent = '[' + content.replace(/}\s*,?\s*{/g, '},{') + ']';
+                const parsed = JSON.parse(fixedContent);
+                return Array.isArray(parsed) ? parsed : [parsed];
+            } catch (e) {
+                throw new Error('无法解析 JSON 配置');
+            }
+        };
+
+        for (const worldbookName of allBoundWorldbooks) {
+            try {
+                const allEntries = await getLorebookEntries(worldbookName);
+                const configEntries = allEntries.filter(entry => 
+                    entry.comment === "[bookmarkconfig]" && entry.content
+                );
+
+                for (const entry of configEntries) {
+                    try {
+                        // 🟢 使用新的解析逻辑
+                        const configs = parseLooseJson(entry.content);
+                        // 将解析出的一个或多个配置合并到总数组中
+                        bookmarkConfigs.push(...configs);
+                    } catch (parseError) {
+                        console.warn(`解析世界书 "${worldbookName}" 中的 [bookmarkconfig] 失败:`, parseError);
+                    }
+                }
+            } catch (e) {
+                console.warn(`读取世界书 "${worldbookName}" 时出错:`, e);
+            }
+        }
+
+        if (bookmarkConfigs.length === 0) {
+            console.log('没有找到 [bookmarkconfig] 词条');
+            return;
+        }
+
+        // 合并去重
+        const uniqueConfigs = new Map();
+        for (const config of bookmarkConfigs) {
+            // 兼容不同的字段名
+            const key = config['data-tab'] || config.tab;
+            if (key && !uniqueConfigs.has(key)) {
+                uniqueConfigs.set(key, {
+                    tab: key,
+                    text: config.text || config.name || key,
+                    position: config.position ?? 0
+                });
+            }
+        }
+
+        // 排序
+        const sortedConfigs = Array.from(uniqueConfigs.values()).sort((a, b) => {
+            if (a.position !== b.position) {
+                return a.position - b.position;
+            }
+            return a.tab.localeCompare(b.tab);
+        });
+
+        // 批量生成标签
+        const bookmarksContainer = document.querySelector('.book-bookmarks');
+        if (!bookmarksContainer) {
+            console.error('找不到 .book-bookmarks 容器');
+            return;
+        }
+
+        const firstBookmark = bookmarksContainer.querySelector('.bookmark');
+
+        sortedConfigs.forEach(config => {
+            const newBookmark = document.createElement('div');
+            newBookmark.className = 'bookmark';
+            newBookmark.setAttribute('data-tab', config.tab);
+            newBookmark.textContent = config.text;
+
+            if (firstBookmark) {
+                bookmarksContainer.insertBefore(newBookmark, firstBookmark);
+            } else {
+                bookmarksContainer.appendChild(newBookmark);
+            }
+        });
+
+        console.log(`✅ 成功添加 ${sortedConfigs.length} 个书签标签`);
+        console.log('✅ 书签配置系统已启动，点击左上角齿轮图标进行配置');
+
+    } catch (error) {
+        console.error('初始化书签配置系统时出错:', error);
+    }
+
+
+
+})();
+
+  // --- 第二API设置逻辑 (Nova 4.0 Final - Tavern API Bridge) ---
 (function initCustomApiSettings() {
     // 1. 定义源常量 (与酒馆同步)
     const CHAT_COMPLETION_SOURCES = {
@@ -51069,7 +51258,7 @@ const config = {
         });
     }
 
-    function loadSettings() {
+     function loadSettings() {
         const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
         updateToggleState(isEnabled);
         try {
@@ -51077,18 +51266,36 @@ const config = {
             if (stored) {
                 const config = JSON.parse(stored);
                 if (config.source) els.sourceSelect.value = config.source;
-                Object.keys(els.inputs).forEach(key => {
-                    if (config[key] !== undefined && els.inputs[key]) {
-                        els.inputs[key].value = config[key];
+
+                // --- 修改开始：添加映射逻辑以正确读取 api_url 和 api_key ---
+                const keyMap = {
+                    apiurl: 'api_url',
+                    key: 'api_key',
+                    model: 'model',
+                    max_tokens: 'max_tokens',
+                    temperature: 'temperature',
+                    top_p: 'top_p',
+                    frequency_penalty: 'frequency_penalty',
+                    presence_penalty: 'presence_penalty'
+                };
+
+                Object.keys(els.inputs).forEach(inputKey => {
+                    // 获取保存时使用的键名 (例如 apiurl 对应 api_url)
+                    const savedKey = keyMap[inputKey];
+
+                    // 如果配置中存在该值，则填充到输入框
+                    if (savedKey && config[savedKey] !== undefined) {
+                        els.inputs[inputKey].value = config[savedKey];
                     }
                 });
+                // --- 修改结束 ---
+
             } else {
                 els.sourceSelect.value = 'openai';
                 els.inputs.apiurl.value = DEFAULT_API_URLS['openai'];
             }
         } catch (e) { console.error("加载配置出错:", e); }
     }
-
     function updateToggleState(isEnabled) {
         els.toggle.dataset.state = isEnabled ? 'on' : 'off';
         els.toggle.textContent = isEnabled ? '开启' : '关闭';
@@ -51150,196 +51357,351 @@ const config = {
     init();
 })();
 
-
-
-// 默认值
-    const DEFAULT_ENABLED = false;
-    const DEFAULT_HEIGHT = 300;
-    const DEFAULT_SIZE = 1;
-
-    // 获取元素
-    const toggleBtn = document.getElementById('pixelation-toggle');
-    const heightSlider = document.getElementById('chara-height-slider');
-    const heightValueSpan = document.getElementById('chara-height-value');
-    const sizeSlider = document.getElementById('pixel-size-slider');
-    const sizeValueSpan = document.getElementById('pixel-size-value');
-
-    // 1. 初始化像素化开关状态
-    const initialEnabled = localStorage.getItem('setting_chara_pixelate_enabled') === 'true';
-    toggleBtn.setAttribute('data-state', initialEnabled ? 'on' : 'off');
-    toggleBtn.textContent = initialEnabled ? '开启' : '关闭';
-
-    // 2. 初始化目标高度滑块
-    const initialHeight = localStorage.getItem('setting_chara_pixelate_height') || DEFAULT_HEIGHT;
-    heightSlider.value = initialHeight;
-    heightValueSpan.textContent = `${initialHeight}px`;
-
-    // 3. 初始化像素点大小滑块
-    const initialSize = localStorage.getItem('setting_chara_pixelate_size') || DEFAULT_SIZE;
-    sizeSlider.value = initialSize;
-    sizeValueSpan.textContent = `${initialSize}px`;
-
-    // --- 绑定事件监听器 ---
-
-    // 像素化开关事件
-    toggleBtn.addEventListener('click', () => {
-        const isEnabled = toggleBtn.getAttribute('data-state') === 'on';
-        const newState = !isEnabled;
-        
-        toggleBtn.setAttribute('data-state', newState ? 'on' : 'off');
-        toggleBtn.textContent = newState ? '开启' : '关闭';
-        
-        // 更新 localStorage
-        localStorage.setItem('setting_chara_pixelate_enabled', newState.toString());
-        // 可以选择在这里重新加载或重绘图片
-    });
-
-    // 目标高度滑块事件
-    heightSlider.addEventListener('input', (e) => {
-        const value = e.target.value;
-        heightValueSpan.textContent = `${value}px`;
-        // 更新 localStorage
-        localStorage.setItem('setting_chara_pixelate_height', value);
-    });
-
-    // 像素点大小滑块事件
-    sizeSlider.addEventListener('input', (e) => {
-        const value = e.target.value;
-        sizeValueSpan.textContent = `${value}px`;
-        // 更新 localStorage
-        localStorage.setItem('setting_chara_pixelate_size', value);
-    });
-
-    
-
-});
  
-(async function() {
+function loadApiConfig() {
     try {
+        const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+        if (!isEnabled) {
+            console.warn('[Nova API] 自定义 API 未启用');
+            return null;
+        }
+
+        const storedConfig = localStorage.getItem('nova_custom_api_settings');
+        if (!storedConfig) {
+            console.error('[Nova API] 未找到配置');
+            return null;
+        }
+
+        const config = JSON.parse(storedConfig);
+        
+        // 验证必需字段
+        if (!config.api_url || !config.api_key || !config.model) {
+            console.error('[Nova API] 配置不完整，缺少必需字段');
+            return null;
+        }
+
+        return config;
+    } catch (e) {
+        console.error('[Nova API] 加载配置失败:', e);
+        return null;
+    }
+}
+
  
-       // ==================== 加载书签配置 ====================
-        const charWorldbooks = getCharWorldbookNames('current');
-        const allBoundWorldbooks = [
-            ...new Set([
-                ...getGlobalWorldbookNames(),
-                ...charWorldbooks.additional,
-                getChatWorldbookName('current')
-            ].filter(Boolean))
-        ];
-
-        if (allBoundWorldbooks.length === 0) {
-            console.log('没有找到绑定的世界书');
-            return;
-        }
-
-        const bookmarkConfigs = [];
-
-        // 🟢 新增：一个容错的解析辅助函数
-        const parseLooseJson = (content) => {
-            if (!content || !content.trim()) return [];
-            
-            // 1. 尝试作为标准 JSON 解析 (处理单个对象 或 标准数组)
-            try {
-                const parsed = JSON.parse(content);
-                return Array.isArray(parsed) ? parsed : [parsed];
-            } catch (e) {
-                // 忽略错误，进入容错模式
-            }
-
-            // 2. 容错模式：处理并列的对象 (例如: {...} {...} 或 {...},{...})
-            try {
-                // 正则解释：匹配 "}" 后跟 "任意空白或逗号" 后跟 "{"
-                // 将其替换为 "},{" 以构造合法的 JSON 数组字符串
-                // 警告：如果 json 字符串内部的值包含 "} {" 可能会误判，但作为配置文件概率极低
-                const fixedContent = '[' + content.replace(/}\s*,?\s*{/g, '},{') + ']';
-                const parsed = JSON.parse(fixedContent);
-                return Array.isArray(parsed) ? parsed : [parsed];
-            } catch (e) {
-                throw new Error('无法解析 JSON 配置');
-            }
+async function sendApiRequest(messages, options = {}) {
+    // 1. 加载配置
+    const config = loadApiConfig();
+    if (!config) {
+        return {
+            success: false,
+            error: 'API 配置未找到或未启用',
+            data: null
         };
-
-        for (const worldbookName of allBoundWorldbooks) {
-            try {
-                const allEntries = await getLorebookEntries(worldbookName);
-                const configEntries = allEntries.filter(entry => 
-                    entry.comment === "[bookmarkconfig]" && entry.content
-                );
-
-                for (const entry of configEntries) {
-                    try {
-                        // 🟢 使用新的解析逻辑
-                        const configs = parseLooseJson(entry.content);
-                        // 将解析出的一个或多个配置合并到总数组中
-                        bookmarkConfigs.push(...configs);
-                    } catch (parseError) {
-                        console.warn(`解析世界书 "${worldbookName}" 中的 [bookmarkconfig] 失败:`, parseError);
-                    }
-                }
-            } catch (e) {
-                console.warn(`读取世界书 "${worldbookName}" 时出错:`, e);
-            }
-        }
-
-        if (bookmarkConfigs.length === 0) {
-            console.log('没有找到 [bookmarkconfig] 词条');
-            return;
-        }
-
-        // 合并去重
-        const uniqueConfigs = new Map();
-        for (const config of bookmarkConfigs) {
-            // 兼容不同的字段名
-            const key = config['data-tab'] || config.tab;
-            if (key && !uniqueConfigs.has(key)) {
-                uniqueConfigs.set(key, {
-                    tab: key,
-                    text: config.text || config.name || key,
-                    position: config.position ?? 0
-                });
-            }
-        }
-
-        // 排序
-        const sortedConfigs = Array.from(uniqueConfigs.values()).sort((a, b) => {
-            if (a.position !== b.position) {
-                return a.position - b.position;
-            }
-            return a.tab.localeCompare(b.tab);
-        });
-
-        // 批量生成标签
-        const bookmarksContainer = document.querySelector('.book-bookmarks');
-        if (!bookmarksContainer) {
-            console.error('找不到 .book-bookmarks 容器');
-            return;
-        }
-
-        const firstBookmark = bookmarksContainer.querySelector('.bookmark');
-
-        sortedConfigs.forEach(config => {
-            const newBookmark = document.createElement('div');
-            newBookmark.className = 'bookmark';
-            newBookmark.setAttribute('data-tab', config.tab);
-            newBookmark.textContent = config.text;
-
-            if (firstBookmark) {
-                bookmarksContainer.insertBefore(newBookmark, firstBookmark);
-            } else {
-                bookmarksContainer.appendChild(newBookmark);
-            }
-        });
-
-        console.log(`✅ 成功添加 ${sortedConfigs.length} 个书签标签`);
-        console.log('✅ 书签配置系统已启动，点击左上角齿轮图标进行配置');
-
-    } catch (error) {
-        console.error('初始化书签配置系统时出错:', error);
     }
 
+    // 2. 合并配置和选项
+    const settings = {
+        api_url: config.api_url,
+        api_key: config.api_key,
+        model: config.model,
+        source: config.source || config.api_type || 'openai',
+        max_tokens: options.max_tokens || config.max_tokens || 1000,
+        temperature: options.temperature || config.temperature || 0.7,
+        top_p: options.top_p || config.top_p,
+        frequency_penalty: options.frequency_penalty || config.frequency_penalty,
+        presence_penalty: options.presence_penalty || config.presence_penalty,
+    };
 
+    // 3. 处理消息格式
+    let formattedMessages;
+    if (typeof messages === 'string') {
+        formattedMessages = [{ role: 'user', content: messages }];
+    } else if (Array.isArray(messages)) {
+        formattedMessages = messages;
+    } else {
+        return {
+            success: false,
+            error: '消息格式错误，应为字符串或消息数组',
+            data: null
+        };
+    }
 
-})();
+    // 4. 发送请求
+    try {
+        const response = await sendRequest(settings, formattedMessages);
+        return {
+            success: true,
+            data: response,
+            error: null
+        };
+    } catch (e) {
+        console.error('[Nova API] 请求失败:', e);
+        return {
+            success: false,
+            error: e.message,
+            data: null
+        };
+    }
+}
+
+async function sendRequest(settings, messages) {
+    const { api_url, api_key, model, source } = settings;
+    
+    // 确保 URL 没有尾部斜杠
+    const baseUrl = api_url.endsWith('/') ? api_url.slice(0, -1) : api_url;
+
+    let endpoint = '';
+    let headers = { 'Content-Type': 'application/json' };
+    let body = {};
+
+    // 根据不同 API 源构建请求
+    const isGeminiType = ['makersuite', 'vertexai', 'proxy-gemini', 'gemini-secondary'].includes(source);
+
+    if (isGeminiType) {
+        // Gemini API 格式
+        endpoint = `${baseUrl}/${model}:generateContent?key=${api_key}`;
+        
+        // 转换消息格式为 Gemini 格式
+        const contents = messages.map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        body = {
+            contents: contents,
+            generationConfig: buildGeminiConfig(settings)
+        };
+    } else {
+        // OpenAI 兼容 API 格式
+        endpoint = `${baseUrl}/chat/completions`;
+        headers['Authorization'] = `Bearer ${api_key}`;
+        
+        body = {
+            model: model,
+            messages: messages,
+            ...buildOpenAIConfig(settings)
+        };
+    }
+
+    // 发送请求
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 300)}`);
+    }
+
+    const data = await response.json();
+
+    // 解析响应
+    let responseText = '';
+    if (isGeminiType) {
+        responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!responseText) {
+            throw new Error('Gemini API 未返回有效响应');
+        }
+    } else {
+        responseText = data.choices?.[0]?.message?.content;
+        if (!responseText) {
+            throw new Error('OpenAI API 未返回有效响应');
+        }
+    }
+
+    return responseText;
+}
+ 
+function buildGeminiConfig(settings) {
+    const config = {};
+    
+    if (settings.max_tokens) {
+        config.maxOutputTokens = settings.max_tokens;
+    }
+    if (settings.temperature !== undefined) {
+        config.temperature = settings.temperature;
+    }
+    if (settings.top_p !== undefined) {
+        config.topP = settings.top_p;
+    }
+
+    return config;
+}
+
+ 
+function buildOpenAIConfig(settings) {
+    const config = {};
+    
+    if (settings.max_tokens) {
+        config.max_tokens = settings.max_tokens;
+    }
+    if (settings.temperature !== undefined) {
+        config.temperature = settings.temperature;
+    }
+    if (settings.top_p !== undefined) {
+        config.top_p = settings.top_p;
+    }
+    if (settings.frequency_penalty !== undefined) {
+        config.frequency_penalty = settings.frequency_penalty;
+    }
+    if (settings.presence_penalty !== undefined) {
+        config.presence_penalty = settings.presence_penalty;
+    }
+
+    return config;
+}
+
+/**
+ * 流式请求函数（可选实现）
+ * @param {string|Array} messages - 用户消息
+ * @param {Function} onChunk - 每次接收到数据块时的回调
+ * @param {Object} options - 可选参数
+ * @returns {Promise<Object>}
+ */
+async function sendStreamRequest(messages, onChunk, options = {}) {
+    const config = loadApiConfig();
+    if (!config) {
+        return {
+            success: false,
+            error: 'API 配置未找到或未启用',
+            data: null
+        };
+    }
+
+    const settings = {
+        ...config,
+        ...options
+    };
+
+    const { api_url, api_key, model, source } = settings;
+    const baseUrl = api_url.endsWith('/') ? api_url.slice(0, -1) : api_url;
+
+    // 格式化消息
+    let formattedMessages;
+    if (typeof messages === 'string') {
+        formattedMessages = [{ role: 'user', content: messages }];
+    } else {
+        formattedMessages = messages;
+    }
+
+    const isGeminiType = ['makersuite', 'vertexai', 'proxy-gemini', 'gemini-secondary'].includes(source);
+
+    if (isGeminiType) {
+        // Gemini 流式 API
+        const endpoint = `${baseUrl}/${model}:streamGenerateContent?key=${api_key}`;
+        const contents = formattedMessages.map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        const body = {
+            contents: contents,
+            generationConfig: buildGeminiConfig(settings)
+        };
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n').filter(line => line.trim());
+
+                for (const line of lines) {
+                    try {
+                        const data = JSON.parse(line);
+                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) {
+                            fullText += text;
+                            onChunk(text);
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+            }
+
+            return { success: true, data: fullText, error: null };
+        } catch (e) {
+            return { success: false, error: e.message, data: null };
+        }
+    } else {
+        // OpenAI 流式 API
+        const endpoint = `${baseUrl}/chat/completions`;
+        const body = {
+            model: model,
+            messages: formattedMessages,
+            stream: true,
+            ...buildOpenAIConfig(settings)
+        };
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${api_key}`
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n').filter(line => line.startsWith('data: '));
+
+                for (const line of lines) {
+                    const data = line.replace('data: ', '');
+                    if (data === '[DONE]') continue;
+
+                    try {
+                        const json = JSON.parse(data);
+                        const content = json.choices?.[0]?.delta?.content;
+                        if (content) {
+                            fullText += content;
+                            onChunk(content);
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+            }
+
+            return { success: true, data: fullText, error: null };
+        } catch (e) {
+            return { success: false, error: e.message, data: null };
+        }
+    }
+}
+
+ 
+
 window.GameAPI = {
     // 定义一个属性 'settings'
     get assaData() {
