@@ -24549,7 +24549,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
             // 初始化完成后，也为角色计算一次衍生属性，确保一切都准备就绪
             if (vars.play_character_data && Object.keys(vars.play_character_data).length > 0) {
                  // _updateDerivedAttributes 也需要存在
-                _updateDerivedAttributes(vars.play_character_data);
+                window.worldHelper._updateDerivedAttributes(vars.play_character_data);
             }
 
             return vars;
@@ -24585,6 +24585,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         processFinalMessageModules:processFinalMessageModules,
         showNovaAlert:showNovaAlert,
         processUpdateMemoryCommands:processUpdateMemoryCommands,
+        _updateDerivedAttributes:_updateDerivedAttributes,
         tryParseJson:tryParseJson,
         show: async () => {
              const vars = await getVariables({ type: 'chat' });
@@ -30559,7 +30560,7 @@ if (match) {
         }
         if (operationsFound) {
             // 在所有操作完成后，统一计算衍生属性
-            _updateDerivedAttributes(playDataToUpdate);
+            window.worldHelper._updateDerivedAttributes(playDataToUpdate);
           let taskStartDateOverride = null;
     if (originalStatData.world && originalStatData.world.task &&
         statDataToUpdate.world && statDataToUpdate.world.task) {
