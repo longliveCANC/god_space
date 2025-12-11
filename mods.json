@@ -327,7 +327,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["功能脚本"],
-    "description": "[需3.4.5版本及以上]开启该脚本并外挂该世界书后，哈基米可以直接修改你的血量上限，而不是由耐力加成。",
+    "description": "[需3.4.5版本及以上]开启该脚本并外挂该世界书后，哈基米可以直接修改你的血量上限，而不再由耐力加成。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod07.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-解锁血量上限.json",
  "previewImage": ""
