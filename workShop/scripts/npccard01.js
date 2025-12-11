@@ -81,6 +81,7 @@
 
             /* 悬浮球 */
             .mod01-floater {
+            z-index:9;
                 position: fixed; top: 100px; left: 20px;
                 width: 48px; height: 48px;
                 background: var(--container-bg-color);
