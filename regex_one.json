@@ -13372,6 +13372,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                 <div class="shop-header-controls">
  
         <button id="enter-gacha01-btn" class="control-btn gacha-btn" style="margin-right: 8px; display: none;">进入抽卡</button>
+        <button id="clear-items-btn" class="control-btn" style="margin-right: 8px;">清空</button>
                     <button id="generate-items-btn" class="control-btn" style="margin-right: 8px;">生成</button>
                     <input type="text" id="shop-search-input" placeholder="搜索名称、效果、描述…">
                     <button id="back-from-shop-btn">← 返回终端</button>
@@ -13785,7 +13786,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 
                 <div class="setting-item-column" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
     <div class="setting-item" style="margin-bottom: 10px;">
-        <label>启用第二API (暂时只能用于商店)</label>
+        <label>启用第二API (若不启用，则默认都使用酒馆的主api。目前异步变量只能默认用主api)</label>
         <div class="switch-container">
             <button id="enable-custom-api-toggle" class="switch-btn" data-state="off">关闭</button>
         </div>
@@ -14481,7 +14482,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.5';
+let current_game_version = '3.4.6';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -31102,7 +31103,7 @@ batches = 1;
             { type: 'chat' }
   );
  
-    const applyCustomApi = (isContinuationVar === true && localStorage.getItem('enable_custom_api_v2') === 'true'); // 假设开关名
+    const applyCustomApi = (isContinuationVar === true && localStorage.getItem('enable_custom_api_v2') === 'true');  
     const activeCustomApi = applyCustomApi ? customApiSettings : undefined;
 
 // ===== 新增：捕获提示词的逻辑 =====
@@ -39366,7 +39367,28 @@ const randomShopDB = {
             };
         });
     },
+       // 清空所有商品
+    async clearAllItems() {
+        const db = await this.initDB();
+        return new Promise((resolve, reject) => {
+            // 开启一个读写事务
+            const transaction = db.transaction(this.STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(this.STORE_NAME);
 
+            // 使用 clear() 方法清空整个对象仓库
+            const request = store.clear();
+
+            request.onsuccess = () => {
+                console.log('All items have been cleared from the database.');
+                resolve();
+            };
+
+            request.onerror = (event) => {
+                console.error('Error clearing items:', event.target.error);
+                reject('Error clearing items');
+            };
+        });
+    },
     // 获取所有商品
     async getAllItems() {
         const db = await this.initDB();
@@ -39386,7 +39408,30 @@ const randomShopDB = {
         });
     }
 };
+    // 1. 获取清空按钮的引用
+    const clearButton = document.getElementById('clear-items-btn');
 
+    // 2. 检查按钮是否存在
+    if (clearButton) {
+        // 3. 为按钮添加点击事件监听器
+        clearButton.addEventListener('click', async () => {
+            // 弹出确认框，防止用户误操作
+            if (confirm('您确定要清空所有随机商品吗？此操作不可撤销。')) {
+                try {
+                    // 调用数据库的清空方法
+                    await randomShopDB.clearAllItems();
+                    alert('所有商品已成功清空！');
+                    // 可选：清空后刷新页面或更新UI
+                    // location.reload();
+                } catch (error) {
+                    console.error('Failed to clear items:', error);
+                    alert('清空商品时发生错误，请查看控制台。');
+                }
+            }
+        });
+    } else {
+        console.warn('Button with ID "clear-items-btn" not found.');
+    }
  async function getRandomShopItems() {
     try {
         // 第1步：从数据库获取商品数据（这是对象数组）
@@ -39443,7 +39488,7 @@ function getRandomPrizeRange() {
  * @returns {Array} An array of items that fall within the specified price range.
  */
 async function getItemsInPriceRange(min, max) {
-    const randomItems =  await getRandomShopItems();
+     randomItems =  await getRandomShopItems();
     // Combine fixed and random items into a single pool for selection.
     const allItems = [...fixedItems, ...randomItems];
 
@@ -39620,6 +39665,7 @@ function SafeGetValue(value) {
  * 修改：商店初始化，移除旧的随机商品解析
  */
  function initializeShopData() {
+    
     // --- 1. 新增：填充顶部的货币信息 ---
   
     const currencyContainer = document.getElementById('shop-currency-display');
@@ -41159,7 +41205,7 @@ await applyThemeAndData();
 
        // --- Nova为你添加的全新小球与Modal交互逻辑 ---
     document.querySelectorAll('.orb').forEach(orb => {
-        orb.addEventListener('click', () => {
+        orb.addEventListener('click', async () => {
             const modalId = orb.dataset.modalId;
             if (modalId) {
                 // 特殊处理商店
@@ -41170,7 +41216,7 @@ await applyThemeAndData();
                         modalContainer.appendChild(shopWrapper); // 将商店内容移动到Modal中
                         shopWrapper.classList.add('active');
                         showModal(modalId);
-
+       randomItems =  await getRandomShopItems();
                         // 初始化商店数据
                         if (playCharacterData) {
                             initializeShopData();
@@ -44324,59 +44370,124 @@ const processApiResponse = async (responseText) => {
 };
 
  function extractJsonFromResponse(responseText) {
-    // 方法1: 优先查找 Markdown JSON 代码块 (最准确)
-    const jsonBlockMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+    /**
+     * 内部帮助函数：使用堆栈计数法寻找匹配的闭合括号位置
+     * 能够忽略字符串内部的括号，精准定位 JSON 结束位置
+     */
+    function findBalancedClosing(text, startIndex) {
+        let depth = 0;
+        let inString = false;
+        let escape = false;
+
+        for (let i = startIndex; i < text.length; i++) {
+            const char = text[i];
+
+            // 处理转义字符 (如 \")
+            if (escape) {
+                escape = false;
+                continue;
+            }
+            if (char === '\\') {
+                escape = true;
+                continue;
+            }
+
+            // 处理字符串状态 (忽略字符串内的 [])
+            if (char === '"') {
+                inString = !inString;
+                continue;
+            }
+
+            // 如果不在字符串内，处理层级
+            if (!inString) {
+                if (char === '[') {
+                    depth++;
+                } else if (char === ']') {
+                    depth--;
+                    // 当层级归零时，找到了匹配的结束括号
+                    if (depth === 0) {
+                        return i;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    // ================= 提取逻辑开始 =================
+
+    let extractedContent = null;
+
+    // 1. 优先尝试 Markdown JSON 代码块 (最准确)
+    const jsonBlockMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     if (jsonBlockMatch) {
-        return jsonBlockMatch[1].trim();
+        extractedContent = jsonBlockMatch[1].trim();
     }
 
-    // 方法2: 查找普通代码块
-    const codeBlockMatch = responseText.match(/```\s*([\s\S]*?)\s*```/);
-    if (codeBlockMatch) {
-        const content = codeBlockMatch[1].trim();
-        // 确保是 JSON 数组
-        if (content.startsWith('[')) {
-            return content;
+    // 2. 如果没有代码块，使用智能扫描 + 堆栈计数
+    if (!extractedContent) {
+        // 查找可能的 JSON 数组开头
+        // 优先查找 [[ 或 [{ 这种嵌套结构（特征更明显，不易误判）
+        // 其次查找 [" (普通字符串数组)
+        let startMatch = responseText.match(/\[\s*(?:\[|\{)/);
+
+        // 如果没找到嵌套结构，再尝试找普通数组，但要小心
+        if (!startMatch) {
+            startMatch = responseText.match(/\[\s*"/);
+        }
+
+        if (startMatch) {
+            const startIndex = startMatch.index;
+            const endIndex = findBalancedClosing(responseText, startIndex);
+
+            if (endIndex !== -1) {
+                extractedContent = responseText.substring(startIndex, endIndex + 1);
+            }
         }
     }
 
-    // 方法3: 智能查找数据数组 (关键修复)
-    // 之前的正则 /\[[\s\S]*\]/ 会匹配到提示词中的 "[名称, 价格...]"
-    // 这里我们查找以 [ 开头，且紧接着是 " (双引号) 或 [ (嵌套数组) 的内容
-    // 这样可以有效过滤掉中文说明文本
-
-    // 寻找第一个符合 JSON 数据特征的起始位置
-    const dataStartIndex = responseText.search(/\[\s*(?:\[|")/);
-
-    if (dataStartIndex !== -1) {
-        // 从这个位置开始截取剩余文本
-        const potentialJson = responseText.substring(dataStartIndex);
-        // 找到最后一个 ] 作为结束
-        const lastBracketIndex = potentialJson.lastIndexOf(']');
-        if (lastBracketIndex !== -1) {
-            return potentialJson.substring(0, lastBracketIndex + 1);
+    // 3. 如果还是没找到，尝试最后的保底（整个文本找首尾）
+    if (!extractedContent) {
+        const firstOpen = responseText.indexOf('[');
+        const lastClose = responseText.lastIndexOf(']');
+        if (firstOpen !== -1 && lastClose > firstOpen) {
+            extractedContent = responseText.substring(firstOpen, lastClose + 1);
         }
     }
 
-    // 方法4: 保底策略 - 尝试从后往前找
-    // 思考模型通常把结果放在最后。如果前面都失败了，找最后一个完整的 [] 块
-    const lastClose = responseText.lastIndexOf(']');
-    if (lastClose !== -1) {
-        // 往回找对应的 [
-        // 注意：这里简单找可能会有问题，但作为最后的保底可以一试
-        const openBracket = responseText.lastIndexOf('[', lastClose);
-        if (openBracket !== -1) {
-            const content = responseText.substring(openBracket, lastClose + 1);
-            // 简单验证一下是否包含双引号，避免提取到空数组或格式说明
-            if (content.includes('"')) {
-                return content;
+    // ================= 验证与修复逻辑 =================
+
+    if (extractedContent) {
+        try {
+            // 尝试直接解析，验证是否有效
+            JSON.parse(extractedContent);
+            return extractedContent;
+        } catch (e) {
+            console.warn('JSON 解析失败，尝试自动修复常见错误...', e);
+
+            // 修复 1: 去除末尾多余的逗号 (AI 常见错误: [1, 2,])
+            // 匹配：逗号 + 任意空白 + 结束括号/花括号
+            let fixedContent = extractedContent.replace(/,\s*([\]}])/g, '$1');
+
+            // 修复 2: 尝试将单引号替换为双引号 (如果 AI 用了 JS 格式而非 JSON)
+            // 注意：这只是简单替换，复杂的字符串内含单引号可能会出错，但作为保底值得一试
+            if (!fixedContent.includes('"') && fixedContent.includes("'")) {
+                 fixedContent = fixedContent.replace(/'/g, '"');
+            }
+
+            try {
+                JSON.parse(fixedContent);
+                return fixedContent; // 修复成功
+            } catch (e2) {
+                console.error('JSON 自动修复失败', e2);
+                // 即使修复失败，也返回提取到的原始内容，交给后续流程处理（可能会有更高级的解析器）
+                return extractedContent;
             }
         }
     }
 
     return null;
 }
- 
   // 真正的生成执行函数
     const executeGeneration = async (keywords = "") => {
          hideModal("keyword-modal"); // 使用正确的函数名
@@ -44406,7 +44517,7 @@ const processApiResponse = async (responseText) => {
                物品则随意。
             - 描述 (string): 一段不超过150字的生动描述，解释其背景和作用。
 
-            若用户无要求，则请生成12个新的项目，其中必须包含至少3个“技能”和3个“血统”。
+            若用户无要求，则请生成24个新的项目，其中必须包含至少6个“技能”和6个“血统”。
             若用户有要求，则按照用户要求生成。生成的类别不得超出物品、技能和血统。
             ${keywordInstruction}
             
@@ -44424,42 +44535,93 @@ const processApiResponse = async (responseText) => {
             showModal('shop-modal', 'API错误', error.message);
         }
     };
-const generateContent = async (promptText) => {
+    const generateContent = async (promptText) => {
     mainGenerateBtn.textContent = '生成中…';
     mainGenerateBtn.disabled = true;
-    
+
     try {
+        // ==================== 新增/修改部分开始 ====================
+
+        // 1. 检查是否启用第二 API
+        const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+
+        if (!isEnabled) {
+            // 2. 未启用时的处理：弹出提示框
+            const userConfirmed = confirm('未启用第二API，将使用酒馆主API生成商品，是否确认？');
+
+            if (!userConfirmed) {
+                throw new Error('用户取消生成');
+            }
+
+            // 3. 准备 generateRaw 配置
+            // 根据提供的 TS 定义，generateRaw 使用 ordered_prompts 来控制发送内容
+            let rawConfig = {
+                // 不设置 custom_api 字段，默认使用酒馆当前的主 API 连接
+                // 设置 max_chat_history 为 0，避免当前聊天记录干扰物品生成
+                max_chat_history: 0,
+                ordered_prompts: []
+            };
+
+            // 4. 处理 promptText (可能是字符串，也可能是符合格式的数组)
+            if (Array.isArray(promptText)) {
+                // 如果已经是数组 (RolePrompt[])，直接使用
+                rawConfig.ordered_prompts = promptText;
+            } else {
+                // 如果是字符串，构造为 user 消息
+                // 这里也可以根据需要添加 system prompt，例如：
+                // rawConfig.ordered_prompts.push({ role: 'system', content: '你是一个物品生成器...' });
+                rawConfig.ordered_prompts = [
+                    { role: 'user', content: promptText }
+                ];
+            }
+
+            // 5. 调用酒馆主 API
+            // 注意：主 API 的参数（温度、max_tokens等）将使用酒馆当前选中的“文本生成预设”
+            const generatedText = await generateRaw(rawConfig);
+
+            return generatedText;
+        }
+
+        // ==================== 新增/修改部分结束 ====================
+
+        // 下面是原有的逻辑（当启用第二 API 时执行）
+
         // 调用通用 API 函数
         const result = await sendApiRequest(promptText, {
             max_tokens: 8192,
             temperature: 1,
             top_p: 0.95
         });
-        
+
         if (!result.success) {
             let errorMessage = `生成失败: ${result.error}`;
-            
+
             // 检查是否是配置问题
             if (result.error.includes('配置未找到') || result.error.includes('未启用')) {
                 errorMessage = 'API 配置未找到或未启用。\n\n请前往设置页面：\n1. 启用自定义 API\n2. 填写 API URL、API Key 和模型名称';
                 // 可选：清除旧的 Gemini API Key
                 localStorage.removeItem('geminiApiKey');
             }
-            
+
             throw new Error(errorMessage);
         }
-        
+
         return result.data;
-        
+
     } catch (error) {
         console.error('[生成失败]', error);
+        // 如果是用户取消，不抛出错误到控制台，或者可以做特殊处理
+        if (error.message !== '用户取消生成') {
+             // 这里可以加个 alert 或者 toast 提示错误
+             // alert(error.message);
+        }
         throw error;
     } finally {
         mainGenerateBtn.textContent = '生成';
         mainGenerateBtn.disabled = false;
     }
 };
-    // 主生成按钮只负责打开模态框
+   // 主生成按钮只负责打开模态框
     mainGenerateBtn.addEventListener('click', () => {
         //console.log("生成按钮被点击，准备打开模态框");
         keywordInput.value = ''; // 清空上次的输入
