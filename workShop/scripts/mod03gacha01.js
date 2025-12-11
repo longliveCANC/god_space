@@ -384,7 +384,7 @@
                 // 安全获取积分
                 try {
                     if (window.GameAPI && window.GameAPI.playCharacterData) {
-                        currentPoints = window.GameAPI.playCharacterData.货币段.积分[0];
+                        currentPoints = window.GameAPI.playCharacterData.货币.积分[0];
                     } else {
                         console.warn("无法读取 playCharacterData，跳过积分检查");
                         currentPoints = 999999; // 调试模式或获取失败时允许抽卡
@@ -496,8 +496,8 @@
                 if (window.GameAPI) {
                     // 1. 前端立刻扣除积分 (更新显示)
                     // try {
-                    //     if(window.GameAPI.playCharacterData && window.GameAPI.playCharacterData.货币段) {
-                    //         window.GameAPI.playCharacterData.货币段.积分[0] -= cost;
+                    //     if(window.GameAPI.playCharacterData && window.GameAPI.playCharacterData.货币) {
+                    //         window.GameAPI.playCharacterData.货币.积分[0] -= cost;
                     //         console.log(`前端积分已扣除: -${cost}`);
                     //     }
                     // } catch (e) { console.error("前端扣费失败:", e); }

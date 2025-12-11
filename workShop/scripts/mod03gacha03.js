@@ -335,7 +335,7 @@
         let currentPoints = 0;
         try {
             if (window.GameAPI && window.GameAPI.playCharacterData) {
-                currentPoints = window.GameAPI.playCharacterData.货币段.积分[0];
+                currentPoints = window.GameAPI.playCharacterData.货币.积分[0];
             } else {
                 currentPoints = 999999; // Fallback
             }

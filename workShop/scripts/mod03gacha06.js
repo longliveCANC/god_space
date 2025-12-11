@@ -534,7 +534,7 @@ ctx.fillText(`等级 ${tierInfo.tier}`, w/2, 200);
             let currentPoints = 0;
             try {
                 if (window.GameAPI && window.GameAPI.playCharacterData) {
-                    currentPoints = window.GameAPI.playCharacterData.货币段.积分[0];
+                    currentPoints = window.GameAPI.playCharacterData.货币.积分[0];
                 } else {
                     currentPoints = 999999;
                 }
