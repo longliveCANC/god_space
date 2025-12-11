@@ -321,5 +321,16 @@
     "worldBookUrl": "",
  "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 11.png"
  
-  }  
+  }  ,  {
+    "id": "mod07-自定义属性",
+    "name": "自定义属性",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["功能脚本"],
+    "description": "开启该脚本后，可以自定义你的人物属性，并存储为模板。位置在设置界面的将被右边的扳手。注意，自定义属性之后，记得关闭💫2手动可选:新-分阶段人物状态说明，不然你会变得弱不禁风。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod07.js",
+    "worldBookUrl": "",
+ "previewImage": ""
+ 
+  } 
 ]

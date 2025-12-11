@@ -14487,7 +14487,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.6';
+let current_game_version = '3.4.7';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -16918,11 +16918,20 @@ all_in: {
             const maxHp = val.playCharacterData?.衍生属性?.生命值?.上限?.[0];
             return typeof maxHp === 'number' && maxHp > 200;
         },
+legendary_physique: (val) =>
+    ["力量", "敏捷", "耐力"].some(attr =>
+        val?.playCharacterData?.基础属性?.生理属性?.[attr]?.基础?.[0] >= 8
+    ),
 
-        // ========== 属性与技能成长 ==========
-        legendary_physique: (val) => ["力量", "敏捷", "耐力"].some(attr => val.playCharacterData.基础属性.生理属性[attr].基础[0] >= 8),
-        legendary_mind: (val) => ["智力", "感知", "决心"].some(attr => val.playCharacterData.基础属性.心智属性[attr].基础[0] >= 8),
-        legendary_presence: (val) => ["风度", "操控", "沉着"].some(attr => val.playCharacterData.基础属性.互动属性[attr].基础[0] >= 8),
+legendary_mind: (val) =>
+    ["智力", "感知", "决心"].some(attr =>
+        val?.playCharacterData?.基础属性?.心智属性?.[attr]?.基础?.[0] >= 8
+    ),
+
+legendary_presence: (val) =>
+    ["风度", "操控", "沉着"].some(attr =>
+        val?.playCharacterData?.基础属性?.互动属性?.[attr]?.基础?.[0] >= 8
+    ),
         master_of_one: (val) => {
             for (const category of Object.values(val.playCharacterData.基础技能)) {
                 for (const skill of Object.values(category)) {
@@ -16942,9 +16951,9 @@ all_in: {
         },
         specialist: (val) => {
             const sums = {
-                phys: Object.values(val.playCharacterData.基础技能.生理技能).reduce((acc, s) => acc + s[0], 0),
-                mental: Object.values(val.playCharacterData.基础技能.心智技能).reduce((acc, s) => acc + s[0], 0),
-                social: Object.values(val.playCharacterData.基础技能.互动技能).reduce((acc, s) => acc + s[0], 0)
+                phys: Object.values(val.playCharacterData?.基础技能?.生理技能).reduce((acc, s) => acc + s[0], 0),
+                mental: Object.values(val.playCharacterData?.基础技能?.心智技能).reduce((acc, s) => acc + s[0], 0),
+                social: Object.values(val.playCharacterData?.基础技能?.互动技能).reduce((acc, s) => acc + s[0], 0)
             };
             return sums.phys > (sums.mental + sums.social) ||
                    sums.mental > (sums.phys + sums.social) ||
@@ -34308,25 +34317,40 @@ document.getElementById('header-difficulty').textContent = `${SafeGetValue(statD
 
 }
 
-// --- 新增：获取并解析状态加成 (增强版) ---
-function getStatusBonuses(statData) {
+  function getStatusBonuses(statData) {
     const bonuses = {};
     const statusString = _.get(statData, "user.status[0]", "");
     if (!statusString) {
         return bonuses;
     }
 
-    // 定义属性和技能的分类，用于批量处理
-    const attributeCategories = {
-        '生理属性': ['力量', '敏捷', '耐力'],
-        '心智属性': ['智力', '感知', '决心'],
-        '互动属性': ['风度', '操控', '沉着'],
-        '全属性': ['力量', '敏捷', '耐力', '智力', '感知', '决心', '风度', '操控', '沉着'],
-        '生理技能': ['运动', '肉搏', '驾驶', '枪械', '手上功夫', '隐藏', '求生', '白刃', '弓箭'],
-        '心智技能': ['学识', '电脑', '手艺', '调查', '医学', '神秘学', '科学'],
-        '互动技能': ['动物沟通', '感受', '表达', '胁迫', '交际', '掩饰'],
-        '全技能': ['运动', '肉搏', '驾驶', '枪械', '手上功夫', '隐藏', '求生', '白刃', '弓箭', '学识', '电脑', '手艺', '调查', '医学', '神秘学', '科学', '动物沟通', '感受', '表达', '胁迫', '交际', '掩饰']
-    };
+    // 动态生成属性和技能的分类
+    const attributeCategories = {};
+    const allAttributes = [];
+    const allSkills = [];
+    
+    // 从 characterData 动态提取基础属性分类
+    if (playCharacterData['基础属性']) {
+        for (const [subCategory, items] of Object.entries(playCharacterData['基础属性'])) {
+            const itemNames = Object.keys(items);
+            attributeCategories[subCategory] = itemNames;
+            allAttributes.push(...itemNames);
+        }
+        attributeCategories['全属性'] = allAttributes;
+attributeCategories['全基础属性'] = allAttributes;
+    }
+    
+    // 从 characterData 动态提取基础技能分类
+    if (playCharacterData['基础技能']) {
+        for (const [subCategory, items] of Object.entries(playCharacterData['基础技能'])) {
+            const itemNames = Object.keys(items);
+            attributeCategories[subCategory] = itemNames;
+            allSkills.push(...itemNames);
+        }
+        attributeCategories['全技能'] = allSkills;
+attributeCategories['全基础技能'] = allSkills;
+    }
+    
     // 为了更快的查找，创建一个反向映射，知道每个子属性属于哪个大类
     const subAttributeMap = {};
     for (const category in attributeCategories) {
@@ -34336,35 +34360,39 @@ function getStatusBonuses(statData) {
         });
     }
 
+      let stringsToParse = [];
     const matches = statusString.match(/【[^】]+】/g);
 
     if (matches) {
-        matches.forEach(match => {
-            const content = match.substring(1, match.length - 1);
-            const attributes = content.split(/;|；/).map(attr => attr.trim()).filter(attr => attr !== "");
-
-            attributes.forEach(attr => {
-                // 正则匹配 "名称+/-数值" (暂不支持百分比)
-                const parts = attr.match(/^(.+?)\s*([+-]\d+)$/) || attr.match(/^(.+?)[:|：]\s*([+-]?\d+)$/);
-
-                if (parts && parts.length === 3) {
-                    let name = parts[1].trim();
-                    const value = parseInt(parts[2].trim().replace('+', ''), 10);
-
-                    // 检查是类别还是单个属性
-                    if (attributeCategories[name]) {
-                        // 是一个类别，批量应用
-                        attributeCategories[name].forEach(subAttr => {
-                            bonuses[subAttr] = (bonuses[subAttr] || 0) + value;
-                        });
-                    } else {
-                        // 是单个属性
-                        bonuses[name] = (bonuses[name] || 0) + value;
-                    }
-                }
-            });
-        });
+        stringsToParse = matches.map(match => match.substring(1, match.length - 1));
+    } else if (statusString.trim()) {
+        stringsToParse.push(statusString);
     }
+
+    stringsToParse.forEach(content => {
+        const attributes = content.split(/;|；/).map(attr => attr.trim()).filter(attr => attr !== "");
+
+        attributes.forEach(attr => {
+            // 正则匹配 "名称+/-数值" (暂不支持百分比)
+            const parts = attr.match(/^(.+?)\s*([+-]\d+)$/) || attr.match(/^(.+?)[:|：]\s*([+-]?\d+)$/);
+
+            if (parts && parts.length === 3) {
+                let name = parts[1].trim();
+                const value = parseInt(parts[2].trim().replace('+', ''), 10);
+
+                // 检查是类别还是单个属性
+                if (attributeCategories[name]) {
+                    // 是一个类别，批量应用
+                    attributeCategories[name].forEach(subAttr => {
+                        bonuses[subAttr] = (bonuses[subAttr] || 0) + value;
+                    });
+                } else {
+                    // 是单个属性
+                    bonuses[name] = (bonuses[name] || 0) + value;
+                }
+            }
+        });
+    });
     return bonuses;
 }
 
@@ -34865,141 +34893,113 @@ function populateCharacterPage(playData, statData, assaData) {
         }
     }
 
-    // --- 右侧面板: 渲染新的整合模块 (核心改动) ---
-    const statsContainer = document.getElementById('main-stats-container');
-    statsContainer.innerHTML = ''; // 清空容器
-    const currentXp = playData.货币.经验值[0];
-    const equipmentBonuses = getEquipmentBonuses(statData, assaData);
-   const statusBonuses = getStatusBonuses(statData);
-    const moduleMapping = [
-        { name: "生理", attr: "生理属性", skill: "生理技能" },
-        { name: "心智", attr: "心智属性", skill: "心智技能" },
-        { name: "互动", attr: "互动属性", skill: "互动技能" }
-    ];
+   // --- 右侧面板: 渲染新的整合模块 (核心改动) ---
+const statsContainer = document.getElementById('main-stats-container');
+statsContainer.innerHTML = ''; // 清空容器
+const currentXp = playData.货币.经验值[0];
+const equipmentBonuses = getEquipmentBonuses(statData, assaData);
+const statusBonuses = getStatusBonuses(statData);
 
-    moduleMapping.forEach(moduleInfo => {
-        const moduleDiv = document.createElement('div');
-        moduleDiv.className = 'stat-module';
+// 动态渲染属性模块
+const attrCategories = playData.基础属性 || {};
+for (const categoryName in attrCategories) {
+    const moduleDiv = document.createElement('div');
+    moduleDiv.className = 'stat-module';
 
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'stat-module-title';
-        titleDiv.textContent = moduleInfo.name;
-        titleDiv.onclick = () => moduleDiv.classList.toggle('collapsed');
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'stat-module-title';
+    titleDiv.textContent = categoryName; // 使用数据中的分类名作为标题
+    titleDiv.onclick = () => moduleDiv.classList.toggle('collapsed');
 
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'stat-module-content';
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'stat-module-content';
 
-        // --- 渲染属性 ---
-        let attrHtml = `<div class="sub-category-title">基础属性</div>`;
-        const attrCategoryData = playData.基础属性[moduleInfo.attr];
-        for (const attrName in attrCategoryData) {
-            const attr = attrCategoryData[attrName];
-            const dataPath = `基础属性.${moduleInfo.attr}.${attrName}.基础`;
-              const equipBonus = equipmentBonuses[attrName] || 0;
-            const statusBonus = statusBonuses[attrName] || 0; // 获取状态加成
+    let attrHtml = '';
+    const attrCategoryData = attrCategories[categoryName];
+    for (const attrName in attrCategoryData) {
+        const attr = attrCategoryData[attrName];
+        // 确保数据结构正确，防止因用户误操作导致页面崩溃
+        if (!attr || !attr.基础 || !Array.isArray(attr.基础)) continue;
 
-            const equipBonusHtml = equipBonus !== 0 ? ` <span class="equipment-bonus">(${equipBonus > 0 ? '+' : ''}${equipBonus})</span>` : '';
-            // 新增：生成状态加成的 HTML，并使用新的 'status-modifier' 样式
-            const statusBonusHtml = statusBonus !== 0 ? ` <span class="status-modifier">(${statusBonus > 0 ? '+' : ''}${statusBonus})</span>` : '';
-const legendaryValue = attr.传奇?.[0]; // 如果 attr.传奇 不存在，legendaryValue 会是 undefined，而不是报错
-const legendaryTooltip = attr.传奇?.[1];
+        const dataPath = `基础属性.${categoryName}.${attrName}.基础`;
+        const equipBonus = equipmentBonuses[attrName] || 0;
+        const statusBonus = statusBonuses[attrName] || 0;
 
-const legendaryBonusHtml = legendaryValue > 0
-  ? ` <span class="legendary-value" data-tooltip="${legendaryTooltip}">(+${legendaryValue})</span>`
-  : '';
-           
-            const upgradeCost = calculateXpCost(attr.基础[0], 'attribute');
+        const equipBonusHtml = equipBonus !== 0 ? ` <span class="equipment-bonus">(${equipBonus > 0 ? '+' : ''}${equipBonus})</span>` : '';
+        const statusBonusHtml = statusBonus !== 0 ? ` <span class="status-modifier">(${statusBonus > 0 ? '+' : ''}${statusBonus})</span>` : '';
+
+        const legendaryValue = attr.传奇?.[0];
+        const legendaryTooltip = attr.传奇?.[1];
+        const legendaryBonusHtml = legendaryValue > 0 ? ` <span class="legendary-value" data-tooltip="${legendaryTooltip}">(+${legendaryValue})</span>` : '';
+
+        const upgradeCost = calculateXpCost(attr.基础[0], 'attribute');
+        const canUpgrade = currentXp >= upgradeCost;
+        const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${attrName}" data-level="${attr.基础[0]}" data-type="attribute">+</span>` : '';
+
+        attrHtml += `
+        <div class="attr-item" data-tooltip="${attr.基础[1]}">
+            <span class="attr-name">${attrName}${upgradeButtonHtml}</span>
+            <span class="attr-value">${attr.基础[0]}${equipBonusHtml}${statusBonusHtml}${legendaryBonusHtml}</span>
+        </div>`;
+    }
+    contentDiv.innerHTML = attrHtml;
+    moduleDiv.appendChild(titleDiv);
+    moduleDiv.appendChild(contentDiv);
+    statsContainer.appendChild(moduleDiv);
+}
+
+// 动态渲染技能模块
+const skillCategories = playData.基础技能 || {};
+for (const categoryName in skillCategories) {
+    const moduleDiv = document.createElement('div');
+    moduleDiv.className = 'stat-module';
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'stat-module-title';
+    titleDiv.textContent = categoryName; // 使用数据中的分类名作为标题
+    titleDiv.onclick = () => moduleDiv.classList.toggle('collapsed');
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'stat-module-content';
+
+    let skillHtml = '';
+    const skillCategoryData = skillCategories[categoryName];
+    const skillsToShow = Object.keys(skillCategoryData).filter(skillName =>
+        (skillCategoryData[skillName] && skillCategoryData[skillName][0] > 0) || (equipmentBonuses[skillName] && equipmentBonuses[skillName] !== 0)
+    );
+
+    if (skillsToShow.length > 0) {
+        for (const skillName of skillsToShow) {
+            const skill = skillCategoryData[skillName];
+            // 数据校验
+            if (!Array.isArray(skill)) continue;
+
+            const dataPath = `基础技能.${categoryName}.${skillName}`;
+            const skillBonus = equipmentBonuses[skillName] || 0;
+            const statusSkillBonus = statusBonuses[skillName] || 0;
+
+            const skillBonusHtml = skillBonus !== 0 ? ` <span class="equipment-bonus">(${skillBonus > 0 ? '+' : ''}${skillBonus})</span>` : '';
+            const statusSkillBonusHtml = statusSkillBonus !== 0 ? ` <span class="status-modifier">(${statusSkillBonus > 0 ? '+' : ''}${statusSkillBonus})</span>` : '';
+
+            const upgradeCost = calculateXpCost(skill[0], 'skill');
             const canUpgrade = currentXp >= upgradeCost;
-            const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${attrName}" data-level="${attr.基础[0]}" data-type="attribute">+</span>` : '';
+            const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${skillName}" data-level="${skill[0]}" data-type="skill">+</span>` : '';
 
-            attrHtml += `
-            <div class="attr-item" data-tooltip="${attr.基础[1]}">
-                <span class="attr-name">${attrName}${upgradeButtonHtml}</span>
-                <span class="attr-value">${attr.基础[0]}${equipBonusHtml}${statusBonusHtml}${legendaryBonusHtml}</span>
+            skillHtml += `
+            <div class="skill-item" data-tooltip="${skill[1]}">
+                <span class="skill-name">${skillName}${upgradeButtonHtml}</span>
+                <span class="skill-value">${skill[0]}${skillBonusHtml}${statusSkillBonusHtml}</span>
             </div>`;
         }
-
-        // --- 渲染技能 ---
-        let skillHtml = `<div class="sub-category-title">相关技能</div>`;
-        const skillCategoryData = playData.基础技能[moduleInfo.skill];
-         const skillsToShow = Object.keys(skillCategoryData).filter(skillName =>
-            skillCategoryData[skillName][0] > 0 || (equipmentBonuses[skillName] && equipmentBonuses[skillName] !== 0)
-        );
-        if (skillsToShow.length > 0) {
-            for (const skillName of skillsToShow) {
-                const skill = skillCategoryData[skillName];
-                const dataPath = `基础技能.${moduleInfo.skill}.${skillName}`;
-                 const skillBonus = equipmentBonuses[skillName] || 0;
-                const statusSkillBonus = statusBonuses[skillName] || 0; // 获取技能的状态加成
-
-                const skillBonusHtml = skillBonus !== 0 ? ` <span class="equipment-bonus">(${skillBonus > 0 ? '+' : ''}${skillBonus})</span>` : '';
-                // 新增：生成技能 상태加成的 HTML
-                const statusSkillBonusHtml = statusSkillBonus !== 0 ? ` <span class="status-modifier">(${statusSkillBonus > 0 ? '+' : ''}${statusSkillBonus})</span>` : '';
-                const upgradeCost = calculateXpCost(skill[0], 'skill');
-                const canUpgrade = currentXp >= upgradeCost;
-                const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${skillName}" data-level="${skill[0]}" data-type="skill">+</span>` : '';
-
-                skillHtml += `
-                <div class="skill-item" data-tooltip="${skill[1]}">
-                    <span class="skill-name">${skillName}${upgradeButtonHtml}</span>
-                    <span class="skill-value">${skill[0]}${skillBonusHtml}${statusSkillBonusHtml}</span>
-                </div>`;
-            }
-        } else {
-            skillHtml += `<div class="info-value" style="font-size:0.9em; color: var(--text-secondary-color);">暂无已掌握的${moduleInfo.name}技能</div>`;
-        }
-
-
-        contentDiv.innerHTML = attrHtml + skillHtml;
-        moduleDiv.appendChild(titleDiv);
-        moduleDiv.appendChild(contentDiv);
-        statsContainer.appendChild(moduleDiv);
-    });
-
-    // --- 渲染衍生属性 (保持独立模块) ---
-    // (这部分代码逻辑可以复用，我们把它包装成一个新模块)
-    const derivedContainer = document.createElement('div');
-    derivedContainer.className = 'stat-module';
-    const derivedTitle = document.createElement('div');
-    derivedTitle.className = 'stat-module-title';
-    derivedTitle.textContent = '衍生属性';
-    derivedTitle.onclick = () => derivedContainer.classList.toggle('collapsed');
-    const derivedContent = document.createElement('div');
-    derivedContent.className = 'stat-module-content';
-
-    let derivedHtml = '';
-    const derivedData = playData.衍生属性;
-    // (从你原代码中复制并微调的衍生属性渲染逻辑)
-    for (const key in derivedData) {
-        const dataEntry = derivedData[key];
-        const getBonusHtml = (bonusValue) => !bonusValue ? '' : `<span class="equipment-bonus">(${bonusValue > 0 ? '+' : ''}${bonusValue})</span>`;
-        if (typeof dataEntry[1] === 'string') {
-            const bonus = equipmentBonuses[`衍生属性.${key}`] || 0;
-            derivedHtml += `<div class="attr-item" data-tooltip="${dataEntry[1]}"><span class="attr-name">${key}</span><span class="attr-value">${dataEntry[0]}${getBonusHtml(bonus)}</span></div>`;
-        } else if (typeof dataEntry === 'object') {
-            derivedHtml += `<div class="attr-item sub-category-title" style="border:none; margin: 10px 0 5px 0;">${key}</div>`;
-            for (const subKey in dataEntry) {
-                const subEntry = dataEntry[subKey];
-                if (typeof subEntry[1] === 'string') {
-                    const bonus = equipmentBonuses[`衍生属性.${key}.${subKey}`] || 0;
-                    derivedHtml += `<div class="attr-item" data-tooltip="${subEntry[1]}" style="padding-left:15px;"><span class="attr-name">${subKey}</span><span class="attr-value">${subEntry[0]}${getBonusHtml(bonus)}</span></div>`;
-                } else if (typeof subEntry === 'object') {
-                    derivedHtml += `<div class="attr-item" style="padding-left:15px; color:var(--text-secondary-color);">${subKey}</div>`;
-                    for (const deepKey in subEntry) {
-                        const deepEntry = subEntry[deepKey];
-                        const bonus = equipmentBonuses[`衍生属性.${key}.${subKey}.${deepKey}`] || 0;
-                        if (typeof deepEntry[1] === 'string') {
-                            derivedHtml += `<div class="attr-item" data-tooltip="${deepEntry[1]}" style="padding-left:30px;"><span class="attr-name">${deepKey}</span><span class="attr-value">${deepEntry[0]}${getBonusHtml(bonus)}</span></div>`;
-                        }
-                    }
-                }
-            }
-        }
+    } else {
+        skillHtml += `<div class="info-value" style="font-size:0.9em; color: var(--text-secondary-color);">暂无已掌握的${categoryName}</div>`;
     }
-    derivedContent.innerHTML = derivedHtml;
-    derivedContainer.appendChild(derivedTitle);
-    derivedContainer.appendChild(derivedContent);
-    statsContainer.appendChild(derivedContainer);
+
+    contentDiv.innerHTML = skillHtml;
+    moduleDiv.appendChild(titleDiv);
+    moduleDiv.appendChild(contentDiv);
+    statsContainer.appendChild(moduleDiv);
+}
 
 
     // --- 最后, 调用新函数填充第二个 Tab ---
@@ -39948,11 +39948,7 @@ function showItemDetails(section, item) {
         }
 
 
-/**
- * 新增：根据商品分类生成购买指令
- * @param {object} item - 商品对象
- * @returns {string} - 生成的 memory 指令字符串
- */
+ 
  function getPurchaseCommand(item) {
     const [name, price, category, , effect, description] = item;
     const attributeToCategoryMap = {
@@ -49053,23 +49049,30 @@ setupActionPanel() {
 
     // 4. 需要选择骰池，也需要目标的动作
     let poolChoices = [];
-    if (playerData) {
-        switch (action) {
-            case 'attack':
-                poolChoices = [ ...Object.keys(playerData.基础属性.生理属性), '肉搏', '枪械', '白刃', '弓箭','神秘学','科学' ];
-                break;
-            case 'persuade':
-                 poolChoices = [ ...Object.keys(playerData.基础属性.互动属性), ...Object.keys(playerData.基础技能.互动技能) ];
-                break;
-             case 'scan':
-                 // ⭐ 妈妈的修正魔法在这里！⭐
-                 const mindAttrs = Object.keys(playerData.基础属性.心智属性);
-                 const mindSkills = Object.keys(playerData.基础技能.心智技能);
-                  poolChoices = [...mindAttrs, ...mindSkills].filter(skill => !['医学', '手艺'].includes(skill));
-                 // ⭐ 魔法结束 ⭐
-                break;
-        }
+ if (playerData) {
+    switch (action) {
+        case 'attack':
+            // 如果 生理属性 不存在，则返回空数组 []
+            const physicalAttrs = Object.keys(playerData.基础属性?.生理属性 || {});
+            poolChoices = [ ...physicalAttrs, '肉搏', '枪械', '白刃', '弓箭', '神秘学', '科学' ];
+            break;
+
+        case 'persuade':
+            // 对 互动属性 和 互动技能 都进行保护
+            const socialAttrs = Object.keys(playerData.基础属性?.互动属性 || {});
+            const socialSkills = Object.keys(playerData.基础技能?.互动技能 || {});
+            poolChoices = [ ...socialAttrs, ...socialSkills ];
+            break;
+
+        case 'scan':
+            // ⭐ 妈妈的修正魔法在这里！⭐
+            const mindAttrs = Object.keys(playerData.基础属性?.心智属性 || {});
+            const mindSkills = Object.keys(playerData.基础技能?.心智技能 || {});
+            poolChoices = [...mindAttrs, ...mindSkills].filter(skill => !['医学', '手艺'].includes(skill));
+            // ⭐ 魔法结束 ⭐
+            break;
     }
+}
 
   // 如果没有可用的技能/属性，直接提示并中止
     const availableChoices = poolChoices.filter(c => (this.player.dicePool[c] || 0) > 0);
