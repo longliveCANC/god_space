@@ -25044,7 +25044,7 @@ function cleanupGlobalUIState() {
  
     if (!chatDisplayArea || chatDisplayArea.children.length === 0) {
         console.log("[Nova's Little Helper] 检测到画卷为空，召唤 renderHistory 进行创世重绘...");
-        await renderHistory();  
+        await renderHistory(); 
         return; // 完成使命，优雅退场
     }
 
@@ -25072,7 +25072,7 @@ function cleanupGlobalUIState() {
  
  ensureLoadMoreButtonExists();
  
-initDisplay();
+await initDisplay();
  
 
  
@@ -31971,14 +31971,14 @@ if (isContinuation) {
          // 这是一个备用方案，万一找不到最后一条AI消息
         aiMessage = { role: 'assistant', content: aiFullResponse };
         conversationHistory.push(aiMessage);
-        updateLastMessage(aiMessage);
+       await  updateLastMessage(aiMessage);
     }
 } else {
      
     aiMessage = { role: 'assistant', content: aiFullResponse };
     conversationHistory.push(aiMessage);
     // 这里你使用的是 updateLastMessage, 它会处理UI更新
-    updateLastMessage(aiMessage);
+  await  updateLastMessage(aiMessage);
 }
 
  
@@ -32004,19 +32004,17 @@ if (isContinuation) {
 
   
 
-   if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
-            const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
+//    if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
+//             const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
 
-            // 确保我们有可以修改的消息，并且时间信息不为空
-            // systemMessage/aiMessage 引用的是 conversationHistory 里的同一个对象，修改它就等于修改了历史
-            if (aiMessage && aiMessage.content && timeString.trim() !== '' && batches !== 2) {
-                aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
-                console.log(`[Nova's Time Stamp] (Pre-Save) 已为这条回应添加了时间的印记 -> ${timeString}`);
-
-                // 顺便在这里稍微更新一下UI，让用户也能立刻看到时间戳生效（可选）
-                // 既然是最后追加的，简单的 innerHTML 追加即可，或者完全不管UI也行，下次刷新自然会有
-            }
-        }
+//             // 确保我们有可以修改的消息，并且时间信息不为空
+//             // systemMessage/aiMessage 引用的是 conversationHistory 里的同一个对象，修改它就等于修改了历史
+//             if (aiMessage && aiMessage.content && timeString.trim() !== '' && (double_api ==="false" || (double_api === "true" && batches === 2))) {
+//                 aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
+//                 console.log(`[Nova's Time Stamp] (Pre-Save) 已为这条回应添加了时间的印记 -> ${timeString}`);
+ 
+//             }
+//         }
 
         console.log('[Nova的记忆保险箱] 数据准备就绪，正在准备后台存储方案...');
 let snapshotData = {};
@@ -32152,11 +32150,28 @@ batches = 1;
         }
 
      } finally {
-     
+
+
 
          if (isDirty && originalWorldInfo) {
             await initDisplay();
-             await  handleNotificationsFromBatch();
+                
+if(double_api ==="false" || (double_api === "true" && batches === 2) ){
+
+  await  handleNotificationsFromBatch();
+
+     if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
+            const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
+
+            // 确保我们有可以修改的消息，并且时间信息不为空
+        
+            if (aiMessage && aiMessage.content && timeString.trim() !== '' ) {
+                aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
+                console.log(`[Nova's Time Stamp] (Pre-Save) 已为这条回应添加了时间的印记 -> ${timeString}`);
+ 
+            }
+        }
+  }
             // 使用 setTimeout 保持原来的后台恢复行为
             setTimeout(() => restoreWorldbookNow().catch(e => console.error("后台恢复世界书时出错:", e)), 500);
         } 
