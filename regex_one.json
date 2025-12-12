@@ -12084,6 +12084,91 @@ pointer-events: auto;
     border: none;
     cursor: pointer;
 }
+
+
+/* 1. 压缩消息项之间的间距 */
+.group-chat-message-item,
+.private-chat-wrapper,
+.group-chat-wrapper {
+    margin: 0 !important;
+    margin-bottom: 4px !important;  /* 只保留最小间距 */
+    padding: 0 !important;
+}
+
+/* 2. 压缩消息内容区域 */
+.group-chat-message-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 2px !important;  /* 如果是flex布局 */
+}
+
+/* 3. 压缩用户名和气泡之间的间距 */
+.group-chat-user-id {
+    margin: 0 !important;
+    margin-bottom: 2px !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+
+/* 4. 压缩气泡本身 */
+.group-chat-message-bubble {
+    margin: 0 !important;
+    padding: 8px 12px !important;  /* 只保留内边距 */
+}
+
+/* 5. 压缩特殊消息 */
+.special-message {
+    margin: 0 !important;
+    padding: 8px !important;
+}
+
+/* 6. 压缩音乐卡片 */
+.music-card-lite {
+    margin: 0 !important;
+    padding: 8px !important;
+}
+
+/* 7. 压缩群聊分隔符 */
+.group-chat-separator {
+    margin: 4px 0 !important;
+    padding: 4px 0 !important;
+}
+
+/* 8. 压缩头像占位符 */
+.group-chat-avatar-placeholder {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 9. 移除所有可能的额外间距 */
+.group-chat-message-item > *,
+.group-chat-message-content > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* 10. 特别处理：如果消息在气泡内 */
+.message-bubble .group-chat-message-item,
+.message-bubble .private-chat-wrapper,
+.message-bubble .group-chat-wrapper {
+    margin-bottom: 4px !important;
+}
+
+.message-bubble .group-chat-message-item:last-child,
+.message-bubble .private-chat-wrapper:last-child,
+.message-bubble .group-chat-wrapper:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* 终极压缩方案 */
+[class*="chat"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.group-chat-message-item * {
+    margin: 0 !important;
+}
   </style>
  
 </head>
@@ -22818,6 +22903,12 @@ async function loadPreviousMessages() {
         if (loadMoreBtn) loadMoreBtn.style.display = 'none'; // 如果已经到顶了，就隐藏
     }
 }
+
+function limitConsecutiveNewlines(text, maxNewlines = 1) {
+    // 将3个及以上的换行符替换为最多2个
+    const regex = new RegExp(`\n{${maxNewlines + 1},}`, 'g');
+    return text.replace(regex, '\n'.repeat(maxNewlines));
+}
  async function renderReadingModeChapter(msg) {
     // 使用一个临时的 div 元素来辅助 DOM 操作，最终返回其 innerHTML
     const bubble = document.createElement('div');
@@ -22846,7 +22937,7 @@ async function loadPreviousMessages() {
         'display',
         { depth: -1 } // 阅读模式固定深度为 -1
     );
-
+processedContent = limitConsecutiveNewlines(processedContent);
     // 步骤2：保护 HTML 和代码块
     let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
         const placeholder = `HTMLREADINGPLACEHOLDER${placeholderIndex}`;
@@ -25454,7 +25545,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         </div>
     </div>`;
 }
-   async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
+   async function   createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
     let content = msg.content;
    
@@ -25482,13 +25573,15 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     .replace(/\*(.+?)\*/g, function(match, p1) { 
         return '<em>' + p1 + '</em>'; 
     });
+
+
     processedContent = formatAsTavernRegexedString(
         processedContent,
         msg.role === 'user' ? 'user_input' : 'ai_output',
         'display',
         { depth: depth }
     );
-
+    processedContent = limitConsecutiveNewlines(processedContent);
     // 步骤1：保护 HTML 和代码块
     let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
         const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
@@ -31715,11 +31808,13 @@ if (messageVars && messageVars.检定记忆) {
           
  
 const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
-    if (!msg || !msg.content) {
-        console.warn(`[Nova's Regex] 消息 ${index} 为空或缺少内容，跳过处理`);
-        return msg; // 返回原始消息避免后续出错
-    }
-    let content = msg.content;
+     // 1. 基础判空
+    if (!msg) return { role: 'system', content: '' };
+
+    // 2. 【关键修复】强制转换为字符串！
+    // 无论它是 null, undefined, 还是数字 123，都会变成字符串 "123"
+    let content = String(msg.content || '');
+ 
 
                 // 根据消息的角色确定来源
                 // 注意：promptsForAI数组的最后一条是经过特殊构造的user message
@@ -31761,7 +31856,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 id: `history_scan_trigger_${index}`,
                 position: 'none',
                 role: msg.role,
-                content: msg.content,
+                 content: String(msg.content || ''), // <--- 【关键修复】强制转字符串
                 should_scan: true,
                 depth: msg.depth
             });
@@ -31770,7 +31865,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
             injections.push({
                 id: `actual_history_display_${index}`,
                 position: 'before_chat',
-                role: msg.role,
+                 content: String(msg.content || ''), // <--- 【关键修复】强制转字符串
                 content: msg.content,
                 should_scan: false
             });
@@ -33212,7 +33307,7 @@ async function triggerassa(commandString) {
     }
 }
 
-
+window.triggerassa  = triggerassa;
 const refreshSnapshotsBtn = document.getElementById('refresh-snapshots-btn');
 const deleteAllSnapshotsBtn = document.getElementById('delete-all-snapshots-btn');
 const snapshotListDiv = document.getElementById('snapshot-list');
@@ -51951,14 +52046,17 @@ window.GameAPI = {
             console.error("processGachaRewards 函数未定义");
         }
     },
- triggerassa: function(...args) {
-       
-        if (typeof triggerassa === 'function') {
+        triggerassa: function(...args) {
+        // 修改：优先查找 window.processGachaRewards
+        if (typeof window.triggerassa === 'function') {
+            return window.triggerassa(...args);
+        } else if (typeof triggerassa === 'function') {
             return triggerassa(...args);
         } else {
             console.error("triggerassa 函数未定义");
         }
     },
+ 
  initDisplay: function(...args) {
  
         if (typeof initDisplay === 'function') {
