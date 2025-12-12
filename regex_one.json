@@ -12085,90 +12085,13 @@ pointer-events: auto;
     cursor: pointer;
 }
 
-
-/* 1. 压缩消息项之间的间距 */
-.group-chat-message-item,
 .private-chat-wrapper,
 .group-chat-wrapper {
-    margin: 0 !important;
-    margin-bottom: 4px !important;  /* 只保留最小间距 */
-    padding: 0 !important;
+    white-space: normal; /* 关键：忽略代码中的换行符和缩进 */
+    display: block;
+    width: 100%;
 }
 
-/* 2. 压缩消息内容区域 */
-.group-chat-message-content {
-    margin: 0 !important;
-    padding: 0 !important;
-    gap: 2px !important;  /* 如果是flex布局 */
-}
-
-/* 3. 压缩用户名和气泡之间的间距 */
-.group-chat-user-id {
-    margin: 0 !important;
-    margin-bottom: 2px !important;
-    padding: 0 !important;
-    line-height: 1.2 !important;
-}
-
-/* 4. 压缩气泡本身 */
-.group-chat-message-bubble {
-    margin: 0 !important;
-    padding: 8px 12px !important;  /* 只保留内边距 */
-}
-
-/* 5. 压缩特殊消息 */
-.special-message {
-    margin: 0 !important;
-    padding: 8px !important;
-}
-
-/* 6. 压缩音乐卡片 */
-.music-card-lite {
-    margin: 0 !important;
-    padding: 8px !important;
-}
-
-/* 7. 压缩群聊分隔符 */
-.group-chat-separator {
-    margin: 4px 0 !important;
-    padding: 4px 0 !important;
-}
-
-/* 8. 压缩头像占位符 */
-.group-chat-avatar-placeholder {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* 9. 移除所有可能的额外间距 */
-.group-chat-message-item > *,
-.group-chat-message-content > * {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-/* 10. 特别处理：如果消息在气泡内 */
-.message-bubble .group-chat-message-item,
-.message-bubble .private-chat-wrapper,
-.message-bubble .group-chat-wrapper {
-    margin-bottom: 4px !important;
-}
-
-.message-bubble .group-chat-message-item:last-child,
-.message-bubble .private-chat-wrapper:last-child,
-.message-bubble .group-chat-wrapper:last-child {
-    margin-bottom: 0 !important;
-}
-
-/* 终极压缩方案 */
-[class*="chat"] {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-.group-chat-message-item * {
-    margin: 0 !important;
-}
   </style>
  
 </head>
@@ -25185,7 +25108,7 @@ await initDisplay();
  * 负责所有音乐卡片的播放控制、搜索、淡入淡出及 UI 同步
  */
  
- function renderPrivateMsgToHtml(sender, receiver, content, userNickname, is_from_render = false) {
+  function renderPrivateMsgToHtml(sender, receiver, content, userNickname, is_from_render = false) {
     const isSent = sender === userNickname;
     
     const itemClass = isSent ? 'group-chat-message-item sent' : 'group-chat-message-item received';
@@ -25215,8 +25138,7 @@ await initDisplay();
     processedContent = processedContent.replace(/\[yy-([^\]]+)\]/g, (match, text) => {
         const duration = Math.floor(Math.random() * 13) + 2;
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message voice-message" title="点击播放(模拟)">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message voice-message" title="点击播放(模拟)">
                 <div class="special-msg-icon">
                     <div class="voice-wave">
                         <div class="voice-bar"></div>
@@ -25248,8 +25170,7 @@ await initDisplay();
         const safeArtist = artist.replace(/'/g, "\\'");
         
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        let musicHtml = `
-            <div class="music-card-lite">
+        let musicHtml = `<div class="music-card-lite">
                 <div class="music-card-left">
                     <div class="music-card-title">${song}</div>
                     <div class="music-card-artist">${artist}</div>
@@ -25282,8 +25203,7 @@ await initDisplay();
             </div>`;
         
         if (isAutoPlayBgm) {
-            musicHtml += `
-                <div class="js-music-autoplay-trigger" 
+            musicHtml += `<div class="js-music-autoplay-trigger" 
                      style="display:none;" 
                      data-song="${safeSong}" 
                      data-artist="${safeArtist}" 
@@ -25304,8 +25224,7 @@ await initDisplay();
         let displayText = receiver === userNickname ? "向你转账" : `向 ${receiver} 转账`;
         
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message transfer-message">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message transfer-message">
                 <div class="special-msg-icon">💰</div>
                 <div class="special-msg-content">
                     <div class="special-msg-subtitle">${displayText}</div>
@@ -25320,8 +25239,7 @@ await initDisplay();
     // 图片消息 [img-描述]
     processedContent = processedContent.replace(/\[img-([^\]]+)\]/g, (match, desc) => {
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message image-message">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message image-message">
                 <div class="special-msg-icon">🖼️</div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">发送了图片</div>
@@ -25357,8 +25275,7 @@ await initDisplay();
     // 最终组装
     if (isMusic && specialMsgIndex === 1 && !processedContent.replace(specialMsgPlaceholders[`__SPECIAL_MSG_0__`] || '', '').trim()) {
         // 纯音乐消息，独立显示
-        return `
-        <div class="private-chat-wrapper" style="width:100%;">
+        return `<div class="private-chat-wrapper" style="width:100%;">
             <div class="${itemClass}" data-user-id="${sender}">
                 <div class="group-chat-avatar-placeholder"></div>
                 <div class="group-chat-message-content" style="width:100%;">
@@ -25370,8 +25287,7 @@ await initDisplay();
     }
     
     // 普通/混合气泡
-    return `
-<div class="private-chat-wrapper">
+    return `<div class="private-chat-wrapper">
     <div class="${itemClass}" data-user-id="${sender}">
         <div class="group-chat-avatar-placeholder"></div>
         <div class="group-chat-message-content">
@@ -25403,8 +25319,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     processedContent = processedContent.replace(/\[yy-([^\]]+)\]/g, (match, text) => {
         const duration = Math.floor(Math.random() * 13) + 2;
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message voice-message" title="点击播放(模拟)">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message voice-message" title="点击播放(模拟)">
                 <div class="special-msg-icon">
                     <div class="voice-wave">
                         <div class="voice-bar"></div>
@@ -25435,8 +25350,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         const safeArtist = artist.replace(/'/g, "\\'");
         
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="music-card-lite">
+        specialMsgPlaceholders[placeholder] = `<div class="music-card-lite">
                 <div class="music-card-left">
                     <div class="music-card-title">${song}</div>
                     <div class="music-card-artist">${artist}</div>
@@ -25466,8 +25380,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     processedContent = processedContent.replace(/\[zz-([^\]]+)\]/g, (match, raw) => {
         const amount = raw.replace(/[^0-9.]/g, '');
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message transfer-message">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message transfer-message">
                 <div class="special-msg-icon">💰</div>
                 <div class="special-msg-content">
                     <div class="special-msg-subtitle">发起转账</div>
@@ -25482,8 +25395,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     // 图片消息
     processedContent = processedContent.replace(/\[img-([^\]]+)\]/g, (match, desc) => {
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message image-message">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message image-message">
                 <div class="special-msg-icon">🖼️</div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">发送了图片</div>
@@ -25520,8 +25432,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     
     // 最终组装
     if (isMusic && specialMsgIndex === 1 && !processedContent.replace(specialMsgPlaceholders[`__SPECIAL_MSG_0__`] || '', '').trim()) {
-        return `
-        <div class="private-chat-wrapper" style="width:100%;">
+        return `<div class="private-chat-wrapper" style="width:100%;">
             <div class="${itemClass}" data-user-id="${sender}" style="width:100%">
                 <div class="group-chat-avatar-placeholder"></div>
                 <div class="group-chat-message-content" style="width:100%;">
@@ -25532,8 +25443,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         </div>`;
     }
     
-    return `
-    <div class="group-chat-wrapper">
+    return `<div class="group-chat-wrapper">
         <div class="${itemClass}" data-user-id="${sender}">
             <div class="group-chat-avatar-placeholder"></div>
             <div class="group-chat-message-content">
@@ -25545,7 +25455,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         </div>
     </div>`;
 }
-   async function   createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
+   async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
     let content = msg.content;
    
@@ -25573,15 +25483,13 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     .replace(/\*(.+?)\*/g, function(match, p1) { 
         return '<em>' + p1 + '</em>'; 
     });
-
-
     processedContent = formatAsTavernRegexedString(
         processedContent,
         msg.role === 'user' ? 'user_input' : 'ai_output',
         'display',
         { depth: depth }
     );
-    processedContent = limitConsecutiveNewlines(processedContent);
+processedContent = limitConsecutiveNewlines(processedContent);
     // 步骤1：保护 HTML 和代码块
     let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
         const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
@@ -47112,8 +47020,7 @@ const switchActiveChat = (type, id) => {
     processedContent = processedContent.replace(/\[yy-([^\]]+)\]/g, (match, text) => {
         const duration = Math.floor(Math.random() * 13) + 2;
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message voice-message" title="点击播放(模拟)">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message voice-message" title="点击播放(模拟)">
                 <div class="special-msg-icon">
                     <div class="voice-wave">
                         <div class="voice-bar"></div>
@@ -47144,8 +47051,7 @@ const switchActiveChat = (type, id) => {
         const safeArtist = artist.replace(/'/g, "\\'");
         
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="music-card-lite">
+        specialMsgPlaceholders[placeholder] = `<div class="music-card-lite">
                 <div class="music-card-left">
                     <div class="music-card-title">${song}</div>
                     <div class="music-card-artist">${artist}</div>
@@ -47179,8 +47085,7 @@ const switchActiveChat = (type, id) => {
         const displayText = isSent ? "发起转账" : `向 ${msg.user_id} 转账`;
         
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message transfer-message">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message transfer-message">
                 <div class="special-msg-icon">💰</div>
                 <div class="special-msg-content">
                     <div class="special-msg-subtitle">${displayText}</div>
@@ -47195,8 +47100,7 @@ const switchActiveChat = (type, id) => {
     // 4. 图片消息 [img-描述]
     processedContent = processedContent.replace(/\[img-([^\]]+)\]/g, (match, desc) => {
         const placeholder = `__SPECIAL_MSG_${specialMsgIndex}__`;
-        specialMsgPlaceholders[placeholder] = `
-            <div class="special-message image-message">
+        specialMsgPlaceholders[placeholder] = `<div class="special-message image-message">
                 <div class="special-msg-icon">🖼️</div>
                 <div class="special-msg-content">
                     <div class="special-msg-title">发送了图片</div>
@@ -47265,9 +47169,7 @@ const switchActiveChat = (type, id) => {
 
     // 最终组装
     if (isMusic && specialMsgIndex === 1 && !processedContent.replace(specialMsgPlaceholders[`__SPECIAL_MSG_0__`] || '', '').trim()) {
-        div.innerHTML = `
- 
-                <div class="group-chat-avatar-placeholder"></div>
+        div.innerHTML = `<div class="group-chat-avatar-placeholder"></div>
                 <div class="group-chat-message-content" style="width:100%;">
                     <div class="group-chat-user-id">${msg.user_id}</div>
                     ${processedContent}
@@ -47276,8 +47178,7 @@ const switchActiveChat = (type, id) => {
           return div;
     }
     // 组装消息（如果有特殊消息，去掉气泡背景和padding）
-    div.innerHTML = `
-        <div class="group-chat-avatar-placeholder"></div>
+    div.innerHTML = `<div class="group-chat-avatar-placeholder"></div>
         <div class="group-chat-message-content">
             <div class="group-chat-user-id">${msg.user_id}</div>
             ${replyHtml}
