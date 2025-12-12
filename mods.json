@@ -332,5 +332,16 @@
     "worldBookUrl": "",
  "previewImage": ""
  
+  } ,  {
+    "id": "x-mod-无限恐怖世界观优化",
+    "name": "无限恐怖世界观优化",
+    "author": "飛梭花",
+    "version": "1.0",
+    "tags": ["无限恐怖"],
+    "description": "因为我是元祖无限爱好者所以我自己改了一下无限恐怖模式，玩着还可以诡异感不是特别大。将其世界书外挂在全局即可直接覆盖世界观。开局的基调和类型需要都修改为`从片单中抽取`，不然会生成很奇怪的开局",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-无限恐怖世界观优化.json",
+ "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 18.png"
+ 
   } 
 ]
