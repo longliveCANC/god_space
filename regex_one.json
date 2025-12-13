@@ -22827,7 +22827,7 @@ async function loadPreviousMessages() {
     }
 }
 
-function limitConsecutiveNewlines(text, maxNewlines = 1) {
+function limitConsecutiveNewlines(text, maxNewlines = 2) {
     // 将3个及以上的换行符替换为最多2个
     const regex = new RegExp(`\n{${maxNewlines + 1},}`, 'g');
     return text.replace(regex, '\n'.repeat(maxNewlines));
