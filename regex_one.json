@@ -11673,8 +11673,12 @@ pointer-events: auto;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
     flex-wrap: wrap;
+      justify-content: space-between; /* 让搜索框和按钮组分开 */
 }
-
+.toolbar-btn-group {
+    display: flex;
+    gap: 8px;
+}
 .workshop-search {
     flex: 1;
     display: flex;
@@ -11682,6 +11686,87 @@ pointer-events: auto;
     min-width: 200px;
 }
 
+/* 2. 订阅按钮样式 (详情页) */
+.sub-btn {
+    background: transparent;
+    border: 1px solid var(--text-secondary-color);
+    color: var(--text-secondary-color);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sub-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.sub-btn.subscribed {
+    background: var(--primary-color);
+    color: #000; /* 选中态文字颜色，根据主题可能需要调整 */
+    border-color: var(--primary-color);
+}
+
+/* 3. 筛选类型切换 (标签/作者) */
+.filter-type-switch {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 0 5px;
+    font-size: 14px;
+    color: var(--text-secondary-color);
+}
+.filter-type-btn {
+    cursor: pointer;
+    padding-bottom: 2px;
+    border-bottom: 2px solid transparent;
+}
+.filter-type-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* 4. 自定义更新弹窗 */
+.update-modal-content {
+    background: var(--background-color);
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 20px var(--glow-color);
+    width: 400px;
+    max-width: 90%;
+    padding: 20px;
+    border-radius: 8px;
+    position: relative;
+    color: var(--text-color);
+}
+
+.update-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 15px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 0;
+}
+
+.update-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 13px;
+}
+.update-item .new-badge {
+    background: var(--danger-color);
+    color: white;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-right: 5px;
+}
 #workshop-search-input {
     flex: 1;
     background: var(--background-color);
@@ -12091,9 +12176,90 @@ pointer-events: auto;
     display: block;
     width: 100%;
 }
+/* --- 新增样式 --- */
+.ws-tab-header {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+.ws-tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary-color);
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 2px solid transparent;
+}
+.ws-tab-btn:hover { color: var(--text-color); background: rgba(255,255,255,0.05); }
+.ws-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    font-weight: bold;
+}
+.ws-tab-content { display: none; animation: fadeIn 0.3s; }
+.ws-tab-content.active { display: block; }
 
+.ws-form-group { margin-bottom: 12px; }
+.ws-form-label { display: block; color: var(--secondary-color); font-size: 0.9em; margin-bottom: 5px; }
+.ws-input {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 4px;
+}
+.ws-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--glow-color); }
+.ws-file-input {
+    border: 1px dashed var(--border-color);
+    padding: 10px;
+    width: 100%;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+}
+.ws-tip { font-size: 0.8em; color: #888; margin-top: 4px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.ws-tag-select-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 5px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+.ws-selectable-tag {
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+    cursor: pointer;
+    color: var(--text-secondary-color);
+    transition: all 0.2s;
+    user-select: none;
+}
+.ws-selectable-tag:hover {
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+.ws-selectable-tag.selected {
+    background: var(--primary-color);
+    color: black;
+    border-color: var(--primary-color);
+    font-weight: bold;
+}
+/* 自定义标签输入框微调 */
+.ws-tag-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
   </style>
- 
+ <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -13767,7 +13933,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                 </div>
 
                 <div id="simple-streaming-options" class="setting-item" style="display: none; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px; margin-left: 20px;">
-                    <label for="simple-streaming-toggle">启用简易流式</label>
+                    <label for="simple-streaming-toggle">启用简易流式(降低性能消耗)</label>
                     <input type="checkbox" id="simple-streaming-toggle" style="width: auto; cursor: pointer;">
                 </div>
 
@@ -14163,24 +14329,32 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
         </div>
 <div class="settings-page" id="settings-page-workshop">
     <div class="workshop-container">
+ <div class="workshop-toolbar">
+    <div class="workshop-search">
+        <input type="text" id="workshop-search-input" placeholder="搜索模组...">
+        <button id="workshop-search-btn" class="control-btn">🔍</button>
+    </div>
 
-       <div class="workshop-toolbar">
-            <div class="workshop-search">
-                <input type="text" id="workshop-search-input" placeholder="搜索模组...">
-                <button id="workshop-search-btn" class="control-btn">🔍</button>
-            </div>
+    <div class="toolbar-btn-group">
 
-
-            <button id="ws-create-local-btn" class="control-btn" style="border-color: var(--success-color); color: var(--success-color);">+ 新建本地脚本</button>
-
-            <button id="workshop-refresh-btn" class="control-btn special-btn">刷新列表</button>
-            <button id="workshop-reload-runtime-btn" class="control-btn danger-btn">重载生效</button>
-        </div>
+        <button id="ws-manage-btn" class="control-btn">⚙️ 管理模组</button>
 
 
-        <div id="ws-tags-container" class="ws-tags-wrapper">
+        <button id="ws-dev-menu-btn" class="control-btn" style="border-color: var(--secondary-color); color: var(--secondary-color);">🛠️ 开发者</button>
 
-        </div>
+ 
+        <button id="workshop-reload-runtime-btn" class="control-btn danger-btn">重载</button>
+    </div>
+</div>
+
+
+<div class="filter-type-switch">
+    <span class="filter-type-btn active" id="filter-by-tag">按标签</span>
+    <span class="filter-type-btn" id="filter-by-author">按作者</span>
+</div>
+
+
+<div id="ws-tags-container" class="ws-tags-wrapper"></div>
 
 
         <div id="ws-pagination-controls" class="ws-pagination">
@@ -14491,7 +14665,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
         </div>
     </div>
 </div>
-
+ 
 </body>
 
 <script>
@@ -15286,12 +15460,19 @@ const npcImageMap_fallbackData = {
 "摸摸头":"https://files.catbox.moe/i65j4n.gif"
 };
  let memeImageMap ={};
- window.NovaWorkshop = (function() {
+
+ emailjs.init('kDLEJZKjDhhihIqV1'); // 替换成你的 Public Key
+  window.NovaWorkshop = (function() {
     const REMOTE_URL = 'https://longlivecanc.github.io/god_space/mods.json';
-    const DB_NAME = 'GodSpaceWorkshopDB_v2';
-    const DB_VERSION = 2;
+    // 【修改】升级数据库版本
+    const DB_NAME = 'GodSpaceWorkshopDB_v3';
+    const DB_VERSION = 3;
+
     const STORE_MOD_SETTINGS = 'user_mods';
     const STORE_LOCAL_SCRIPTS = 'local_scripts';
+    // 【新增】新增两个存储库
+    const STORE_SUBSCRIPTIONS = 'subscriptions'; // 存储订阅关系
+    const STORE_META_CACHE = 'meta_cache';       // 存储上次的 mods.json
 
     let db = null;
     let allRemoteMods = [];
@@ -15302,11 +15483,13 @@ const npcImageMap_fallbackData = {
         currentPage: 1,
         itemsPerPage: 4,
         currentTag: 'all',
+        filterMode: 'tag', // 'tag' 或 'author'
         searchTerm: '',
-        filteredList: []
+        filteredList: [],
+        subscriptions: new Set() // 内存中缓存订阅ID，方便快速判断
     };
 
-    // --- 数据库操作区域 (保持不变) ---
+    // --- 数据库操作区域 ---
     function initDB() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -15314,6 +15497,9 @@ const npcImageMap_fallbackData = {
                 db = event.target.result;
                 if (!db.objectStoreNames.contains(STORE_MOD_SETTINGS)) db.createObjectStore(STORE_MOD_SETTINGS, { keyPath: 'id' });
                 if (!db.objectStoreNames.contains(STORE_LOCAL_SCRIPTS)) db.createObjectStore(STORE_LOCAL_SCRIPTS, { keyPath: 'id' });
+                // 【新增】创建新表
+                if (!db.objectStoreNames.contains(STORE_SUBSCRIPTIONS)) db.createObjectStore(STORE_SUBSCRIPTIONS, { keyPath: 'id' });
+                if (!db.objectStoreNames.contains(STORE_META_CACHE)) db.createObjectStore(STORE_META_CACHE, { keyPath: 'key' });
             };
             request.onsuccess = (event) => { db = event.target.result; resolve(db); };
             request.onerror = (e) => reject(e);
@@ -15405,7 +15591,210 @@ const npcImageMap_fallbackData = {
             };
         });
     }
+    // 【新增】订阅相关数据库操作
+    function getSubscriptions() {
+        return new Promise(resolve => {
+            const tx = db.transaction([STORE_SUBSCRIPTIONS], 'readonly');
+            const req = tx.objectStore(STORE_SUBSCRIPTIONS).getAll();
+            req.onsuccess = () => {
+                const result = req.result || [];
+                // 更新内存状态
+                state.subscriptions = new Set(result.map(item => item.id));
+                resolve(result);
+            };
+        });
+    }
 
+    function toggleSubscription(targetId, type, name) {
+        return new Promise(resolve => {
+            const tx = db.transaction([STORE_SUBSCRIPTIONS], 'readwrite');
+            const store = tx.objectStore(STORE_SUBSCRIPTIONS);
+            const id = `sub_${type}_${targetId}`; // ID 格式: sub_author_Name 或 sub_mod_123
+
+            store.get(id).onsuccess = (e) => {
+                if (e.target.result) {
+                    // 已存在，删除（取消订阅）
+                    store.delete(id);
+                    state.subscriptions.delete(id);
+                    resolve(false); // 返回当前状态：未订阅
+                } else {
+                    // 不存在，添加（订阅）
+                    store.put({ id: id, type: type, target: targetId, name: name, timestamp: Date.now() });
+                    state.subscriptions.add(id);
+                    resolve(true); // 返回当前状态：已订阅
+                }
+            };
+        });
+    }
+
+    // 【新增】缓存 JSON 操作
+    function getCachedJson() {
+        return new Promise(resolve => {
+            const tx = db.transaction([STORE_META_CACHE], 'readonly');
+            tx.objectStore(STORE_META_CACHE).get('last_remote_json').onsuccess = (e) => {
+                resolve(e.target.result ? e.target.result.data : null);
+            };
+        });
+    }
+
+    function saveCachedJson(data) {
+        const tx = db.transaction([STORE_META_CACHE], 'readwrite');
+        tx.objectStore(STORE_META_CACHE).put({ key: 'last_remote_json', data: data, timestamp: Date.now() });
+    }
+    // --- 核心逻辑：更新检测 ---
+    async function checkForUpdates(newMods) {
+        const oldMods = await getCachedJson();
+
+        // 1. 如果没有本地缓存（第一次运行），直接保存，不弹窗
+        if (!oldMods) {
+            saveCachedJson(newMods);
+            return;
+        }
+
+        const updates = [];
+        const oldModMap = new Map(oldMods.map(m => [String(m.id), m]));
+
+        // 预处理订阅列表
+        const subAuthors = new Set();
+        const subMods = new Set();
+        state.subscriptions.forEach(subId => {
+            if(subId.startsWith('sub_author_')) subAuthors.add(subId.replace('sub_author_', ''));
+            if(subId.startsWith('sub_mod_')) subMods.add(subId.replace('sub_mod_', ''));
+        });
+
+        // 如果用户没有任何订阅，直接保存退出，不进行后续比对
+        if (subAuthors.size === 0 && subMods.size === 0) {
+            saveCachedJson(newMods);
+            return;
+        }
+
+        newMods.forEach(newMod => {
+            const oldMod = oldModMap.get(String(newMod.id));
+
+            // 情况A: 订阅了作者，且这是个新模组 (旧列表里没有)
+            if (subAuthors.has(newMod.author) && !oldMod) {
+                updates.push({
+                    type: 'new_mod',
+                    title: `🎉 作者新作: ${newMod.author}`,
+                    text: `发布了新模组 <b>${newMod.name}</b>`
+                });
+            }
+
+            // 情况B: 订阅了模组，且版本号变大
+            // 注意：这里简单判断字符串不相等且存在旧版本。实际生产环境建议引入 compareVersions 函数
+            if (subMods.has(String(newMod.id)) && oldMod && newMod.version !== oldMod.version) {
+                updates.push({
+                    type: 'update_mod',
+                    title: `🔄 模组更新: ${newMod.name}`,
+                    text: `版本从 v${oldMod.version} 更新至 v${newMod.version}`
+                });
+            }
+        });
+
+        // 只有当有实质更新内容时，才弹出窗口
+        if (updates.length > 0) {
+            showUpdateModal(updates);
+        }
+
+        // 检测完成后，更新缓存
+        saveCachedJson(newMods);
+    }
+
+    // 参考游戏主程序的弹窗实现
+    function showUpdateModal(updates) {
+        // 如果已存在（极少情况），先移除
+        const existingModal = document.getElementById('ws-update-modal');
+        if (existingModal) existingModal.remove();
+
+        // 生成更新列表 HTML
+        const updatesHTML = updates.map(u => `
+            <div style="margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <div style="color: var(--primary-color); font-weight: bold; margin-bottom: 4px;">${u.title}</div>
+                <div style="font-size: 0.9em; color: var(--text-color);">${u.text}</div>
+            </div>
+        `).join('');
+
+        // 动态构建 DOM，直接挂载到 body，确保层级最高且居中
+        // 使用与主程序一致的 class="modal" 结构
+        const modalHTML = `
+        <div id="ws-update-modal" class="modal active" style="z-index: 10000;">
+            <div class="modal-content" style="max-width: 500px; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 20px var(--glow-color);">
+                <button class="modal-close" id="ws-modal-close-x">×</button>
+                <div class="modal-title" style="color: var(--primary-color);">🔔 创意工坊订阅更新</div>
+
+                <div class="modal-description" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 5px; margin-top: 10px; color: var(--text-color);">
+                    ${updatesHTML}
+                </div>
+
+                <div class="modal-actions" style="text-align: right; margin-top: 20px;">
+                    <button id="ws-modal-confirm-btn" class="control-btn">知道了</button>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // 绑定事件
+        const modal = document.getElementById('ws-update-modal');
+        const closeBtnX = document.getElementById('ws-modal-close-x');
+        const confirmBtn = document.getElementById('ws-modal-confirm-btn');
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            setTimeout(() => { if(modal) modal.remove(); }, 300); // 等待动画结束后移除 DOM
+        };
+
+        // 1. 点击遮罩层关闭
+        modal.onclick = (e) => {
+            if (e.target === modal) closeModal();
+        };
+
+        // 2. 点击右上角 X 关闭
+        if(closeBtnX) closeBtnX.onclick = closeModal;
+
+        // 3. 点击“知道了”关闭
+        if(confirmBtn) confirmBtn.onclick = closeModal;
+    }
+ 
+    function renderFiltersUI() {
+        const container = document.getElementById('ws-tags-container');
+        if(!container) return;
+
+        let items = [];
+        if (state.filterMode === 'tag') {
+            // 收集所有标签
+            const tags = new Set(['all']);
+            [...allRemoteMods, ...allLocalMods].forEach(m => {
+                if(m.tags) m.tags.forEach(t => tags.add(t));
+            });
+            items = Array.from(tags);
+        } else {
+            // 收集所有作者
+            const authors = new Set(['all']);
+            [...allRemoteMods, ...allLocalMods].forEach(m => {
+                if(m.author) authors.add(m.author);
+            });
+            items = Array.from(authors);
+        }
+
+        let html = '';
+        items.forEach(item => {
+            const activeClass = state.currentTag === item ? 'active' : '';
+            const displayName = item === 'all' ? (state.filterMode === 'tag' ? '全部标签' : '全部作者') : item;
+            html += `<button class="ws-tag-btn ${activeClass}" data-val="${item}">${displayName}</button>`;
+        });
+        container.innerHTML = html;
+
+        container.querySelectorAll('.ws-tag-btn').forEach(btn => {
+            btn.onclick = () => {
+                container.querySelectorAll('.ws-tag-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.currentTag = btn.dataset.val;
+                state.currentPage = 1;
+                refreshView();
+            };
+        });
+    }
     // --- 辅助函数：检查脚本是否有效 ---
     // 【修改点1】如果是 null, undefined 或 空字符串，则视为无效
     function hasValidScript(mod) {
@@ -15512,51 +15901,68 @@ const npcImageMap_fallbackData = {
         const modal = document.getElementById('ws-detail-modal');
         setupModalClose('ws-detail-modal'); // 确保绑定关闭事件
 
-        const title = document.getElementById('ws-detail-title');
-        const author = document.getElementById('ws-detail-author');
+       
+ 
+  const title = document.getElementById('ws-detail-title');
+        const author = document.getElementById('ws-detail-author'); // 注意：这里我们需要修改 HTML 结构或者直接操作 innerHTML
         const version = document.getElementById('ws-detail-version');
         const img = document.getElementById('ws-detail-image');
         const desc = document.getElementById('ws-detail-desc');
         const actions = document.getElementById('ws-detail-actions');
-
+           // 基础信息填充
         title.innerText = mod.name;
-        author.innerText = `作者: ${mod.author}`;
         version.innerText = `版本: ${mod.version || '1.0'}`;
 
+        // 【修改】作者栏增加订阅按钮
+        const isAuthorSubbed = state.subscriptions.has(`sub_author_${mod.author}`);
+        const authorBtnText = isAuthorSubbed ? '已订阅作者' : '订阅作者';
+        const authorBtnClass = isAuthorSubbed ? 'subscribed' : '';
+
+        // 使用 innerHTML 重新构建作者栏
+        author.innerHTML = `
+            作者: ${mod.author}
+            <button class="sub-btn ${authorBtnClass}" id="ws-sub-author-btn" style="margin-left:10px;">
+                ${isAuthorSubbed ? '❤️' : '🤍'} ${authorBtnText}
+            </button>
+        `;
+
+        // 图片处理 (保持不变)
         if(mod.previewImage) {
             img.src = mod.previewImage;
             img.style.display = 'block';
+            img.style.cursor = 'zoom-in';
+            img.onclick = () => showFullImage(mod.previewImage);
         } else {
             img.style.display = 'none';
         }
- // 【修改开始】图片点击查看大图逻辑
-        if(mod.previewImage) {
-            img.src = mod.previewImage;
-            img.style.display = 'block';
-            img.style.cursor = 'zoom-in'; // 鼠标样式变为放大镜
-            img.onclick = () => showFullImage(mod.previewImage); // 绑定点击事件
-        } else {
-            img.style.display = 'none';
-            img.onclick = null; // 清除事件防止误触
-        }
-        // 【修改结束】
+
         let safeDesc = (mod.description || '暂无简介').replace(/\n/g, '<br>');
         desc.innerHTML = safeDesc;
 
+        // 底部按钮组
         let btnHtml = '';
 
-        // 世界书下载
-        if(hasValidWorldBook(mod)) {
+        // 【新增】作品订阅按钮 (仅对远程模组有效)
+        if (mod.scriptUrl !== 'local') {
+            const isModSubbed = state.subscriptions.has(`sub_mod_${mod.id}`);
+            const modBtnText = isModSubbed ? '已订阅更新' : '订阅更新';
+            const modBtnClass = isModSubbed ? 'subscribed' : '';
+            btnHtml += `<button class="control-btn sub-btn ${modBtnClass}" id="ws-sub-mod-btn" style="margin-right:10px; border-color:var(--primary-color);">
+                ${isModSubbed ? '🔔' : '🔕'} ${modBtnText}
+            </button>`;
+        }
+
+        // 世界书下载 (保持不变)
+        if(mod.worldBookUrl && mod.worldBookUrl.trim() !== "") {
             btnHtml += `<button class="control-btn" id="ws-modal-dl-btn">📘 下载世界书</button> `;
         }
 
-        // 脚本开关
-        if(hasValidScript(mod) || mod.scriptContent) {
+        // 脚本开关 (保持不变)
+        if((mod.scriptUrl && mod.scriptUrl.trim() !== "") || mod.scriptContent) {
             const btnText = isEnabled ? '🔴 禁用脚本' : '🟢 启用脚本';
             const btnClass = isEnabled ? 'danger-btn' : 'primary';
             btnHtml += `<button class="control-btn ${btnClass}" id="ws-modal-toggle-btn">${btnText}</button>`;
         } else {
-             // 【修改点1】无脚本时显示提示或不显示按钮
              btnHtml += `<span style="color:#666; font-size:12px; margin-right:10px;">(无脚本)</span>`;
         }
 
@@ -15565,6 +15971,29 @@ const npcImageMap_fallbackData = {
         }
 
         actions.innerHTML = btnHtml;
+
+        // --- 绑定事件 ---
+
+        // 1. 作者订阅事件
+        const subAuthorBtn = document.getElementById('ws-sub-author-btn');
+        if(subAuthorBtn) {
+            subAuthorBtn.onclick = async () => {
+                const newState = await toggleSubscription(mod.author, 'author', mod.author);
+                // 刷新当前弹窗内的按钮状态
+                subAuthorBtn.className = `sub-btn ${newState ? 'subscribed' : ''}`;
+                subAuthorBtn.innerHTML = `${newState ? '❤️' : '🤍'} ${newState ? '已订阅作者' : '订阅作者'}`;
+            };
+        }
+
+        // 2. 作品订阅事件
+        const subModBtn = document.getElementById('ws-sub-mod-btn');
+        if(subModBtn) {
+            subModBtn.onclick = async () => {
+                const newState = await toggleSubscription(mod.id, 'mod', mod.name);
+                subModBtn.className = `control-btn sub-btn ${newState ? 'subscribed' : ''}`;
+                subModBtn.innerHTML = `${newState ? '🔔' : '🔕'} ${newState ? '已订阅更新' : '订阅更新'}`;
+            };
+        }
 
         const toggleBtn = document.getElementById('ws-modal-toggle-btn');
         if(toggleBtn) {
@@ -15580,124 +16009,454 @@ const npcImageMap_fallbackData = {
             dlBtn.onclick = () => window.NovaWorkshop.downloadWorldBook(mod.worldBookUrl, `${mod.id}.json`);
         }
 
-        const editBtn = document.getElementById('ws-modal-edit-local');
-        if(editBtn) editBtn.onclick = () => {
-            modal.classList.remove('active');
-            openEditorModal(mod);
-        };
+    const editBtn = document.getElementById('ws-modal-edit-local');
+    if(editBtn) editBtn.onclick = () => {
+        modal.classList.remove('active');
+        openDevCenter('local', mod); // 传入 mod 数据进行编辑
+    };
 
         modal.classList.add('active');
     }
 
-     // 【新增】编辑器弹窗：增加“立刻执行”按钮
-    function openEditorModal(existingMod = null) {
-        const modal = document.getElementById('ws-editor-modal');
-        setupModalClose('ws-editor-modal');
+ 
+    // 1. 获取或生成作者身份标识
+    function getAuthorIdentity() {
+        let token = localStorage.getItem('ws_author_token');
+        if (!token) {
+            // 生成一个简单的 UUID
+            token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            localStorage.setItem('ws_author_token', token);
+        }
+        return token;
+    }
 
+    // 2. 获取“我的作品” (基于 Token 匹配远程数据)
+    function getMyRemoteWorks() {
+        const token = getAuthorIdentity();
+        // 假设 mods.json 中未来会包含 authorToken 字段 (隐藏字段)
+        // 或者是你手动维护的映射。这里演示直接匹配字段。
+        return allRemoteMods.filter(m => m.authorToken === token);
+    }
+    // --- 辅助函数：读取文件内容 ---
+    function readFileContent(file) {
+        return new Promise((resolve, reject) => {
+            if (!file) return resolve(null);
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(e);
+            // 读取为文本，方便直接放入 JSON
+            reader.readAsText(file);
+        });
+    }
+
+       // --- 辅助：获取所有去重的现有标签 ---
+    function getAllExistingTags() {
+        const tags = new Set();
+        // 预设一些基础标签
+        // ['DLC', '辅助', '剧情', '魔改', '美化'].forEach(t => tags.add(t));
+        // 从远程模组中提取
+        allRemoteMods.forEach(m => {
+            if (m.tags && Array.isArray(m.tags)) {
+                m.tags.forEach(t => tags.add(t));
+            }
+        });
+        return Array.from(tags);
+    }
+
+    // --- 开发者中心 ---
+    function openDevCenter(defaultTab = 'local', editData = null) {
+        const old = document.getElementById('ws-dev-modal');
+        if (old) old.remove();
+
+        const token = getAuthorIdentity();
+        const myWorks = getMyRemoteWorks();
+        const allTags = getAllExistingTags(); // 获取所有标签
+
+        // 状态：当前选中的标签
+        let selectedTags = new Set();
+
+        const html = `
+        <div id="ws-dev-modal" class="modal active" style="z-index: 11000;">
+            <div class="modal-content" style="max-width: 600px; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 20px var(--glow-color);">
+                <button class="modal-close" id="ws-dev-close">×</button>
+                <div class="modal-title" style="color: var(--primary-color);">🛠️ 开发者中心</div>
+
+                <div class="ws-tab-header">
+                    <button class="ws-tab-btn ${defaultTab === 'local' ? 'active' : ''}" data-tab="local">📝 本地脚本</button>
+                    <button class="ws-tab-btn ${defaultTab === 'upload' ? 'active' : ''}" data-tab="upload">📤 投稿/更新</button>
+                    <button class="ws-tab-btn ${defaultTab === 'works' ? 'active' : ''}" data-tab="works">📂 我的作品</button>
+                </div>
+
+
+                <div id="tab-local" class="ws-tab-content ${defaultTab === 'local' ? 'active' : ''}">
+                    <input type="text" id="ws-edit-name" class="ws-input" placeholder="脚本名称" style="margin-bottom:10px;">
+                    <input type="text" id="ws-edit-desc" class="ws-input" placeholder="简介" style="margin-bottom:10px;">
+                    <textarea id="ws-edit-code" class="ws-editor-area" placeholder="// 在此粘贴代码..." style="height: 200px; width:100%; background:rgba(0,0,0,0.3); color:var(--text-color); border:1px solid var(--border-color);"></textarea>
+                    <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+                        <button class="control-btn" id="ws-run-local-now-btn" style="background: #b58900; color: black;">▶ 立刻执行</button>
+                        <button class="control-btn danger-btn" id="ws-delete-local-btn" style="display:none;">删除</button>
+                        <button class="control-btn" id="ws-save-local-btn">保存本地</button>
+                    </div>
+                </div>
+
+
+                <div id="tab-upload" class="ws-tab-content ${defaultTab === 'upload' ? 'active' : ''}">
+                    <div class="ws-form-group">
+                        <label class="ws-form-label">投稿类型</label>
+                        <select id="ws-upload-type" class="ws-input">
+                            <option value="new">✨ 新增模组</option>
+                            ${myWorks.length > 0 ? '<option value="update">🔄 更新已有作品</option>' : ''}
+                        </select>
+                    </div>
+
+                    <div id="ws-update-select-container" class="ws-form-group" style="display:none;">
+                        <label class="ws-form-label">选择要更新的作品</label>
+                        <select id="ws-upload-target-id" class="ws-input">
+                            ${myWorks.map(m => `<option value="${m.id}">${m.name} (v${m.version})</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="ws-form-group">
+                        <label class="ws-form-label">模组名称</label>
+                        <input type="text" id="ws-upload-name" class="ws-input" placeholder="例如：垂钓诸天">
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <div class="ws-form-group" style="flex:1;">
+                            <label class="ws-form-label">作者署名</label>
+                            <input type="text" id="ws-upload-author" class="ws-input" placeholder="你的昵称">
+                        </div>
+                        <div class="ws-form-group" style="width:100px;">
+                            <label class="ws-form-label">版本号</label>
+                            <input type="text" id="ws-upload-version" class="ws-input" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="ws-form-group">
+                        <label class="ws-form-label">简介 (支持 HTML)</label>
+                        <textarea id="ws-upload-desc" class="ws-input" rows="3"></textarea>
+                    </div>
+
+
+                    <div class="ws-form-group">
+                        <label class="ws-form-label">标签 (点击选择 或 输入自定义)</label>
+                        <div id="ws-tags-selection-area" class="ws-tag-select-container">
+
+                        </div>
+                        <div class="ws-tag-input-wrapper">
+                            <input type="text" id="ws-custom-tag-input" class="ws-input" placeholder="输入新标签后按回车添加" style="flex:1;">
+                            <button id="ws-add-tag-btn" class="control-btn" style="padding: 8px 12px;">+</button>
+                        </div>
+                    </div>
+
+                    <div class="ws-form-group" style="border-top: 1px dashed var(--border-color); padding-top:10px;">
+                        <label class="ws-form-label">📂 脚本文件 (.js) - 可选</label>
+                        <input type="file" id="ws-file-script" class="ws-file-input" accept=".js,.txt">
+                    </div>
+
+                    <div class="ws-form-group">
+                        <label class="ws-form-label">📘 世界书文件 (.json) - 可选</label>
+                        <input type="file" id="ws-file-worldbook" class="ws-file-input" accept=".json">
+                    </div>
+
+                    <div class="ws-form-group">
+                        <label class="ws-form-label">给assa的留言 (可选)</label>
+                        <textarea id="ws-upload-note" class="ws-input" rows="2" placeholder="例如：这个脚本需要配合xx使用...以及，最好告诉assa要怎么联系你，比如dc昵称，方便后续的沟通"></textarea>
+                    </div>
+
+                    <div style="margin-top:15px; text-align:right;">
+                        <div class="ws-tip" style="margin-bottom:10px; color: var(--success-color);">* 作者一个月只能收到200封邮件，发不出去就是额度无了</div>
+                        <button class="control-btn" id="ws-send-mail-btn" style="background:var(--primary-color); color:black;">🚀 直接投稿发送</button>
+                    </div>
+                </div>
+
+
+                <div id="tab-works" class="ws-tab-content ${defaultTab === 'works' ? 'active' : ''}">
+                    <div style="margin-bottom:10px; font-size:0.9em; color:#888;">
+                        你的作者 Token: <span style="font-family:monospace; background:#333; padding:2px;">${token}</span>
+                    </div>
+                    <div id="ws-my-works-list" style="max-height:300px; overflow-y:auto;">
+                        ${myWorks.length === 0 ? '<div style="text-align:center; padding:20px; color:#666;">暂无已发布的远程作品</div>' : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        const modal = document.getElementById('ws-dev-modal');
+
+        // --- 通用事件绑定 ---
+        const closeModal = () => { modal.classList.remove('active'); setTimeout(() => modal.remove(), 300); };
+        document.getElementById('ws-dev-close').onclick = closeModal;
+        modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+
+        const tabs = modal.querySelectorAll('.ws-tab-btn');
+        const contents = modal.querySelectorAll('.ws-tab-content');
+        tabs.forEach(btn => {
+            btn.onclick = () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            };
+        });
+
+        // --- Tab 1: 本地编辑器逻辑 (保持不变) ---
         const nameInput = document.getElementById('ws-edit-name');
         const descInput = document.getElementById('ws-edit-desc');
         const codeInput = document.getElementById('ws-edit-code');
         const saveBtn = document.getElementById('ws-save-local-btn');
         const delBtn = document.getElementById('ws-delete-local-btn');
+        const runBtn = document.getElementById('ws-run-local-now-btn');
 
-        // --- 新增代码开始 ---
-        // 查找或创建“立刻执行”按钮 (防止重复添加)
-        let runBtn = document.getElementById('ws-run-local-now-btn');
-        if (!runBtn) {
-            runBtn = document.createElement('button');
-            runBtn.id = 'ws-run-local-now-btn';
-            runBtn.className = 'control-btn'; // 使用通用样式
-            runBtn.style.cssText = "background: #b58900; color: black; margin-right: 10px;"; // 区分颜色
-            runBtn.innerText = "▶ 立刻执行";
-            // 插入到保存按钮之前
-            saveBtn.parentNode.insertBefore(runBtn, saveBtn);
+        if (editData) {
+            nameInput.value = editData.name;
+            descInput.value = editData.description;
+            codeInput.value = editData.scriptContent;
+            delBtn.style.display = 'inline-block';
+            delBtn.onclick = async () => {
+                if(confirm('确定删除此脚本吗？')) {
+                    await deleteLocalScript(editData.id);
+                    closeModal();
+                    await loadDataAndRender();
+                }
+            };
         }
-
-        // 绑定立刻执行事件
+        saveBtn.onclick = async () => {
+            if(!nameInput.value || !codeInput.value) { alert('名称和代码不能为空'); return; }
+            const data = { id: editData ? editData.id : null, name: nameInput.value, description: descInput.value, scriptContent: codeInput.value };
+            await saveLocalScript(data);
+            closeModal();
+            await loadDataAndRender();
+        };
         runBtn.onclick = () => {
             const code = codeInput.value;
             if(!code.trim()) { alert('没有代码可以执行'); return; }
             try {
                 const script = document.createElement('script');
                 script.textContent = code;
-                script.setAttribute('data-temp-run', Date.now()); // 标记为临时运行
                 document.body.appendChild(script);
                 alert('脚本已执行！');
-            } catch(e) {
-                console.error(e);
-                alert('执行出错，请查看控制台');
-            }
+            } catch(e) { console.error(e); alert('执行出错'); }
         };
-        // --- 新增代码结束 ---
 
-        if(existingMod) {
-            nameInput.value = existingMod.name;
-            descInput.value = existingMod.description;
-            codeInput.value = existingMod.scriptContent;
-            delBtn.style.display = 'inline-block';
-            delBtn.onclick = async () => {
-                if(confirm('确定删除此脚本吗？')) {
-                    await deleteLocalScript(existingMod.id);
-                    modal.classList.remove('active');
-                    await loadDataAndRender();
-                }
-            };
-        } else {
-            nameInput.value = '';
-            descInput.value = '';
-            codeInput.value = '';
-            delBtn.style.display = 'none';
+        // --- Tab 2: 投稿逻辑 (含标签逻辑) ---
+        const typeSelect = document.getElementById('ws-upload-type');
+        const targetSelectContainer = document.getElementById('ws-update-select-container');
+        const targetSelect = document.getElementById('ws-upload-target-id');
+        const tagContainer = document.getElementById('ws-tags-selection-area');
+        const customTagInput = document.getElementById('ws-custom-tag-input');
+        const addTagBtn = document.getElementById('ws-add-tag-btn');
+
+        // 渲染标签函数
+        function renderTags() {
+            tagContainer.innerHTML = '';
+            // 合并现有标签和用户新加的标签(如果不在现有列表中)
+            const displayTags = new Set([...allTags, ...selectedTags]);
+
+            displayTags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = `ws-selectable-tag ${selectedTags.has(tag) ? 'selected' : ''}`;
+                span.innerText = tag;
+                span.onclick = () => {
+                    if (selectedTags.has(tag)) {
+                        selectedTags.delete(tag);
+                    } else {
+                        selectedTags.add(tag);
+                    }
+                    renderTags(); // 重绘
+                };
+                tagContainer.appendChild(span);
+            });
         }
 
-        saveBtn.onclick = async () => {
-            if(!nameInput.value || !codeInput.value) { alert('名称和代码不能为空'); return; }
-            const data = {
-                id: existingMod ? existingMod.id : null,
-                name: nameInput.value,
-                description: descInput.value,
-                scriptContent: codeInput.value
-            };
-            await saveLocalScript(data);
-            modal.classList.remove('active');
-            await loadDataAndRender();
+        // 添加自定义标签逻辑
+        const addCustomTag = () => {
+            const val = customTagInput.value.trim();
+            if (val) {
+                selectedTags.add(val);
+                if (!allTags.includes(val)) allTags.push(val); // 临时加入列表
+                customTagInput.value = '';
+                renderTags();
+            }
+        };
+        addTagBtn.onclick = addCustomTag;
+        customTagInput.onkeydown = (e) => { if(e.key === 'Enter') addCustomTag(); };
+
+        // 初始化标签
+        renderTags();
+
+        // 联动逻辑
+        typeSelect.onchange = () => {
+            if (typeSelect.value === 'update') {
+                targetSelectContainer.style.display = 'block';
+                if(targetSelect.value) fillFormFromExisting(targetSelect.value);
+            } else {
+                targetSelectContainer.style.display = 'none';
+                document.getElementById('ws-upload-name').value = '';
+                document.getElementById('ws-upload-desc').value = '';
+                selectedTags.clear(); // 清空标签
+                renderTags();
+            }
+        };
+        targetSelect.onchange = () => fillFormFromExisting(targetSelect.value);
+
+        function fillFormFromExisting(id) {
+            const mod = myWorks.find(m => m.id === id);
+            if(mod) {
+                document.getElementById('ws-upload-name').value = mod.name;
+                document.getElementById('ws-upload-author').value = mod.author;
+                document.getElementById('ws-upload-version').value = mod.version;
+                document.getElementById('ws-upload-desc').value = mod.description;
+
+                // 填充标签
+                selectedTags.clear();
+                if(mod.tags) mod.tags.forEach(t => selectedTags.add(t));
+                renderTags();
+            }
+        }
+
+        // 发送逻辑
+        const sendBtn = document.getElementById('ws-send-mail-btn');
+        sendBtn.onclick = async () => {
+            const name = document.getElementById('ws-upload-name').value;
+            const author = document.getElementById('ws-upload-author').value;
+            const version = document.getElementById('ws-upload-version').value;
+            const desc = document.getElementById('ws-upload-desc').value;
+            const note = document.getElementById('ws-upload-note').value;
+            const scriptFile = document.getElementById('ws-file-script').files[0];
+            const wbFile = document.getElementById('ws-file-worldbook').files[0];
+
+            // 获取最终标签字符串
+            const finalTags = Array.from(selectedTags).join(', ');
+
+            if(!name || !author) { alert('名称和作者必填'); return; }
+
+            const originalBtnText = sendBtn.innerHTML;
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '⏳ 正在打包并发送...';
+            sendBtn.style.opacity = '0.7';
+
+           try {
+    const scriptContent = await readFileContent(scriptFile);
+    const wbContent = await readFileContent(wbFile);
+
+    // EmailJS 参数
+    const emailParams = {
+        mod_name: name,
+        author: author,
+        version: version || '1.0',
+        type: typeSelect.value === 'update' ? '🔄 更新' : '✨ 新增',
+        target_id: typeSelect.value === 'update' ? targetSelect.value : '自动生成',
+        description: desc || '无',
+        tags: finalTags || '无',
+        note: note || '无',
+        token: token || '无',
+        script_filename: scriptFile ? scriptFile.name : '无',
+        script_content: scriptContent || '无',
+        worldbook_filename: wbFile ? wbFile.name : '无',
+        worldbook_content: wbContent || '无'
+    };
+
+    // 发送邮件
+    const result = await emailjs.send(
+        'service_sbz6u6c',      // 替换成你的 Service ID
+        'template_hlresca',     // 替换成你的 Template ID
+        emailParams
+    );
+
+    console.log("EmailJS Response:", result);
+
+    if (result.status === 200) {
+        alert(`✅ 投稿成功！\n\n开发者已收到你的作品：\n"${name}"\n\n请耐心等待审核更新。`);
+        closeModal();
+    } else {
+        throw new Error('发送失败');
+    }
+ 
+            } catch (error) {
+                console.error("Upload failed:", error);
+                alert(`❌ 发送失败: ${error.message}\n\n如果是第一次使用，请检查邮箱是否收到激活邮件！`);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalBtnText;
+                sendBtn.style.opacity = '1';
+            }
         };
 
-        modal.classList.add('active');
+        // --- Tab 3: 我的作品列表 (保持不变) ---
+        const worksList = document.getElementById('ws-my-works-list');
+        if(myWorks.length > 0) {
+            worksList.innerHTML = myWorks.map(m => `
+                <div style="padding:10px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="color:var(--primary-color); font-weight:bold;">${m.name} <span style="font-size:0.8em; color:#888;">v${m.version}</span></div>
+                        <div style="font-size:0.8em; color:#aaa;">ID: ${m.id}</div>
+                    </div>
+                    <div style="font-size:0.8em; color:var(--success-color);">已发布</div>
+                </div>
+            `).join('');
+        }
     }
     async function loadDataAndRender() {
-         if (allRemoteMods.length === 0) {
-            if (typeof loadRemoteJson !== 'function') {
-                const res = await fetch(REMOTE_URL);
-                allRemoteMods = await res.json();
-            } else {
-                 allRemoteMods = await loadRemoteJson(REMOTE_URL, []);
+        // 1. 获取订阅信息
+        await getSubscriptions();
+
+        // 2. 获取远程数据
+        if (allRemoteMods.length === 0) {
+            try {
+                let remoteData = [];
+                if (typeof loadRemoteJson !== 'function') {
+                    const res = await fetch(REMOTE_URL);
+                    remoteData = await res.json();
+                } else {
+                    remoteData = await loadRemoteJson(REMOTE_URL, []);
+                }
+                allRemoteMods = remoteData;
+
+                // 【新增】检测更新
+                await checkForUpdates(allRemoteMods);
+
+            } catch (e) {
+                console.error("Fetch mods failed", e);
             }
         }
-        allLocalMods = await getLocalScripts();
 
-        let tags = new Set();
-        [...allRemoteMods, ...allLocalMods].forEach(m => {
-            if(m.tags) m.tags.forEach(t => tags.add(t));
-        });
-        renderTagsUI(Array.from(tags));
+        allLocalMods = await getLocalScripts(); // 假设此函数存在
+
+        renderFiltersUI(); // 使用新的渲染函数
         refreshView(true);
     }
-   // 【修改】视图刷新：使用 Fragment 解决闪烁，加强 ID 匹配
+
+    // 【修改】refreshView 适配筛选模式
     async function refreshView(needsRefilter = true) {
         const container = document.getElementById('workshop-mod-list');
-        // 注意：不要在这里直接清空 container.innerHTML，等到最后一起替换
-
-        const userSettings = await getUserModSettings();
-        // 建立映射时，强制 Key 为字符串
+        const userSettings = await getUserModSettings(); // 假设此函数存在
         const settingsMap = new Map(userSettings.map(i => [String(i.id), i]));
 
         if(needsRefilter) {
             const term = state.searchTerm.toLowerCase();
             const list = [...allLocalMods, ...allRemoteMods];
+
             state.filteredList = list.filter(mod => {
-                const matchTag = state.currentTag === 'all' || (mod.tags && mod.tags.includes(state.currentTag));
-                const matchSearch = mod.name.toLowerCase().includes(term) || (mod.description && mod.description.toLowerCase().includes(term));
-                return matchTag && matchSearch;
+                // 筛选逻辑：标签 或 作者
+                let matchFilter = true;
+                if (state.currentTag !== 'all') {
+                    if (state.filterMode === 'tag') {
+                        matchFilter = mod.tags && mod.tags.includes(state.currentTag);
+                    } else {
+                        matchFilter = mod.author === state.currentTag;
+                    }
+                }
+
+                const matchSearch = mod.name.toLowerCase().includes(term) ||
+                                  (mod.description && mod.description.toLowerCase().includes(term)) ||
+                                  (mod.author && mod.author.toLowerCase().includes(term));
+
+                return matchFilter && matchSearch;
             });
         }
 
@@ -15832,9 +16591,41 @@ const npcImageMap_fallbackData = {
         }
     }
     
-    function bindEvents() {
-        const createBtn = document.getElementById('ws-create-local-btn');
-        if(createBtn) createBtn.onclick = () => openEditorModal();
+     function bindEvents() {
+        // 1. 筛选模式切换
+        const tagFilterBtn = document.getElementById('filter-by-tag');
+        const authorFilterBtn = document.getElementById('filter-by-author');
+
+        if(tagFilterBtn && authorFilterBtn) {
+            tagFilterBtn.onclick = () => {
+                state.filterMode = 'tag';
+                state.currentTag = 'all';
+                tagFilterBtn.classList.add('active');
+                authorFilterBtn.classList.remove('active');
+                renderFiltersUI();
+                refreshView(true);
+            };
+            authorFilterBtn.onclick = () => {
+                state.filterMode = 'author';
+                state.currentTag = 'all';
+                authorFilterBtn.classList.add('active');
+                tagFilterBtn.classList.remove('active');
+                renderFiltersUI();
+                refreshView(true);
+            };
+        }
+
+        // 2. 开发者菜单按钮
+    const devBtn = document.getElementById('ws-dev-menu-btn');
+    if(devBtn) {
+        devBtn.onclick = () => {
+            openDevCenter('local'); // 默认打开本地编辑页
+        };
+    }
+
+        // 3. 管理模组按钮
+        const manageBtn = document.getElementById('ws-manage-btn');
+        if(manageBtn) manageBtn.onclick = () => alert("模组管理面板开发中...");
 
         const searchInput = document.getElementById('workshop-search-input');
         const searchBtn = document.getElementById('workshop-search-btn');
@@ -15844,11 +16635,7 @@ const npcImageMap_fallbackData = {
             refreshView(true);
         };
 
-        const refreshBtn = document.getElementById('workshop-refresh-btn');
-        if(refreshBtn) refreshBtn.onclick = () => {
-            allRemoteMods = [];
-            loadDataAndRender();
-        };
+ 
 
         // 重新加载运行时 (Reload Runtime)
         const reloadBtn = document.getElementById('workshop-reload-runtime-btn');
