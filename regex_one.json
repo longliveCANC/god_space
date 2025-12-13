@@ -2853,8 +2853,8 @@ input[type="range"]::-moz-range-thumb {
 
 .message-bubble {
     white-space: pre-line;  
-      line-height: var(--base-line-height, 1.6);
-       font-size: var(--base-font-size, 16px);
+      line-height: var(--base-line-height, 1.7);
+       font-size: var(--base-font-size, 19px);
     max-width: 93%;
     min-width:93%;
     padding: 15px 20px;
@@ -3308,7 +3308,7 @@ box-shadow: 0 0 8px var(--glow-color);
         .tag { font-family: var(--base-font-family), serif; background-color: var(--secondary-color); color: var(--background-color); padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; box-shadow: 0 0 8px var(--glow-color); transition: all 0.3s ease; }
         .choice-card.focused .tag { background-color: var(--primary-color);  }
 
-        .description { margin: 0;  font-size: var(--base-font-size, 16px);  line-height: 1.8; color: var(--text-color); transition: color 0.3s ease; }
+        .description { margin: 0;  font-size: var(--base-font-size, 19px);  line-height: 1.8; color: var(--text-color); transition: color 0.3s ease; }
         /* .choice-card.focused .description { color: #ffffff; } */
         
         /* .choice-card.disabled .description { color: #888; } */
@@ -5401,12 +5401,12 @@ opacity: 0.6;
     color: var(--text-secondary-color);
     margin-right: 8px;
     font-weight: bold;
-        font-size: var(--base-font-size, 16px);
+        font-size: var(--base-font-size, 19px);
 }
 
 .tree-value {
     color: var(--text-color);
-      font-size: var(--base-font-size, 16px);
+      font-size: var(--base-font-size, 19px);
 }
 
 .tree-children {
@@ -9963,8 +9963,8 @@ input:checked + .slider:before {
     overflow-y: auto;
    
    white-space: pre-line; /* 保留换行符 */
-     line-height: var(--base-line-height, 1.6);
-       font-size: var(--base-font-size, 16px);
+     line-height: var(--base-line-height, 1.7);
+       font-size: var(--base-font-size, 19px);
     scrollbar-width: thin;
     scrollbar-color: var(--primary-color) var(--container-bg-color);
 }
@@ -41132,22 +41132,22 @@ initAutoSetNpcFilter();
     try {
         const savedFontSize = localStorage.getItem('baseFontSize');
         // 如果有保存的值, 就用它；如果没有，就用滑块默认的16
-        const initialSize = savedFontSize ? parseInt(savedFontSize, 10) : 16;
+        const initialSize = savedFontSize ? parseInt(savedFontSize, 10) : 19;
         applyFontSize(initialSize);
     } catch (e) {
         console.warn("无法加载字体大小设置，将使用默认值。");
-        applyFontSize(16); // 如果出错，也使用默认值
+        applyFontSize(19); // 如果出错，也使用默认值
     }
 
      // 检查localStorage里有没有保存的行高
     try {
         const savedLineHeight = localStorage.getItem('baseLineHeight');
         // 如果有保存的值, 就用它；如果没有，就用默认的1.6
-        const initialHeight = savedLineHeight ? parseFloat(savedLineHeight) : 1.6;
+        const initialHeight = savedLineHeight ? parseFloat(savedLineHeight) : 1.7;
         applyLineHeight(initialHeight);
     } catch (e) {
         console.warn("无法加载行高设置，将使用默认值。");
-        applyLineHeight(1.6);
+        applyLineHeight(1.7);
     }
 
    // 1. **首先**，把我们的字体衣橱挂满！
