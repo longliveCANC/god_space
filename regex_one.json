@@ -38847,7 +38847,7 @@ if (debugClearBtn) {
     });
 }
         // ========== 新增：成就系统UI交互 (结束) ==========
- 
+  fixedItems = fixedItems.filter(item => item[2] !== "基础技能");
         const zeroSkills = [];
         const skillCategories = playCharacterData["基础技能"];
 
@@ -39365,7 +39365,7 @@ function populateInventoryModal() {
 }
     
        // 替换为:
-const fixedItems = [
+let fixedItems = [
     // 格式: [名称, 积分价格, 分类, {所需支线}, 效果, 描述]
      ["压缩饼干", 50, "物品", {}, "填饱肚子", "一块可以提供一天能量的高热量饼干，味道不怎么样。"],
     ["纯净水", 20, "物品", {}, "解渴", "经过净化的饮用水，500毫升装。"],
