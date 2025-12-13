@@ -14669,7 +14669,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.7';
+let current_game_version = '3.4.8';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -15699,7 +15699,29 @@ const npcImageMap_fallbackData = {
         // 检测完成后，更新缓存
         saveCachedJson(newMods);
     }
-
+// 【新增】启动时检查更新（不依赖 UI 加载）
+async function checkUpdatesOnStartup() {
+    try {
+        let remoteData = [];
+        if (typeof loadRemoteJson !== 'function') {
+            const res = await fetch(REMOTE_URL);
+            remoteData = await res.json();
+        } else {
+            remoteData = await loadRemoteJson(REMOTE_URL, []);
+        }
+        
+        // 先获取订阅信息
+        await getSubscriptions();
+        
+        // 检测更新（会在有更新时自动弹窗）
+        await checkForUpdates(remoteData);
+        
+        // 缓存到全局变量，避免后续重复请求
+        allRemoteMods = remoteData;
+    } catch (e) {
+        console.error("启动时检查更新失败", e);
+    }
+}
     // 参考游戏主程序的弹窗实现
     function showUpdateModal(updates) {
         // 如果已存在（极少情况），先移除
@@ -16401,28 +16423,25 @@ const npcImageMap_fallbackData = {
             `).join('');
         }
     }
-    async function loadDataAndRender() {
-        // 1. 获取订阅信息
-        await getSubscriptions();
+  async function loadDataAndRender() {
+    // 1. 获取订阅信息
+    await getSubscriptions();
 
-        // 2. 获取远程数据
-        if (allRemoteMods.length === 0) {
-            try {
-                let remoteData = [];
-                if (typeof loadRemoteJson !== 'function') {
-                    const res = await fetch(REMOTE_URL);
-                    remoteData = await res.json();
-                } else {
-                    remoteData = await loadRemoteJson(REMOTE_URL, []);
-                }
-                allRemoteMods = remoteData;
-
-                // 【新增】检测更新
-                await checkForUpdates(allRemoteMods);
-
-            } catch (e) {
-                console.error("Fetch mods failed", e);
+    // 2. 获取远程数据（如果启动时已加载，则跳过）
+    if (allRemoteMods.length === 0) {
+        try {
+            let remoteData = [];
+            if (typeof loadRemoteJson !== 'function') {
+                const res = await fetch(REMOTE_URL);
+                remoteData = await res.json();
+            } else {
+                remoteData = await loadRemoteJson(REMOTE_URL, []);
             }
+            allRemoteMods = remoteData;
+            // 【移除】不在这里检测更新，因为启动时已经检测过了
+        } catch (e) {
+            console.error("Fetch mods failed", e);
+        }
         }
 
         allLocalMods = await getLocalScripts(); // 假设此函数存在
@@ -16693,10 +16712,12 @@ const npcImageMap_fallbackData = {
         });
     }
     return {
-        init: async function() {
-            await initDB();
-            bindEvents();
-        },
+init: async function() {
+    await initDB();
+    bindEvents();
+    // 【新增】主界面加载时检查更新
+    await checkUpdatesOnStartup();
+},
         runMods: executeActiveMods,
        downloadWorldBook: downloadFile  
     };
