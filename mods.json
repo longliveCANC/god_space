@@ -72,7 +72,7 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-合理性审查之骰.json",
     "previewImage": ""
   } , {
-    "id": "领养小孩-外挂版世界书",
+    "id": "x-dlc-领养小孩",
     "name": "领养小孩",
     "author": "assa",
     "version": "1.0",
@@ -82,7 +82,7 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养小孩-外挂版世界书.json",
     "previewImage": ""
   } , {
-    "id": "领养大人-外挂版世界书",
+    "id": "x-dlc-领养大人",
     "name": "领养大人",
     "author": "assa",
     "version": "1.0",
