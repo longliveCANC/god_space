@@ -12,6 +12,18 @@
 
   "previewImage": ""
   },  {
+    "id": "mod_test_0555",
+    "name": "公告位",
+        "authorToken":"0354437c-3984-4fb6-872c-bc1a299ddfa3",
+    "author": "assa",
+    "version": "1.6",
+    "tags": ["公告"],
+    "description": "dlc需要开启无世界观。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
+
+  "previewImage": ""
+  }, {
     "id": "小蝌蚪找妈妈-同层版",
     "name": "本体世界书快捷链接",
     "author": "assa",
