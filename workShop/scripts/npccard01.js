@@ -1518,7 +1518,7 @@
             const data = npc.data;
 
             // --- 妈妈帮你更新了忽略列表 ---
-            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp'];
+            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp','game批注'];
 
 
             // --- 0. 顶部区域：名字、外貌、好感度 (这部分保持不变) ---

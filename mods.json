@@ -45,9 +45,9 @@
     "id": "x-mod-超复杂npc",
     "name": "超复杂npc档案",
     "author": "assa",
-    "version": "2.0",
+    "version": "2.1",
     "tags": ["npc档案","nsfw"],
-    "description": "[1127世界书更新nsfw词条，选开]世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
+    "description": "[1213世界书更新意象/声线/小习惯/批注，选开.美化已对应更新。可能会塑造人物更稳定，大概。去掉了恩怨和承诺]世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-超复杂npc.json",
     "previewImage": ""
