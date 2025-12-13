@@ -14651,20 +14651,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     </div>
 </div>
 
-
-<div id="ws-editor-modal" class="ws-modal-overlay">
-    <div class="ws-modal-content">
-        <span class="ws-modal-close" onclick="document.getElementById('ws-editor-modal').classList.remove('active')">×</span>
-        <h3 style="color: var(--primary-color);">编辑本地脚本</h3>
-        <input type="text" id="ws-edit-name" placeholder="脚本名称" style="width:100%; margin-bottom:10px; padding:8px; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white;">
-        <input type="text" id="ws-edit-desc" placeholder="简介" style="width:100%; margin-bottom:10px; padding:8px; background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white;">
-        <textarea id="ws-edit-code" class="ws-editor-area" placeholder="// 在此粘贴代码..."></textarea>
-        <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
-            <button class="control-btn danger-btn" id="ws-delete-local-btn" style="display:none;">删除</button>
-            <button class="control-btn" id="ws-save-local-btn" style="background:var(--success-color); color:black;">保存脚本</button>
-        </div>
-    </div>
-</div>
+ 
  
 </body>
 
@@ -16226,45 +16213,74 @@ async function checkUpdatesOnStartup() {
             };
         });
 
-        // --- Tab 1: 本地编辑器逻辑 (保持不变) ---
-        const nameInput = document.getElementById('ws-edit-name');
-        const descInput = document.getElementById('ws-edit-desc');
-        const codeInput = document.getElementById('ws-edit-code');
-        const saveBtn = document.getElementById('ws-save-local-btn');
-        const delBtn = document.getElementById('ws-delete-local-btn');
-        const runBtn = document.getElementById('ws-run-local-now-btn');
+           // --- Tab 1: 本地编辑器逻辑 (使用 setTimeout 确保 DOM 渲染完成) ---
+        setTimeout(() => {
+            const nameInput = document.getElementById('ws-edit-name');
+            const descInput = document.getElementById('ws-edit-desc');
+            const codeInput = document.getElementById('ws-edit-code');
+            const saveBtn = document.getElementById('ws-save-local-btn');
+            const delBtn = document.getElementById('ws-delete-local-btn');
+            const runBtn = document.getElementById('ws-run-local-now-btn');
 
-        if (editData) {
-            nameInput.value = editData.name;
-            descInput.value = editData.description;
-            codeInput.value = editData.scriptContent;
-            delBtn.style.display = 'inline-block';
-            delBtn.onclick = async () => {
-                if(confirm('确定删除此脚本吗？')) {
-                    await deleteLocalScript(editData.id);
-                    closeModal();
-                    await loadDataAndRender();
+            // 检查元素是否存在
+            if(!nameInput || !descInput || !codeInput || !saveBtn || !runBtn) {
+                console.error('本地编辑器元素未找到');
+                return;
+            }
+
+            if (editData) {
+                nameInput.value = editData.name || '';
+                descInput.value = editData.description || '';
+                codeInput.value = editData.scriptContent || '';
+                delBtn.style.display = 'inline-block';
+                delBtn.onclick = async () => {
+                    if(confirm('确定删除此脚本吗？')) {
+                        await deleteLocalScript(editData.id);
+                        closeModal();
+                        await loadDataAndRender();
+                    }
+                };
+            }
+
+            saveBtn.onclick = async () => {
+                const name = nameInput.value.trim();
+                const code = codeInput.value.trim();
+                
+                if(!name || !code) { 
+                    alert('名称和代码不能为空'); 
+                    return; 
+                }
+                
+                const data = { 
+                    id: editData ? editData.id : null, 
+                    name: name, 
+                    description: descInput.value.trim(), 
+                    scriptContent: code 
+                };
+                
+                await saveLocalScript(data);
+                alert('保存成功！');
+                closeModal();
+                await loadDataAndRender();
+            };
+
+            runBtn.onclick = () => {
+                const code = codeInput.value.trim();
+                if(!code) { 
+                    alert('没有代码可以执行'); 
+                    return; 
+                }
+                try {
+                    const script = document.createElement('script');
+                    script.textContent = code;
+                    document.body.appendChild(script);
+                    alert('脚本已执行！请检查控制台输出');
+                } catch(e) { 
+                    console.error('脚本执行错误:', e); 
+                    alert(`执行出错: ${e.message}`); 
                 }
             };
-        }
-        saveBtn.onclick = async () => {
-            if(!nameInput.value || !codeInput.value) { alert('名称和代码不能为空'); return; }
-            const data = { id: editData ? editData.id : null, name: nameInput.value, description: descInput.value, scriptContent: codeInput.value };
-            await saveLocalScript(data);
-            closeModal();
-            await loadDataAndRender();
-        };
-        runBtn.onclick = () => {
-            const code = codeInput.value;
-            if(!code.trim()) { alert('没有代码可以执行'); return; }
-            try {
-                const script = document.createElement('script');
-                script.textContent = code;
-                document.body.appendChild(script);
-                alert('脚本已执行！');
-            } catch(e) { console.error(e); alert('执行出错'); }
-        };
-
+        }, 100); // 延迟100ms确保DOM完全渲染
         // --- Tab 2: 投稿逻辑 (含标签逻辑) ---
         const typeSelect = document.getElementById('ws-upload-type');
         const targetSelectContainer = document.getElementById('ws-update-select-container');
@@ -45102,13 +45118,6 @@ function setupGeneratorButton() {
 
     if (!mainGenerateBtn || !keywordModal) return;
 
-
-     // ================== 新增代码开始 ==================
-
-    const apiKeyConfigBtn = document.getElementById('api-key-config-btn');
-
- 
-    // ================== 新增代码结束 ==================
  
 
     // 调用Gemini API
