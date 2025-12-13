@@ -734,6 +734,83 @@
     box-shadow: 0 0 15px rgba(255,255,255,0.1);
     border-radius: 10px;
 }
+            /* --- 新增：声线波形可视化 --- */
+            .mod01-voice-container {
+                display: flex; align-items: center;
+                background: rgba(0,0,0,0.2);
+                border: 1px solid var(--border-color);
+                padding: 10px 15px; border-radius: 6px;
+                margin-bottom: 15px;
+            }
+            .mod01-voice-icon { font-size: 18px; margin-right: 15px; color: var(--primary-color); opacity: 0.8; }
+            .mod01-voice-text { font-size: 13px; color: var(--text-color); flex: 1; line-height: 1.4; }
+            .mod01-voice-wave {
+                display: flex; align-items: center; gap: 2px; height: 20px; margin-left: 15px;
+            }
+            .mod01-voice-bar {
+                width: 3px; background: var(--secondary-color);
+                animation: mod01-wave 1s infinite ease-in-out;
+                border-radius: 2px;
+            }
+            @keyframes mod01-wave { 0%, 100% { height: 4px; opacity: 0.5; } 50% { height: 16px; opacity: 1; } }
+
+            /* --- 新增：意象云 --- */
+            .mod01-imagery-box {
+                display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;
+                padding: 10px; background: radial-gradient(circle at center, rgba(255,255,255,0.03), transparent);
+                border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+            }
+            .mod01-imagery-label {
+                width: 100%; font-size: 10px; color: var(--text-secondary-color);
+                text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; text-align: center;
+            }
+            .mod01-imagery-tag {
+                font-family: serif; font-style: italic;
+                padding: 4px 12px; border-radius: 20px;
+                border: 1px solid rgba(255,255,255,0.15);
+                color: var(--text-color); font-size: 13px;
+                background: rgba(255,255,255,0.02);
+                transition: all 0.3s;
+            }
+            .mod01-imagery-tag:hover {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 8px var(--glow-color);
+                transform: translateY(-2px);
+            }
+            .mod01-imagery-tag::before { content: '✦'; margin-right: 5px; color: var(--secondary-color); font-size: 10px;}
+
+            /* --- 新增：Game Meta 批注 (警告风格) --- */
+            .mod01-meta-alert {
+                margin-top: 20px; margin-bottom: 20px;
+                background: rgba(255, 165, 0, 0.05); /* 橙色背景淡化 */
+                border-left: 4px solid #ffaa00;
+                padding: 15px; position: relative;
+                font-family: monospace; /* 等宽字体体现代码感 */
+            }
+            .mod01-meta-alert::before {
+                content: "⚠ game的批注";
+                display: block; font-weight: bold; color: #ffaa00;
+                font-size: 11px; margin-bottom: 8px; letter-spacing: 1px;
+            }
+            .mod01-meta-content { color: #e0d0b0; font-size: 12px; line-height: 1.5; }
+
+            /* --- 新增：小习惯卡片 --- */
+            .mod01-habit-grid {
+                display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 10px; margin-bottom: 20px;
+            }
+            .mod01-habit-card {
+                background: rgba(255,255,255,0.03);
+                border: 1px dashed var(--border-color);
+                padding: 10px; border-radius: 4px;
+                display: flex; align-items: flex-start;
+            }
+            .mod01-habit-icon {
+                margin-right: 10px; margin-top: 2px;
+                color: var(--secondary-color); font-size: 14px;
+            }
+            .mod01-habit-text { font-size: 13px; color: var(--text-secondary-color); line-height: 1.4; }
+
 
         `;
         document.head.appendChild(style);
@@ -1507,6 +1584,89 @@
                 }
             });
 
+   // --- 新增美化 1：声线 (Voice) ---
+            if (data.声线) {
+                const voiceBox = document.createElement('div');
+                voiceBox.className = 'mod01-voice-container';
+                // 生成随机高度的波形条
+                let barsHtml = '';
+                for(let i=0; i<8; i++) {
+                    const h = 4 + Math.random() * 12;
+                    const delay = Math.random() * 1;
+                    barsHtml += `<div class="mod01-voice-bar" style="height:${h}px; animation-delay:${delay}s"></div>`;
+                }
+                voiceBox.innerHTML = `
+                    <div class="mod01-voice-icon"><i class="fas fa-microphone-alt"></i></div>
+                    <div class="mod01-voice-text">
+                        <div style="font-size:10px; color:var(--secondary-color); margin-bottom:2px;">声线</div>
+                        ${data.声线}
+                    </div>
+                    <div class="mod01-voice-wave">${barsHtml}</div>
+                `;
+                // 插入位置：放在标签容器之后，主内容之前
+                tagsContainer.insertAdjacentElement('afterend', voiceBox);
+                ignoreKeys.push('声线');
+            }
+
+            // --- 新增美化 2：意象 (Imagery) ---
+            if (data.意象) {
+                const imgBox = document.createElement('div');
+                imgBox.className = 'mod01-imagery-box';
+                imgBox.innerHTML = `<div class="mod01-imagery-label">ABSTRACT IMAGERY</div>`;
+
+                // 支持中文或英文分号切割
+                const images = String(data.意象).split(/[;；]/).filter(s => s.trim());
+                images.forEach(img => {
+                    const tag = document.createElement('span');
+                    tag.className = 'mod01-imagery-tag';
+                    tag.innerText = img.trim();
+                    imgBox.appendChild(tag);
+                });
+
+                // 插入位置：放在声线之后（如果存在）或者标签之后
+                const refNode = root.querySelector('.mod01-voice-container') || tagsContainer;
+                refNode.insertAdjacentElement('afterend', imgBox);
+                ignoreKeys.push('意象');
+            }
+
+            // --- 新增美化 3：小习惯 (Habits) ---
+            // 放在“事件”或“身份”之前，作为人物细节补充
+            if (data.小习惯) {
+                const sec = document.createElement('div');
+                sec.className = 'mod01-section';
+                sec.innerHTML = `<div class="mod01-sec-title">小习惯</div>`;
+
+                const grid = document.createElement('div');
+                grid.className = 'mod01-habit-grid';
+
+                // 尝试智能分割：如果是分号分隔，或者换行分隔
+                let habits = [];
+                const rawHabit = String(data.小习惯);
+                if (rawHabit.includes(';') || rawHabit.includes('；')) {
+                    habits = rawHabit.split(/[;；]/);
+                } else if (rawHabit.includes('\n')) {
+                    habits = rawHabit.split('\n');
+                } else {
+                    // 如果是一整段话，尝试按句号分割，或者直接作为一条
+                    habits = [rawHabit];
+                }
+
+                habits.forEach(h => {
+                    if(!h.trim()) return;
+                    grid.innerHTML += `
+                        <div class="mod01-habit-card">
+                            <div class="mod01-habit-icon"><i class="far fa-check-circle"></i></div>
+                            <div class="mod01-habit-text">${h.trim()}</div>
+                        </div>
+                    `;
+                });
+
+                sec.appendChild(grid);
+                // 插入到 root 的当前末尾 (通常在 Header/Tags/Voice/Imagery 之后)
+                root.appendChild(sec);
+                ignoreKeys.push('小习惯');
+            }
+
 
             // --- 妈妈的改动：用正则表达式查找并渲染关系/印象 ---
             const relationRegex = /(和.+关系)$/;
@@ -1582,6 +1742,17 @@
 
                 root.appendChild(sec);
             });
+
+                        // --- 新增美化 4：Game Meta 批注 ---
+            // 这是一个特殊的 Meta 字段，我们把它放在显眼的位置，或者所有属性的最下方作为“开发者注脚”
+            // 这里选择放在最下方，但在通用循环之前
+            if (data.game批注) {
+                const metaBox = document.createElement('div');
+                metaBox.className = 'mod01-meta-alert';
+                metaBox.innerHTML = `<div class="mod01-meta-content">${data.game批注}</div>`;
+                root.appendChild(metaBox);
+                ignoreKeys.push('game批注');
+            }
         }
 
         // --- 新增：沉浸式事件渲染 ---
