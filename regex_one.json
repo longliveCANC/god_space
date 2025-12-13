@@ -14669,7 +14669,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.8';
+let current_game_version = '3.4.9';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -33652,12 +33652,14 @@ rollCardToggleButton.addEventListener('click', () => {
 });
 updateRollCardToggleVisual();
  // --- 流式传输设置 ---
-const streamingToggle = document.getElementById('streaming-toggle');
+ const streamingToggle = document.getElementById('streaming-toggle');
 const streamingStatusIndicator = document.getElementById('streaming-status-indicator');
 const simpleStreamingOptions = document.getElementById('simple-streaming-options');
 const simpleStreamingToggle = document.getElementById('simple-streaming-toggle');
- function updateStreamingToggleState() {
+
+function updateStreamingToggleState() {
     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
+    
     if (isStreamingEnabled) {
         streamingToggle.dataset.state = 'on';
         streamingToggle.textContent = '开启';
@@ -33665,11 +33667,9 @@ const simpleStreamingToggle = document.getElementById('simple-streaming-toggle')
         streamingStatusIndicator.style.color = 'var(--success-color, #4CAF50)';
         simpleStreamingOptions.style.display = 'flex';
 
-        // --- 关键修复点 ---
-        // 当流式选项可见时，立即从localStorage加载并设置其状态
+        // 加载并设置简易流式状态
         const isSimpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') === 'true';
         simpleStreamingToggle.checked = isSimpleStreamingEnabled;
-
     } else {
         streamingToggle.dataset.state = 'off';
         streamingToggle.textContent = '关闭';
@@ -33679,32 +33679,20 @@ const simpleStreamingToggle = document.getElementById('simple-streaming-toggle')
     }
 }
 
+// 流式开关点击事件（只定义一次）
 streamingToggle.addEventListener('click', () => {
-    let isEnabled = streamingToggle.dataset.state === 'on';
-    localStorage.setItem('streamingEnabled', !isEnabled);
+    const isEnabled = streamingToggle.dataset.state === 'on';
+    localStorage.setItem('streamingEnabled', String(!isEnabled)); // 修复：保存反转后的值
     updateStreamingToggleState();
 });
 
-// 当“简易流式”复选框状态改变时，保存到localStorage
-simpleStreamingToggle.addEventListener('change', () => {
-    localStorage.setItem('simpleStreamingEnabled', simpleStreamingToggle.checked);
-});
-
-function updateSimpleStreamingState() {
-    const isSimpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') === 'true';
-    simpleStreamingToggle.checked = isSimpleStreamingEnabled;
-}
-
-streamingToggle.addEventListener('click', () => {
-    let isEnabled = streamingToggle.dataset.state === 'on';
-    localStorage.setItem('streamingEnabled', !isEnabled);
-    updateStreamingToggleState();
-});
-
+// 简易流式复选框改变事件（只定义一次）
 simpleStreamingToggle.addEventListener('change', () => {
     localStorage.setItem('simpleStreamingEnabled', String(simpleStreamingToggle.checked));
 });
 
+// 初始化状态
+updateStreamingToggleState();
 function updateScanFloorsDisplay() {
     const currentFloors = localStorage.getItem('scanFloorsCount');
     const displayElement = document.getElementById('current-scan-floors');
