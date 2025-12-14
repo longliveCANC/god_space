@@ -33113,7 +33113,7 @@ let backupData = {};
     }
 }
     } catch (e) {
-        if (double_api === 'true' && batches === 2) {
+        if (double_api === 'true') {
         await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
         batches = 1;
         console.log("[Nova's Error Handler] 检测到错误,已取消变量生成阶段");
