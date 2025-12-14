@@ -1629,6 +1629,11 @@
                 ignoreKeys.push('意象');
             }
 
+            // --- 事件 (沉浸式插入，这部分逻辑不变) ---
+            if(data.事件 && typeof data.事件 === 'object') {
+                this.renderEvents(root, data.事件);
+                ignoreKeys.push('事件');
+            }
             // --- 新增美化 3：小习惯 (Habits) ---
             // 放在“事件”或“身份”之前，作为人物细节补充
             if (data.小习惯) {
@@ -1668,6 +1673,18 @@
             }
 
 
+
+
+
+
+            // --- 身份 (这部分逻辑不变) ---
+            if(data.身份) {
+                const sec = document.createElement('div');
+                sec.className = 'mod01-section';
+                sec.innerHTML = `<div class="mod01-sec-title">身份 IDENTITY</div><div class="mod01-text-block">${data.身份}</div>`;
+                root.appendChild(sec);
+                ignoreKeys.push('身份');
+            }
             // --- 妈妈的改动：用正则表达式查找并渲染关系/印象 ---
             const relationRegex = /(和.+关系)$/;
             Object.keys(data).forEach(key => {
@@ -1679,28 +1696,11 @@
                         <span>${data[key]}</span>
                     `;
                     // 我们把它插在标签容器后面，主内容前面
-                    tagsContainer.insertAdjacentElement('afterend', relationBlock);
-
+                    // tagsContainer.insertAdjacentElement('afterend', relationBlock);
+  root.appendChild(relationBlock);
                     ignoreKeys.push(key); // 处理完就加到忽略列表里
                 }
             });
-
-
-            // --- 事件 (沉浸式插入，这部分逻辑不变) ---
-            if(data.事件 && typeof data.事件 === 'object') {
-                this.renderEvents(root, data.事件);
-                ignoreKeys.push('事件');
-            }
-
-            // --- 身份 (这部分逻辑不变) ---
-            if(data.身份) {
-                const sec = document.createElement('div');
-                sec.className = 'mod01-section';
-                sec.innerHTML = `<div class="mod01-sec-title">身份 IDENTITY</div><div class="mod01-text-block">${data.身份}</div>`;
-                root.appendChild(sec);
-                ignoreKeys.push('身份');
-            }
-
             // --- 属性 (这部分逻辑不变) ---
             if(data.属性) {
                 this.renderStats(root, data.属性);
