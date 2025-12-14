@@ -345,5 +345,15 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-无限恐怖世界观优化.json",
  "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 18.png"
  
+  } ,{
+    "id": "mod08",
+    "name": "隐藏侧边小球和顶部小球",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["美化脚本"],
+    "description": "如图，电脑端鼠标悬浮的时候才出现，手机端在点击附近位置才出现。手机端可能会显得不那么拥挤。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod08.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 19.png"
   } 
 ]
