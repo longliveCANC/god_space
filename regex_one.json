@@ -29972,13 +29972,14 @@ const parseGenericArgs = (str) => {
     return args;
 };
 
-// 💖 辅助工具：温柔地剥去引号皮
-const unquote = (s) => {
-    if (!s) return s;
-    if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) {
-        return s.slice(1, -1);
+ const unquote = (s) => {
+    if (typeof s !== 'string') return s;
+    let str = s;
+    // 递归去除外层引号
+    while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+        str = str.slice(1, -1);
     }
-    return s;
+    return str;
 };
 const extractBalancedArgs = (str, startTrigger) => {
     const startIndex = str.indexOf(startTrigger);
@@ -30249,7 +30250,7 @@ async function processUpdateMemoryCommands(commandText, message_id) {
 
     // 过滤掉因为分割可能产生的无用的小线头。
     const lines = commandLines.map(line => line.trim()).filter(line => line && !line.startsWith('//'));
-     // 💖 添加路径清理辅助函数 💖
+     //   添加路径清理辅助函数  
 const cleanPath = (path) => {
     if (typeof path !== 'string') return path;
     
@@ -30500,12 +30501,13 @@ function parseStatusParams(paramStr) {
 }
 
 function cleanParam(param) {
-    // 移除外层引号（如果有的话）
-    if ((param.startsWith('"') && param.endsWith('"')) || 
-        (param.startsWith("'") && param.endsWith("'"))) {
-        return param.slice(1, -1);
+    // 递归移除所有外层引号
+    let str = param;
+    while ((str.startsWith('"') && str.endsWith('"')) || 
+           (str.startsWith("'") && str.endsWith("'"))) {
+        str = str.slice(1, -1);
     }
-    return param;
+    return str;
 }
  
 if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
@@ -30555,9 +30557,14 @@ if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
                             continue;
                         }
 
-                        // 清理可能带有的引号
-                        const clean = (s) => (s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"')) ? s.slice(1, -1) : s;
-
+               const clean = (s) => {
+    let str = s;
+    // 递归去除外层引号，直到没有引号为止
+    while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+        str = str.slice(1, -1);
+    }
+    return str;
+};
                                 if (args.length >= 3) {
                                  let path = cleanPath(clean(args[0]));
                                 // <--- 把妈妈的悄悄话加在这里！
@@ -31039,8 +31046,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                                  continue;
                                  }
                                     let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
-                             const key = (fullPath.substring(lastDotIndex1 + 1));
-
+                      const key = clean(fullPath.substring(lastDotIndex1 + 1)); // 对 key 也应用 clean
                                  // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
                              if (path.includes('群员')) {
                                  const originalPath = path;
