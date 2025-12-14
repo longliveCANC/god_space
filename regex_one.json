@@ -24257,6 +24257,7 @@ function showReadingModeMenu(event, chapterData) {
         <div class="dropdown-item" data-action="edit">✏️ 编辑</div>
         <div class="dropdown-item" data-action="star">${chapterData.msg.isStarred ? '⭐ 取消收藏' : '☆ 收藏'}</div>
         <div class="dropdown-item" data-action="name">🏷️ 命名</div>
+          <div class="dropdown-item" data-action="delete" style="color: #ff6b6b;">🗑️ 删除</div>
     `;
 
     // 定位菜单（在按钮下方）
@@ -24506,6 +24507,19 @@ function showReadingModeMenu(event, chapterData) {
             if (e.target === overlay) cancelBtn.onclick();
         };
     };
+ // 删除功能
+dropdown.querySelector('[data-action="delete"]').onclick = async () => {
+    dropdown.remove();
+    
+    // 关闭阅读模式 - 添加 hidden class
+    const readingModeContainer = document.getElementById('reading-mode-container');
+    if (readingModeContainer) {
+        readingModeContainer.classList.add('reading-mode-hidden');
+    }
+    
+    // 调用删除函数
+    await deleteMessage(chapterData.originalIndex);
+};
 }
 // ===== 7. 新增：切换收藏过滤的函数 =====
 function toggleStarredFilter() {
@@ -25373,12 +25387,7 @@ function editMessage(index, bubbleElement) {
 
 function updateRerollButtonState(){
        
-          if(conversationHistory.length > 0 ){
-        // if(conversationHistory.length > 0 && conversationHistory[conversationHistory.length-1].role === 'assistant'){
-            rerollButton.disabled = false;
-        } else {
-            rerollButton.disabled = true;
-        }
+ 
     }
  
 (async () => {
