@@ -14761,7 +14761,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.10';
+let current_game_version = '3.4.11';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -33061,34 +33061,63 @@ let backupData = {};
 
  
            setTimeout(heavySaveTasks, 500);
-          if (double_api === 'true' && !isContinuationVar) {
-        console.log("[Nova's Double API] 检测到双重API请求，准备进入第二阶段...");
- overlay.classList.remove('active');
+ if (double_api === 'true' && !isContinuationVar) {
+    console.log("[Nova's Double API] 检测到双重API请求,准备进入第二阶段...");
+    
+    // 【新增】验证机制 - 检查是否应该继续第二阶段
+    let shouldProceedToPhase2 = true;
+    
+    // 检查1: 新正文是否有文本内容
+    if (!aiFullResponse || aiFullResponse.trim() === '') {
+        console.warn("[Nova's Double API] 阻拦:第一阶段未生成有效文本,取消变量生成");
+        shouldProceedToPhase2 = false;
+    }
+    
+    // 检查2: conversationHistory最新消息是否为AI消息
+    const lastMessage = conversationHistory[conversationHistory.length - 1];
+    if (!lastMessage || lastMessage.role !== 'assistant') {
+        console.warn("[Nova's Double API] 阻拦:历史记录异常,最新消息不是AI回复,取消变量生成");
+        shouldProceedToPhase2 = false;
+    }
+    
+    // 如果任何检查失败,重置批次并跳过第二阶段
+    if (!shouldProceedToPhase2) {
+        await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+        batches = 1;
+        toastr.warning('第一阶段生成异常,已取消变量更新', '流程中断');
+        // 继续执行 finally 块的清理工作,不再执行下面的第二阶段代码
+    } else {
+        // 【原有代码】只有通过验证才执行
+        overlay.classList.remove('active');
         sendButton.disabled = false;
         sendButton.textContent = '→';
         document.getElementById('continue-button').disabled = false;
         document.getElementById('continue-var-button').disabled = false;  
-        // 关键步骤：在第二次发送前，【立即同步恢复】世界书
+        
         await restoreWorldbookNow();
-        console.log("[Nova's Double API] 世界书已恢复至原始状态，开始第二阶段生成。");
+        console.log("[Nova's Double API] 世界书已恢复至原始状态,开始第二阶段生成。");
 
-        // 1. 设置 batches = 2
         await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
-batches = 2;
-  setTimeout(async ()=>{ await handleSend({
-            isContinuation: true,
-            isContinuationVar: true
-        })}, 500);
-        // 2. 触发第二次发送 (续写模式 + 变量更新模式)
-       
+        batches = 2;
+        
+        setTimeout(async ()=>{ 
+            await handleSend({
+                isContinuation: true,
+                isContinuationVar: true
+            })
+        }, 500);
 
-
-            // 3. 第二次发送结束后，设置 batches = 1
-            await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
-batches = 1;
-            console.log("[Nova's Double API] 双重流程执行完毕。");
-        }
+        await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+        batches = 1;
+        console.log("[Nova's Double API] 双重流程执行完毕。");
+    }
+}
     } catch (e) {
+        if (double_api === 'true' && batches === 2) {
+        await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+        batches = 1;
+        console.log("[Nova's Error Handler] 检测到错误,已取消变量生成阶段");
+    }
           
         if (e && e.message && e.message.includes('AbortError')) {
             console.log("[Nova's Lifesaver] 妈妈感知到了，是你按下了暂停。正在温柔地保存我们说到一半的故事...");
