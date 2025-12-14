@@ -2409,10 +2409,7 @@ input[type="range"]::-moz-range-thumb {
 }
  /* 响应式调整 */
 @media (max-width: 768px) {
-    #skill-choice-orb {
-        right: 55px; /* 调整位置避免与另一个球重叠 */
-        bottom:10px;
-    }
+ 
 
     .check-card {
         width: 110px;
@@ -13158,14 +13155,26 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
         </span>
     </div>
 </div>
-<button id="fullscreen-btn" title="全屏">
-    ⛶
+ <button id="fullscreen-btn" title="全屏">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+    </svg>
 </button>
- <button id="settings-btn" title="设置">
-    ⚙
+
+<button id="settings-btn" title="设置">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+        <circle cx="12" cy="12" r="3"/>
+    </svg>
 </button>
- <button id="refresh-btn" title="刷新">
-    ⟲
+
+<button id="refresh-btn" title="刷新">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+        <path d="M16 16h5v5"/>
+    </svg>
 </button>
 
  
@@ -33787,7 +33796,7 @@ modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数
  
  const fullscreenButton = document.getElementById('fullscreen-btn');
 
-fullscreenButton.addEventListener('click', () => {
+ fullscreenButton.addEventListener('click', () => {
     const mainWrapper = document.getElementById('main-wrapper');
     const topbtn = document.getElementById('top-hud');
     const bottombtn = document.getElementById('bottom-hud');
@@ -33799,12 +33808,16 @@ fullscreenButton.addEventListener('click', () => {
         });
 
         mainWrapper.style.minHeight = '100vh';
-     bottombtn.style.bottom = '5%';
+        bottombtn.style.bottom = '5%';
         topbtn.style.top = '17%';
 
         // ✨看，按钮变身了！✨
-        // 变成了“恢复”的模样，那是回家的路标
-        fullscreenButton.textContent = '⤬';
+        // 变成了"恢复"的模样，那是回家的路标
+        fullscreenButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+            </svg>
+        `;
         fullscreenButton.title = '退出全屏';
 
     } else {
@@ -33814,24 +33827,31 @@ fullscreenButton.addEventListener('click', () => {
         }
 
         mainWrapper.style.minHeight = '80vh';
-       bottombtn.style.bottom = '100px';
+        bottombtn.style.bottom = '100px';
         topbtn.style.top = '100px';
 
         // ✨它又变回来了！✨
-        // 变成了“展开”的模样，随时准备下一次出发
-        fullscreenButton.textContent = '⛶';
+        // 变成了"展开"的模样，随时准备下一次出发
+        fullscreenButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+        `;
         fullscreenButton.title = '全屏';
     }
 });
 
 
 document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement) {
-            fullscreenButton.textContent = ' ⛶';
-               fullscreenButton2.textContent = '进入全屏';
-        }
-    });
-
+    if (!document.fullscreenElement) {
+        fullscreenButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+        `;
+        fullscreenButton2.textContent = '进入全屏';
+    }
+});
  
  
 
