@@ -3823,7 +3823,26 @@ box-shadow: 0 0 8px var(--glow-color);
             display: flex; /* 确保内容撑満 */
             flex-direction: column;
         }
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
 
+.modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
         #forum-modal-close-btn {
             position: absolute;
             top: 10px;
@@ -13297,7 +13316,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     <div class="group-chat-context-menu-item" id="context-menu-reply">回复</div>
 </div>
 
-<div id='task-summary-modal-container' class = 'modal'>
+<div id='task-summary-modal-container' class = 'modal' style="z-index: 99999;">
   <div id="summary-root" class="task-summary-main-container">
         <!-- 内容将由JavaScript动态生成 -->
     </div>
@@ -26996,6 +27015,14 @@ const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S
                 summaryOrb.classList.remove('orb-flash');
             }, { once: true });
         }
+         // 自动弹出模态框
+    const latestSummary = allSummaryMatches[allSummaryMatches.length - 1][1];
+    const summaryModalContainer = document.getElementById('task-summary-modal-container');
+    if (summaryModalContainer && typeof runTaskSummary === 'function') {
+        summaryModalContainer.style.display = 'block';
+        runTaskSummary(latestSummary);
+        summaryModalContainer.classList.add('active');
+    }
     }
 
     // --- 群聊 ---
@@ -32698,7 +32725,7 @@ if (messageVars && messageVars.检定记忆) {
             promptsForAI.push(...recentAiMessages);
     //          const recentAiAsUser = recentAiMessages.map(msg => ({
     //     ...msg,
-    //     role: 'user'
+    //     role: 'model'
     // }));
     // promptsForAI.push(...recentAiAsUser);
             promptsForAI.push({
@@ -32768,6 +32795,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 id: `history_scan_trigger_${index}`,
                 position: 'none',
                 role: msg.role,
+ role: msg.role === 'user' ? 'user' : 'assistant',
                  content: String(msg.content || ''), // <--- 【关键修复】强制转字符串
                 should_scan: true,
                 depth: msg.depth
@@ -32777,6 +32805,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
             injections.push({
                 id: `actual_history_display_${index}`,
                 position: 'before_chat',
+                   role: msg.role === 'user' ? 'user' : 'assistant', 
                  content: String(msg.content || ''), // <--- 【关键修复】强制转字符串
                 content: msg.content,
                 should_scan: false
@@ -47375,6 +47404,7 @@ async function runTaskSummary(content) {
             let html = `
                 <header>
                     <h1>任务结算报告</h1>
+                      <button class="modal-close-btn" id="task-summary-close-btn">×</button>
                 </header>
                 <div class="content-wrapper">
                     <nav class="tabs-nav">
@@ -47493,6 +47523,17 @@ async function runTaskSummary(content) {
                     });
                 }
             });
+
+            const closeBtn = document.getElementById('task-summary-close-btn');
+if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+        const summaryModalContainer = document.getElementById('task-summary-modal-container');
+        if (summaryModalContainer) {
+            summaryModalContainer.classList.remove('active');
+            summaryModalContainer.style.display = 'none';
+        }
+    });
+}
   };
  
   // ——————————————————————————————————————总结结束——————————————————————————
