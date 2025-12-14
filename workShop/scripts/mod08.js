@@ -34,7 +34,6 @@
       pointer-events: none;
       position: relative;
       z-index: 1;
-      visibility: hidden; /* 添加visibility防止布局影响 */
     }
     
     #orb-container.show .orb,
@@ -42,7 +41,6 @@
       opacity: 1;
       transform: translateX(0);
       pointer-events: auto;
-      visibility: visible;
     }
     
     /* top-left-orbs 样式(顶部横向容器) */
@@ -65,7 +63,6 @@
       pointer-events: none;
       position: relative;
       z-index: 1;
-      visibility: hidden; /* 添加visibility防止布局影响 */
     }
     
     #top-left-orbs.show .orb,
@@ -73,7 +70,6 @@
       opacity: 1;
       transform: translateY(0);
       pointer-events: auto;
-      visibility: visible;
     }
   `;
   document.head.appendChild(style);
