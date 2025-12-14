@@ -7160,8 +7160,7 @@ opacity: 0.6;
 #save-template-form { display: flex; gap: 0.8rem; flex-wrap: wrap; }
 #save-template-name { flex: 1; }
 
- /* --- 请修改这部分 --- */
-#galaxy-container {
+ #galaxy-container {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -7170,26 +7169,89 @@ opacity: 0.6;
     max-width: 1000px;
     transform: translate(-50%, -50%);
     perspective: 1500px;
-    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
     /* ✨ 魔法核心：声明这是一个真正的3D容器！✨ */
     transform-style: preserve-3d;
 }
 
- 
-/* 星系位置逻辑保持不变 */
-#galaxy-physic { transform: translate3d(-100%, -50%, -800px) rotateY(45deg); opacity: 0.5; }
-#galaxy-mental { transform: translate3d(-50%, -50%, 0) rotateY(0deg); opacity: 1;}
-#galaxy-social { transform: translate3d(0%, -50%, -800px) rotateY(-45deg); opacity: 0.5; }
-#galaxy-container.show-physic #galaxy-physic,
-#galaxy-container.show-mental #galaxy-mental,
-#galaxy-container.show-social #galaxy-social { transform: translate3d(-50%, -50%, 0) rotateY(0deg); opacity: 1; z-index: 10; }
-#galaxy-container.show-physic #galaxy-mental { transform: translate3d(0%, -50%, -800px) rotateY(-45deg); opacity: 0.5; }
-#galaxy-container.show-physic #galaxy-social { transform: translate3d(100%, -50%, -1200px) rotateY(-60deg); opacity: 0.3; }
-#galaxy-container.show-mental #galaxy-physic { transform: translate3d(-100%, -50%, -800px) rotateY(45deg); opacity: 0.5; }
-#galaxy-container.show-mental #galaxy-social { transform: translate3d(0%, -50%, -800px) rotateY(-45deg); opacity: 0.5; }
-#galaxy-container.show-social #galaxy-physic { transform: translate3d(-200%, -50%, -1200px) rotateY(60deg); opacity: 0.3; }
-#galaxy-container.show-social #galaxy-mental { transform: translate3d(-100%, -50%, -800px) rotateY(45deg); opacity: 0.5; }
+/* --- 星系包装器 --- */
+.galaxy-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+}
 
+/* 星系标题 */
+.galaxy-title {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 0 20px rgba(147, 197, 253, 0.8),
+                 0 0 40px rgba(147, 197, 253, 0.4);
+    letter-spacing: 2px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+/* 当前激活的星系 */
+.galaxy-wrapper.active {
+    transform: translate(-50%, -50%) translateZ(0) rotateY(0deg);
+    opacity: 1;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.galaxy-wrapper.active .galaxy-title {
+    opacity: 1;
+}
+
+/* 左侧隐藏的星系 */
+.galaxy-wrapper.left-1 {
+    transform: translate(-150%, -50%) translateZ(-600px) rotateY(35deg);
+    opacity: 0.4;
+}
+
+.galaxy-wrapper.left-2 {
+    transform: translate(-250%, -50%) translateZ(-1000px) rotateY(50deg);
+    opacity: 0.2;
+}
+
+/* 右侧隐藏的星系 */
+.galaxy-wrapper.right-1 {
+    transform: translate(50%, -50%) translateZ(-600px) rotateY(-35deg);
+    opacity: 0.4;
+}
+
+.galaxy-wrapper.right-2 {
+    transform: translate(150%, -50%) translateZ(-1000px) rotateY(-50deg);
+    opacity: 0.2;
+}
+
+/* 更远的星系 */
+.galaxy-wrapper.far-left,
+.galaxy-wrapper.far-right {
+    transform: translate(-50%, -50%) translateZ(-1500px);
+    opacity: 0;
+}
+
+/* 星系系统容器 */
+.galaxy-system {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+}
+ 
  /* 请用这些新规则替换旧的.star和.star:hover规则 */
 .star {
     position: absolute;
@@ -7376,71 +7438,9 @@ opacity: 0.6;
     text-align: center;
 }
 
- /* 关键：让星系大小自适应屏幕 */
-.galaxy-system {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    /* 使用vmin确保在任何屏幕比例下，它都表现为一个正方形，并能被包含在80vw/80vh的区域内 */
-    width: 65vmin;
-    height: 65vmin;
-    max-width: 800px; /* 仍然保留最大尺寸，防止在PC上过大 */
-    max-height: 800px;
-    transform-style: preserve-3d;
-    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-    /* pointer-events: none; */ /* <--- 妈妈帮你把这道错误的禁制解除了！ */
-    transform: translate(-50%, -50%);
-}
+ 
 
-/* 这是一个新的父容器，专门用来处理位移和缩放 */
- .galaxy-wrapper {
-    position: absolute;
-    width: 100%;
-    height: 100vh;
-    top: 0;
-    left: 0;
-    transform-style: preserve-3d;
-    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease;
-    /* ✨ 核心法则：默认情况下，所有星系包裹层都变成“幽灵”，不捕捉鼠标事件 */
-    pointer-events: none;
-}
-
-/* 默认状态 */
-#wrapper-physic { transform: translateZ(-800px); opacity: 0.5; }
-/* ✨ 初始时，只有中间的mental星系可以被触摸 */
-#wrapper-mental { transform: translateZ(0); opacity: 1; pointer-events: auto; }
-#wrapper-social { transform: translateZ(-800px); opacity: 0.5; }
-
-/* 内部星系只负责旋转 */
-#galaxy-physic { transform: translate(-50%, -50%) rotateY(45deg); }
-#galaxy-mental { transform: translate(-50%, -50%) rotateY(0deg); }
-#galaxy-social { transform: translate(-50%, -50%) rotateY(-45deg); }
-
- #galaxy-container.show-physic #wrapper-physic,
-#galaxy-container.show-mental #wrapper-mental,
-#galaxy-container.show-social #wrapper-social {
-    transform: translateZ(0);
-    opacity: 1;
-    z-index: 10;
-    /* ✨ 核心法则：只有当星系来到我们面前时，才让它和它的孩子们可以被触摸 */
-    pointer-events: auto;
-}
-#galaxy-container.show-physic #galaxy-physic,
-#galaxy-container.show-mental #galaxy-mental,
-#galaxy-container.show-social #galaxy-social {
-    transform: translate(-50%, -50%) rotateY(0deg);
-}
-
-/* 未激活时，父容器推远，内部星系保持倾斜 */
-#galaxy-container.show-physic #wrapper-mental { transform: translateZ(-800px); opacity: 0.5; }
-#galaxy-container.show-physic #wrapper-social { transform: translateZ(-1200px); opacity: 0.3; }
-
-#galaxy-container.show-mental #wrapper-physic { transform: translateZ(-800px); opacity: 0.5; }
-#galaxy-container.show-mental #wrapper-social { transform: translateZ(-800px); opacity: 0.5; }
-
-#galaxy-container.show-social #wrapper-physic { transform: translateZ(-1200px); opacity: 0.3; }
-#galaxy-container.show-social #wrapper-mental { transform: translateZ(-800px); opacity: 0.5; }
-    
+ 
     
 /* 点数条和剩余点数组合在一起 */
 .points-info {
@@ -12983,7 +12983,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     </div>
 
 
-  <div id="galaxy-container">
+<div id="galaxy-container">
     <div id="wrapper-physic" class="galaxy-wrapper">
     <div id="galaxy-physic" class="galaxy-system" data-galaxy="physic"></div>
 </div>
@@ -19356,64 +19356,7 @@ async function applyImagesWithCache() {
         }
     }
 }
-function _updateDerivedAttributes(data) {
-        if (!data || !data.基础属性) return;
-        //console.log("[Player] ✨ 正在更新衍生属性...");
-        const attr = data.基础属性;
-        const skills = data.基础技能;
-        const derived = data.衍生属性;
-        const 力量 = attr.生理属性.力量.基础[0];
-        const 敏捷 = attr.生理属性.敏捷.基础[0];
-        const 耐力 = attr.生理属性.耐力.基础[0];
-        const 感知 = attr.心智属性.感知.基础[0];
-        const 决心 = attr.心智属性.决心.基础[0];
-        const 沉着 = attr.互动属性.沉着.基础[0];
-        const 体积 = derived.体积[0];
-        const 运动 = skills.生理技能.运动[0];
-        const 求生 = skills.生理技能.求生[0];
-      derived.速度.基础速度[0] = Math.floor((力量 + 敏捷 + 体积) / 3);
-derived.先攻[0] = Math.floor((敏捷 + 沉着) / 2);
-derived.防御.基础防御[0] = Math.min(敏捷, 感知);
-const oldMaxHP = derived.生命值.上限[0];
-derived.生命值.上限[0] = 体积 * 10 + 耐力 * 20;
-if (derived.生命值.上限[0] > oldMaxHP) {
-    derived.生命值.当前值[0] += (derived.生命值.上限[0] - oldMaxHP);
-}
-if (derived.生命值.当前值[0] > derived.生命值.上限[0]) {
-    derived.生命值.当前值[0] = derived.生命值.上限[0];
-}
-derived.意志力.意志值[0] = 决心 + 沉着;
-derived.意志力.上限[0] = derived.意志力.意志值[0];
-derived.感知范围.敏感范围[0] = 感知 * 10;
-derived.感知范围.模糊范围[0] = derived.感知范围.敏感范围[0] * 10;
-derived.豁免检定基础.强韧[0] = Math.floor((耐力 + 求生) / 2);
-derived.豁免检定基础.反射[0] = Math.floor((敏捷 + 运动) / 2);
-derived.豁免检定基础.意志[0] = 决心 + 沉着;
-
-  // --- 基础值获取 ---
-        const 力量_基础 = attr.生理属性.力量.基础[0];
-        const 敏捷_基础 = attr.生理属性.敏捷.基础[0];
-        const 耐力_基础 = attr.生理属性.耐力.基础[0];
-        const 智力_基础 = attr.心智属性.智力.基础[0];
-        const 感知_基础 = attr.心智属性.感知.基础[0];
-        const 决心_基础 = attr.心智属性.决心.基础[0];
-        const 风度_基础 = attr.互动属性.风度.基础[0];
-        const 操控_基础 = attr.互动属性.操控.基础[0];
-        const 沉着_基础 = attr.互动属性.沉着.基础[0];
-
-   // --- 传奇属性计算 ---
-        attr.生理属性.力量.传奇[0] = Math.max(0, 力量_基础 - 8);
-        attr.生理属性.敏捷.传奇[0] = Math.max(0, 敏捷_基础 - 8);
-        attr.生理属性.耐力.传奇[0] = Math.max(0, 耐力_基础 - 8);
-        attr.心智属性.智力.传奇[0] = Math.max(0, 智力_基础 - 8);
-        attr.心智属性.感知.传奇[0] = Math.max(0, 感知_基础 - 8);
-        attr.心智属性.决心.传奇[0] = Math.max(0, 决心_基础 - 8);
-        attr.互动属性.风度.传奇[0] = Math.max(0, 风度_基础 - 8);
-        attr.互动属性.操控.传奇[0] = Math.max(0, 操控_基础 - 8);
-        attr.互动属性.沉着.传奇[0] = Math.max(0, 沉着_基础 - 8);
-      //  console.log("[Player] ✨ 衍生属性更新完毕！");
-    }
-    
+  
 function _replaceUserPlaceholder(data, userName) {
     if (!data || !userName) {
         return data;
@@ -19516,6 +19459,23 @@ document.querySelectorAll('.hud-toggle').forEach(toggle => {
         }
     });
 });
+  // --- ✨ 动态星系切换逻辑 ✨ ---
+    const galaxyContainer = document.getElementById('galaxy-container');
+    const prevBtn = document.getElementById('galaxy-nav-prev');
+    const nextBtn = document.getElementById('galaxy-nav-next');
+
+    // 🔧 修改开始：动态获取所有星系
+    const galaxyWrappers = Array.from(document.querySelectorAll('.galaxy-wrapper'));
+    const totalGalaxies = galaxyWrappers.length;
+    
+    if (totalGalaxies === 0) {
+        console.warn('没有找到任何星系容器');
+        return;
+    }
+
+    let currentGalaxyIndex = 0; // 默认从第一个开始
+
+
      const bookmarkButton = document.querySelector('.choice-world-card .bookmark-button');
 
     // 我们把卡片的原始值“54”和激活值“62”先记在这里，像记住咒语的两个关键字
@@ -19569,66 +19529,81 @@ document.addEventListener('click', (e) => {
     }
 });
 
-    // --- ✨ 全新的、注入了生命与触感的星系切换逻辑 ✨ ---
-    const galaxyContainer = document.getElementById('galaxy-container');
-    const prevBtn = document.getElementById('galaxy-nav-prev');
-    const nextBtn = document.getElementById('galaxy-nav-next');
+ function switchGalaxy(newIndex) {
+    if (totalGalaxies === 0) return;
+    
+    // 确保索引在有效范围内循环
+    currentGalaxyIndex = ((newIndex % totalGalaxies) + totalGalaxies) % totalGalaxies;
+    
+    playSound(document.getElementById('click-sound'), 0.7);
 
-    // 定义我们星系的轨迹，以及它们对应的DOM包裹元素
-    const galaxies = ['physic', 'mental', 'social'];
-    const galaxyWrappers = {
-        physic: document.getElementById('wrapper-physic'),
-        mental: document.getElementById('wrapper-mental'),
-        social: document.getElementById('wrapper-social')
-    };
+    // 遍历所有星系，应用位置类名
+    galaxyWrappers.forEach((wrapper, index) => {
+        if (!wrapper) return;
 
-    let currentGalaxyIndex = galaxies.indexOf('mental'); // 默认从中间的开始
-
-    /**
-     * 妈妈为你重写的核心切换魔法
-     * @param {number} newIndex - 要切换到的星系索引
-     */
-    function switchGalaxy(newIndex) {
-        // 确保索引在我们定义的轨迹内循环
-        currentGalaxyIndex = (newIndex + galaxies.length) % galaxies.length;
-        const activeGalaxyName = galaxies[currentGalaxyIndex];
-
-        // 1. 设置父容器的class，触发整体的移动和旋转动画
-        galaxyContainer.className = `show-${activeGalaxyName}`;
-        playSound(document.getElementById('click-sound'), 0.7);
-
-        // 2. ✨ 遍历所有星系，施展“归位”与“漂流”的魔法 ✨
-        galaxies.forEach(galaxyName => {
-            const wrapper = galaxyWrappers[galaxyName];
-            if (!wrapper) return;
-
-            const starsInGalaxy = wrapper.querySelectorAll('.star');
-
-            if (galaxyName === activeGalaxyName) {
-                // 这是我们的主角星系！
-                // 魔法一：让它的包裹层可以被触摸
-                wrapper.style.pointerEvents = 'auto';
-
-                // 魔法二：命令它所有的孩子（星星）平滑地回归到 Z=0 的“互动平面”
-                starsInGalaxy.forEach(star => {
-                    star.style.setProperty('--star-z', '0px');
-                });
-
-            } else {
-                // 这是退居幕后的背景星系！
-                // 魔法一：让它的包裹层变成幽灵，无法被触摸
-                wrapper.style.pointerEvents = 'none';
-
-                // 魔法二：让它所有的孩子，从它们各自的出生记录(dataset)中读取Z坐标，漂流回深空
-                starsInGalaxy.forEach(star => {
-                    const randomZ = star.dataset.randomZ || 0; // 读取存储的随机Z值
-                    star.style.setProperty('--star-z', `${randomZ}px`);
-                });
-            }
-        });
-    }
-
-    // 绑定左右箭头
+        const galaxySystem = wrapper.querySelector('.galaxy-system');
+        if (!galaxySystem) return;
+        
+        const starsInGalaxy = galaxySystem.querySelectorAll('.star');
+        
+        // 移除所有位置类
+        wrapper.classList.remove('active', 'left-1', 'left-2', 'right-1', 'right-2', 'far-left', 'far-right');
+        
+        // 计算相对位置
+        const relativePos = index - currentGalaxyIndex;
+        
+        // 根据相对位置添加对应类名
+        if (relativePos === 0) {
+            // 当前激活的星系
+            wrapper.classList.add('active');
+            
+            // 星星回归到 Z=0 的互动平面
+            starsInGalaxy.forEach(star => {
+                star.style.setProperty('--star-z', '0px');
+            });
+            
+        } else if (relativePos === -1 || relativePos === totalGalaxies - 1) {
+            // 左侧第一个
+            wrapper.classList.add('left-1');
+            starsInGalaxy.forEach(star => {
+                const randomZ = star.dataset.randomZ || 0;
+                star.style.setProperty('--star-z', `${randomZ}px`);
+            });
+            
+        } else if (relativePos === -2 || relativePos === totalGalaxies - 2) {
+            // 左侧第二个
+            wrapper.classList.add('left-2');
+            starsInGalaxy.forEach(star => {
+                const randomZ = star.dataset.randomZ || 0;
+                star.style.setProperty('--star-z', `${randomZ}px`);
+            });
+            
+        } else if (relativePos === 1 || relativePos === -(totalGalaxies - 1)) {
+            // 右侧第一个
+            wrapper.classList.add('right-1');
+            starsInGalaxy.forEach(star => {
+                const randomZ = star.dataset.randomZ || 0;
+                star.style.setProperty('--star-z', `${randomZ}px`);
+            });
+            
+        } else if (relativePos === 2 || relativePos === -(totalGalaxies - 2)) {
+            // 右侧第二个
+            wrapper.classList.add('right-2');
+            starsInGalaxy.forEach(star => {
+                const randomZ = star.dataset.randomZ || 0;
+                star.style.setProperty('--star-z', `${randomZ}px`);
+            });
+            
+        } else {
+            // 更远的星系
+            wrapper.classList.add(relativePos < 0 ? 'far-left' : 'far-right');
+            starsInGalaxy.forEach(star => {
+                const randomZ = star.dataset.randomZ || 0;
+                star.style.setProperty('--star-z', `${randomZ}px`);
+            });
+        }
+    });
+} // 绑定左右箭头
     nextBtn.addEventListener('click', () => switchGalaxy(currentGalaxyIndex + 1));
     prevBtn.addEventListener('click', () => switchGalaxy(currentGalaxyIndex - 1));
 
@@ -19640,78 +19615,61 @@ document.addEventListener('click', (e) => {
     const arrangeBtn = document.getElementById('arrange-stars-btn');
     let isStarsArranged = false;
 
-    // ... (你原来的 applyArrangedLayout 和 reRandomizeWithCollisionCheck 函数放在这里，它们不需要改变)
   function applyArrangedLayout() {
-    // 我们设定一个常用的屏幕宽度值来区分手机和桌面
-    const isMobile = window.innerWidth <= 768;
+        const isMobile = window.innerWidth <= 768;
 
-    const galaxies = ['physic', 'mental', 'social'];
-    galaxies.forEach(galaxyName => {
-        const container = document.getElementById(`galaxy-${galaxyName}`);
-        // 加上一个保护性的检查，确保容器存在
-        if (!container) {
-            console.warn(`Galaxy container not found: galaxy-${galaxyName}`);
-            return;
-        }
+        // 🔧 修改：动态获取所有星系
+        const galaxySystems = document.querySelectorAll('.galaxy-system');
+        
+        galaxySystems.forEach(container => {
+            if (!container) return;
 
-        const starsInGalaxy = container.querySelectorAll('.star');
-        const starCount = starsInGalaxy.length;
-        if (starCount === 0) return;
+            const starsInGalaxy = container.querySelectorAll('.star');
+            const starCount = starsInGalaxy.length;
+            if (starCount === 0) return;
 
-         if (isMobile) {
-            // --- 这是为你特别设计的移动端布局：三列纵向排列，并整体居中 ---
-            const cols = 3;
-            const rows = Math.ceil(starCount / cols);
-            if (rows === 0) return;
+            if (isMobile) {
+                // 移动端：三列纵向排列
+                const cols = 3;
+                const rows = Math.ceil(starCount / cols);
+                if (rows === 0) return;
 
-            // Y轴（纵向）的间距和偏移量保持不变
-            const y_spacing = (rows > 1) ? 90 / (rows - 1) : 0;
-            const y_offset = 5;
+                const y_spacing = (rows > 1) ? 90 / (rows - 1) : 0;
+                const y_offset = 5;
+                const x_center_spacing = 25;
 
-            // 为了实现三列居中，我们重新定义X轴的定位逻辑
-            const x_center_spacing = 25; // 中心列到两侧列的间距，25%的效果很好
+                starsInGalaxy.forEach((star, index) => {
+                    const col = Math.floor(index / rows);
+                    const row = index % rows;
 
-            starsInGalaxy.forEach((star, index) => {
-                // 实现“先填满第一列，再填第二列...”的逻辑不变
-                const col = Math.floor(index / rows);
-                const row = index % rows;
+                    const leftPosition = 50 + (col - 1) * x_center_spacing;
+                    const topPosition = (rows > 1)
+                        ? `${y_offset + row * y_spacing}%`
+                        : '50%';
 
-                // 新的魔法在这里：计算X轴位置，实现整体居中
-                // col 0 -> 50% - 25% = 25%
-                // col 1 -> 50% (正中心)
-                // col 2 -> 50% + 25% = 75%
-                const leftPosition = 50 + (col - 1) * x_center_spacing;
+                    star.style.left = `${leftPosition}%`;
+                    star.style.top = topPosition;
+                    star.style.setProperty('--star-z', '0px');
+                });
+            } else {
+                // 桌面端：多行布局
+                const cols = Math.max(3, Math.ceil(starCount / 2));
+                const x_spacing = 90 / cols;
+                const y_spacing = 35;
+                const x_offset = 5;
+                const y_offset = 15;
 
-                // 纵向位置的逻辑保持不变
-                const topPosition = (rows > 1)
-                    ? `${y_offset + row * y_spacing}%`
-                    : '50%'; // 只有一行时垂直居中
+                starsInGalaxy.forEach((star, index) => {
+                    const row = Math.floor(index / cols);
+                    const col = index % cols;
 
-                star.style.left = `${leftPosition}%`;
-                star.style.top = topPosition;
-                star.style.setProperty('--star-z', '0px');
-            });
-        } else {
-            // --- 这仍是我们之前的桌面端布局 ---
-            const cols = Math.max(3, Math.ceil(starCount / 2));
-            const x_spacing = 90 / cols;
-            const y_spacing = 35;
-            const x_offset = 5;
-            const y_offset = 15;
-
-            starsInGalaxy.forEach((star, index) => {
-                // 这是实现“先填满第一行，再填第二行...”的逻辑
-                const row = Math.floor(index / cols);
-                const col = index % cols;
-
-                star.style.left = `${x_offset + col * x_spacing}%`;
-                star.style.top = `${y_offset + row * y_spacing}%`;
-                star.style.setProperty('--star-z', '0px');
-            });
-        }
-    });
-}
-
+                    star.style.left = `${x_offset + col * x_spacing}%`;
+                    star.style.top = `${y_offset + row * y_spacing}%`;
+                    star.style.setProperty('--star-z', '0px');
+                });
+            }
+        });
+    }
 
     const isColliding = (rect, existingRects) => {
         for (let otherRect of existingRects) {
@@ -19726,40 +19684,44 @@ document.addEventListener('click', (e) => {
     };
 
 
-    function reRandomizeWithCollisionCheck() {
-        const galaxies = ['physic', 'mental', 'social'];
-        galaxies.forEach(galaxyName => {
-            const container = document.getElementById(`galaxy-${galaxyName}`);
-            const starsInGalaxy = container.querySelectorAll('.star');
-            const existingCoords = [];
+ function reRandomizeWithCollisionCheck() {
+    // 🔧 修改：动态获取所有星系
+    const galaxyContainers = document.querySelectorAll('.galaxy-system');
+    
+    galaxyContainers.forEach(container => {
+        if (!container) return; // 安全检查
+        
+        const starsInGalaxy = container.querySelectorAll('.star');
+        const existingCoords = [];
 
-            starsInGalaxy.forEach(star => {
-                const STAR_SIZE = 110;
-                const MAX_ATTEMPTS = 100;
-                let x, y, z, newRect, attempts = 0;
+        starsInGalaxy.forEach(star => {
+            const STAR_SIZE = 110;
+            const MAX_ATTEMPTS = 100;
+            let x, y, z, newRect, attempts = 0;
 
-                do {
-                    x = Math.random() * 70 + 15;
-                    y = Math.random() * 70 + 15;
-                    z = (Math.random() - 0.5) * 300;
-                    newRect = { x: x, y: y, width: STAR_SIZE / 5, height: STAR_SIZE / 5 };
-                    attempts++;
-                } while (isColliding(newRect, existingCoords) && attempts < MAX_ATTEMPTS);
+            do {
+                x = Math.random() * 70 + 15;
+                y = Math.random() * 70 + 15;
+                z = (Math.random() - 0.5) * 300;
+                newRect = { x: x, y: y, width: STAR_SIZE / 5, height: STAR_SIZE / 5 };
+                attempts++;
+            } while (isColliding(newRect, existingCoords) && attempts < MAX_ATTEMPTS);
 
-                existingCoords.push(newRect);
+            existingCoords.push(newRect);
 
-                star.style.left = `${x}%`;
-                star.style.top = `${y}%`;
-                star.style.setProperty('--star-z', `${z}px`);
+            star.style.left = `${x}%`;
+            star.style.top = `${y}%`;
+            star.style.setProperty('--star-z', `${z}px`);
 
-                star.dataset.randomLeft = `${x}%`;
-                star.dataset.randomTop = `${y}%`;
-                star.dataset.randomZ = z;
-            });
+            star.dataset.randomLeft = `${x}%`;
+            star.dataset.randomTop = `${y}%`;
+            star.dataset.randomZ = z;
         });
-        // 重新随机后，要再次调用 switchGalaxy，确保只有当前星系的星星 Z 轴为 0
-        switchGalaxy(currentGalaxyIndex);
-    }
+    });
+    
+    // 重新随机后，要再次调用 switchGalaxy，确保只有当前星系的星星 Z 轴为 0
+    switchGalaxy(currentGalaxyIndex);
+}
 
     arrangeBtn.addEventListener('click', () => {
         playSound(document.getElementById('click-sound'), 0.6);
@@ -22593,30 +22555,7 @@ async function saveTeammatesToLorebook() {
         updateUI();
     }
  
-
-function initPage2() {
-  
-
-    // 美德恶德注入 (没变)
-    conceptSection.innerHTML = createSelectGroup('virtue-select', '美德', virtues, '概念段.美德与恶德.美德') + createSelectGroup('vice-select', '恶德', vices, '概念段.美德与恶德.恶德');
-
-    // --- 💖 轨道演算术准备 💖 ---
-    // 为每个星系创建一个专属的坐标记录本
-    const starCoordinates = {
-        'galaxy-physic': [],
-        'galaxy-mental': [],
-        'galaxy-social': [],
-    };
-
-    // --- 星星注入 ---
-    const galaxyTargets = {
-        '生理属性': 'galaxy-physic', '心智属性': 'galaxy-mental', '互动属性': 'galaxy-social',
-        '生理技能': 'galaxy-physic', '心智技能': 'galaxy-mental', '互动技能': 'galaxy-social',
-    };
-
-    document.querySelectorAll('.galaxy-system').forEach(g => g.innerHTML = '');
- // fallback 数据定义
-const fallbackCharacterData = {
+  const fallbackCharacterData = {
   "概念段": {
     "美德与恶德": {
       "美德": ["正义", "当角色为正义而冒险时，触发正义，回复所有意志力。"],
@@ -22671,43 +22610,153 @@ const fallbackCharacterData = {
     }
   }
 };
+ 
+function initPage2() {
+  
+    // 美德恶德注入 (没变)
+    conceptSection.innerHTML = createSelectGroup('virtue-select', '美德', virtues, '概念段.美德与恶德.美德') + createSelectGroup('vice-select', '恶德', vices, '概念段.美德与恶德.恶德');
 
-// 检查并使用 fallback 数据
-if (!playCharacterData || !playCharacterData.基础属性 || Object.keys(playCharacterData.基础属性).length === 0) {
-  console.warn('未找到有效的基础属性数据，使用默认数据');
-  playCharacterData = fallbackCharacterData;
-}
-
-// 注入属性星星，并传入对应的坐标记录本
-for (const category in playCharacterData.基础属性) {
-  const targetGalaxyId = galaxyTargets[category];
-  const targetGalaxyEl = document.getElementById(targetGalaxyId);
-  if (targetGalaxyEl) {
-    for (const attr in playCharacterData.基础属性[category]) {
-      const path = `基础属性.${category}.${attr}.基础`;
-      targetGalaxyEl.innerHTML += createPointAllocator(
-        attr,
-        playCharacterData.基础属性[category][attr].基础[1],
-        path,
-        starCoordinates[targetGalaxyId]
-      );
+    // 🔧 新增：检查并使用 fallback 数据
+    if (!playCharacterData || !playCharacterData.基础属性 || Object.keys(playCharacterData.基础属性).length === 0) {
+        console.warn('未找到有效的基础属性数据，使用默认数据');
+        playCharacterData = fallbackCharacterData;
     }
-  }
-}
 
-    // 注入技能星星，并传入对应的坐标记录本
-    for (const category in playCharacterData.基础技能) {
+    // 🔧 新增：动态生成星系容器
+    const attributeCategories = Object.keys(playCharacterData.基础属性 || {});
+    const skillCategories = Object.keys(playCharacterData.基础技能 || {});
+    const allCategories = [...attributeCategories, ...skillCategories];
+    
+    // 清空并重建 galaxy-container
+    const galaxyContainer = document.getElementById('galaxy-container');
+    if (!galaxyContainer) {
+        console.error('找不到 galaxy-container');
+        return;
+    }
+    
+    // 保存导航按钮（如果存在）
+    const navPrev = document.getElementById('galaxy-nav-prev');
+    const navNext = document.getElementById('galaxy-nav-next');
+    
+    // 清空容器
+    galaxyContainer.innerHTML = '';
+    
+    // 动态创建星系
+    const starCoordinates = {};
+    const galaxyTargets = {};
+    
+    allCategories.forEach((category, index) => {
+        const galaxyId = `galaxy-${index}`;
+        galaxyTargets[category] = galaxyId;
+        starCoordinates[galaxyId] = [];
+        
+        // 创建星系HTML
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.id = `wrapper-${index}`;
+        wrapperDiv.className = 'galaxy-wrapper';
+        wrapperDiv.setAttribute('data-category-name', category); // 保存分类名称用于显示
+        
+        const galaxyDiv = document.createElement('div');
+        galaxyDiv.id = galaxyId;
+        galaxyDiv.className = 'galaxy-system';
+        galaxyDiv.setAttribute('data-galaxy', index);
+        const titleDiv = document.createElement('div');
+titleDiv.className = 'galaxy-title';
+titleDiv.textContent = category; // 只显示类别名称（如"灵根"、"战斗"）
+wrapperDiv.appendChild(titleDiv);
+        wrapperDiv.appendChild(galaxyDiv);
+        galaxyContainer.appendChild(wrapperDiv);
+    });
+    
+    // 重新添加导航按钮
+    if (navPrev && navNext) {
+        galaxyContainer.appendChild(navPrev);
+        galaxyContainer.appendChild(navNext);
+    } else {
+        // 如果原来没有，创建新的
+        const prevBtn = document.createElement('div');
+        prevBtn.id = 'galaxy-nav-prev';
+        prevBtn.className = 'galaxy-nav';
+        prevBtn.innerHTML = '&lt;';
+        
+        const nextBtn = document.createElement('div');
+        nextBtn.id = 'galaxy-nav-next';
+        nextBtn.className = 'galaxy-nav';
+        nextBtn.innerHTML = '&gt;';
+        
+        galaxyContainer.appendChild(prevBtn);
+        galaxyContainer.appendChild(nextBtn);
+    }
+
+  
+ 
+   document.querySelectorAll('.galaxy-system').forEach(g => g.innerHTML = '');
+    
+    // 递归函数：处理嵌套属性
+    function injectNestedAttributes(data, parentPath, targetGalaxyEl, coordinates) {
+        for (const key in data) {
+            const value = data[key];
+            
+            // 判断是否是最终属性（包含"基础"或直接是数组）
+       if (value.基础 && Array.isArray(value.基础)) {
+    // 情况1: { "灵根": { "基础": [0, "描述"], "传奇": [...] } }
+    // 🔧 修改：只处理"基础"，忽略"传奇"等其他子键
+    if (Array.isArray(value.基础)) {
+        const path = `${parentPath}.${key}.基础`;
+        targetGalaxyEl.innerHTML += createPointAllocator(
+            key,  // 只显示属性名，不加"·基础"后缀
+            value.基础[1],
+            path,
+            coordinates
+        );
+    }
+} else if (Array.isArray(value) && value.length >= 2) {
+                // 情况2: { "力量": [0, "描述"] } - 直接是数组
+                const path = `${parentPath}.${key}`;
+                targetGalaxyEl.innerHTML += createPointAllocator(
+                    key,
+                    value[1],
+                    path,
+                    coordinates
+                );
+            } else if (typeof value === 'object' && value !== null) {
+                // 情况3: 还有更深层级，递归处理
+                injectNestedAttributes(value, `${parentPath}.${key}`, targetGalaxyEl, coordinates);
+            }
+        }
+    }
+    
+    // 注入属性
+    for (const category in playCharacterData.基础属性) {
+        const targetGalaxyId = galaxyTargets[category];
+        const targetGalaxyEl = document.getElementById(targetGalaxyId);
+        if (targetGalaxyEl) {
+            injectNestedAttributes(
+                playCharacterData.基础属性[category],
+                `基础属性.${category}`,
+                targetGalaxyEl,
+                starCoordinates[targetGalaxyId]
+            );
+        }
+    }
+   for (const category in playCharacterData.基础技能) {
         const targetGalaxyId = galaxyTargets[category];
         const targetGalaxyEl = document.getElementById(targetGalaxyId);
         if (targetGalaxyEl) {
             for (const skill in playCharacterData.基础技能[category]) {
-                const path = `基础技能.${category}.${skill}`;
-                targetGalaxyEl.innerHTML += createPointAllocator(skill, playCharacterData.基础技能[category][skill][1], path, starCoordinates[targetGalaxyId]);
+                const value = playCharacterData.基础技能[category][skill];
+                if (Array.isArray(value) && value.length >= 2) {
+                    const path = `基础技能.${category}.${skill}`;
+                    targetGalaxyEl.innerHTML += createPointAllocator(
+                        skill,
+                        value[1],
+                        path,
+                        starCoordinates[targetGalaxyId]
+                    );
+                }
             }
         }
     }
-// --- 绑定事件 (核心逻辑不变，但由于星星是动态生成的，需要事件委托或重新绑定) ---
-// 妈妈在这里为你确保所有新生成的星星上的按钮都能正常工作
 document.querySelectorAll('.分配-按钮').forEach(button => {
     button.removeEventListener('click', handlePointChange); // 先移除旧的以防万一
     button.addEventListener('click', handlePointChange);
@@ -22770,6 +22819,8 @@ templateSelect_init.addEventListener('change', applySelectedTemplate);
 saveTemplateBtn.addEventListener('click', saveCurrentBuildAsTemplate);
 deleteTemplateBtn.addEventListener('click', deleteSelectedTemplate);
 averagePointsBtn.addEventListener('click', distributePointsAverage);
+
+ setupPage2Interactions();
 }
  
     function createSelectGroup(id, label, options, dataPath) {
@@ -23533,7 +23584,7 @@ godSpaceButton.addEventListener('click', async () => {
     initPage1();
     setupNewUI(); // 立即执行这个设置函数
     initPage2();
-  setupPage2Interactions(); // <--- 妈妈帮你加在这里！
+ 
     updateUI();
     
  
