@@ -12258,6 +12258,94 @@ pointer-events: auto;
     align-items: center;
     gap: 10px;
 }
+
+
+#custom-prompt-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+
+#keyword-modal textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+/* 数据注入标签容器 */
+.data-injection-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* 数据注入标签样式 */
+.data-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    color: var(--text-color);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.data-tag:hover {
+    background: rgba(0, 250, 255, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px var(--glow-color);
+}
+
+.data-tag.selected {
+    background: linear-gradient(135deg, rgba(0, 250, 255, 0.2), rgba(122, 255, 255, 0.2));
+    border-color: var(--primary-color);
+    box-shadow: 0 0 12px var(--glow-color);
+}
+
+.data-tag input[type="checkbox"] {
+    margin-right: 6px;
+    cursor: pointer;
+}
+
+/* 自定义复选框样式 */
+.data-tag input[type="checkbox"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+    background: transparent;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.data-tag input[type="checkbox"]:checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 6px var(--glow-color);
+}
+
+.data-tag input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    color: var(--background-color);
+    font-size: 14px;
+    font-weight: bold;
+}
   </style>
  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -13671,7 +13759,24 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 
  
 
+<!-- 新增：提示词自定义区域 -->
+<div style="margin-top: 15px;">
+    <label style="display: flex; align-items: center; margin-bottom: 8px;">
+        <input type="checkbox" id="use-custom-prompt" style="margin-right: 8px;">
+        <strong>使用自定义提示词</strong>
+    </label>
+    <textarea id="custom-prompt-input" 
+              placeholder="在此编辑完整的系统提示词..."
+              style="min-height: 200px; display: none;"></textarea>
+</div>
 
+<!-- 新增：数据注入选项 -->
+<div style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+    <p style="margin-bottom: 8px;"><strong>注入游戏数据（可选）：</strong></p>
+     <div id="data-injection-tags" class="data-injection-container">
+        <!-- 标签将通过 JS 动态生成 -->
+    </div>
+</div>
 <div class="modal-buttons">
  
     <button id="submit-generation-btn" class="control-btn">开始生成</button>
@@ -14656,7 +14761,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.9';
+let current_game_version = '3.4.10';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -45175,7 +45280,203 @@ function setupGeneratorButton() {
 
     if (!mainGenerateBtn || !keywordModal) return;
 
+ // 新增：自定义提示词相关元素
+const useCustomPromptCheckbox = document.getElementById('use-custom-prompt');
+const customPromptInput = document.getElementById('custom-prompt-input');
+const injectGameStateCheckbox = document.getElementById('inject-game-state');
+const injectCharacterDataCheckbox = document.getElementById('inject-character-data');
+const injectSettingsDataCheckbox = document.getElementById('inject-settings-data');
+
+// 新增：默认提示词（原有的 prompt 模板）
+const DEFAULT_PROMPT_TEMPLATE = `请扮演一个创意无限的游戏设计师，为一款名为"主神空间"的桌面角色扮演游戏设计新的"技能"、"血统"和"物品"。可以有搞笑且没用的商品。
+你需要严格遵守以下格式，每一项都必须是一个独立的JSON数组，数组元素分别是：[名称, 价格, 分类, {支线剧情要求}, 效果, 描述]。
+- 名称 (string): 必须简洁、有创意且引人入胜。
+- 价格 (number): 整数，范围在100至50000之间。高级商品的生成应该**稀少**或者**不生成**。必须存在低级技能、低级物品和低级血统。商品价格参考：只提升一点属性（增加一个dp）的价格是800-1000积分。技能应该更加昂贵。血统越高级应该越昂贵，而不是线性增长。
+- 分类 (string): "技能"、"血统"或"物品"。
+- 支线剧情要求 (object): 一个JSON对象，键为支线等级（如"D", "C"），值为数量。如果不需要，请提供一个空对象 {}。
+- 效果 (string): 
+  对于技能，格式为 "【dp+X;能量池-Y】"，其中X和Y是数字，禁止列出其他效果。dp和能量池的数值需克制，5点dp的加成=一个凡人登峰造极的技能领域加成。
+  对于血统，请列出属性加成和能量池信息，例如 "属性: 敏捷+2, 感知+2\\n能量池: 自然魔力(40)"。必须使用 \\n 作为换行符。
+  可用的属性：
+    力量  敏捷  耐力 
+    智力  感知  决心 
+    风度  操控  沉着 
+   物品则随意。
+- 描述 (string): 一段不超过150字的生动描述，解释其背景和作用。
+
+若用户无要求，则请生成24个新的项目，其中必须包含至少6个"技能"和6个"血统"。
+若用户有要求，则按照用户要求生成。生成的类别不得超出物品、技能和血统。
  
+
+你的回答必须是纯粹的JSON数组格式，用逗号分隔，不要包含任何额外的解释、注释或markdown标记。
+  例如:
+["疗伤草药", 200, "物品", {}, "捣碎后外敷，止血并加速轻伤愈合", "来自武侠世界的常见草药，对刀剑伤有不错的效果。"],
+["心灵回响", 5000, "技能", {"C":1}, "【dp+2;能量池-60】", "短暂读取目标强烈的表层情绪和意图。高手能借此预测对手的下一步行动，但过度使用可能导致信息过载。"],
+["量子幽影血统", 12000, "血统", {"B":1}, "属性: 敏捷+4, 智力+3\\n能量池: 虚空能量(60)", "你的身体由不稳定的量子泡沫构成，能够短距离瞬移，并有一定几率让指向你的攻击直接"穿过"。"]`;
+
+// 新增：加载保存的自定义提示词
+const savedCustomPrompt = localStorage.getItem('custom_shop_prompt');
+if (savedCustomPrompt) {
+    customPromptInput.value = savedCustomPrompt;
+} else {
+    customPromptInput.value = DEFAULT_PROMPT_TEMPLATE;
+}
+
+// 新增：自定义提示词开关事件
+useCustomPromptCheckbox.addEventListener('change', (e) => {
+    customPromptInput.style.display = e.target.checked ? 'block' : 'none';
+});
+const DATA_FIELD_MAP = {
+    // 游戏状态
+    'gameState': '游戏状态',
+    'characterData': '玩家属性',
+    
+    // global_lore 下的字段（跳过 分阶段好感）
+    'global_lore.npc': '全局人物',
+    'global_lore.settings': '全局设定',
+    'global_lore.背包': '背包',
+    'global_lore.其他技能': '其他技能',
+    'global_lore.根基体系': '根基体系',
+    'global_lore.小队信息': '小队信息',
+    'global_lore.备忘录': '备忘录',
+    
+    // world_lore 下的字段
+    'world_lore.npc': '世界人物',
+    'world_lore.settings': '世界设定',
+    
+    // map 下的字段
+    'map.全局地点表': '全局地点',
+    'map.主要地点表': '主要地点',
+    
+    // home 下的字段
+    'home.items': '家园物品',
+    
+    // summary 下的字段
+    'summary.big': '长期总结',
+    'summary.small': '短期总结'
+};
+
+// 新增：生成数据注入标签
+function generateDataInjectionTags() {
+    const container = document.getElementById('data-injection-tags');
+    if (!container) return;
+    
+    container.innerHTML = ''; // 清空现有标签
+    
+    // 基础数据标签
+    const basicTags = [
+        { key: 'gameState', label: '游戏状态' },
+        { key: 'characterData', label: '玩家属性' }
+    ];
+    
+    basicTags.forEach(tag => {
+        const tagElement = createDataTag(tag.key, tag.label);
+        container.appendChild(tagElement);
+    });
+    
+    // 从 assa_data 动态生成标签
+    try {
+    
+            generateAssaDataTags(container, assaSettingsData);
+    
+    } catch (error) {
+        console.warn('无法获取 assa_data:', error);
+    }
+}
+
+// 新增：从 assa_data 生成标签
+function generateAssaDataTags(container, assaData) {
+    // 遍历 global_lore（跳过 分阶段好感）
+    if (assaData.global_lore) {
+        Object.keys(assaData.global_lore).forEach(key => {
+            if (key !== '分阶段好感') {
+                const dataKey = `global_lore.${key}`;
+                const label = DATA_FIELD_MAP[dataKey] || key;
+                const tagElement = createDataTag(dataKey, label);
+                container.appendChild(tagElement);
+            }
+        });
+    }
+    
+    // 遍历 world_lore
+    if (assaData.world_lore) {
+        Object.keys(assaData.world_lore).forEach(key => {
+            const dataKey = `world_lore.${key}`;
+            const label = DATA_FIELD_MAP[dataKey] || key;
+            const tagElement = createDataTag(dataKey, label);
+            container.appendChild(tagElement);
+        });
+    }
+    
+    // 遍历 map
+    if (assaData.map) {
+        Object.keys(assaData.map).forEach(key => {
+            const dataKey = `map.${key}`;
+            const label = DATA_FIELD_MAP[dataKey] || key;
+            const tagElement = createDataTag(dataKey, label);
+            container.appendChild(tagElement);
+        });
+    }
+    
+    // 遍历 home
+    if (assaData.home) {
+        Object.keys(assaData.home).forEach(key => {
+            const dataKey = `home.${key}`;
+            const label = DATA_FIELD_MAP[dataKey] || key;
+            const tagElement = createDataTag(dataKey, label);
+            container.appendChild(tagElement);
+        });
+    }
+    
+    // 遍历 summary
+    if (assaData.summary) {
+        Object.keys(assaData.summary).forEach(key => {
+            const dataKey = `summary.${key}`;
+            const label = DATA_FIELD_MAP[dataKey] || key;
+            const tagElement = createDataTag(dataKey, label);
+            container.appendChild(tagElement);
+        });
+    }
+}
+
+// 新增：创建单个数据标签
+function createDataTag(dataKey, label) {
+    const tag = document.createElement('label');
+    tag.className = 'data-tag';
+    tag.dataset.key = dataKey;
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.dataset.dataKey = dataKey;
+    
+    const labelText = document.createElement('span');
+    labelText.textContent = label;
+    
+    tag.appendChild(checkbox);
+    tag.appendChild(labelText);
+    
+    // 点击标签时切换选中状态
+    tag.addEventListener('click', (e) => {
+        if (e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+        }
+        tag.classList.toggle('selected', checkbox.checked);
+    });
+    
+    // 复选框变化时更新样式
+    checkbox.addEventListener('change', () => {
+        tag.classList.toggle('selected', checkbox.checked);
+    });
+    
+    return tag;
+}
+
+// 新增：初始化标签（在模态框打开时调用）
+generateDataInjectionTags();
+// 新增：保存自定义提示词到 localStorage
+customPromptInput.addEventListener('blur', () => {
+    localStorage.setItem('custom_shop_prompt', customPromptInput.value);
+});
 
     // 调用Gemini API
  
@@ -45375,54 +45676,95 @@ const processApiResponse = async (responseText) => {
 
     return null;
 }
-  // 真正的生成执行函数
-    const executeGeneration = async (keywords = "") => {
-         hideModal("keyword-modal"); // 使用正确的函数名
- 
- 
-    // ===== 新增结束 =====
-        // --- 动态构建提示词 ---
-        let keywordInstruction = "";
-        if (keywords.trim() !== "") {
-            keywordInstruction = `\n请特别注意以下用户要求： "${keywords.trim()}"。你需要巧妙地将这些要求融合到你的创作中。`;
-        }
+const executeGeneration = async (keywords = "") => {
+    hideModal("keyword-modal");
 
-        const prompt = `
-            请扮演一个创意无限的游戏设计师，为一款名为“主神空间”的桌面角色扮演游戏设计新的“技能”、“血统”和“物品”。可以有搞笑且没用的商品。
-            你需要严格遵守以下格式，每一项都必须是一个独立的JSON数组，数组元素分别是：[名称, 价格, 分类, {支线剧情要求}, 效果, 描述]。
-            - 名称 (string): 必须简洁、有创意且引人入胜。
-            - 价格 (number): 整数，范围在100至50000之间。高级商品的生成应该**稀少**或者**不生成**。必须存在低级技能、低级物品和低级血统。商品价格参考：只提升一点属性（增加一个dp）的价格是800-1000积分。技能应该更加昂贵。血统越高级应该越昂贵，而不是线性增长。
-            - 分类 (string): "技能"、"血统"或"物品"。
-            - 支线剧情要求 (object): 一个JSON对象，键为支线等级（如"D", "C"），值为数量。如果不需要，请提供一个空对象 {}。
-            - 效果 (string): 
-              对于技能，格式为 "【dp+X;能量池-Y】"，其中X和Y是数字，禁止列出其他效果。dp和能量池的数值需克制，5点dp的加成=一个凡人登峰造极的技能领域加成。
-              对于血统，请列出属性加成和能量池信息，例如 "属性: 敏捷+2, 感知+2\\n能量池: 自然魔力(40)"。必须使用 \\n 作为换行符。
-              可用的属性：
-                力量  敏捷  耐力 
-                智力  感知  决心 
-                风度  操控  沉着 
-               物品则随意。
-            - 描述 (string): 一段不超过150字的生动描述，解释其背景和作用。
-
-            若用户无要求，则请生成24个新的项目，其中必须包含至少6个“技能”和6个“血统”。
-            若用户有要求，则按照用户要求生成。生成的类别不得超出物品、技能和血统。
-            ${keywordInstruction}
-            
-            你的回答必须是纯粹的JSON数组格式，用逗号分隔，不要包含任何额外的解释、注释或markdown标记。
-              例如:
-            ["疗伤草药", 200, "物品", {}, "捣碎后外敷，止血并加速轻伤愈合", "来自武侠世界的常见草药，对刀剑伤有不错的效果。"],
-            ["心灵回响", 5000, "技能", {"C":1}, "【dp+2;能量池-60】", "短暂读取目标强烈的表层情绪和意图。高手能借此预测对手的下一步行动，但过度使用可能导致信息过载。"],
-            ["量子幽影血统", 12000, "血统", {"B":1}, "属性: 敏捷+4, 智力+3\\n能量池: 虚空能量(60)", "你的身体由不稳定的量子泡沫构成，能够短距离瞬移，并有一定几率让指向你的攻击直接“穿过”。"]
-            `;
+    // 获取所有选中的数据字段
+    const selectedTags = document.querySelectorAll('.data-tag input[type="checkbox"]:checked');
+    const selectedDataKeys = Array.from(selectedTags).map(cb => cb.dataset.dataKey);
     
+    let dataInjection = "";
+    
+    if (selectedDataKeys.length > 0) {
+           dataInjection += `\n\n=== 重要提示 ===
+以下是当前游戏的实际数据，你必须仔细阅读并理解这些信息。
+在生成物品时，至少有一半的物品必须与这些游戏数据相关!
+ 
+请确保生成的内容能够自然融入当前的游戏世界，而不是完全独立的随机物品。
+==================\n`;
+ 
         try {
-            const result = await generateContent(prompt);
-            processApiResponse(result);
+            // 获取基础数据
+            if (selectedDataKeys.includes('gameState') && currentGameData) {
+                dataInjection += `\n\n=== 当前游戏状态 ===\n${JSON.stringify(currentGameData, null, 2)}\n`;
+            }
+            
+            if (selectedDataKeys.includes('characterData')) {
+                const playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
+                if (playCharacterData) {
+                    dataInjection += `\n\n=== 玩家角色属性 ===\n${JSON.stringify(playCharacterData, null, 2)}\n`;
+                }
+            }
+            
+            // 获取 assa_data 中的数据
+            const assaData = TavernHelper.getVariables({ type: 'chat' }).assa_data;
+            if (assaData) {
+                selectedDataKeys.forEach(key => {
+                    if (key.startsWith('global_lore.') || 
+                        key.startsWith('world_lore.') || 
+                        key.startsWith('map.') || 
+                        key.startsWith('home.') || 
+                        key.startsWith('summary.')) {
+                        
+                        const parts = key.split('.');
+                        let data = assaData;
+                        
+                        // 逐层获取数据
+                        for (const part of parts) {
+                            if (data && data[part] !== undefined) {
+                                data = data[part];
+                            } else {
+                                data = null;
+                                break;
+                            }
+                        }
+                        
+                        if (data) {
+                            const label = DATA_FIELD_MAP[key] || key;
+                            dataInjection += `\n\n=== ${label} ===\n${JSON.stringify(data, null, 2)}\n`;
+                        }
+                    }
+                });
+            }
         } catch (error) {
-            showModal('shop-modal', 'API错误', error.message);
+            console.warn('获取游戏数据时出错:', error);
         }
-    };
-    const generateContent = async (promptText) => {
+    }
+
+    // 构建提示词
+    let basePrompt;
+    if (useCustomPromptCheckbox.checked) {
+        basePrompt = customPromptInput.value.trim();
+    } else {
+        basePrompt = DEFAULT_PROMPT_TEMPLATE;
+    }
+
+    // 添加关键词指令
+    let keywordInstruction = "";
+    if (keywords.trim() !== "") {
+        keywordInstruction = `\n\n请特别注意以下用户要求： "${keywords.trim()}"。你需要巧妙地将这些要求融合到你的创作中。`;
+    }
+
+    const finalPrompt = basePrompt + keywordInstruction + dataInjection;
+
+    try {
+        const result = await generateContent(finalPrompt);
+        processApiResponse(result);
+    } catch (error) {
+        showModal('shop-modal', 'API错误', error.message);
+    }
+};
+      const generateContent = async (promptText) => {
     mainGenerateBtn.textContent = '生成中…';
     mainGenerateBtn.disabled = true;
 
@@ -45509,11 +45851,11 @@ const processApiResponse = async (responseText) => {
     }
 };
    // 主生成按钮只负责打开模态框
-    mainGenerateBtn.addEventListener('click', () => {
-        //console.log("生成按钮被点击，准备打开模态框");
-        keywordInput.value = ''; // 清空上次的输入
-        showModal('keyword-modal');
-    });
+mainGenerateBtn.addEventListener('click', () => {
+    keywordInput.value = ''; // 清空上次的输入
+    generateDataInjectionTags(); // 刷新标签
+    showModal('keyword-modal');
+});
 
     // 模态框内的“开始生成”按钮
     submitGenerationBtn.addEventListener('click', () => {
