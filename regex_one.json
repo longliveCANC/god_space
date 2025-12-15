@@ -31089,11 +31089,21 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
 }
 
 // === 审查3：NPC重复检查与路径自动切换 ===
-if (path.includes('global_lore.npc') || path.includes('world_lore.npc')) {
+ if (path.includes('global_lore.npc') || path.includes('world_lore.npc')) {
     console.log(`[Core] 💖 智能审查(NPC去重): 检测到NPC路径 '${path}.${keyArg}'，开始检查重复...`);
     
-    // 提取NPC名称
-    const npcName = keyArg;
+    // 提取NPC名称 - 修改：从路径中的npc后缀识别
+    let npcName;
+    const npcMatch = path.match(/\.npc\.([^.]+)/);
+    if (npcMatch) {
+        // 如果路径包含 .npc.xxx 格式，提取xxx作为NPC名称
+        npcName = npcMatch[1];
+    } else {
+        // 否则使用keyArg作为NPC名称（原有逻辑）
+        npcName = keyArg;
+    }
+    
+    console.log(`[Core] 🔍 提取到NPC名称: '${npcName}'`);
     
     // 定义需要检查的所有可能路径
     const pathsToCheck = [
@@ -31298,6 +31308,59 @@ if (path.includes('global_lore.npc') || path.includes('world_lore.npc')) {
             path = checkPath;
             console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
             break;
+        }
+    }
+}
+
+
+// === 审查3：NPC重复检查与路径自动切换 ===
+ if (path.includes('global_lore.npc') || path.includes('world_lore.npc')) {
+    console.log(`[Core] 💖 智能审查(NPC去重): 检测到NPC路径 '${path}.${key}'，开始检查重复...`);
+    
+    // 提取NPC名称 - 修改：从路径中的npc后缀识别
+    let npcName;
+    const npcMatch = path.match(/\.npc\.([^.]+)/);
+    if (npcMatch) {
+        // 如果路径包含 .npc.xxx 格式，提取xxx作为NPC名称
+        npcName = npcMatch[1];
+    } else {
+        // 否则使用keyArg作为NPC名称（原有逻辑）
+        npcName = key;
+    }
+    
+    console.log(`[Core] 🔍 提取到NPC名称: '${npcName}'`);
+    
+    // 定义需要检查的所有可能路径
+    const pathsToCheck = [
+        'global_lore.npc',
+        'global_lore.小队信息',
+        'world_lore.npc'
+    ];
+    
+    // 排除当前路径，只检查其他路径
+    const otherPaths = pathsToCheck.filter(p => p !== path);
+    
+    // 检查是否在其他路径下存在同名NPC
+    for (const checkPath of otherPaths) {
+        const pathParts = checkPath.split('.');
+        let targetObj = assaDataToUpdate;
+        
+        // 导航到目标路径
+        for (const part of pathParts) {
+            if (targetObj && targetObj.hasOwnProperty(part)) {
+                targetObj = targetObj[part];
+            } else {
+                targetObj = null;
+                break;
+            }
+        }
+        
+        // 如果找到了同名NPC
+        if (targetObj && targetObj.hasOwnProperty(npcName)) {
+            console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于 '${checkPath}'，自动切换路径`);
+            path = checkPath;
+            console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
+            break; // 找到第一个就停止检查
         }
     }
 }
