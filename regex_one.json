@@ -25503,6 +25503,10 @@ content = content.replace(/"([^"]+)"\s*:\s*\{([^{}]+)\}/g, function(fullMatch, o
 
 console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`);
  
+   content = content.replace(/,\s*([}\]])/g, (match, closingBracket) => {
+        // closingBracket 参数就是捕获组匹配到的内容 (即 '}' 或 ']')
+        return closingBracket;
+    });
 
     // **第三幕：慈悲缝合**
     // 这是我们新学会的魔法！在所有修复之后，我们来弥补缺失的拥抱。
