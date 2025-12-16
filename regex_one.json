@@ -14789,7 +14789,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.11';
+let current_game_version = '3.4.12';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -21722,7 +21722,7 @@ const customActionInput = document.getElementById('custom-action-input');
                 const camp = document.getElementById('paradise-camp').value;
                 const paradiseIdentity = document.getElementById('paradise-identity').value;
                 // 乐园世界的信封，上面写着阵营和身份
-                commandPrefix = `<基于以下设定初始化任务并立刻进入，同时设置并记忆user乐园阵营:${camp}，并设置user乐园身份:${paradiseIdentity}>\n`;
+                commandPrefix = `<基于以下设定初始化任务并立刻进入，同时设置并记忆<user>乐园阵营:${camp}，并设置<user>乐园身份:${paradiseIdentity} ，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>\n`;
             } else if (version === '5') {
                 // 快穿世界的信封，要求立刻生成攻略目标
                 commandPrefix = `<基于以下设定生成世界并立刻进入，同时初始化攻略目标信息和攻略任务>\n`;
@@ -23426,13 +23426,13 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
             const commandTemplates = {
                 mission: {
                     'default': `<初始化任务并立刻进入任务世界，必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合，并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>`,
-                    '3': `<初始化任务并立刻进入任务世界，必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合，并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>\n<设置并记忆user乐园阵营:${camp}，并设置user乐园身份:${paradiseIdentity}>`,
+                    '3': `<初始化任务并立刻进入任务世界，必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合，并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>\n<设置并记忆<user>乐园阵营:${camp}，并设置<user>乐园身份:${paradiseIdentity}，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>`,
                     '5': `<初始化世界并立刻进入，立刻初始化攻略目标信息和攻略任务。必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合要求，但无论是什么类型的世界或基调，都必须含有攻略任务和攻略对象，这是第一优先级！！并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>`,
                     '6': `<立刻根据要求初始化${userName}所处的现实世界和开局。必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合要求，生成的开局中必须包含/引出诸天聊天群的信息，此为第一优先级！！并记录关键信息。设定如下：\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>`,
                 },
                 safeZone: {
                     'default': `<初始化进入${currentTheme.mainSystem}——${name}将在短暂的意识模糊后于${currentTheme.mainSystem}的安全区醒来，无法立即进入任务。>`,
-                    '3': `<初始化进入${currentTheme.mainSystem}——${name}将在短暂的意识模糊后于${currentTheme.mainSystem}的安全区醒来，无法立即进入任务。>\n<设置并记忆user乐园阵营:${camp}，并设置user乐园身份:${paradiseIdentity}>`,
+                    '3': `<初始化进入${currentTheme.mainSystem}——${name}将在短暂的意识模糊后于${currentTheme.mainSystem}的安全区醒来，无法立即进入任务。>\n<设置并记忆user乐园阵营:${camp}，并设置user乐园身份:${paradiseIdentity}，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>`,
                     '6': `<初始化${userName}进入${currentTheme.mainSystem}的开局和场景>`,
                 }
             };
