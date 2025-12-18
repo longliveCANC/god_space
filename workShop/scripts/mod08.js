@@ -71,6 +71,11 @@
       transform: translateY(0);
       pointer-events: auto;
     }
+
+      .message-bubble {
+      max-width: 100% !important;
+      padding: 0 !important;
+    }
   `;
   document.head.appendChild(style);
 
