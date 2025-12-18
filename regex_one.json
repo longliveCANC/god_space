@@ -14789,7 +14789,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.12';
+let current_game_version = '3.4.13';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -14818,6 +14818,7 @@ let is_restore_prompt = "true";
 let weneedshop = "false";
 let is_show_notifications = "true";
 let ifScanMemory = "false";
+let dice_use = "true";
 let bookItemSettings = null;
 let batches = 1;
 let playerinput = "";
@@ -21722,7 +21723,7 @@ const customActionInput = document.getElementById('custom-action-input');
                 const camp = document.getElementById('paradise-camp').value;
                 const paradiseIdentity = document.getElementById('paradise-identity').value;
                 // 乐园世界的信封，上面写着阵营和身份
-                commandPrefix = `<基于以下设定初始化任务并立刻进入，同时设置并记忆<user>乐园阵营:${camp}，并设置<user>乐园身份:${paradiseIdentity} ，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），使用memory指令初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>\n`;
+                commandPrefix = `<基于以下设定初始化任务并立刻进入，同时设置并记忆<user>乐园阵营:${camp}，并设置<user>乐园身份:${paradiseIdentity} ，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>\n`;
             } else if (version === '5') {
                 // 快穿世界的信封，要求立刻生成攻略目标
                 commandPrefix = `<基于以下设定生成世界并立刻进入，同时初始化攻略目标信息和攻略任务>\n`;
@@ -23426,13 +23427,13 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
             const commandTemplates = {
                 mission: {
                     'default': `<初始化任务并立刻进入任务世界，必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合，并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>`,
-                    '3': `<初始化任务并立刻进入任务世界，必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合，并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>\n<设置并记忆<user>乐园阵营:${camp}，并设置<user>乐园身份:${paradiseIdentity}，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），使用memory指令初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>`,
+                    '3': `<初始化任务并立刻进入任务世界，必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合，并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>\n<设置并记忆<user>乐园阵营:${camp}，并设置<user>乐园身份:${paradiseIdentity}，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>`,
                     '5': `<初始化世界并立刻进入，立刻初始化攻略目标信息和攻略任务。必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合要求，但无论是什么类型的世界或基调，都必须含有攻略任务和攻略对象，这是第一优先级！！并记录关键信息。设定如下：\n- 任务基调：{tone}\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>`,
                     '6': `<立刻根据要求初始化${userName}所处的现实世界和开局。必须严格按照要求和设定信息自然生成正文，若有设定冲突则尽可能大开脑洞使其合理融合要求，生成的开局中必须包含/引出诸天聊天群的信息，此为第一优先级！！并记录关键信息。设定如下：\n- 世界类型：{type}\n- 初始身份：{identity}\n- 开局：{opening}>`,
                 },
                 safeZone: {
                     'default': `<初始化进入${currentTheme.mainSystem}——${name}将在短暂的意识模糊后于${currentTheme.mainSystem}的安全区醒来，无法立即进入任务。>`,
-                    '3': `<初始化进入${currentTheme.mainSystem}——${name}将在短暂的意识模糊后于${currentTheme.mainSystem}的安全区醒来，无法立即进入任务。>\n<设置并记忆user乐园阵营:${camp}，并设置user乐园身份:${paradiseIdentity}，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），使用memory指令初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>`,
+                    '3': `<初始化进入${currentTheme.mainSystem}——${name}将在短暂的意识模糊后于${currentTheme.mainSystem}的安全区醒来，无法立即进入任务。>\n<设置并记忆user乐园阵营:${camp}，并设置user乐园身份:${paradiseIdentity}，同时在<user>的npc档案中拓展字段（不需要完成初始化<user>的npc档案），初始化其烙印等级（阶级及其等级）和其他信息（如信誉值）>`,
                     '6': `<初始化${userName}进入${currentTheme.mainSystem}的开局和场景>`,
                 }
             };
@@ -24813,7 +24814,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAna|<moduleAnalyze>([\s\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
             // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
@@ -28298,7 +28299,10 @@ async function showRollResultCard(rollData=null) {
         return;
     }
     
- 
+   const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
+        if (!isRollCardEnabled || dice_use === "false") {
+            return;
+        }
     if (typeof rollData === 'string') {
         // await updateVariablesWith(old_variables => {
         //     return {
@@ -28308,10 +28312,7 @@ async function showRollResultCard(rollData=null) {
         // }, { type: 'message' });
         // checkMemoryData = rollData;
         
-        const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
-        if (!isRollCardEnabled) {
-            return;
-        }
+
         
         const container = document.getElementById('roll-result-card-container');
         if (!container) return;
@@ -28356,18 +28357,6 @@ async function showRollResultCard(rollData=null) {
         return; // 处理完系统提示后直接返回
     }
 
-        //     await updateVariablesWith(old_variables => {
-        //     return {
-        //         ...old_variables,
-        //         "检定记忆":rollData,
-        //     };
-        // }, { type: 'message' });
-// checkMemoryData = rollData;
-       const isRollCardEnabled = localStorage.getItem('rollCardEnabled') !== 'off';
-    if(!isRollCardEnabled){
-     
-    return;
-    }
  
 const playerName = currentGameData.user.name || '用户';  // 添加这行
     const container = document.getElementById('roll-result-card-container');
@@ -30456,21 +30445,24 @@ async function processUpdateMemoryCommands(commandText, message_id) {
     // 过滤掉因为分割可能产生的无用的小线头。
     const lines = commandLines.map(line => line.trim()).filter(line => line && !line.startsWith('//'));
      //   添加路径清理辅助函数  
-const cleanPath = (path) => {
+ const cleanPath = (path) => {
     if (typeof path !== 'string') return path;
     
     const parts = path.split('.');
     
-    // 只处理前两个参数,移除 - 和空格
     const cleanedParts = parts.map((part, index) => {
+        // 所有部分都移除引号
+        let cleaned = part.replace(/["']/g, '');
+        
+        // 只对前两个参数额外移除 - 和空格
         if (index < 2) {
-            return part.replace(/[-\s]/g, '');
+            cleaned = cleaned.replace(/[-\s]/g, '');
         }
-        return part;
+        
+        return cleaned;
     });
     
     return cleanedParts.join('.');
-    // return path;
 };
     let finalPlayData, finalAssaData, finalStatData;
  const updater = async (variables) => { // 注意这里改为 async
@@ -30788,7 +30780,7 @@ if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
                                 path = `${path}.${additionalPath}`;
 
                                 // 剩下最后一部分，才是我们真正的钥匙
-                                keyArg = keyArg.substring(lastDotInKey + 1);
+                     keyArg = unquote(keyArg.substring(lastDotInKey + 1)); // 修改这里：添加 unquote
 
                                 console.log(`[Core] ✨ 重组后 -> Path: '${path}', Key: '${keyArg}'`);
                             }
@@ -30803,7 +30795,7 @@ if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
                                  const potentialParentPath = thirdArgClean.substring(0, lastDotIndexThird);
 
                                  if (path === potentialParentPath) {
-                                     const newKey = thirdArgClean.substring(lastDotIndexThird + 1);
+                                  const newKey = unquote(thirdArgClean.substring(lastDotIndexThird + 1)); // 修改这里：添加 unquote
                                      console.log(`[Core] 💖 memory-op(智能重命名): 检测到新格式，将 '${path}.${keyArg}' 重命名为 '${path}.${newKey}'`);
 
                                      // 导航到父对象
@@ -31162,8 +31154,8 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                                value: finalValue
                            });
                         } else if (args.length === 2) {
-                            const path1Str = cleanPath(clean(args[0]));
-                           const path2Str = cleanPath(clean(args[1]));
+                            const path1Str = cleanPath(unquote(args[0])); // 修改这里：添加 unquote
+    const path2Str = cleanPath(unquote(args[1])); // 修改这里：添加 unquote
 
                             const lastDotIndex1 = path1Str.lastIndexOf('.');
                             const lastDotIndex2 = path2Str.lastIndexOf('.');
@@ -31172,9 +31164,9 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                             // 只有当两个参数看起来都像是路径时（都包含'.'），我们才启动新模式
                             if (lastDotIndex1 !== -1 && lastDotIndex2 !== -1) {
                                    let parentPath1 = path1Str.substring(0, lastDotIndex1); // ✨ 由 const 改为 let
-                                const key1 = path1Str.substring(lastDotIndex1 + 1);
-                                let parentPath2 = path2Str.substring(0, lastDotIndex2); // ✨ 由 const 改为 let
-                                const key2 = path2Str.substring(lastDotIndex2 + 1);
+                               const key1 = unquote(path1Str.substring(lastDotIndex1 + 1)); // 修改这里：添加 unquote
+        let parentPath2 = path2Str.substring(0, lastDotIndex2);
+        const key2 = unquote(path2Str.substring(lastDotIndex2 + 1)); // 修改这里：添加 unquote
 
                                    // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
                                 if (parentPath1.includes('群员')) {
@@ -31272,7 +31264,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                                  continue;
                                  }
                                     let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
-                      const key = clean(fullPath.substring(lastDotIndex1 + 1)); // 对 key 也应用 clean
+                 const key = unquote(clean(fullPath.substring(lastDotIndex1 + 1))); // 修改这里：确保有 unquote
                                  // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
                              if (path.includes('群员')) {
                                  const originalPath = path;
@@ -33649,7 +33641,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|<moduleAnalyze>([\s\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
         
         };
 
@@ -34704,7 +34696,7 @@ async function applyThemeAndData() {
             const version = String(chatVariables.world_version);
             if (themeConfig[version]) {
                 currentTheme = themeConfig[version];
-                //console.log(`💖 妈妈检测到版本 ${version}，为新界面切换到【${currentTheme.mainSystem}】主题。`);
+                console.log(`💖 妈妈检测到版本 ${version}，为新界面切换到【${currentTheme.mainSystem}】主题。`);
             }
         }
 
@@ -39005,6 +38997,7 @@ playerinput= String(chatdata.玩家输入||"");
 enable_preset_2nd_pass = String(chatdata.enable_preset_2nd_pass||'true');
 noBackup = String(chatdata.is_no_backup||'false');
 ifScanMemory = String(chatdata.if_scan_memory||'false');
+dice_use= String(chatdata.dice_use||'true');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
@@ -39018,6 +39011,7 @@ ifScanMemory = String(chatdata.if_scan_memory||'false');
  
 console.log("isPrivateChat "+isPrivateChat);
 console.log("version "+version);
+ 
  //ui消失管理
  
    if (version === '6' || isPrivateChat === 'true') {
@@ -39283,6 +39277,7 @@ function upgradeEventHandler(e) {
     }
 }
 
+await applyThemeAndData(); 
 }
   
 
@@ -42178,7 +42173,7 @@ checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 
 setupReconfigModal();
 initAutoSetNpcFilter();
- await applyThemeAndData();  
+  
   initializeDanmuSettings();
 
     // --- 新增：消息背景透明开关 ---
@@ -42330,7 +42325,7 @@ if (activeUrlSet.size > 0) {
  
  await initDisplay();
   await loadWorldbookSettingsFromChat();
-await applyThemeAndData(); 
+
 
 
     // 标签页切换
@@ -46658,7 +46653,7 @@ function executeChoice(fullCommand, cardElement, successText, keepUiActive = fal
                 const tags = [];
                 let match;
                 while ((match = tagRegex.exec(optionText)) !== null) {
-                      tags.push(match[1].replace(/[^\u4e00-\u9fa5a-zA-Z0-9:：]/g, ''));
+                 tags.push(match[1].trim());
                 }
                 // const descriptionText = optionText.replace(tagRegex, '').replace(/^\d+\.\s*/, '').trim();
 const descriptionText = optionText.replace(tagRegex, '').replace(/^\s*\d+\.\s*/, '').trim();
