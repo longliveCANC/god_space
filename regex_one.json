@@ -14789,7 +14789,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.13';
+let current_game_version = '3.4.14';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -31154,8 +31154,8 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                                value: finalValue
                            });
                         } else if (args.length === 2) {
-                            const path1Str = cleanPath(unquote(args[0])); // 修改这里：添加 unquote
-    const path2Str = cleanPath(unquote(args[1])); // 修改这里：添加 unquote
+                            const path1Str = cleanPath(args[0]); // 修改这里：添加 unquote
+    const path2Str = args[1]; // 修改这里：添加 unquote
 
                             const lastDotIndex1 = path1Str.lastIndexOf('.');
                             const lastDotIndex2 = path2Str.lastIndexOf('.');
@@ -31166,7 +31166,7 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                                    let parentPath1 = path1Str.substring(0, lastDotIndex1); // ✨ 由 const 改为 let
                                const key1 = unquote(path1Str.substring(lastDotIndex1 + 1)); // 修改这里：添加 unquote
         let parentPath2 = path2Str.substring(0, lastDotIndex2);
-        const key2 = unquote(path2Str.substring(lastDotIndex2 + 1)); // 修改这里：添加 unquote
+        const key2 = path2Str.substring(lastDotIndex2 + 1); // 修改这里：添加 unquote
 
                                    // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
                                 if (parentPath1.includes('群员')) {
