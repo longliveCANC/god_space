@@ -12372,7 +12372,7 @@ pointer-events: auto;
 #swipe-handle {
     position: fixed; /* 固定在视口上 */
     left: 0;
-    top: 0;
+    bottom: 0;
     width: 100%; /* 触发区域的宽度，可以根据需要调整 */
     height: 35vh; /* 占据整个屏幕高度 */
     z-index: 998; /* 比选项区低一点，但要高于大部分背景内容 */
@@ -32755,8 +32755,9 @@ if (messageVars && messageVars.检定记忆) {
             promptsForAI.push({
                 role: 'user',
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
-                content: "\n)};//历史内容结束\n\n\n用户输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意："
-            });
+                 content: "\n)};//历史内容结束\n\n\n用户(玩家)输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户(玩家)行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意："
+           
+              });
              let userText_format = userText.replace(/<updateMemory>(?:(?!<updateMemory>)[\s\S])*?<\/updateMemory>/gs, '')
 
     await TavernHelper.insertOrAssignVariables(
@@ -34622,7 +34623,7 @@ function setupCustomAssetManager() {
 
         try {
             await imageDB.set(storeName, key, file);
-            alert(`"${key}" 上传成功！`);
+            
             form.reset();
             fileInput.parentElement.querySelector('.file-name-display').textContent = '未选择文件';
             await renderAssetList(storeName, listElement); // 刷新列表
