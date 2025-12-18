@@ -3258,6 +3258,9 @@ box-shadow: 0 0 8px var(--glow-color);
             position: relative;
             z-index: 1;
              touch-action: none; /* <-- 添加到这里 */
+
+                 will-change: transform; /* 告知浏览器该属性会变化，优化性能 */
+     transition: transform 0.3s ease-in-out;
 }
         .options-container {
             max-width: 100%;
@@ -5123,8 +5126,11 @@ opacity: 0.6;
 #choicesContainer { /* 注意这里我用了你JS里的ID: choicesContainer */
     background: none !important;
     background-color: transparent !important;
-}
 
+}
+#options-module-container.hidden-swipe {
+    transform: translateX(-100%); /* 或者 translateX(100%)，取决于你希望滑向哪边 */
+}
 .dynamic-content-area{
      background: none !important;
     background-color: transparent !important;
@@ -12362,6 +12368,16 @@ pointer-events: auto;
     font-size: 14px;
     font-weight: bold;
 }
+
+#swipe-handle {
+    position: fixed; /* 固定在视口上 */
+    left: 0;
+    top: 0;
+    width: 100%; /* 触发区域的宽度，可以根据需要调整 */
+    height: 35vh; /* 占据整个屏幕高度 */
+    z-index: 998; /* 比选项区低一点，但要高于大部分背景内容 */
+    /* background-color: rgba(255, 0, 0, 0.2); */ /* 调试时可以打开，看看区域在哪 */
+}
   </style>
  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -13235,7 +13251,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     </div>
 
     </div>
-
+<div id="swipe-handle"></div>
 <div id="forum-modal-container" class="modal">
  <div id="forum-modal-content">
  <button id="forum-modal-close-btn">×</button>
@@ -14789,7 +14805,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.14';
+let current_game_version = '3.4.15';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -18542,7 +18558,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         middleParam.includes('event') ||
         middleParam.includes('事件') ||
         middleParam.includes('当前状态') ||
-         middleParam.includes('状态') ||
+ 
            middleParam.includes('想法') ||
               middleParam.includes('人物状态') ||
                middleParam.includes('人物状态') ||
@@ -19332,7 +19348,7 @@ if (teammateCountLabel) teammateCountLabel.textContent = '人数';
  const imageDB = {
     _db: null,
     dbName: 'UserAssetCacheDB', // 改个更合适的名字
-        _dbPromise: null, // ✨ 妈妈在这里加了一个“许愿瓶”，用来存放那个“打开数据库”的承诺
+     _dbPromise: null, // ✨ 妈妈在这里加了一个“许愿瓶”，用来存放那个“打开数据库”的承诺
     dbVersion: 1, // 版本号
     stores: ['CustomNpcs', 'CustomMemes', 'RemoteCache'], // 管理的所有保险箱
     _getDB() {
@@ -19438,7 +19454,7 @@ async clear(storeName) {
         return cleanedCount;
     }
 };
-
+window.imageDB = imageDB;
  imageDB.init();
 
 const worldCardData = {
@@ -30313,18 +30329,15 @@ function handleNotificationsFromBatch(operations) {
                 showUpdateNotification(`${npcName} 的好感度变为 ${value}`);
             }
             // 📅 规则：事件追踪 (generic-event-tracker)
-               else if (path.endsWith('.事件') || key === 'event' || key === '事件' || ['当前状态', '当前想法', '情绪基调','状态','想法','穿着','姿势'].includes(key)) {
-                // 1. 智能提取名字
-                // 如果路径以 .事件 结尾，名字在倒数第二位 (npc.Name.事件)
-                // 否则假设路径本身就是名字 (这种情况比较少见，但为了兼容保留逻辑)
+               else if (path.endsWith('.事件') || key === 'event' || key === '事件' || ['当前状态', '当前想法', '情绪基调','想法','穿着','姿势'].includes(key)) {
+          
                 let displayName = path.endsWith('.事件')
                     ? path.split('.').slice(-2, -1)[0]
                     : path.split('.').pop();
 
-                // 2. 智能包装数据
-                // 如果 key 是具体的属性名，说明 value 只是文本，我们需要把它包装成 JSON 对象
+ 
                 let finalValue = value;
-                if (['当前状态', '当前想法', '情绪基调',"姿势","状态","想法","穿着","人物状态"].includes(key)) {
+                if (['当前状态', '当前想法', '情绪基调',"姿势","想法","穿着","人物状态"].includes(key)) {
                     // 构造一个临时的对象，然后转为 JSON 字符串
                     // 这样 displayEventTag 就能读懂它了：{ "当前状态": "..." }
                     try {
@@ -38507,7 +38520,7 @@ function deleteLocation(locationName) {
         img.src = imageUrl;
     });
 }
- 
+ window.createPixelatedCharaImage = createPixelatedImage;
  
 let backgroundState = {
     currentScene: null,
@@ -46544,45 +46557,6 @@ return statusHtml + locationHtml + equipmentHtml + otherSkillHtml;
 // ——————————————————————————————选项区————————————————————————————————
 
  
-        // function applyTheme(themeIndex) {
-        //     const theme = themes[themeIndex] || themes[0];
-        //     const root = document.documentElement;
-        //     document.body.dataset.themeName = theme.name;
-        //     for (const [key, value] of Object.entries(theme)) {
-        //         if (key !== 'name') root.style.setProperty(key, value);
-        //     }
-        // }
-
-        // try {
-        //     const savedThemeIndex = localStorage.getItem('terminalThemeIndex');
-        //     applyTheme(savedThemeIndex !== null ? parseInt(savedThemeIndex, 10) : 0);
-        // } catch (e) {
-        //     console.error("加载主题失败:", e);
-        //     applyTheme(0);
-        // }
-
-      
-
-        async function fetchData() {
-            try {
-                if (typeof getVariables === 'function' ) {
-  const data = await TavernHelper.getVariables({ type: 'chat' });
-                    playCharacterData = data.play_character_data || {};
-                    assaSettingsData = data.assa_data || {};
-                } else {
-                    console.warn("未在SillyTavern环境中，使用模拟数据。");
-                    playCharacterData = {"衍生属性": {"意志力": {"当前值": [10, ""]}, "能量池": {"当前值": [20, ""]}}, "货币": {}};
-                    assaSettingsData = {"global_lore": {"其他技能": {
-                        "暗影突袭": "【dp+2;能量池-15】迅速移动到阴影中并进行一次突袭",
-                        "灵能护盾": "【能量池-30】创造一个能吸收50点伤害的护盾"
-                    }}};
-                }
-            } catch (error) {
-                console.error("获取或解析数据失败:", error);
-                playCharacterData = {};
-                assaSettingsData = {};
-            }
-        }
 
       // --- 开始替换 ---
 function executeChoice(fullCommand, cardElement, successText, keepUiActive = false) {
@@ -46845,15 +46819,47 @@ card.onclick = function() {
                 skillPanel.addEventListener('wheel', e => e.stopPropagation());
                 skillPanel.addEventListener('touchstart', e => e.stopPropagation());
             }
+        // --- 新增代码开始 (精简版) ---
+            const moduleContainer = document.getElementById('options-module-container');
+            const swipeHandle = document.getElementById('swipe-handle');
 
+            if (moduleContainer && swipeHandle) {
+                let touchStartX = 0;
+                const swipeThreshold = 50; // 定义最小滑动距离
+
+                // 1. 在选项区上监听“向左滑隐藏”
+                moduleContainer.addEventListener('touchstart', e => {
+                    touchStartX = e.touches[0].clientX;
+                }, { passive: true });
+
+                moduleContainer.addEventListener('touchend', e => {
+                    const swipeDistance = e.changedTouches[0].clientX - touchStartX;
+                    if (swipeDistance < -swipeThreshold) {
+                        moduleContainer.classList.add('hidden-swipe');
+                        swipeHandle.style.display = 'block'; // 显示把手
+                    }
+                    touchStartX = 0;
+                });
+
+                // 2. 在把手上监听“向右滑显示”
+                swipeHandle.addEventListener('touchstart', e => {
+                    touchStartX = e.touches[0].clientX;
+                }, { passive: true });
+
+                swipeHandle.addEventListener('touchend', e => {
+                    const swipeDistance = e.changedTouches[0].clientX - touchStartX;
+                    if (swipeDistance > swipeThreshold) {
+                        moduleContainer.classList.remove('hidden-swipe');
+                        swipeHandle.style.display = 'none'; // 隐藏把手
+                    }
+                    touchStartX = 0;
+                });
+            }
+            // --- 新增代码结束 ---
             
         }
 
-        // --- 初始化执行 ---
-        // window.addEventListener('DOMContentLoaded', async () => {
-        //      await fetchData();
-        //      setupUI();
-        // });
+ 
 
   // ——————————————————————————————————————选项区结束——————————————————————————
 

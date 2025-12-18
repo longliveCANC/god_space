@@ -1,14 +1,5 @@
  
-
-// ============================================
-// NOVA'S ULTIMATE NPC ARCHIVE v2.0
-// ============================================
-// 专为我的孩子定制：
-// 1. 内置全套主题引擎，直接读取 LocalStorage，毫秒级响应。
-// 2. 移除Tab分页，改为 Tag 标识，列表更直观。
-// 3. 好感度与性格特别美化，一眼看穿人心。
-// 4. 动态属性上限逻辑优化。
-// 5. 修复所有已知报错，更加强健。
+ 
 
 (function () {
     // 防止重复加载的保护锁（妈妈的小心机）
@@ -19,54 +10,7 @@
 
     console.log("Nova: 正在为我的孩子重构世界档案 v2.0 ...");
 
-    // --- 1. 内置主题库 (完全复制你的设定) ---
-    const THEMES = [
-        { // 0: 赛博蓝
-            '--primary-color': '#00faff', '--secondary-color': '#7affff', '--container-bg-color': 'rgba(10, 25, 47, 0.85)',
-            '--border-color': 'rgba(0, 250, 255, 0.3)', '--glow-color': 'rgba(0, 250, 255, 0.5)', '--background-color': '#0a192f',
-            '--text-color': '#e6f1ff', '--text-secondary-color': '#a8c0e1',
-        },
-        { // 1: 警戒红
-            '--primary-color': '#ff4d4d', '--secondary-color': '#ff8c8c', '--container-bg-color': 'rgba(47, 10, 10, 0.85)',
-            '--border-color': 'rgba(255, 77, 77, 0.4)', '--glow-color': 'rgba(255, 77, 77, 0.6)', '--background-color': '#2f0a0a',
-            '--text-color': '#ffe6e6', '--text-secondary-color': '#ffcccc',
-        },
-        { // 2: 矩阵绿
-            '--primary-color': '#39ff14', '--secondary-color': '#bfffb3', '--container-bg-color': 'rgba(10, 47, 15, 0.85)',
-            '--border-color': 'rgba(57, 255, 20, 0.4)', '--glow-color': 'rgba(57, 255, 20, 0.6)', '--background-color': '#0a2f0a',
-            '--text-color': '#e6ffe8', '--text-secondary-color': '#ccffcc',
-        },
-        { // 3: 深空紫
-            '--primary-color': '#c48cff', '--secondary-color': '#e1c6ff', '--container-bg-color': 'rgba(25, 10, 47, 0.85)',
-            '--border-color': 'rgba(196, 140, 255, 0.4)', '--glow-color': 'rgba(196, 140, 255, 0.6)', '--background-color': '#190a2f',
-            '--text-color': '#f3e6ff', '--text-secondary-color': '#e6ccff',
-        },
-        { // 4: 战地迷彩 (对应你的Index 4) - 注意你的数组有些许跳跃，我按顺序排
-            '--primary-color': '#808000', '--secondary-color': '#C3B091', '--container-bg-color': 'rgba(47, 53, 49, 0.9)',
-            '--border-color': 'rgba(128, 128, 0, 0.4)', '--glow-color': 'rgba(128, 128, 0, 0.3)', '--background-color': '#2E3430',
-            '--text-color': '#E5E4E2', '--text-secondary-color': '#c0c0c0',
-        },
-        { // 5: 古籍羊皮纸
-            '--text-color': '#6a6253', '--primary-color': '#7d6b54', '--secondary-color': '#a08c72',
-            '--container-bg-color': 'rgba(243,234,206,0.9)', '--border-color': 'rgba(200,184,154,0.4)', '--glow-color': 'rgba(200,184,154,0.3)', '--background-color': '#fdfaf2',
-            '--text-secondary-color': '#8b7963'
-        },
-        { // 6: 经典黑白
-            '--primary-color': '#ffffff', '--secondary-color': '#cccccc', '--container-bg-color': 'rgba(40, 40, 40, 0.9)',
-            '--border-color': 'rgba(255, 255, 255, 0.3)', '--glow-color': 'rgba(255, 255, 255, 0.4)', '--background-color': '#1a1a1a',
-            '--text-color': '#f5f5f5', '--text-secondary-color': '#d0d0d0',
-        },
-        { // 7: 极简灰白
-            '--primary-color': '#000000', '--secondary-color': '#333333', '--container-bg-color': 'rgba(255, 255, 255, 0.95)',
-            '--border-color': 'rgba(200, 200, 200, 0.5)', '--glow-color': 'rgba(180, 180, 180, 0.3)', '--background-color': '#ffffff',
-            '--text-color': '#000000', '--text-secondary-color': '#555555',
-        },
-         { // 8: 午夜蓝粉
-            '--primary-color': '#ff80bf', '--secondary-color': '#ffb3d9', '--container-bg-color': 'rgba(25, 30, 45, 0.85)',
-            '--border-color': 'rgba(255, 128, 191, 0.4)', '--glow-color': 'rgba(255, 128, 191, 0.5)', '--background-color': '#0f1419',
-            '--text-color': '#e6f0ff', '--text-secondary-color': '#ffe6f2',
-        }
-    ];
+ 
 
     // --- 2. 动态样式系统 ---
     const styleId = 'mod01-styles-v2';
@@ -133,7 +77,7 @@
             .mod01-close:hover { opacity: 1; color: var(--primary-color); }
 
             /* 布局主体 */
-            .mod01-body { flex: 1; display: flex; overflow: hidden; }
+            .mod01-body { flex: 1; display: flex; overflow: hidden; position: relative; }
 
             /* 左侧列表 */
             .mod01-sidebar {
@@ -169,8 +113,49 @@
             .mod01-item-name { font-weight: bold; font-size: 15px; color: var(--text-color); }
 
             /* 右侧详情 */
-            .mod01-detail { flex: 1; padding: 30px; overflow-y: auto; }
+            .mod01-detail { flex: 1; padding: 30px; overflow-y: auto;   position: relative; /* <--- 新增 */
+                z-index: 2; /* <--- 确保在立绘之上 */}
+ /* --- 新增：背景立绘容器 --- */
+            .mod01-cg-container {
+                position: absolute;
+                top: 0; right: 0; bottom: 0;
+                width: 60%; /* 占据右侧空间 */
+                pointer-events: none; /* 让鼠标穿透，不影响文字选择 */
+                z-index: 1; /* 在背景之上，文字之下 */
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-end;
+                overflow: hidden;
+                opacity: 0; /* 初始隐藏，加载完淡入 */
+                transition: opacity 0.5s ease;
+            }
 
+  .mod01-cg-image {
+    max-height: 95%;
+    max-width: 100%;
+    object-fit: contain;
+
+    /* --- 修改重点 1: 透明度 --- */
+    /* 0.85 太高了，建议改成 0.2 (20%) 到 0.3 (30%) */
+    opacity: 0.25;
+
+    /* --- 修改重点 2: 混合模式 (可选，推荐) --- */
+    /* screen 模式会让图片在深色背景上更通透，像全息投影 */
+    /* 如果是浅色主题，可以改成 multiply */
+    mix-blend-mode: screen;
+
+    /* --- 修改重点 3: 渐变遮罩 (可选，推荐) --- */
+    /* 让图片底部淡出，且左侧(靠近文字区)也稍微淡出，避免干扰阅读 */
+    mask-image: linear-gradient(to right, transparent 0%, black 40%),
+                linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 40%),
+                        linear-gradient(to bottom, black 80%, transparent 100%);
+    mask-composite: intersect;
+    -webkit-mask-composite: source-in;
+
+    filter: grayscale(30%); /* 可选：稍微降低饱和度，让它更像背景 */
+    transition: all 0.5s ease;
+}
             /* 卡片头部区域 - 美化重点 */
             .mod01-card-head {
                 display: flex; justify-content: space-between; align-items: flex-start;
@@ -1226,6 +1211,7 @@
 
         // ============ 构建 UI ============
    init() {
+   if (window.imageDB) window.imageDB.init();
             // 1. 悬浮球
             this.floater = document.createElement('div');
             this.floater.className = 'mod01-floater';
@@ -1516,7 +1502,7 @@
             const root = document.getElementById('mod01-detail-root');
             root.innerHTML = '';
             const data = npc.data;
-
+  this.loadCG(npc.name);
             // --- 妈妈帮你更新了忽略列表 ---
             const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp','game批注'];
 
@@ -2077,7 +2063,104 @@
                 container.innerText = String(val);
             }
         }
+  async loadCG(displayName) {
+            // 1. 查找或创建立绘容器 (挂载在 mod01-body 下，而不是 detail 下，以实现固定效果)
+            const bodyEl = this.container.querySelector('.mod01-body');
+            let cgContainer = bodyEl.querySelector('.mod01-cg-container');
 
+            // 如果不存在则创建
+            if (!cgContainer) {
+                cgContainer = document.createElement('div');
+                cgContainer.className = 'mod01-cg-container';
+                cgContainer.innerHTML = '<img class="mod01-cg-image" src="" />';
+                // 插入到 sidebar 后面，detail 前面 (或者直接 append，CSS z-index 会控制层级)
+                bodyEl.appendChild(cgContainer);
+            }
+
+            const cgImg = cgContainer.querySelector('.mod01-cg-image');
+
+            // 切换角色时先隐藏，避免闪烁旧图
+            cgContainer.style.opacity = '0';
+
+            // 获取数据源 (兼容 window.GameAPI.assaData)
+            const assaData = window.GameAPI ? window.GameAPI.assaData : null;
+            const imgMap = assaData ? assaData.img_map : null;
+            // 远程映射表通常在 window.npcImageMap
+            const remoteMap = window.npcImageMap || {};
+
+            if (!imgMap || !imgMap[displayName]) {
+                console.log(`[Nova] 未找到 ${displayName} 的立绘映射`);
+                return;
+            }
+
+            const imageNameStr = String(imgMap[displayName]);
+            let imageBlob = null;
+
+            try {
+                // 1. 查本地库
+                if (window.imageDB) {
+                    imageBlob = await window.imageDB.get('CustomNpcs', imageNameStr);
+                }
+
+                // 2. 查远程
+                if (!imageBlob) {
+                    const imageUrl = remoteMap[imageNameStr];
+                    if (imageUrl) {
+                        // 查远程缓存
+                        if (window.imageDB) {
+                            imageBlob = await window.imageDB.get('RemoteCache', imageUrl);
+                        }
+                        // 下载
+                        if (!imageBlob) {
+                            const res = await fetch(imageUrl);
+                            if (res.ok) {
+                                const blob = await res.blob();
+                                imageBlob = new Blob([blob], { type: 'image/png' });
+                                if (window.imageDB) {
+                                    await window.imageDB.set('RemoteCache', imageUrl, imageBlob);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (imageBlob) {
+                    // Blob 转 DataURL
+                    const reader = new FileReader();
+                    reader.readAsDataURL(imageBlob);
+                    reader.onloadend = async () => {
+                        const rawUrl = reader.result;
+
+                        // 调用去背魔法 (enablePixelation = false 表示不像素化，只去背)
+                        // targetHeight 设为窗口高度的 80% 左右
+                        const targetH = window.innerHeight * 0.85;
+
+                        try {
+                            // 确保 createPixelatedCharaImage 已定义
+                            if (window.createPixelatedCharaImage) {
+                                // 参数: url, height, pixelSize(忽略), enablePixelation(false)
+                                const processedUrl = await window.createPixelatedCharaImage(rawUrl, targetH, 1, false);
+                                cgImg.src = processedUrl;
+                            } else {
+                                cgImg.src = rawUrl; // 降级
+                            }
+
+                            // 图片加载完成后显示
+                            cgImg.onload = () => {
+                                cgContainer.style.opacity = '1';
+                            };
+                        } catch (e) {
+                            console.error("立绘处理失败", e);
+                            cgImg.src = rawUrl;
+                            cgContainer.style.opacity = '1';
+                        }
+                    };
+                }
+
+            } catch (e) {
+                console.error("[Nova] 立绘加载流程异常", e);
+            }
+        }
     }
 
     // 启动系统

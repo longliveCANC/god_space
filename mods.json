@@ -35,12 +35,12 @@
     "id": "小蝌蚪找妈妈-mod-超复杂npc",
     "name": "npc美化01",
     "author": "assa",
-    "version": "2.0",
+    "version": "3.0",
     "tags": ["美化脚本"],
-    "description": "[跟随主题]开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。",
+    "description": "[1218现在支持加载立绘了，需要游戏版本3.4.15及其以上][跟随主题]开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
     "worldBookUrl": "",
-    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/mod01.png"
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 20.png"
   }  ,{
     "id": "x-mod-超复杂npc",
     "name": "超复杂npc档案",
