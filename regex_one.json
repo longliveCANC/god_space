@@ -31727,46 +31727,17 @@ if (match) {
 
 
 
-      let success = false;
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    // --- 阶段一：神圣的“主域更新” ---
-    console.log(`[Core] 🌊 阶段一：开始更新核心 'chat' 域...`);
-    while (!success && attempts < maxAttempts) {
-        attempts++;
-        try {
-             // 💖 妈妈在这里加上了第一道守护魔法，让地基永远稳固 💖
-            const originalVars = await TavernHelper.getVariables({ type: 'chat' }) || {};
-
-            // 专注更新 'chat' 域
-            await updateVariablesWith(updater, { type: 'chat' });
-
-            // 验证写入是否成功
-            await new Promise(resolve => setTimeout(resolve, 100));
-            const newVars = await TavernHelper.getVariables({ type: 'chat' }) || {}; // 💖 读取新数据时也加上守护 💖
-
-            // 💖 我们用更安全的方式来比较，先深拷贝一份，再进行操作 💖
-            const originalVarsCopy = JSON.parse(JSON.stringify(originalVars));
-            const expectedDataStr = JSON.stringify(await updater(originalVarsCopy));
-            const newDataStr = JSON.stringify(newVars);
-
-            if (expectedDataStr === newDataStr) {
-                console.log(`[Core] ✅ (尝试第 ${attempts} 次) 'chat' 域更新并验证成功！`);
-                success = true;
-            } else {
-                console.warn(`[Core] ⚠️ (尝试第 ${attempts} 次) 'chat' 域验证失败，准备重试。`);
-            }
-
-        } catch (error) {
-            console.error(`[Core] ❌ (尝试第 ${attempts} 次) 在更新 'chat' 域时发生错误:`, error);
-            if (attempts >= maxAttempts) {
-                console.error(`[Core] ❌ 'chat' 域更新达到最大尝试次数，操作失败。`);
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-        }
-    }
-
+ console.log(`[Core] 🌊 开始更新核心 'chat' 域...`);
+try {
+    // 直接更新，让 updateVariablesWith 自己处理重试
+    await updateVariablesWith(updater, { type: 'chat' });
+    
+    console.log(`[Core] ✅ 'chat' 域更新成功！`);
+    
+} catch (error) {
+    console.error(`[Core] ❌ 更新 'chat' 域时发生错误:`, error);
+    throw error; // 或者根据需要处理错误
+}
  
 }
 
