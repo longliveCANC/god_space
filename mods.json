@@ -30,7 +30,7 @@
     "description": "开启该脚本后，令小盒左上角可以直接编辑世界状态和人物角色数据。也就是statdata和playcharacterdata。需要游戏版本是3.3.13及以上。现在也可以编辑assa_data了，主要是为了编辑里面的未显示字段，如资源条、称号等",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod02.js",
     "worldBookUrl": "",
-    "previewImage": ""
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 21.png"
   } ,{
     "id": "小蝌蚪找妈妈-mod-超复杂npc",
     "name": "npc美化01",
