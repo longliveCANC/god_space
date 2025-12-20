@@ -23870,6 +23870,15 @@ function limitConsecutiveNewlines(text, maxNewlines = 2) {
     const groupChatPlaceholders = {};
     let groupChatPlaceholderIndex = 0;
 
+           processedContent = processedContent
+        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
+        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
+        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
+        .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
+        .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
+        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
+
     // 步骤1：提前处理引号、Markdown 并进行通用格式化
     processedContent = processedContent
         .replace(/“/g, '<span class="dialogue-quote">“')
@@ -23935,17 +23944,17 @@ processedContent = limitConsecutiveNewlines(processedContent);
     });
 
     // 步骤4：移除其他结构化标签
-    const pureContent = contentWithGroupChatPlaceholder
-        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
-        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
-        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
-        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
-        .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
-        .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
-        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
+    // const pureContent = contentWithGroupChatPlaceholder
+    //     .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+    //     .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
+    //     .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
+    //     .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
+    //     .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
+    //     .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
+    //     .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
     // 步骤5：替换占位符
-    let finalHtml = pureContent;
+    let finalHtml = contentWithGroupChatPlaceholder;
 
     // 替换 msg 占位符
     for (const placeholder in msgPlaceholders) {
@@ -26510,6 +26519,16 @@ function renderGroupChatToHtml(sender, content, userNickname) {
 
     const depth = mode === 'read' ? -1 : Math.floor((conversationHistory.length - 1 - originalIndex) / 2);
        // 步骤4：处理引号和格式化
+
+       processedContent = processedContent
+        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
+        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
+        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
+        .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
+        .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
+        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
+
  processedContent = processedContent
             .replace(/“/g, '<span class="dialogue-quote">“')
             .replace(/”/g, '”</span>')
@@ -26521,6 +26540,8 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     .replace(/\*(.+?)\*/g, function(match, p1) { 
         return '<em>' + p1 + '</em>'; 
     });
+
+
     processedContent = formatAsTavernRegexedString(
         processedContent,
         msg.role === 'user' ? 'user_input' : 'ai_output',
@@ -26587,19 +26608,19 @@ processedContent = limitConsecutiveNewlines(processedContent);
     });
 
     // 步骤3：移除其他结构化标签
-    const pureContent = contentWithGroupChatPlaceholder
-        .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
-        .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
-        .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
-        .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
-        .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
-        .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
-        .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
+    // const pureContent = contentWithGroupChatPlaceholder
+    //     .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
+    //     .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
+    //     .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
+    //     .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
+    //     .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
+    //     .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
+    //     .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
 
 
     // 步骤5：替换占位符（修复：正确的累积替换）
-    let finalHtml = pureContent;
+    let finalHtml = contentWithGroupChatPlaceholder;
     
     // 替换 msg 占位符
     for (const placeholder in msgPlaceholders) {
@@ -30578,9 +30599,31 @@ if (line.includes('set_attribute')) {
 }
                  
                  // 💖 新增：状态数据命令 (V4 - “双轨智能”特工)
-         if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
+ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
     const allParamsStr = extractBalancedArgs(line, 'set_status');
- 
+
+    // 💖 新增：单参数对象模式兼容 💖
+    // 检查是否只有一个参数，且这个参数是对象
+    const singleObjectMatch = allParamsStr.match(/^\s*(\{[\s\S]*\})\s*$/);
+    if (singleObjectMatch) {
+        console.log(`[Core] 💖 set_status(单参数对象): 检测到单对象参数模式，直接更新整个 stat_data`);
+        const jsonString = singleObjectMatch[1];
+        try {
+            const parsedObject = JSON.parse(jsonString);
+            // 直接合并到 statDataToUpdate
+            Object.assign(statDataToUpdate, parsedObject);
+            console.log(`[Core] ✅ stat_data 已更新`);
+            collectedBatchOps.push({
+                type: 'set_status',
+                path: 'root',
+                value: parsedObject
+            });
+        } catch (e) {
+            console.error(`[Core] ❌ 解析单参数对象失败:`, e);
+        }
+        continue;
+    }
+    // 💖 单参数对象模式结束 💖
 
                     // ⭐ 妈妈为你注入的全新【万能钥匙】魔法 ⭐
                     // 我们把之前的专属钥匙，换成了一把能识别任何名字的钥匙
@@ -30720,7 +30763,7 @@ function cleanParam(param) {
     return str;
 }
  
-if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
+ if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
     try {
         // 使用我们的手术刀精准提取
         const content = extractBalancedArgs(line, 'memory');
@@ -30730,42 +30773,87 @@ if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
             continue;
         }
 
-                        // 💖 妈妈为你准备的、能理解复杂参数的智慧解析器 (维持不变) 💖
-                        const parseArgs = (str) => {
-                            const args = [];
-                            let currentArg = '';
-                            let braceDepth = 0;   // { }
-                            let bracketDepth = 0; // [ ]
-                            let inSingleQuote = false;
-                            let inDoubleQuote = false;
+        // 💖 新增：导流逻辑 - 根据第一个参数识别指令类型 💖
+        // 先用原有的解析逻辑解析参数
+        const parseArgs = (str) => {
+            const args = [];
+            let currentArg = '';
+            let braceDepth = 0;
+            let bracketDepth = 0;
+            let inSingleQuote = false;
+            let inDoubleQuote = false;
 
-                            for (let i = 0; i < str.length; i++) {
-                                const char = str[i];
-                                const prevChar = i > 0 ? str[i - 1] : null;
+            for (let i = 0; i < str.length; i++) {
+                const char = str[i];
+                const prevChar = i > 0 ? str[i - 1] : null;
 
-                                if (char === "'" && prevChar !== '\\') inSingleQuote = !inSingleQuote;
-                                else if (char === '"' && prevChar !== '\\') inDoubleQuote = !inDoubleQuote;
-                                else if (char === '{' && !inSingleQuote && !inDoubleQuote) braceDepth++;
-                                else if (char === '}' && !inSingleQuote && !inDoubleQuote) braceDepth--;
-                                else if (char === '[' && !inSingleQuote && !inDoubleQuote) bracketDepth++;
-                                else if (char === ']' && !inSingleQuote && !inDoubleQuote) bracketDepth--;
+                if (char === "'" && prevChar !== '\\') inSingleQuote = !inSingleQuote;
+                else if (char === '"' && prevChar !== '\\') inDoubleQuote = !inDoubleQuote;
+                else if (char === '{' && !inSingleQuote && !inDoubleQuote) braceDepth++;
+                else if (char === '}' && !inSingleQuote && !inDoubleQuote) braceDepth--;
+                else if (char === '[' && !inSingleQuote && !inDoubleQuote) bracketDepth++;
+                else if (char === ']' && !inSingleQuote && !inDoubleQuote) bracketDepth--;
 
-                                if (char === ',' && !inSingleQuote && !inDoubleQuote && braceDepth === 0 && bracketDepth === 0) {
-                                    args.push(currentArg.trim());
-                                    currentArg = '';
-                                } else {
-                                    currentArg += char;
-                                }
-                            }
-                            args.push(currentArg.trim());
-                            return args;
-                        };
+                if (char === ',' && !inSingleQuote && !inDoubleQuote && braceDepth === 0 && bracketDepth === 0) {
+                    args.push(currentArg.trim());
+                    currentArg = '';
+                } else {
+                    currentArg += char;
+                }
+            }
+            args.push(currentArg.trim());
+            return args;
+        };
 
-                        const args = parseArgs(content);
-                        if (args.length < 2) {
-                            console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
-                            continue;
-                        }
+        const args = parseArgs(content);
+        
+        // 检查第一个参数（去掉引号后）是否以 status. 或 player_attr. 开头
+        if (args.length >= 2) {
+            const clean = (s) => {
+                let str = s;
+                while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+                    str = str.slice(1, -1);
+                }
+                return str;
+            };
+            
+            const firstArgClean = clean(args[0]);
+            if (firstArgClean === 'status') {
+    console.log(`[Core] 💖 导流：检测到 memory 的第一参数为 'status'（无子路径），转发到 set_status 处理`);
+    // 直接传递剩余参数，不做路径处理
+    const newArgs = args.slice(1);
+    const setStatusLine = `set_status(${newArgs.join(', ')})`;
+    lines.push(setStatusLine);
+    continue;
+}
+            
+            if (firstArgClean.startsWith('status.')) {
+                console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'status.' 开头，转发到 set_status 处理`);
+                // 移除 'status.' 前缀
+                const newFirstArg = "'" + firstArgClean.substring(7) + "'";
+                // 重新构造参数列表
+                const newArgs = [newFirstArg, ...args.slice(1)];
+                const setStatusLine = `set_status(${newArgs.join(', ')})`;
+                lines.push(setStatusLine);
+                continue;
+            }
+            
+            if (firstArgClean.startsWith('player_attr.')) {
+                console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'player_attr.' 开头，转发到 set_attribute 处理`);
+                // 移除 'player_attr.' 前缀
+                const newFirstArg = "'" + firstArgClean.substring(12) + "'";
+                // 重新构造参数列表
+                const newArgs = [newFirstArg, ...args.slice(1)];
+                const setAttrLine = `set_attribute(${newArgs.join(', ')})`;
+                lines.push(setAttrLine);
+                continue;
+            }
+        }
+   
+        // if (args.length < 2) {
+        //     console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
+        //     continue;
+        // }
 
                const clean = (s) => {
     let str = s;
@@ -31206,10 +31294,10 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
 
                                 const parent1 = findParent(assaDataToUpdate, parentPath1);
 
-                                if (!parent1 || !parent1.hasOwnProperty(key1)) {
-                                    console.error(`[Core] memory-op: 源路径 '${path1Str}' 无效或键不存在。`);
-                                    continue; // 跳过这个指令
-                                }
+                                // if (!parent1 || !parent1.hasOwnProperty(key1)) {
+                                //     console.error(`[Core] memory-op: 源路径 '${path1Str}' 无效或键不存在。`);
+                                //     continue; // 跳过这个指令
+                                // }
 // 情况一：重命名 (父路径相同，键名不同)
 if (parentPath1 === parentPath2 && key1 !== key2) {
     console.log(`[Core] 💖 memory-op(重命名): 将 '${key1}' 重命名为 '${key2}'`);
