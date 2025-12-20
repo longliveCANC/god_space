@@ -30778,18 +30778,16 @@ if (line.trim().startsWith('memory') || /\bmemory\s*\(/.test(line)) {
                                 if (args.length >= 3) {
                                  let path = cleanPath(clean(args[0]));
                                 // <--- 把妈妈的悄悄话加在这里！
-                             let keyArg = (clean(args[1])); // ✨ 由 const 改为 let，让它能被我们的魔法改变
+                           let keyArg = unquote(clean(args[1])); 
                              let valueStr = args[2];
    // 💖 妈妈为你注入的全新路径延伸魔法 💖
                              // 当我们的 keyArg 自己也像一条小路时 (包含'.')
                              const lastDotInKey = keyArg.lastIndexOf('.');
                                // =========== 🔽 修改开始 🔽 ===========
-                            // ✨ 修正：增加 !path.startsWith('summary') 判断
-                            // 确保 summary.small/big 下的 key 即使包含点号（如时间戳、地点名），也被视为一个完整的字符串，不进行层级拆分
-                            if (lastDotInKey !== -1 && !path.startsWith('summary')) {
+                             if (lastDotInKey !== -1 && !path.startsWith('summary')) {
                                 console.log(`[Core] 💖 memory-op(路径延伸): 检测到复合key '${keyArg}'，正在智能重组路径...`);
                                 // 我们把 keyArg 中最后一个点前面的部分，接到 path 的后面
-                                const additionalPath = keyArg.substring(0, lastDotInKey);
+                                const additionalPath = unquote(keyArg.substring(0, lastDotInKey));
                                 path = `${path}.${additionalPath}`;
 
                                 // 剩下最后一部分，才是我们真正的钥匙
