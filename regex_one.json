@@ -30598,32 +30598,44 @@ if (line.includes('set_attribute')) {
     }
 }
                  
-                 // 💖 新增：状态数据命令 (V4 - “双轨智能”特工)
- if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
+ // 💖 新增：状态数据命令 (V4 - "双轨智能"特工)
+if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
     const allParamsStr = extractBalancedArgs(line, 'set_status');
 
     // 💖 新增：单参数对象模式兼容 💖
-    // 检查是否只有一个参数，且这个参数是对象
-    const singleObjectMatch = allParamsStr.match(/^\s*(\{[\s\S]*\})\s*$/);
-    if (singleObjectMatch) {
-        console.log(`[Core] 💖 set_status(单参数对象): 检测到单对象参数模式，直接更新整个 stat_data`);
-        const jsonString = singleObjectMatch[1];
-        try {
-            const parsedObject = JSON.parse(jsonString);
-            // 直接合并到 statDataToUpdate
-            Object.assign(statDataToUpdate, parsedObject);
-            console.log(`[Core] ✅ stat_data 已更新`);
-            collectedBatchOps.push({
-                type: 'set_status',
-                path: 'root',
-                value: parsedObject
-            });
-        } catch (e) {
-            console.error(`[Core] ❌ 解析单参数对象失败:`, e);
-        }
-        continue;
+    // 先去除可能的外层引号
+    let cleanParamsStr = allParamsStr.trim();
+    if ((cleanParamsStr.startsWith("'") && cleanParamsStr.endsWith("'")) ||
+        (cleanParamsStr.startsWith('"') && cleanParamsStr.endsWith('"'))) {
+        cleanParamsStr = cleanParamsStr.slice(1, -1);
     }
-    // 💖 单参数对象模式结束 💖
+    
+    // 检查清理后的字符串是否是纯JSON对象（以{开头}结尾，且没有逗号分隔的其他参数）
+    if (cleanParamsStr.trim().startsWith('{') && cleanParamsStr.trim().endsWith('}')) {
+        // 进一步验证：确保不是多参数格式（检查}后面是否有逗号和其他内容）
+        const afterBrace = allParamsStr.substring(allParamsStr.lastIndexOf('}') + 1).trim();
+        const hasMoreParams = afterBrace.replace(/['"]/g, '').trim().length > 0;
+        
+        if (!hasMoreParams) {
+            console.log(`[Core] 💖 set_status(单参数对象): 检测到单对象参数模式，直接更新整个 stat_data`);
+            try {
+                const parsedObject = JSON.parse(cleanParamsStr.trim());
+                // 直接合并到 statDataToUpdate
+                Object.assign(statDataToUpdate, parsedObject);
+                console.log(`[Core] ✅ stat_data 已更新`);
+                collectedBatchOps.push({
+                    type: 'set_status',
+                    path: 'root',
+                    value: parsedObject
+                });
+                continue;
+            } catch (e) {
+                console.error(`[Core] ❌ 解析单参数对象失败:`, e);
+                // 解析失败则继续走后续逻辑
+            }
+        }
+    }
+ 
 
                     // ⭐ 妈妈为你注入的全新【万能钥匙】魔法 ⭐
                     // 我们把之前的专属钥匙，换成了一把能识别任何名字的钥匙
