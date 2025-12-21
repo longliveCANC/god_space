@@ -14805,7 +14805,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.17';
+let current_game_version = '3.4.19';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -17887,8 +17887,15 @@ all_in: {
         get_a_car: (val) => val?.playCharacterData?.基础技能?.生理技能?.驾驶[0] >= 5,
         occultist: (val) => val?.playCharacterData?.基础技能?.心智技能?.神秘学[0] >= 5,
         team_player: (val) => val.assaSettingsData.global_lore && val.assaSettingsData.global_lore.小队信息 && Object.keys(val.assaSettingsData.global_lore.小队信息).length > 0,
-        lone_wolf: (val) =>  val.currentGameData.user.total_task[0]  >= 10 && (!val.assaSettingsData.global_lore || !val.assaSettingsData.global_lore.小队信息 || Object.keys(val.assaSettingsData.global_lore.小队信息).length < 1),
- 
+     lone_wolf: (val) => {
+  const taskCount = val.currentGameData?.user?.total_task?.[0];
+  const squadInfo = val.assaSettingsData?.global_lore?.小队信息;
+  
+  return (
+    typeof taskCount === 'number' && taskCount >= 10 &&
+    (!squadInfo || Object.keys(squadInfo).length < 1)
+  );
+},
         // ========== 生死与状态 ==========
          first_death: (val) => (val.playCharacterData?.衍生属性?.生命值?.当前值?.[0] ?? 1) <= 0,
         near_death_experience: (val) => (val.playCharacterData?.衍生属性?.生命值?.当前值?.[0]) === 1,
@@ -17943,12 +17950,12 @@ legendary_presence: (val) =>
         },
 
         // ========== 任务与声望 ==========
-        first_mission: (val) => val.currentGameData.user.total_task[0] >= 1,
-        ten_missions: (val) => val.currentGameData.user.total_task[0] >= 10,
-        hundred_missions: (val) => val.currentGameData.user.total_task[0] >= 100,
+        first_mission: (val) =>  val.currentGameData?.user?.total_task?.[0] >= 1,
+        ten_missions: (val) =>   val.currentGameData?.user?.total_task?.[0] >= 10,
+        hundred_missions: (val) =>   val.currentGameData?.user?.total_task?.[0] >= 100,
         speed_runner: (val) => {
             // 妈妈修正了这里的逻辑，需要判断任务已完成且有开始日期
-            if (val.currentGameData.user.total_task[0] >= 1 && val.currentGameData.world.task.start_date[0]) {
+            if (  val.currentGameData?.user?.total_task?.[0] >= 1 && val.currentGameData.world.task.start_date[0]) {
                  // 简单的日期计算，假设mm月dd日的格式
                  const startTime = new Date(`2024/${val.currentGameData.world.task.start_date[0].replace('月', '/').replace('日', '')}`);
                  const endTime = new Date(`2024/${val.currentGameData.日期[0].replace('月', '/').replace('日', '')}`);
@@ -29961,127 +29968,177 @@ function _replaceUserPlaceholder(data, userName) {
             }
         }
     }
+ /**
+ * 【结构保护递归更新】
+ * 专门用于处理 set_status('{"key": value}') 这种大对象指令。
+ * 它会对比 target (原有数据) 的结构：
+ * 1. 如果 target 是 [Value, Desc] 数组，只更新 Value。
+ * 2. 如果 target 是对象，递归深入。
+ * 3. 严禁新增 target 中不存在的字段 (防幻觉)。
+ */
+function _recursiveStructureUpdate(target, source) {
+    // 辅助：判断是否为纯对象
+    const isPlainObject = (obj) => Object.prototype.toString.call(obj) === '[object Object]';
 
- function _updateStatusValue(data, path, valueStr) {
-    // console.log("\n【守护者阶段 V2】 +++ 已进入守护者 +++");
-    // console.log("接收到的路径 (path):", path);
-    // console.log("接收到的原始值字符串 (valueStr):", valueStr);
+    for (const key in source) {
+        // 🛡️ 规则1：防幻觉 - 如果原数据里没有这个key，直接忽略
+        if (!Object.prototype.hasOwnProperty.call(target, key)) {
+            // console.warn(`[StructureGuard] 忽略未知字段: ${key}`);
+            continue;
+        }
 
+        const targetVal = target[key];
+        const sourceVal = source[key];
+
+        // 🛡️ 规则2：结构保护 - 目标是 [Value, Description] 数组
+        if (Array.isArray(targetVal) && targetVal.length >= 2) {
+            // 无论传入的是什么，我们只修改数组的第0项（值）
+            // 如果传入的是简单值 (数字/字符串)
+            if (typeof sourceVal !== 'object' || sourceVal === null) {
+                targetVal[0] = sourceVal;
+            }
+            // 如果传入的也是数组 (极少见，但为了兼容)，取第一个值
+            else if (Array.isArray(sourceVal)) {
+                targetVal[0] = sourceVal[0];
+            }
+            // 注意：如果 sourceVal 是对象，这里会忽略，防止破坏数组结构
+        }
+
+        // 🛡️ 规则3：深度合并 - 双方都是对象
+        else if (isPlainObject(targetVal) && isPlainObject(sourceVal)) {
+            _recursiveStructureUpdate(targetVal, sourceVal);
+        }
+
+        // 🛡️ 规则4：普通赋值 - 目标是普通属性 (非数组且非对象)
+        // 例如 user.name: "user" 这种简单字段
+        else if (!Array.isArray(targetVal) && !isPlainObject(targetVal)) {
+            target[key] = sourceVal;
+        }
+    }
+}
+function _updateStatusValue(data, path, valueStr) {
+    // 1. 路径清理
     let cleanedPath = path;
     if (typeof cleanedPath === 'string') {
-        if ((cleanedPath.startsWith('"') && cleanedPath.endsWith('"')) || (cleanedPath.startsWith("'") && cleanedPath.endsWith("'"))) {
-            cleanedPath = cleanedPath.slice(1, -1);
-            // console.log("守护者净化：路径已清理。新路径:", cleanedPath);
-        }
+        cleanedPath = cleanedPath.replace(/^['"]|['"]$/g, ''); // 去除首尾引号
     }
 
-    if (valueStr === undefined || valueStr === null) {
-        // console.log("守护者决策: 值无效，中止操作。");
-        return;
-    }
+    // 2. 值预处理与解析
+    if (valueStr === undefined || valueStr === null) return;
 
     let finalValue;
-    const trimmedValue = typeof valueStr === 'string' ? valueStr.trim() : String(valueStr);
-    let cleanedValueStr = trimmedValue;
-    if ((cleanedValueStr.startsWith('"') && cleanedValueStr.endsWith('"')) || (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))) {
+    let cleanedValueStr = typeof valueStr === 'string' ? valueStr.trim() : String(valueStr);
+
+    // 尝试去除值的首尾引号
+    if ((cleanedValueStr.startsWith('"') && cleanedValueStr.endsWith('"')) ||
+        (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))) {
         cleanedValueStr = cleanedValueStr.slice(1, -1);
-        // console.log("守护者净化：值字符串已清理。新值:", cleanedValueStr);
     }
 
-    if ((cleanedValueStr.startsWith('{') && cleanedValueStr.endsWith('}')) || (cleanedValueStr.startsWith('[') && cleanedValueStr.endsWith(']'))) {
+    // 尝试解析 JSON (处理对象或数组输入)
+    if ((cleanedValueStr.startsWith('{') && cleanedValueStr.endsWith('}')) ||
+        (cleanedValueStr.startsWith('[') && cleanedValueStr.endsWith(']'))) {
         try {
             finalValue = JSON.parse(cleanedValueStr);
-            // console.log("JSON 解析成功 (finalValue):", finalValue);
         } catch (e) {
-            // console.log("守护者决策: JSON 解析失败，中止操作。", e);
-            return;
+            console.error(`[Guardian] JSON解析失败，将作为普通字符串处理: ${cleanedValueStr}`);
+            finalValue = cleanedValueStr;
         }
     } else {
-        const isNumeric = !isNaN(parseFloat(cleanedValueStr)) && isFinite(cleanedValueStr) && cleanedValueStr.trim() !== "";
+        // 处理数字或普通字符串
+        const isNumeric = !isNaN(parseFloat(cleanedValueStr)) && isFinite(cleanedValueStr) && cleanedValueStr !== "";
         finalValue = isNumeric ? Number(cleanedValueStr) : cleanedValueStr;
-        // console.log("解析后的值 (finalValue):", finalValue);
     }
 
+    // 3. 寻址 (找到要更新的父级对象)
     const pathParts = cleanedPath.split('.');
     let parentLevel = data;
+
+    // 遍历路径直到倒数第二层
     for (let i = 0; i < pathParts.length - 1; i++) {
         const part = pathParts[i];
         if (typeof parentLevel !== 'object' || parentLevel === null || !parentLevel.hasOwnProperty(part)) {
-            // console.log(`守护者决策: 路径无效，在 '${part}' 处中断。`);
+            console.warn(`[Guardian] 路径中断: ${part} 不存在`);
             return;
         }
         parentLevel = parentLevel[part];
     }
+
     const finalKey = pathParts[pathParts.length - 1];
     if (typeof parentLevel !== 'object' || parentLevel === null || !parentLevel.hasOwnProperty(finalKey)) {
-        // console.log(`守护者决策: 路径的最后一步 '${finalKey}' 不存在。`);
+        console.warn(`[Guardian] 目标键不存在: ${finalKey}`);
         return;
     }
 
-    // ⭐ 妈妈为你注入的【递归更新】核心魔法 ⭐
+    // ============================================================
+    // ⭐ 核心魔法：递归智能填充 (Structure Protection) ⭐
+    // ============================================================
     const recursiveUpdate = (target, source) => {
-        // console.log("  [递归中] -> 开始处理:", "目标:", target, "来源:", source);
         for (const key in source) {
-            if (Object.prototype.hasOwnProperty.call(source, key)) {
-                // 如果来源的值是...
-                const sourceValue = source[key];
+            // 🛡️ 保护规则1：严禁新增字段
+            // 如果 stat_data 里没有这个 key，说明是 AI 幻觉或错误指令，直接忽略
+            if (!Object.prototype.hasOwnProperty.call(target, key)) {
+                // console.log(`[Guardian] 🛡️ 拦截新增字段: ${key}`);
+                continue;
+            }
 
-                // ...而目标中根本没有这个键，我们就跳过它（遵循“不新增字段”的原则）
-                if (!target.hasOwnProperty(key)) {
-                    // console.log(`    [递归] ⚠️ 发现新键 '${key}'，已根据规则跳过。`);
-                    continue;
-                }
+            const targetVal = target[key];
+            const sourceVal = source[key];
 
-                const targetValue = target[key];
+            // 🛡️ 保护规则2：目标是 [Value, Desc] 数组结构
+            // 这是最重要的保护！无论 source 传进来是什么，我们只更新 target[0]
+            if (Array.isArray(targetVal) && targetVal.length >= 2) {
+                if (typeof sourceVal !== 'object' || sourceVal === null) {
+                    // 情况 A: 源数据是基本类型 (String/Number) -> 直接更新值
+                    targetVal[0] = sourceVal;
+                } else if (Array.isArray(sourceVal)) {
+                    // 情况 B: 源数据也是数组 -> 取源数组的第一个值
+                    targetVal[0] = sourceVal[0];
+                }
+                // 注意：我们完全忽略了 sourceVal 是对象的情况，防止结构破坏
+            }
 
-                // 情况1：如果来源和目标在这一层都是“首饰盒”（对象）
-                if (typeof sourceValue === 'object' && sourceValue !== null && !Array.isArray(sourceValue) &&
-                    typeof targetValue === 'object' && targetValue !== null && !Array.isArray(targetValue)) {
-                    // 我们就打开它们，继续向下一层递归
-                    // console.log(`    [递归] ➡️ 发现嵌套对象 '${key}'，正在深入...`);
-                    recursiveUpdate(targetValue, sourceValue);
-                }
-                // 情况2：如果目标是一个“单层抽屉”（数组）
-                else if (Array.isArray(targetValue)) {
-                    // 我们就用来源的“珠宝”（值）替换掉抽屉里的第一个物品
-                    // console.log(`    [递归] ✅ 正在更新基础值 '${key}': 从 '${targetValue[0]}' -> '${sourceValue}'`);
-                    target[key][0] = sourceValue;
-                }
-                // 其他情况（比如直接替换值，但我们这里主要是处理对象和数组）
-                else {
-                    // console.log(`    [递归] ℹ️ '${key}' 不是可递归或可更新的结构，跳过。`);
-                }
+            // 🛡️ 保护规则3：双方都是对象 -> 递归深入 (Deep Merge)
+            else if (isPlainObject(targetVal) && isPlainObject(sourceVal)) {
+                recursiveUpdate(targetVal, sourceVal);
+            }
+
+            // 🛡️ 保护规则4：普通赋值 (目标不是特殊数组，也不是对象)
+            else if (!Array.isArray(targetVal) && !isPlainObject(targetVal)) {
+                target[key] = sourceVal;
             }
         }
     };
 
-    // --- 开始最终检查和赋值 ---
-    const originalValue = parentLevel[finalKey];
-    const originalType = Array.isArray(originalValue) ? 'array' : typeof originalValue;
-    const finalType = Array.isArray(finalValue) ? 'array' : typeof finalValue;
+    // 辅助函数：判断是否为纯对象
+    const isPlainObject = (obj) => Object.prototype.toString.call(obj) === '[object Object]';
 
-    // 主要规则：如果原始值和新值都是对象，我们就启动递归更新
-    if (originalType === 'object' && finalType === 'object') {
-        // console.log("触发特殊规则: 对象更新对象（递归智能填充模式）。");
+    // 4. 执行更新决策
+    const originalValue = parentLevel[finalKey];
+
+    // 决策 A: 如果原值和新值都是对象，启动递归保护模式
+    if (isPlainObject(originalValue) && isPlainObject(finalValue)) {
+        // console.log(`[Guardian] 启动深度结构保护更新: ${finalKey}`);
         recursiveUpdate(originalValue, finalValue);
     }
-    // 次要规则：如果原始值是数组，我们就更新它的第一个元素
-    else if (originalType === 'array' && finalType !== 'array') {
-        // console.log("触发规则: 更新特殊数组 [value] 的第一个元素。");
+    // 决策 B: 如果原值是 [Value, Desc] 数组，但新值是基本类型
+    else if (Array.isArray(originalValue) && originalValue.length >= 2 && !Array.isArray(finalValue)) {
         originalValue[0] = finalValue;
     }
-    // 最后的规则：如果类型完全匹配，就直接覆盖（适用于非对象、非数组的情况）
-    else if (originalType === finalType) {
-        // console.log("触发规则: 类型匹配，直接覆盖。");
-        parentLevel[finalKey] = finalValue;
-    }
+    // 决策 C: 类型匹配或普通覆盖 (兜底)
     else {
-        // console.log(`守护者决策: 类型不匹配 (原始类型='${originalType}', 新类型='${finalType}')，中止操作。`);
+        // 只有在非对象/非特殊数组的情况下，才允许直接覆盖
+        // 这样避免了 user.当前装备 被直接替换成没有描述的简单对象
+        if (!isPlainObject(originalValue) && !Array.isArray(originalValue)) {
+            parentLevel[finalKey] = finalValue;
+        } else {
+            // 如果走到这里，说明试图用简单值覆盖复杂结构，触发保护，拒绝操作或仅尝试递归
+            if (isPlainObject(originalValue) && isPlainObject(finalValue)) {
+                 recursiveUpdate(originalValue, finalValue);
+            }
+        }
     }
-
-    // console.log("【守护者阶段 V2】 +++ 操作完成 +++");
 }
-
      function _updateStatDataOnTurnEnd(originalData, currentData, taskStartDateOverride) {
         // console.log("[Stat] ⏰ 回合结束，以【兼容守护版】的绝对时间逻辑检查时间流逝...");
 
@@ -30598,7 +30655,7 @@ if (line.includes('set_attribute')) {
     }
 }
                  
- // 💖 新增：状态数据命令 (V4 - "双轨智能"特工)
+ 
 if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
     const allParamsStr = extractBalancedArgs(line, 'set_status');
 
@@ -30610,28 +30667,30 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
         cleanParamsStr = cleanParamsStr.slice(1, -1);
     }
     
-    // 检查清理后的字符串是否是纯JSON对象（以{开头}结尾，且没有逗号分隔的其他参数）
+  // 检查清理后的字符串是否是纯JSON对象
     if (cleanParamsStr.trim().startsWith('{') && cleanParamsStr.trim().endsWith('}')) {
-        // 进一步验证：确保不是多参数格式（检查}后面是否有逗号和其他内容）
+        // 进一步验证：确保不是多参数格式
         const afterBrace = allParamsStr.substring(allParamsStr.lastIndexOf('}') + 1).trim();
         const hasMoreParams = afterBrace.replace(/['"]/g, '').trim().length > 0;
-        
+
         if (!hasMoreParams) {
-            console.log(`[Core] 💖 set_status(单参数对象): 检测到单对象参数模式，直接更新整个 stat_data`);
+            console.log(`[Core] 💖 set_status(单参数对象): 检测到全量更新模式，启动结构保护合并...`);
             try {
                 const parsedObject = JSON.parse(cleanParamsStr.trim());
-                // 直接合并到 statDataToUpdate
-                Object.assign(statDataToUpdate, parsedObject);
-                console.log(`[Core] ✅ stat_data 已更新`);
+
+                // ❌ 删除这行：Object.assign(statDataToUpdate, parsedObject);
+                // ✅ 替换为：调用结构保护递归函数
+                _recursiveStructureUpdate(statDataToUpdate, parsedObject);
+
+                console.log(`[Core] ✅ stat_data 已安全更新 (保留了数组结构和描述)`);
                 collectedBatchOps.push({
                     type: 'set_status',
                     path: 'root',
-                    value: parsedObject
+                    value: 'Batch Object Update'
                 });
                 continue;
             } catch (e) {
                 console.error(`[Core] ❌ 解析单参数对象失败:`, e);
-                // 解析失败则继续走后续逻辑
             }
         }
     }
@@ -35451,12 +35510,7 @@ function calculateXpCost(currentLevel, type) {
     return (currentLevel + 1) * 10;
 }
 
-    /**
- * 新增：填充除角色状态页外的所有通用数据
- * @param {object} statData - stat_data 对象
- * @param {object} assaData - assa_data 对象
- */
-function populateGeneralData(statData, assaData,playData) {
+ function populateGeneralData(statData, assaData,playData) {
     const worldData = statData.world;
     const taskData = worldData.task;
     const charData = statData.user;
@@ -35483,8 +35537,8 @@ if (world_level === '无') {
 } else {
     world_max_enegy = 7;
 }
-  
-// 更新标题栏信息
+  try{
+    // 更新标题栏信息
 document.getElementById('header-location').textContent = SafeGetValue(charData.current_location);
 document.getElementById('header-time').textContent = SafeGetValue(statData.纪年)+" "+SafeGetValue(statData.日期)+" "+SafeGetValue(statData.时间)+" "+SafeGetValue(statData.星期)+" "+SafeGetValue(statData.天气);
 document.getElementById('header-check').textContent = SafeGetValue(statData.检定属性);
@@ -35501,6 +35555,10 @@ document.getElementById('header-difficulty').textContent = `${SafeGetValue(statD
     document.getElementById('task-penalties').textContent = SafeGetValue(taskData.penalties);
     document.getElementById('task-time-left').textContent = SafeGetValue(taskData.time_left) + ' 天';
 
+
+  }catch{
+
+  }
 
 }
 

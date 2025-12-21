@@ -355,5 +355,15 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod08.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 19.png"
+  } ,{
+    "id": "mod09",
+    "name": "一键加上/去除地点的日常标签",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["功能脚本"],
+    "description": "如图，打开后，鼠标点击地点那块，能一键加上/去除地点的日常标签",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod09.js",
+    "worldBookUrl": "",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 22.png"
   } 
 ]
