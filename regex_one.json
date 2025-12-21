@@ -29078,36 +29078,38 @@ function getCanonicalCurrencyName(alias) {
         derived.豁免检定基础.意志[0] = 决心 + 沉着;
     }
     
-    // 传奇属性计算（确保传奇属性结构存在）
-    if (attr.生理属性?.力量?.传奇) {
-        attr.生理属性.力量.传奇[0] = Math.max(0, 力量 - 8);
-    }
-    if (attr.生理属性?.敏捷?.传奇) {
-        attr.生理属性.敏捷.传奇[0] = Math.max(0, 敏捷 - 8);
-    }
-    if (attr.生理属性?.耐力?.传奇) {
-        attr.生理属性.耐力.传奇[0] = Math.max(0, 耐力 - 8);
-    }
-    if (attr.心智属性?.智力?.传奇) {
-        attr.心智属性.智力.传奇[0] = Math.max(0, 智力 - 8);
-    }
-    if (attr.心智属性?.感知?.传奇) {
-        attr.心智属性.感知.传奇[0] = Math.max(0, 感知 - 8);
-    }
-    if (attr.心智属性?.决心?.传奇) {
-        attr.心智属性.决心.传奇[0] = Math.max(0, 决心 - 8);
-    }
-    if (attr.互动属性?.风度?.传奇) {
-        attr.互动属性.风度.传奇[0] = Math.max(0, 风度 - 8);
-    }
-    if (attr.互动属性?.操控?.传奇) {
-        attr.互动属性.操控.传奇[0] = Math.max(0, 操控 - 8);
-    }
-    if (attr.互动属性?.沉着?.传奇) {
-        attr.互动属性.沉着.传奇[0] = Math.max(0, 沉着 - 8);
-    }
+    // 传奇属性计算(保留一位小数)
+if (attr.生理属性?.力量?.传奇) {
+    attr.生理属性.力量.传奇[0] = Math.round(Math.max(0, 力量 - 8) * 10) / 10;
 }
- function _updatePlayerValue(data, path, valueStr) {
+if (attr.生理属性?.敏捷?.传奇) {
+    attr.生理属性.敏捷.传奇[0] = Math.round(Math.max(0, 敏捷 - 8) * 10) / 10;
+}
+if (attr.生理属性?.耐力?.传奇) {
+    attr.生理属性.耐力.传奇[0] = Math.round(Math.max(0, 耐力 - 8) * 10) / 10;
+}
+if (attr.心智属性?.智力?.传奇) {
+    attr.心智属性.智力.传奇[0] = Math.round(Math.max(0, 智力 - 8) * 10) / 10;
+}
+if (attr.心智属性?.感知?.传奇) {
+    attr.心智属性.感知.传奇[0] = Math.round(Math.max(0, 感知 - 8) * 10) / 10;
+}
+if (attr.心智属性?.决心?.传奇) {
+    attr.心智属性.决心.传奇[0] = Math.round(Math.max(0, 决心 - 8) * 10) / 10;
+}
+if (attr.互动属性?.风度?.传奇) {
+    attr.互动属性.风度.传奇[0] = Math.round(Math.max(0, 风度 - 8) * 10) / 10;
+}
+if (attr.互动属性?.操控?.传奇) {
+    attr.互动属性.操控.传奇[0] = Math.round(Math.max(0, 操控 - 8) * 10) / 10;
+}
+if (attr.互动属性?.沉着?.传奇) {
+    attr.互动属性.沉着.传奇[0] = Math.round(Math.max(0, 沉着 - 8) * 10) / 10;
+}
+}
+ 
+
+function _updatePlayerValue(data, path, valueStr) {
     // === 妈妈的魔法准备阶段 ===
 
     // 1. 净化路径和新值
