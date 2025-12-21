@@ -14805,7 +14805,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.20';
+let current_game_version = '3.4.21';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -29315,7 +29315,9 @@ function _updatePlayerValue(data, path, valueStr) {
 // 位于 AssaOps 对象内部
 // 代码位置: 位于 AssaOps 对象内部
 
-_memoryOperation: function(currentData, path, key, value) {
+_memoryOperation: function(currentData, path, key, value, operationType) {
+ 
+
     // 💖 妈妈为你铸造的永恒之锁 💖
     if (path === 'world.task.start_date' || path === 'world.task.time_left') {
         console.log(`[Assa] 🔒 核心记忆路径 '${path}' 已被锁定，无法修改。`);
@@ -29331,7 +29333,9 @@ _memoryOperation: function(currentData, path, key, value) {
             finalValue = value;
         }
     }
-
+    if (operationType !== 'rename' && operationType !== 'move') {
+     
+    }
     // 🛡️ 类型保护检查（在路径导航之前）
     let checkTarget = currentData;
     const pathParts = path.split('.').filter(p => p);
@@ -31327,7 +31331,11 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                            });
                         } else if (args.length === 2) {
                             const path1Str = cleanPath(args[0]); // 修改这里：添加 unquote
-    const path2Str = args[1]; // 修改这里：添加 unquote
+  let path2Str = args[1].trim();
+    if ((path2Str.startsWith("'") && path2Str.endsWith("'")) ||
+        (path2Str.startsWith('"') && path2Str.endsWith('"'))) {
+        path2Str = path2Str.slice(1, -1);
+    }
 
                             const lastDotIndex1 = path1Str.lastIndexOf('.');
                             const lastDotIndex2 = path2Str.lastIndexOf('.');
