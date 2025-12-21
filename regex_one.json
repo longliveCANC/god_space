@@ -14805,7 +14805,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.19';
+let current_game_version = '3.4.20';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -31431,13 +31431,29 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
 
                             // 如果不符合上述两种特殊情况，就执行原来的 "path.key", "value" 逻辑
                             const fullPath = cleanPath(path1Str);
-                            if (lastDotIndex1 === -1) {
-                                 console.log(`[Core] ⚠️ memory 指令格式错误 (两参数时第一个必须包含'.'): ${line}`);
-                                 continue;
-                                 }
+                            // if (lastDotIndex1 === -1) {
+                            //      console.log(`[Core] ⚠️ memory 指令格式错误 (两参数时第一个必须包含'.'): ${line}`);
+                            //      continue;
+                            //      }
                                     let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
-                 const key = unquote(clean(fullPath.substring(lastDotIndex1 + 1))); // 修改这里：确保有 unquote
+                 let key = unquote(clean(fullPath.substring(lastDotIndex1 + 1))); // 修改这里：确保有 unquote
                                  // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
+
+                                 // 💖 新增：summary 路径特殊处理（二参数模式）💖
+if (path.startsWith('summary')) {
+    console.log(`[Core] 💖 memory-op(summary模式-两参数): 检测到summary路径，重新解析完整key`);
+    // 对于 summary 路径，只取第一个点之前的部分作为 path
+    const firstDotIndex = fullPath.indexOf('.');
+    if (firstDotIndex !== -1) {
+        // summary.small 或 summary.big
+        const secondDotIndex = fullPath.indexOf('.', firstDotIndex + 1);
+        if (secondDotIndex !== -1) {
+            path = fullPath.substring(0, secondDotIndex);
+            key = unquote(clean(fullPath.substring(secondDotIndex + 1)));
+            console.log(`[Core] ✨ summary模式重新解析 -> Path: '${path}', Key: '${key}'`);
+        }
+    }
+}
                              if (path.includes('群员')) {
                                  const originalPath = path;
                                  path = path.replaceAll('群员', '小队信息');
