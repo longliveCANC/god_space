@@ -48493,7 +48493,6 @@ const switchActiveChat = (type, id) => {
 
         contentArea.querySelectorAll('.group-chat-message-bubble').forEach(bubble => bubble.addEventListener('contextmenu', handleReply));
     };
-/* === 用下面这个完整函数，替换你旧的 createMessageElement 函数 === */
  
  const createMessageElement = (msg, userNickname) => {
     const isSent = msg.user_id === userNickname;
@@ -48972,8 +48971,6 @@ const renderPrivateChat = (contactId, mode) => {
              list.scrollTop = list.scrollHeight - oldScrollHeight;
         }
     };
-
- /* === 用下面这个完整函数，替换你旧的 handleSendMessage 函数 === */
 const handleSendMessage = () => {
     const input = rootElement.querySelector('.group-chat-input');
     if (!input) return;
@@ -48992,59 +48989,68 @@ const handleSendMessage = () => {
         fullMessageForAI = `回复 @${replyTarget.user_id}(${replyTarget.content}): ${messageText}`;
     }
 
-    const messagesList = rootElement.querySelector('.group-chat-messages-list');
-    messagesList.appendChild(createMessageElement(localMessageBase, userNickname));
-    messagesList.scrollTop = messagesList.scrollHeight;
+    // ✅ 修复: 首次发送时创建列表
+    let messagesList = rootElement.querySelector('.group-chat-messages-list');
+    const placeholder = rootElement.querySelector('.group-chat-placeholder');
+    
+    if (!messagesList && placeholder) {
+        // 首次发送,替换占位符为消息列表
+        messagesList = document.createElement('div');
+        messagesList.className = 'group-chat-messages-list';
+        messagesList.innerHTML = '<div class="group-chat-loader">没有更早的记录了</div>';
+        placeholder.replaceWith(messagesList);
+        
+        // 绑定滚动加载
+        messagesList.addEventListener('scroll', handleScrollTop);
+    }
+    
+    if (messagesList) {
+        messagesList.appendChild(createMessageElement(localMessageBase, userNickname));
+        messagesList.scrollTop = messagesList.scrollHeight;
+    }
 
-    // ✨【关键修正】✨ 无论是群聊还是私聊，都只生成包含单条新消息的片段！
     let newChatBlockString = '';
     const lastHistoryItem = conversationHistory[conversationHistory.length - 1];
-     if (activeChat.type === 'group') {
+    
+    if (activeChat.type === 'group') {
         let newMessageLine = `${userNickname}|${messageText}`;
 
         if (replyTarget) {
-          fullMessageForAI = `回复 @${replyTarget.user_id}(${replyTarget.content}): ${messageText}`;
+            fullMessageForAI = `回复 @${replyTarget.user_id}(${replyTarget.content}): ${messageText}`;
         }
 
-        // 【修改】这里不再默认只用 currentGameData 了，而是优先使用当前聊天的 ID (即群名)
         const currentTargetName = activeChat.id || currentGameData.group_name || '诸天聊天群';
-
-        // 构造带正确名字的 XML
         newChatBlockString = `\n<group_chat name="${currentTargetName}">\n${newMessageLine}\n</group_chat>`;
 
         if (lastHistoryItem) {
-          lastHistoryItem.content += newChatBlockString;
-          saveHistory();
+            lastHistoryItem.content += newChatBlockString;
+            saveHistory();
         }
-        // AI 触发时也明确指出是在哪个群
         triggerassa(`/setinput <${userName}同时在聊天群[${currentTargetName}]进行了以下操作：发送消息：[ ${messageText} ] end>\n`);
-       } else if (activeChat.type === 'private') {
-      const targetId = activeChat.id;
-    if (!privateChatStore[targetId]) privateChatStore[targetId] = { messages: [] };
-    // 1. 存储进本地消息 (本地消息格式保持统一)
-    privateChatStore[targetId].messages.push({ ...localMessageBase, target_id: targetId });
+        
+    } else if (activeChat.type === 'private') {
+        const targetId = activeChat.id;
+        if (!privateChatStore[targetId]) privateChatStore[targetId] = { messages: [] };
+        
+        privateChatStore[targetId].messages.push({ ...localMessageBase, target_id: targetId });
 
-    // 2. 创建一个只包含这条新消息的 <msg> 片段
-    const msgForAssa = `<msg>${userNickname}|${targetId}|${messageText}</msg>`;
-    
-    // 3. 写入 conversationHistory
-    newChatBlockString = `\n${msgForAssa}`;
-    if (lastHistoryItem) {
-      lastHistoryItem.content += newChatBlockString;
-      saveHistory(); 
+        const msgForAssa = `<msg>${userNickname}|${targetId}|${messageText}</msg>`;
+        newChatBlockString = `\n${msgForAssa}`;
+        
+        if (lastHistoryItem) {
+            lastHistoryItem.content += newChatBlockString;
+            saveHistory(); 
+        }
+        
+        triggerassa(`/setinput <${userName}同时对${targetId}进行了私聊：[ ${messageText} ]。end>\n`);
     }
-    
-    // 4. 触发 AI 输入
-    triggerassa(`/setinput <${userName}同时对${targetId}进行了私聊：[ ${messageText} ]。end>\n`);
-           }
 
     input.value = '';
     input.focus();
     cancelReply();
     rootElement.querySelector('.group-chat-meme-palette')?.classList.remove('active');
 };
- 
-    const handleReply = (e) => {
+     const handleReply = (e) => {
         e.preventDefault(); // 阻止默认的右键菜单
         const bubble = e.target.closest('.group-chat-message-bubble');
         const messageItem = e.target.closest('.group-chat-message-item');
