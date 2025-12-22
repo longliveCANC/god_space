@@ -358,4 +358,66 @@ window.GameAPI = {
         showNovaAlert:showNovaAlert,//例：showNovaAlert("已处理");
         processUpdateMemoryCommands:processUpdateMemoryCommands,//直接从酒馆修改变量。例：await processUpdateMemoryCommands("一长串string，有指令就行", -1)
   }
- 
+ //埋下的钩子：
+     let hookDataBeforeSave = {
+    response: aiFullResponse || partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+    let hookData = {
+        message: msg
+    };
+    hookData = await NovaHooks.trigger('before_message_render', hookData);
+
+    // 使用经过钩子处理后的内容
+    let content = hookData.msg.content;
+
+    const NovaHooks = {
+    // 存储所有钩子和它们对应的处理函数
+    _hooks: {},
+
+    /**
+     * 注册一个处理函数到一个钩子上
+     * @param {string} hookName - 钩子的名称 (e.g., 'before_message_render')
+     * @param {function} callback - 要执行的回调函数
+     */
+    add(hookName, callback) {
+        if (!this._hooks[hookName]) {
+            this._hooks[hookName] = [];
+        }
+        this._hooks[hookName].push(callback);
+        console.log(`[NovaHooks] A new function has been hooked into "${hookName}".`);
+    },
+
+    /**
+     * 触发一个钩子，并依次执行所有注册的函数
+     * @param {string} hookName - 要触发的钩子名称
+     * @param {any} data - 要传递给处理函数的数据。为了可修改，最好是对象。
+     * @returns {Promise<any>} - 返回一个Promise，解析为经过所有处理函数修改后的数据
+     */
+    async trigger(hookName, data) {
+        if (!this._hooks[hookName] || this._hooks[hookName].length === 0) {
+            return data; // 如果没有注册的钩子，直接返回原始数据
+        }
+
+        console.log(`[NovaHooks] Triggering hook "${hookName}"...`);
+        let processedData = data;
+
+        // 依次执行所有钩子函数，并将上一个函数的结果传给下一个
+        for (const callback of this._hooks[hookName]) {
+            try {
+                // 使用 await 确保支持异步处理函数
+                processedData = await callback(processedData);
+            } catch (error) {
+                console.error(`[NovaHooks] Error executing hook for "${hookName}":`, error);
+            }
+        }
+
+        return processedData;
+    }
+};
