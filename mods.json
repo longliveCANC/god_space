@@ -365,5 +365,15 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod09.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 22.png"
+  } ,{
+    "id": "mod10",
+    "name": "astro润色功能兼容",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["功能脚本","astro兼容"],
+    "description": "[需版本是3.4.25及其以上]astro最新版的润色需要关闭原生的润色2正则，然后开启这个脚本，来实现在同层中也能使用润色功能。开启该脚本后就不用管了。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod10.js",
+    "worldBookUrl": "",
+    "previewImage": ""
   } 
 ]

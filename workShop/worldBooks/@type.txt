@@ -375,7 +375,7 @@ hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookData
     hookData = await NovaHooks.trigger('before_message_render', hookData);
 
     // 使用经过钩子处理后的内容
-    let content = hookData.msg.content;
+    let content = hookData.message.content;
 
     const NovaHooks = {
     // 存储所有钩子和它们对应的处理函数

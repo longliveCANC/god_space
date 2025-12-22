@@ -15028,7 +15028,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.24';
+let current_game_version = '3.4.25';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -15820,6 +15820,52 @@ const npcImageMap_fallbackData = {
 "摸摸头":"https://files.catbox.moe/i65j4n.gif"
 };
  let memeImageMap ={};
+
+const NovaHooks = {
+    // 存储所有钩子和它们对应的处理函数
+    _hooks: {},
+
+    /**
+     * 注册一个处理函数到一个钩子上
+     * @param {string} hookName - 钩子的名称 (e.g., 'before_message_render')
+     * @param {function} callback - 要执行的回调函数
+     */
+    add(hookName, callback) {
+        if (!this._hooks[hookName]) {
+            this._hooks[hookName] = [];
+        }
+        this._hooks[hookName].push(callback);
+        console.log(`[NovaHooks] A new function has been hooked into "${hookName}".`);
+    },
+
+    /**
+     * 触发一个钩子，并依次执行所有注册的函数
+     * @param {string} hookName - 要触发的钩子名称
+     * @param {any} data - 要传递给处理函数的数据。为了可修改，最好是对象。
+     * @returns {Promise<any>} - 返回一个Promise，解析为经过所有处理函数修改后的数据
+     */
+    async trigger(hookName, data) {
+        if (!this._hooks[hookName] || this._hooks[hookName].length === 0) {
+            return data; // 如果没有注册的钩子，直接返回原始数据
+        }
+
+        console.log(`[NovaHooks] Triggering hook "${hookName}"...`);
+        let processedData = data;
+
+        // 依次执行所有钩子函数，并将上一个函数的结果传给下一个
+        for (const callback of this._hooks[hookName]) {
+            try {
+                // 使用 await 确保支持异步处理函数
+                processedData = await callback(processedData);
+            } catch (error) {
+                console.error(`[NovaHooks] Error executing hook for "${hookName}":`, error);
+            }
+        }
+
+        return processedData;
+    }
+};
+ window.NovaHooks = NovaHooks;
 
  emailjs.init('kDLEJZKjDhhihIqV1'); // 替换成你的 Public Key
   window.NovaWorkshop = (function() {
@@ -23932,7 +23978,7 @@ const allBoundWorldbooks = [
        
     }
 }
- await saveHistory(); // 保存这个历史性的时刻
+ await worldHelper.saveHistory(); // 保存这个历史性的时刻
   worldHelper.renderHistory();
 
     } catch (e) {
@@ -23995,41 +24041,6 @@ godSpaceButton.addEventListener('click', async () => {
         { var: '--danger-color', label: '危险色' },
         { var: '--danger-glow-color', label: '危险辉光' }
     ];
-async function saveHistory() {
-    try {
-         
-        const zeroLevelMessage = await getChatMessages(0);
-
-        // 如果楼层不存在，这是一个异常情况，我们应该停止操作
-        if (!zeroLevelMessage) {
-            console.error("错误：无法找到第 0 楼层消息，保存操作已中断。");
-            return;
-        }
- 
- 
-        await updateVariablesWith(old_variables => {
-            return {
-                ...old_variables,
-                zeroLevelHistory: conversationHistory,
-            };
-        }, { type: 'chat' });
- 
-        // await updateVariablesWith(old_variables => {
-        //     return {
-        //         ...old_variables,
-        //         zeroLevelHistory: conversationHistory,
-        //     };
-        // }, { type: 'message', message_id: 0 });
-
-        // console.log("历史记录已成功且安全地更新到 chatmessage(0).data、chat 变量域和 message(0) 变量域中。");
-
-    } catch (e) {
-        // 捕获并打印任何可能发生的错误
-        console.error("保存历史记录过程中发生意外错误:", e);
-    }
-
-
-}
  
 
 function ensureLoadMoreButtonExists() {
@@ -24637,7 +24648,7 @@ function showReadingModeMenu(event, chapterData) {
             const newText = textarea.value.trim();
             if (newText && newText !== chapterData.msg.content) {
                 conversationHistory[chapterData.originalIndex].content = newText;
-                await saveHistory();
+                await worldHelper.saveHistory();
                 showNovaAlert('内容已保存！');
                 
                 // 重新渲染当前章节
@@ -24674,7 +24685,7 @@ function showReadingModeMenu(event, chapterData) {
         dropdown.remove();
         const message = conversationHistory[chapterData.originalIndex];
         message.isStarred = !message.isStarred;
-        await saveHistory();
+        await worldHelper.saveHistory();
         showNovaAlert(message.isStarred ? '已收藏！' : '已取消收藏');
         
         // 重新渲染当前章节
@@ -24753,7 +24764,7 @@ function showReadingModeMenu(event, chapterData) {
                 delete message.customTitle;
             }
             
-            await saveHistory();
+            await worldHelper.saveHistory();
             showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
             document.body.removeChild(overlay);
             
@@ -25338,7 +25349,7 @@ if (starItem) {
         message.isStarred = !message.isStarred; // 布尔值切换
         
         // 保存到历史记录
-        await saveHistory();
+        await worldHelper.saveHistory();
         
         // 给个小提示
         const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
@@ -25442,7 +25453,7 @@ function nameMessageTitle(index) {
             delete conversationHistory[index].customTitle;
         }
         
-        await saveHistory();
+        await worldHelper.saveHistory();
         showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
  
         document.body.removeChild(overlay);
@@ -25559,7 +25570,7 @@ function nameMessageTitle(index) {
 
             console.log(`[Nova的时光回溯] 信标已设置！下次行动将恢复到【快照 ${targetSnapshotId}】的状态。`);
 
-            await saveHistory();
+            await worldHelper.saveHistory();
             await worldHelper.renderHistory(true);
             updateRerollButtonState();
             showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
@@ -25646,7 +25657,7 @@ function editMessage(index, bubbleElement) {
         const newText = textarea.value.trim();
         if (newText && newText !== originalContentText) {
             conversationHistory[index].content = newText;
-            await saveHistory();
+            await worldHelper.saveHistory();
         }
 
         // ✨ 在这里耐心等待渲染完成！✨
@@ -25882,6 +25893,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
      window.worldHelper = {
         init: initializeCurrentGameData,
         renderPrivateMsgToHtml:renderPrivateMsgToHtml,
+        saveHistory:saveHistory,
         renderGroupChatToHtml:renderGroupChatToHtml,
         createMessageBubble:createMessageBubble,
         processSpecialModulesInMessage:processSpecialModulesInMessage,
@@ -26384,10 +26396,7 @@ await initDisplay();
 // 调用时传入 content
 
 }
- /**
- * 全局聊天音频管理器
- * 负责所有音乐卡片的播放控制、搜索、淡入淡出及 UI 同步
- */
+ 
  
   function renderPrivateMsgToHtml(sender, receiver, content, userNickname, is_from_render = false) {
     const isSent = sender === userNickname;
@@ -26738,15 +26747,24 @@ function renderGroupChatToHtml(sender, content, userNickname) {
 }
    async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
-    let content = msg.content;
+ 
    
-    const originalIndex = conversationHistory.indexOf(msg);
-    if (originalIndex === -1) return document.createElement('div'); // 安全保护
+   
 
     const bubble = document.createElement('div');
     bubble.classList.add('message-bubble');
     bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
 
+     let hookData = {
+        message: msg
+    };
+    hookData = await NovaHooks.trigger('before_message_render', hookData);
+
+    // 使用经过钩子处理后的内容
+    let content = hookData.message.content;
+    const originalIndex = conversationHistory.indexOf(hookData.message);
+
+ if (originalIndex === -1) return document.createElement('div'); // 安全保护
     let processedContent = content;
     const htmlPlaceholders = {};
     let placeholderIndex = 0;
@@ -27533,7 +27551,7 @@ if (typeof window.initializationDone === 'undefined') {
     const chatDisplayArea = document.getElementById('chat-display-area');
     chatDisplayArea.innerHTML = ''; // 清空画卷
 
-   
+ 
     let loadMoreBtn = document.getElementById('load-more-btn');
     if (!loadMoreBtn) {
         loadMoreBtn = document.createElement('button');
@@ -27861,7 +27879,7 @@ async function restoreFromLatestSnapshot() {
                                 if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof renderHistory === 'function') {
                                     // 我们用一个更温馨的提示
                                     conversationHistory.push({ role: 'assistant', content: '<请继续。>' });
-                                    await saveHistory();
+                                    await worldHelper.saveHistory();
                                     renderHistory();
                                 }
                             } else {
@@ -28090,7 +28108,7 @@ if (starItem) {
         message.isStarred = !message.isStarred; // 布尔值切换
         
         // 保存到历史记录
-        await saveHistory();
+        await worldHelper.saveHistory();
         
         // 给个小提示
         const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
@@ -28197,7 +28215,7 @@ function nameMessageTitle(index) {
             delete conversationHistory[index].customTitle;
         }
         
-        await saveHistory();
+        await worldHelper.saveHistory();
         showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
      
         
@@ -28317,7 +28335,7 @@ function nameMessageTitle(index) {
             console.log(`[Nova的时光回溯] 信标已设置！锚定至楼层 ${targetSnapshotId}，下次行动将恢复此快照。`);
             // [修改结束] -----------------------------------------------------
 
-            await saveHistory();
+            await worldHelper.saveHistory();
             await worldHelper.renderHistory(true);
             updateRerollButtonState();
             showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
@@ -28403,7 +28421,7 @@ function editMessage(index, bubbleElement) {
         const newText = textarea.value.trim();
         if (newText && newText !== originalContentText) {
             conversationHistory[index].content = newText;
-            await saveHistory();
+            await worldHelper.saveHistory();
         }
 
         // ✨ 在这里耐心等待渲染完成！✨
@@ -28452,13 +28470,13 @@ function updateRerollButtonState(){
  
             } else {
                 conversationHistory = [];
-                await saveHistory();
+                await worldHelper.saveHistory();
             }
  
         } catch (error) {
             //console.log("初始化失败，我们将开始新的对话。", error);
             conversationHistory = [];
-            await saveHistory();
+            await worldHelper.saveHistory();
         }
        await renderHistory(true);
         updateRerollButtonState(); // ☆ 初始化时更新按钮状态
@@ -28486,16 +28504,7 @@ async function saveHistory() {
             };
         }, { type: 'chat' });
 
-        // 更新 message 作用域 (针对第 0 楼层) 的变量
-        // await updateVariablesWith(old_variables => {
-        //     return {
-        //         ...old_variables,
-        //         zeroLevelHistory: conversationHistory,
-        //     };
-        // }, { type: 'message', message_id: 0 });
-
-        // console.log("历史记录已成功且安全地更新到 chatmessage(0).data、chat 变量域和 message(0) 变量域中。");
-
+ 
     } catch (e) {
         // 捕获并打印任何可能发生的错误
         console.error("保存历史记录过程中发生意外错误:", e);
@@ -32430,7 +32439,7 @@ const inputHide = document.getElementById('setting-hide-latest');
                 if (typeof rebuildWorldFromHistory === 'function') {
                     await rebuildWorldFromHistory('系统正在重构世界线...', 'Settings');
                     toastr.success('世界重构完成');
-                    await saveHistory();
+                    await worldHelper.saveHistory();
                      await initDisplay();
                 } else {
                     toastr.error('找不到重构函数 (rebuildWorldFromHistory)');
@@ -32485,7 +32494,7 @@ const inputHide = document.getElementById('setting-hide-latest');
         
                     await processUpdateMemoryCommands(messageContent, -1); 
                     toastr.success('最后一条AI消息中的世界指令已重新处理！');
-                    await saveHistory();
+                    await worldHelper.saveHistory();
                     await initDisplay();
                 } else {
                     toastr.error('找不到指令处理函数 (processUpdateMemoryCommands)');
@@ -32956,7 +32965,7 @@ console.log("userMessageCount：",userMessageCount);
         }
 
  
-        await saveHistory();
+        await worldHelper.saveHistory();
 
         sendButton.disabled = true;
          document.getElementById('reroll-button').disabled = true; // 💖 禁用菜单里的重开按钮
@@ -33404,8 +33413,20 @@ if (isContinuation) {
             }
       
     } else {
-         // 这是一个备用方案，万一找不到最后一条AI消息
-        aiMessage = { role: 'assistant', content: aiFullResponse };
+     let hookDataBeforeSave = {
+    response: aiFullResponse || partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+// 使用经过钩子处理后的回复
+const finalAiResponse = hookDataBeforeSave.response;
+ 
+aiMessage = { role: 'assistant', content: finalAiResponse };
         conversationHistory.push(aiMessage);
         updateLastMessage(aiMessage);
     }
@@ -33415,7 +33436,20 @@ if (isContinuation) {
   
 } else {
      
-    aiMessage = { role: 'assistant', content: aiFullResponse };
+    let hookDataBeforeSave = {
+    response: aiFullResponse || partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+// 使用经过钩子处理后的回复
+const finalAiResponse = hookDataBeforeSave.response;
+ 
+aiMessage = { role: 'assistant', content: finalAiResponse };
     conversationHistory.push(aiMessage);
     // 这里你使用的是 updateLastMessage, 它会处理UI更新
     updateLastMessage(aiMessage);
@@ -33501,14 +33535,39 @@ if (isContinuation) {
         }
             }
     } else {
-         // 这是一个备用方案，万一找不到最后一条AI消息
-        aiMessage = { role: 'assistant', content: aiFullResponse };
+    let hookDataBeforeSave = {
+    response: aiFullResponse || partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+// 使用经过钩子处理后的回复
+const finalAiResponse = hookDataBeforeSave.response;
+ 
+aiMessage = { role: 'assistant', content: finalAiResponse };
         conversationHistory.push(aiMessage);
        await  updateLastMessage(aiMessage);
     }
 } else {
      
-    aiMessage = { role: 'assistant', content: aiFullResponse };
+ let hookDataBeforeSave = {
+    response: aiFullResponse || partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+// 使用经过钩子处理后的回复
+const finalAiResponse = hookDataBeforeSave.response;
+ 
+aiMessage = { role: 'assistant', content: finalAiResponse };
     conversationHistory.push(aiMessage);
     // 这里你使用的是 updateLastMessage, 它会处理UI更新
   await  updateLastMessage(aiMessage);
@@ -33574,7 +33633,7 @@ let backupData = {};
              console.log('[Nova] 正在后台默默地将记忆刻入永恒...');
              try {
                  // A. 保存历史记录 (此时内存里的 conversationHistory 已经包含了刚才追加的时间戳)
-                 await saveHistory();
+                 await worldHelper.saveHistory();
  if(noBackup === "false"){
                  // B. 保存快照 (使用刚才冻结好的 snapshotData)
                  if (isFirstSend) {
@@ -33672,14 +33731,26 @@ let backupData = {};
                          await renderHistory(); // "继续"模式下，我们重绘整个历史
                     }
                 } else {
-                     // 否则，就是一次新的回应被中断
-                    aiMessage = { role: 'assistant', content: partialAiResponse };
+ let hookDataBeforeSave = {
+    response:   partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+// 使用经过钩子处理后的回复
+const finalAiResponse = hookDataBeforeSave.response;
+ 
+aiMessage = { role: 'assistant', content: finalAiResponse };
                     conversationHistory.push(aiMessage);
                     updateLastMessage(aiMessage); // 温柔地在界面上刷新
                      console.log("[Nova's Creation] 中断后，成功保存了这篇新的、未完的创作。");
                 }
 
-                await saveHistory(); // 保存到记忆长河
+                await worldHelper.saveHistory(); // 保存到记忆长河
 
                 try {
                     let allCommands = "";
@@ -33707,7 +33778,7 @@ let backupData = {};
             toastr.error("在魔法仪式过程中出错了:" + e.message, "报错信息");
             aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
             // 发生错误时，保存当前所有历史，以防万一
-            await saveHistory();
+            await worldHelper.saveHistory();
             await renderHistory(true);
         }
 
@@ -36846,11 +36917,7 @@ function setupTooltips() {
     });
 }
 
-     /**
-     * 格式化分号分隔的字符串为换行显示
-     * @param {string} text - 输入的字符串
-     * @returns {string} - HTML字符串
-     */
+ 
     function formatSemicolonText(text) {
         if (!text || text === '无' || text.trim() === '') {
             return '无';
@@ -36858,14 +36925,7 @@ function setupTooltips() {
         return text.split(';').map(item => item.trim()).filter(item => item).join('<br>');
     }
  
-/**
- * 渲染整个设定书界面
- * @param {object} data - 包含设定信息的assa_data对象
- */
-function renderSettingsBook(data) {
- //console.log("设定书已弃用");
-}
-
+ 
 
 // 检查数据源读取是否正确
 function debugDataSource(mapData) {
@@ -39575,8 +39635,8 @@ renderMap(assaSettingsData.map, updateDetails.mapUpdates);
              renderMap(null, []);
         }
 
-        // 4. 渲染设定书
-        renderSettingsBook(assaSettingsData);
+ 
+     
 
        setupAllUpgradeListeners();
 
@@ -42300,7 +42360,10 @@ function setupReconfigModal() {
         { name: '资源消耗', uid: 58, category: 'gameplay', desc: '启用体力/物资消耗' },
         { name: '分阶段好感', uid: 65, category: 'gameplay', desc: '好感度分级系统' },
         { name: '称号系统', uid: 51, category: 'gameplay', desc: '启用玩家称号' },
-
+  
+               { name: '根基体系', uid: 63, category: 'gameplay', desc: '启用血统、改造、功法' },
+                 { name: '真实MOD', uid: 12, category: 'gameplay', desc: '启用真实模式' },
+        { name: '困难MOD', uid: 16, category: 'gameplay', desc: '启用困难模式' },
         // --- 视觉与表现 (Visual) ---
    
         { name: '场景图开', uid: 45, group: 'cg', category: 'visual', desc: '自动生成环境配图' },
@@ -42318,11 +42381,9 @@ function setupReconfigModal() {
         { name: '极简npc', uid: 44, group: 'npc-info', category: 'system', desc: '极少NPC信息' },
         { name: '简单npc', uid: 72, group: 'npc-info', category: 'system', desc: '标准NPC信息' },
         { name: '复杂npc', uid: 36, group: 'npc-info', category: 'system', desc: '详细NPC信息' },
-        { name: '真实MOD', uid: 12, category: 'system', desc: '启用真实模式' },
-        { name: '困难MOD', uid: 16, category: 'system', desc: '启用困难模式' },
-       
+    
         { name: '特殊日期', uid: 42, category: 'system', desc: '自动记录和提醒节日与特殊事件' },
-        { name: '根基体系', uid: 63, category: 'system', desc: '启用血统、改造、功法' },
+
     ];
 
     // 定义分类元数据
@@ -49454,7 +49515,7 @@ const handleSendMessage = () => {
 
         if (lastHistoryItem) {
             lastHistoryItem.content += newChatBlockString;
-            saveHistory();
+            worldHelper.saveHistory();
         }
         triggerassa(`/setinput <${userName}同时在聊天群[${currentTargetName}]进行了以下操作：发送消息：[ ${messageText} ] end>\n`);
         
@@ -49469,7 +49530,7 @@ const handleSendMessage = () => {
         
         if (lastHistoryItem) {
             lastHistoryItem.content += newChatBlockString;
-            saveHistory(); 
+            worldHelper.saveHistory(); 
         }
         
         triggerassa(`/setinput <${userName}同时对${targetId}进行了私聊：[ ${messageText} ]。end>\n`);
@@ -50038,7 +50099,7 @@ this.combatData.roundCounter = this.roundCounter;       // ✨ (顺便也把回�
             `<battle>${newBattleContent}</battle>`
         );
         // 6. 呼唤“存档”咒语，让这一切成为永久！
-        saveHistory();
+        worldHelper.saveHistory();
         console.log(`[Nova's Memory Crystal] 战斗 floor ${this.floorId} 的状态已固化完毕 (状态: ${this.status})。`);
     } else {
            console.error("在最新的历史记录中未能找到<battle>标签，无法固化记忆。");
