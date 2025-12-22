@@ -13886,7 +13886,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                     <div class="bookmark" data-tab="global_settings">全局设定</div>
                     <div class="bookmark" data-tab="global_背包">你的背包</div>
                     <div class="bookmark" data-tab="global_其他技能">你的技能</div>
-                    <div class="bookmark" data-tab="global_根基体系">根基体系</div>
+                    <div class="bookmark" data-tab="global_根基体系" id="genji_bookmark">根基体系</div>
                     <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>
                      <div class="bookmark" data-tab="world_npc" id="world_npc_bookmark">世界人物</div>
                     <div class="bookmark active" data-tab="world_settings" id="world_settings_bookmark">世界设定</div>
@@ -24846,7 +24846,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAna|<moduleAnalyze>([\s\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+            find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAna|<moduleAnalyze>([\s\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\s\S]*?-->)|<options>([\s\S]*?)<\/options>|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
             // 其他所有属性，如 disabled, runOnEdit 等都从模板中完美继承
         };
 
@@ -33809,7 +33809,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<options>([\\s\\S]*?)<\\/options>|<moduleAnalyze>([\s\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
+         find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\s\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\s\S]*?-->)|<options>([\s\S]*?)<\/options>|<roll>([\\s\\S]*?)<\\/roll>/gs", // 赋予其全新的侦测法则
         
         };
 
@@ -39139,6 +39139,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
         playCharacterData = chatdata.play_character_data; // 新增：缓存角色模板数据
         bookItemSettings = chatdata.bookItemSettings;
          checkMemoryData = chatdata.检定记忆;
+        
          checkMemoryOk = String(chatdata.checklock||'true');
          worldAttitudeData = chatdata.跨世界声望说明;
         characterStatusData = chatdata.当前人物状态;
@@ -39151,10 +39152,11 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
  const isPrivateChat = String(chatdata.private_chat||'true');
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
+ const is_genji = String(chatdata.is_genji||'false');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);
- console.log('111',is_simple_stream);
+ 
 is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
    weneedshop = String(chatdata.we_need_shop||'false');
 is_show_notifications = String(chatdata.is_show_notifications||'true');
@@ -39214,6 +39216,11 @@ if(isThingsRecord ==="true"){
 }else{
     document.getElementById('things_bookmark').style.display = 'none';
 
+}
+
+if(is_genji !== "true"){
+          document.getElementById('genji_bookmark').style.display = 'none';
+ 
 }
    if (version === '7') {
  document.getElementById('world_settings_bookmark').style.display = 'none';
