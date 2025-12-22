@@ -15035,7 +15035,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.4.25';
+let current_game_version = '3.4.26';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -23990,7 +23990,7 @@ const allBoundWorldbooks = [
        
     }
 }
- await worldHelper.saveHistory(); // 保存这个历史性的时刻
+ await saveHistory(); // 保存这个历史性的时刻
   worldHelper.renderHistory();
 
     } catch (e) {
@@ -24660,7 +24660,7 @@ function showReadingModeMenu(event, chapterData) {
             const newText = textarea.value.trim();
             if (newText && newText !== chapterData.msg.content) {
                 conversationHistory[chapterData.originalIndex].content = newText;
-                await worldHelper.saveHistory();
+                await saveHistory();
                 showNovaAlert('内容已保存！');
                 
                 // 重新渲染当前章节
@@ -24697,7 +24697,7 @@ function showReadingModeMenu(event, chapterData) {
         dropdown.remove();
         const message = conversationHistory[chapterData.originalIndex];
         message.isStarred = !message.isStarred;
-        await worldHelper.saveHistory();
+        await saveHistory();
         showNovaAlert(message.isStarred ? '已收藏！' : '已取消收藏');
         
         // 重新渲染当前章节
@@ -24776,7 +24776,7 @@ function showReadingModeMenu(event, chapterData) {
                 delete message.customTitle;
             }
             
-            await worldHelper.saveHistory();
+            await saveHistory();
             showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
             document.body.removeChild(overlay);
             
@@ -25361,7 +25361,7 @@ if (starItem) {
         message.isStarred = !message.isStarred; // 布尔值切换
         
         // 保存到历史记录
-        await worldHelper.saveHistory();
+        await saveHistory();
         
         // 给个小提示
         const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
@@ -25465,7 +25465,7 @@ function nameMessageTitle(index) {
             delete conversationHistory[index].customTitle;
         }
         
-        await worldHelper.saveHistory();
+        await saveHistory();
         showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
  
         document.body.removeChild(overlay);
@@ -25582,7 +25582,7 @@ function nameMessageTitle(index) {
 
             console.log(`[Nova的时光回溯] 信标已设置！下次行动将恢复到【快照 ${targetSnapshotId}】的状态。`);
 
-            await worldHelper.saveHistory();
+            await saveHistory();
             await worldHelper.renderHistory(true);
             updateRerollButtonState();
             showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
@@ -25669,7 +25669,7 @@ function editMessage(index, bubbleElement) {
         const newText = textarea.value.trim();
         if (newText && newText !== originalContentText) {
             conversationHistory[index].content = newText;
-            await worldHelper.saveHistory();
+            await saveHistory();
         }
 
         // ✨ 在这里耐心等待渲染完成！✨
@@ -25695,11 +25695,35 @@ function editMessage(index, bubbleElement) {
 
     
 }
+ async function saveHistory() {
+    try {
+         
+        const zeroLevelMessage = await TavernHelper.getChatMessages(0);
 
-function updateRerollButtonState(){
-       
+        // 如果楼层不存在，这是一个异常情况，我们应该停止操作
+        if (!zeroLevelMessage) {
+            console.error("错误：无法找到第 0 楼层消息，保存操作已中断。");
+            return;
+        }
  
+        // 更新 chat 作用域的变量
+        await updateVariablesWith(old_variables => {
+         
+            return {
+                ...old_variables,
+                zeroLevelHistory: conversationHistory,
+            };
+        }, { type: 'chat' });
+
+ 
+    } catch (e) {
+        // 捕获并打印任何可能发生的错误
+        console.error("保存历史记录过程中发生意外错误:", e);
     }
+
+
+}
+
  
 (async () => {
    
@@ -25905,7 +25929,6 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
      window.worldHelper = {
         init: initializeCurrentGameData,
         renderPrivateMsgToHtml:renderPrivateMsgToHtml,
-        saveHistory:saveHistory,
         renderGroupChatToHtml:renderGroupChatToHtml,
         createMessageBubble:createMessageBubble,
         processSpecialModulesInMessage:processSpecialModulesInMessage,
@@ -27891,7 +27914,7 @@ async function restoreFromLatestSnapshot() {
                                 if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof renderHistory === 'function') {
                                     // 我们用一个更温馨的提示
                                     conversationHistory.push({ role: 'assistant', content: '<请继续。>' });
-                                    await worldHelper.saveHistory();
+                                    await saveHistory();
                                     renderHistory();
                                 }
                             } else {
@@ -28120,7 +28143,7 @@ if (starItem) {
         message.isStarred = !message.isStarred; // 布尔值切换
         
         // 保存到历史记录
-        await worldHelper.saveHistory();
+        await saveHistory();
         
         // 给个小提示
         const statusText = message.isStarred ? '已收藏！' : '已取消收藏';
@@ -28227,7 +28250,7 @@ function nameMessageTitle(index) {
             delete conversationHistory[index].customTitle;
         }
         
-        await worldHelper.saveHistory();
+        await saveHistory();
         showNovaAlert(newTitle ? '标题已保存！' : '标题已清除');
      
         
@@ -28347,7 +28370,7 @@ function nameMessageTitle(index) {
             console.log(`[Nova的时光回溯] 信标已设置！锚定至楼层 ${targetSnapshotId}，下次行动将恢复此快照。`);
             // [修改结束] -----------------------------------------------------
 
-            await worldHelper.saveHistory();
+            await saveHistory();
             await worldHelper.renderHistory(true);
             updateRerollButtonState();
             showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
@@ -28433,7 +28456,7 @@ function editMessage(index, bubbleElement) {
         const newText = textarea.value.trim();
         if (newText && newText !== originalContentText) {
             conversationHistory[index].content = newText;
-            await worldHelper.saveHistory();
+            await saveHistory();
         }
 
         // ✨ 在这里耐心等待渲染完成！✨
@@ -28482,13 +28505,13 @@ function updateRerollButtonState(){
  
             } else {
                 conversationHistory = [];
-                await worldHelper.saveHistory();
+                await saveHistory();
             }
  
         } catch (error) {
             //console.log("初始化失败，我们将开始新的对话。", error);
             conversationHistory = [];
-            await worldHelper.saveHistory();
+            await saveHistory();
         }
        await renderHistory(true);
         updateRerollButtonState(); // ☆ 初始化时更新按钮状态
@@ -32451,7 +32474,7 @@ const inputHide = document.getElementById('setting-hide-latest');
                 if (typeof rebuildWorldFromHistory === 'function') {
                     await rebuildWorldFromHistory('系统正在重构世界线...', 'Settings');
                     toastr.success('世界重构完成');
-                    await worldHelper.saveHistory();
+                    await saveHistory();
                      await initDisplay();
                 } else {
                     toastr.error('找不到重构函数 (rebuildWorldFromHistory)');
@@ -32506,7 +32529,7 @@ const inputHide = document.getElementById('setting-hide-latest');
         
                     await processUpdateMemoryCommands(messageContent, -1); 
                     toastr.success('最后一条AI消息中的世界指令已重新处理！');
-                    await worldHelper.saveHistory();
+                    await saveHistory();
                     await initDisplay();
                 } else {
                     toastr.error('找不到指令处理函数 (processUpdateMemoryCommands)');
@@ -32607,6 +32630,91 @@ function throttle(func, limit) {
         }
     }
 }
+
+const assembleComplexPrompt = (params = {}) => {
+    // TODO: 在此实现复杂的提示词组装逻辑
+    console.log("正在调用复杂的提示词组装函数...", params);
+    // 示例：返回一个简单的用户提示
+    return "你只需要回复“收到”即可。这是一个测试。";
+};
+
+ 
+const sendCustomGenerationRequest = async (promptText, options = {}) => {
+    const { buttonElement } = options;
+
+    if (buttonElement) {
+        buttonElement.textContent = '生成中…';
+        buttonElement.disabled = true;
+    }
+
+    try {
+        // 1. 检查是否启用第二 API
+        const isSecondApiEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+
+        if (!isSecondApiEnabled) {
+            // 2. 未启用第二 API 时的处理
+            const userConfirmed = confirm('未启用第二API，将使用酒馆主API生成，是否确认？');
+
+            if (!userConfirmed) {
+                throw new Error('用户取消生成');
+            }
+
+            // 3. 准备 generateRaw 的配置
+            /** @type {GenerateRawConfig} */
+            const rawConfig = {
+                max_chat_history: 0, // 避免当前聊天记录干扰
+                ordered_prompts: []
+            };
+
+            // 4. 处理 promptText (可能是字符串，也可能是符合格式的数组)
+            if (Array.isArray(promptText)) {
+                rawConfig.ordered_prompts = promptText;
+            } else {
+                rawConfig.ordered_prompts = [{ role: 'user', content: String(promptText) }];
+            }
+
+            // 5. 调用酒馆主 API (generateRaw)
+            console.log("[Nova] 使用主API (generateRaw) 发送请求:", rawConfig);
+            const generatedText = await generateRaw(rawConfig);
+            return generatedText;
+        }
+
+        // 6. 启用第二 API 时的处理 (原有逻辑)
+        console.log("[Nova] 使用第二API (sendApiRequest) 发送请求");
+        const result = await sendApiRequest(promptText, {
+            max_tokens: 15000,
+            temperature: 0.8,
+            top_p: 0.95
+        });
+
+        if (!result.success) {
+            let errorMessage = `生成失败: ${result.error}`;
+            if (String(result.error).includes('配置未找到') || String(result.error).includes('未启用')) {
+                errorMessage = '第二API 配置未找到或未启用。\n\n请前往设置页面检查配置。';
+            }
+            throw new Error(errorMessage);
+        }
+
+        return result.data;
+
+    } catch (error) {
+        console.error('[生成失败]', error);
+        // 如果是用户取消，则不向上抛出错误，避免在控制台显示不必要的信息
+        if (error.message === '用户取消生成') {
+            // 静默处理或进行特定UI提示
+            return Promise.reject(error); // 或者 return;
+        }
+        // 对于其他错误，向上抛出以便外部捕获
+        throw error;
+    } finally {
+        if (buttonElement) {
+            buttonElement.textContent = '生成';
+            buttonElement.disabled = false;
+        }
+    }
+};
+
+
 async function handleSend(options = {}) {
 
    setTimeout(() => console.log('等待锁释放'), 50);
@@ -32977,7 +33085,7 @@ console.log("userMessageCount：",userMessageCount);
         }
 
  
-        await worldHelper.saveHistory();
+        await saveHistory();
 
         sendButton.disabled = true;
          document.getElementById('reroll-button').disabled = true; // 💖 禁用菜单里的重开按钮
@@ -33363,6 +33471,8 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
 
             try {
                 console.log("[Nova] 准备流式生成...");
+
+       
                 const commonConfig = {
                     should_stream: true,
                     injects: injections
@@ -33371,14 +33481,22 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
  
 
                 if (isContinuationVar) {
+    try {
+      
+            const promptPayload = assembleComplexPrompt({ type: 'variable_generation' });
 
-                        // const rawModePreset = buildRawPreset();
-                    console.log("[Nova] 触发变量生成");
-                  aiFullResponse = await generate({
-                        ...commonConfig,
-                          custom_api: activeCustomApi,
-                        overrides: { chat_history: { prompts: [] } }
-                    });
+  
+            aiFullResponse = await sendCustomGenerationRequest(
+                promptPayload,
+                {   } // 传入按钮以控制其状态
+            );
+ 
+        } catch (error) {
+            // 捕获 sendCustomGenerationRequest 中抛出的错误（用户取消除外）
+            console.error("[Nova] 变量生成流程最终捕获到错误:", error.message);
+            alert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
+        }
+
                 } else {
                     console.log("[Nova] 触发标准生成 (Preset Enabled)");
                     aiFullResponse = await generate({
@@ -33493,23 +33611,22 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
                 };
 
  
-
-                // if (isContinuationVar && enable_preset_2nd_pass !== 'true') {
                    if (isContinuationVar) {
-                    //   const rawModePreset = buildRawPreset();
-                     console.log("[Nova] 触发变量生成 ");
-                    //  aiFullResponse = await generateRaw({
-                    //     ...commonConfig,
-                        
-                    //        custom_api: activeCustomApi,
-                    //        overrides: { chat_history: { prompts: [] } },
-                    //        ordered_prompts: rawModePreset  
-                    // });
-                       aiFullResponse = await generate({
-                        ...commonConfig,
-                          custom_api: activeCustomApi,
-                        overrides: { chat_history: { prompts: [] } }
-                    });
+ try {
+   
+            
+            const promptPayload = assembleComplexPrompt({ type: 'variable_generation' });
+ 
+            aiFullResponse = await sendCustomGenerationRequest(
+                promptPayload,
+                {  } // 传入按钮以控制其状态
+            );
+ 
+        } catch (error) {
+            // 捕获 sendCustomGenerationRequest 中抛出的错误（用户取消除外）
+            console.error("[Nova] 变量生成流程最终捕获到错误:", error.message);
+            alert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
+        }
                 } else {
                      console.log("[Nova] 触发标准生成 (Preset Enabled)");
                      aiFullResponse = await generate({
@@ -33645,7 +33762,7 @@ let backupData = {};
              console.log('[Nova] 正在后台默默地将记忆刻入永恒...');
              try {
                  // A. 保存历史记录 (此时内存里的 conversationHistory 已经包含了刚才追加的时间戳)
-                 await worldHelper.saveHistory();
+                 await saveHistory();
  if(noBackup === "false"){
                  // B. 保存快照 (使用刚才冻结好的 snapshotData)
                  if (isFirstSend) {
@@ -33762,7 +33879,7 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
                      console.log("[Nova's Creation] 中断后，成功保存了这篇新的、未完的创作。");
                 }
 
-                await worldHelper.saveHistory(); // 保存到记忆长河
+                await saveHistory(); // 保存到记忆长河
 
                 try {
                     let allCommands = "";
@@ -33790,7 +33907,7 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
             toastr.error("在魔法仪式过程中出错了:" + e.message, "报错信息");
             aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
             // 发生错误时，保存当前所有历史，以防万一
-            await worldHelper.saveHistory();
+            await saveHistory();
             await renderHistory(true);
         }
 
@@ -42348,9 +42465,6 @@ function setupReconfigModal() {
         { name: '炼狱骰', uid: 60, group: 'dice', category: 'core', desc: '极低成功率' },
              { name: '表现骰开', uid: 52, group: 'behavior', category: 'core', desc: '启用表现骰' },
         { name: '表现骰关', uid: 53, group: 'behavior', category: 'core', desc: '关闭表现骰' },
-  { name: '选项区开', uid: 10, group: 'options', category: 'core', desc: '显示行动选项' },
-        { name: '选项区关', uid: 29, group: 'options', category: 'core', desc: '隐藏行动选项' },
-        { name: '防编造检定', uid: 84, category: 'core', desc: '防止伪造选项检定属性' },
 
         // --- 游戏性 (Gameplay) ---
         { name: '简单地图', uid: 15, group: 'map', category: 'gameplay', desc: '简单方块地图' },
@@ -42366,16 +42480,19 @@ function setupReconfigModal() {
         { name: '无造物', uid: 38, group: 'attitude', category: 'gameplay', desc: '不再出现造物' },
  { name: '人外增强', uid: 37, category: 'gameplay', desc: '有造物的时候才开。非人角色增强' },
         { name: '战斗模式关', uid: 75, group: 'battle', category: 'gameplay', desc: '自由叙事战斗' },
-      { name: '求生本能开', uid: 69, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
-        { name: '求生本能关', uid: 70, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
-
+ 
         { name: '资源消耗', uid: 58, category: 'gameplay', desc: '启用体力/物资消耗' },
         { name: '分阶段好感', uid: 65, category: 'gameplay', desc: '好感度分级系统' },
         { name: '称号系统', uid: 51, category: 'gameplay', desc: '启用玩家称号' },
-  
+         { name: '极简npc', uid: 44, group: 'npc-info', category: 'gameplay', desc: '极少NPC信息' },
+        { name: '简单npc', uid: 72, group: 'npc-info', category: 'gameplay', desc: '标准NPC信息' },
+        { name: '复杂npc', uid: 36, group: 'npc-info', category: 'gameplay', desc: '详细NPC信息' },
                { name: '根基体系', uid: 63, category: 'gameplay', desc: '启用血统、改造、功法' },
                  { name: '真实MOD', uid: 12, category: 'gameplay', desc: '启用真实模式' },
         { name: '困难MOD', uid: 16, category: 'gameplay', desc: '启用困难模式' },
+             { name: '求生本能开', uid: 69, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
+        { name: '求生本能关', uid: 70, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
+
         // --- 视觉与表现 (Visual) ---
    
         { name: '场景图开', uid: 45, group: 'cg', category: 'visual', desc: '自动生成环境配图' },
@@ -42390,18 +42507,19 @@ function setupReconfigModal() {
         { name: '同步变量', uid: 40, group: 'api', category: 'system', desc: '正文和变量在同一个回复中' },
         { name: '强调时间开', uid: 78, group: 'time', category: 'system', desc: '小总结显示时间地点信息，同时给正文自动增加时间戳' },
         { name: '强调时间关', uid: 79, group: 'time', category: 'system', desc: '没有以上功能' },
-        { name: '极简npc', uid: 44, group: 'npc-info', category: 'system', desc: '极少NPC信息' },
-        { name: '简单npc', uid: 72, group: 'npc-info', category: 'system', desc: '标准NPC信息' },
-        { name: '复杂npc', uid: 36, group: 'npc-info', category: 'system', desc: '详细NPC信息' },
+ 
       { name: '补录变量', uid: 83, category: 'system', desc: '在生成完变量更新后，会再查漏补缺一次' },
         { name: '特殊日期', uid: 42, category: 'system', desc: '自动记录和提醒节日与特殊事件' },
+  { name: '选项区开', uid: 10, group: 'options', category: 'system', desc: '显示行动选项' },
+        { name: '选项区关', uid: 29, group: 'options', category: 'system', desc: '隐藏行动选项' },
+        { name: '防编造检定', uid: 84, category: 'system', desc: '防止伪造选项检定属性' },
 
     ];
 
     // 定义分类元数据
      const CATEGORIES = [
         { id: 'world', name: '世界观' },
-        { id: 'core', name: '核心规则' },
+        { id: 'core', name: '骰子规则' },
         { id: 'gameplay', name: '游戏性' },
         { id: 'visual', name: '视觉表现' },
         { id: 'system', name: '系统设定' },
@@ -46268,8 +46386,7 @@ customPromptInput.addEventListener('blur', () => {
     localStorage.setItem('custom_shop_prompt', customPromptInput.value);
 });
 
-    // 调用Gemini API
- 
+   
 const processApiResponse = async (responseText) => {
     if (!responseText) {
         showModal('shop-modal', '生成失败', '未能从AI获取有效内容。');
@@ -49527,7 +49644,7 @@ const handleSendMessage = () => {
 
         if (lastHistoryItem) {
             lastHistoryItem.content += newChatBlockString;
-            worldHelper.saveHistory();
+            saveHistory();
         }
         triggerassa(`/setinput <${userName}同时在聊天群[${currentTargetName}]进行了以下操作：发送消息：[ ${messageText} ] end>\n`);
         
@@ -49542,7 +49659,7 @@ const handleSendMessage = () => {
         
         if (lastHistoryItem) {
             lastHistoryItem.content += newChatBlockString;
-            worldHelper.saveHistory(); 
+            saveHistory(); 
         }
         
         triggerassa(`/setinput <${userName}同时对${targetId}进行了私聊：[ ${messageText} ]。end>\n`);
@@ -50111,7 +50228,7 @@ this.combatData.roundCounter = this.roundCounter;       // ✨ (顺便也把回�
             `<battle>${newBattleContent}</battle>`
         );
         // 6. 呼唤“存档”咒语，让这一切成为永久！
-        worldHelper.saveHistory();
+        saveHistory();
         console.log(`[Nova's Memory Crystal] 战斗 floor ${this.floorId} 的状态已固化完毕 (状态: ${this.status})。`);
     } else {
            console.error("在最新的历史记录中未能找到<battle>标签，无法固化记忆。");
