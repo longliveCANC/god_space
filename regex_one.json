@@ -2470,14 +2470,7 @@ input[type="range"]::-moz-range-thumb {
     font-size: 0.9em;
 }
 
-.switch-container {
-    display: flex;
-    background-color: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 3px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-}
+
 
 .switch-btn {
     padding: 6px 15px;
@@ -4703,27 +4696,109 @@ opacity: 0.6;
     color: var(--text-color);
 }
 
- 
+ .switch-container {
+    display: inline-flex;
+    align-items: center;
+}
 
-/* 开关按钮样式 */
-.switch-container .switch-btn {
-    padding: 8px 16px;
+.switch-btn {
+    position: relative;
+    width: 60px;  /* 开关宽度 */
+    height: 28px; /* 开关高度 */
+    padding: 0;   /* 清除内边距 */
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 15px; /* 胶囊形状 */
+    background-color: rgba(0, 0, 0, 0.4);
+    color: transparent; /* 隐藏原有文字，或者你可以保留文字并调整位置 */
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
 }
 
-.switch-container .switch-btn[data-state="on"] {
-    background-color: var(--background-color);
-    color: var(--text-color);
-    border-color: var(--background-color);
+/* 开关内部的圆形滑块 */
+.switch-btn::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--text-secondary-color);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-.switch-container .switch-btn[data-state="off"] {
-    background-color: var(--background-color);
-    color: var(--text-secondary-color);
+/* 开启状态 (data-state="on") */
+.switch-btn[data-state="on"] {
+   
+    border-color: var(--primary-color);
+   
 }
+
+/* 开启状态下的滑块移动和变色 */
+.switch-btn[data-state="on"]::after {
+    left: 35px; /* 向右移动 */
+    background-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--primary-color);
+}
+
+/* 悬停效果 */
+.switch-btn:hover {
+    border-color: var(--text-color);
+}
+ 
+ /* 针对设置容器内的 checkbox 进行样式重置和自定义 */
+.settings-container input[type="checkbox"] {
+    -webkit-appearance: none; /* 去除默认样式 */
+    appearance: none;
+    position: relative;
+    width: 60px;  /* 开关宽度 */
+    height: 28px; /* 开关高度 */
+    border: 1px solid var(--border-color);
+    border-radius: 15px; /* 胶囊形状 */
+    background-color: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+    outline: none;
+    vertical-align: middle;
+}
+
+/* 开关内部的圆形滑块 */
+.settings-container input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--text-secondary-color);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 悬停效果 */
+.settings-container input[type="checkbox"]:hover {
+    border-color: var(--text-color);
+}
+
+/* 选中状态 */
+.settings-container input[type="checkbox"]:checked {
+ 
+    border-color: var(--primary-color);
+   
+}
+
+/* 选中状态下的滑块移动和变色 */
+.settings-container input[type="checkbox"]:checked::after {
+    left: 35px; /* 向右移动 */
+    background-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--primary-color);
+}
+
+
 
 /* 日志输出区域 */
 .log-output {
@@ -9432,126 +9507,262 @@ input:checked + .slider:before {
     z-index: 1001; /* 确保在最上层 */
     backdrop-filter: blur(5px);
 }
-
+ /* --- 布局框架调整 --- */
 .reconfig-modal-content {
+    /* 保持原有基础样式 */
     background-color: var(--container-bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 25px 30px;
-    width: 90%;
-    max-width: 700px;
-    box-shadow: 0 0 25px var(--glow-color);
-    animation: fadeInModal 0.4s ease-out;
-    position: relative;
-       max-height: 80vh;   /* 这样它就不会长得比屏幕还高了 */
-    overflow-y: auto;   /* 当内容多到装不下时，就会出现一个漂亮的滚动条 */
+    border-radius: 16px;
+    padding: 0;
+    width: 95%; /* 手机端更宽 */
+    max-width: 850px;
+    height: 80vh; /* 增加高度 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.reconfig-modal-close {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 28px;
-    color: var(--text-secondary-color);
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-.reconfig-modal-close:hover {
-    color: var(--primary-color);
+.reconfig-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    /* 手机端改为纵向排列 */
+    flex-direction: row;
 }
 
-.reconfig-title {
-    color: var(--primary-color);
-    text-align: center;
-    margin: 0 0 5px 0;
-    font-size: 1.8em;
-}
-
-.reconfig-subtitle {
-    color: var(--text-secondary-color);
-    text-align: center;
-    margin: 0 0 25px 0;
-    font-size: 0.9em;
-}
-
-.reconfig-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px 20px;
-    max-height: 50vh;
-    overflow-y: auto;
+/* --- 侧边栏导航 (适配手机) --- */
+.reconfig-sidebar {
+    width: 160px; /* 稍微窄一点，纯文字不需要太宽 */
+    background: rgba(0, 0, 0, 0.15);
     padding: 10px;
-    background-color: rgba(0,0,0,0.2);
-    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+    flex-shrink: 0;
 }
 
-.reconfig-mod-item {
+.reconfig-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+ .reconfig-tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary-color);
+    padding: 12px 15px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-size: 0.95em;
+    font-weight: 500;
+    /* 移除图标后的纯文字样式 */
+    display: block;
+    width: 100%;
+}
+
+.reconfig-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+}
+
+.reconfig-tab-btn.active {
+    background: rgba(0, 250, 255, 0.15);
+    color: var(--primary-color);
+    font-weight: bold;
+    border-left: 3px solid var(--primary-color); /* 纯文字模式下增加左侧指示条 */
+}
+
+.reconfig-tab-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+ /* --- 内容区与分组 --- */
+.reconfig-content-area {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+/* 这是一个新的容器，用于包裹属于同一个 Group 的卡片 */
+.reconfig-group-wrapper {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    /* 关键：让这个容器独占一行，实现“换行” */
+}
+.reconfig-group-title {
+    width: 100%;
+    font-size: 0.85em;
+    color: var(--text-secondary-color);
+    margin-bottom: 8px;
+    opacity: 0.7;
+}
+.reconfig-section {
+    display: none; /* 默认隐藏，JS控制显示 */
+    animation: fadeInSection 0.3s ease;
+}
+.reconfig-section.active {
+    display: block;
+}
+
+.reconfig-section-title {
+    font-size: 1.2em;
+    color: var(--text-color);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.05);
-    padding: 10px;
-    border-radius: 6px;
+    gap: 10px;
+}
+
+/* --- 现代化的选项卡片 (Grid) --- */
+.reconfig-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+}
+ /* 单个选项卡片 */
+.reconfig-option-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px 15px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    border-left: 3px solid transparent;
-}
-.reconfig-mod-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.reconfig-mod-item.is-active {
-    border-left: 3px solid var(--primary-color);
-}
-
-.reconfig-mod-item input[type="checkbox"] {
-    display: none; /* 我们用label来控制 */
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* 默认宽度，在组内自动伸缩 */
+    flex: 1 1 200px;
+    min-width: 180px;
 }
 
-.reconfig-mod-item label {
+.reconfig-option-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.reconfig-option-card.active {
+    border-color: var(--primary-color);
+ 
+}
+/* --- 移动端适配 (关键) --- */
+@media (max-width: 768px) {
+    .reconfig-body {
+        flex-direction: column; /* 上下布局 */
+    }
+
+    .reconfig-sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row; /* 横向排列 */
+        overflow-x: auto; /* 允许横向滚动 */
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px 5px;
+        white-space: nowrap; /* 防止按钮换行 */
+    }
+
+    .reconfig-tab-btn {
+        width: auto;
+        padding: 8px 15px;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 20px; /* 手机上变成胶囊状 */
+    }
+
+    .reconfig-tab-btn.active {
+        border-left: none;
+        border-bottom: 3px solid var(--primary-color);
+        background: rgba(0, 250, 255, 0.1);
+    }
+
+    .reconfig-content-area {
+        padding: 15px 10px;
+    }
+
+    .reconfig-option-card {
+        min-width: 100%; /* 手机上卡片占满一行 */
+    }
+}
+.reconfig-option-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.reconfig-option-name {
+    font-weight: 500;
     color: var(--text-color);
-    font-size: 1em;
-    cursor: pointer;
-    flex-grow: 1;
-}
-.reconfig-mod-item.is-active label {
-    color: var(--secondary-color);
+    font-size: 0.95em;
 }
 
+.reconfig-option-desc {
+    font-size: 0.8em;
+    color: var(--text-secondary-color);
+    margin-top: 4px;
+}
+
+/* --- 现代开关 (Toggle Switch) --- */
+.reconfig-toggle {
+    width: 40px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    position: relative;
+    transition: background 0.3s;
+    flex-shrink: 0;
+}
+
+.reconfig-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s;
+}
+
+.reconfig-option-card.active .reconfig-toggle {
+    background: var(--primary-color);
+}
+
+.reconfig-option-card.active .reconfig-toggle::after {
+    transform: translateX(18px);
+}
+
+/* --- 底部栏 --- */
 .reconfig-footer {
+    padding: 15px 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    margin-top: 25px;
 }
 
-.reconfig-feedback {
-    color: var(--primary-color);
-    margin-right: 20px;
-    font-style: italic;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.reconfig-apply-btn {
-    background: var(--primary-color);
-    color: var(--background-color);
-    border: none;
-    padding: 10px 25px;
-    border-radius: 5px;
-    font-size: 1em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-.reconfig-apply-btn:hover {
-    box-shadow: 0 0 15px var(--glow-color);
-    transform: translateY(-2px);
-}
-
-@keyframes fadeInModal {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+@keyframes fadeInSection {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* ☆ 妈妈的“星辰指挥台”魔法 v1.0 ☆ */
@@ -12528,6 +12739,7 @@ pointer-events: auto;
 <div class="mod-tab" data-for="npc-love-on" data-name="npc-love-mode" data-off-id="npc-love-off">分阶段好感</div>
          <div class="mod-label">其他</div>
                 <div class="mod-tab" data-for="options-on" data-name="options-mode" data-off-id="options-off">选项区</div>
+                   <div class="mod-tab" data-for="optionshard-on" data-name="optionshard-mode" data-off-id="optionshard-off">选项防编造检定</div>
         <div class="mod-tab" data-for="summary-on" data-name="summary-mode" data-off-id="summary-off" style="display: none;">自动总结</div>
 
 
@@ -12559,6 +12771,11 @@ pointer-events: auto;
 
         <input type="radio" id="options-on" name="options-mode" value="10" checked>
         <input type="radio" id="options-off" name="options-mode" value="29">
+
+        
+        <input type="radio" id="optionshard-on" name="optionshard-mode" value="on" >
+        <input type="radio" id="optionshard-off" name="optionshard-mode" value="off" checked>
+
          <input type="radio" id="private-chat-on" name="private-chat-mode" value="55" checked>
         <input type="radio" id="private-chat-off" name="private-chat-mode" value="56">
 
@@ -14070,7 +14287,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                 </div>
                 <div class="setting-item">
                     <label>记忆上一次的模组配置</label>
-                    <input type="checkbox" id="remember-mod-choice" style="width: auto; cursor: pointer;" checked>
+                    <input type="checkbox" id="remember-mod-choice"   checked>
                 </div>
                             <div class="setting-item">
                     <label for="streaming-toggle">
@@ -14083,12 +14300,12 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 
                 <div id="simple-streaming-options" class="setting-item" style="display: none; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px; margin-left: 20px;">
                     <label for="simple-streaming-toggle">启用简易流式(降低性能消耗)</label>
-                    <input type="checkbox" id="simple-streaming-toggle" style="width: auto; cursor: pointer;">
+                    <input type="checkbox" id="simple-streaming-toggle" >
                 </div>
 
                 <div class="setting-item">
                     <label>自定义绿灯扫描楼层</label>
-                    <input type="checkbox" id="remember-scan-floors" style="width: auto; cursor: pointer;">
+                    <input type="checkbox" id="remember-scan-floors"  >
                 </div>
 
                 <div class="setting-item" id="scan-floors-setting-container" style="display: none;">
@@ -14097,7 +14314,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                 </div>
 <div class="setting-item">
     <label>自动设置NPC为绿灯</label>
-    <input type="checkbox" id="auto-set-npc-filter" style="width: auto; cursor: pointer;">
+    <input type="checkbox" id="auto-set-npc-filter" >
 </div>
 <div class="setting-item">
     <label>好感度变速 <span id="current-favorability-speed" style="color: var(--accent-color); font-weight: bold;">(未设置)</span></label>
@@ -14116,7 +14333,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     <div class="setting-item" style="margin-bottom: 10px;">
         <label>启用第二API (若不启用，则默认都使用酒馆的主api。目前异步变量只能默认用主api)</label>
         <div class="switch-container">
-            <button id="enable-custom-api-toggle" class="switch-btn" data-state="off">关闭</button>
+            <button id="enable-custom-api-toggle" class="switch-btn" data-state="off"></button>
         </div>
     </div>
 
@@ -14239,7 +14456,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
                 <div class="setting-item">
                     <label for="fullscreen-toggle">全屏模式</label>
                     <div class="switch-container">
-                        <button id="fullscreen-btn2" class="switch-btn">进入全屏</button>
+                        <button id="fullscreen-btn2" class="switch-btn" data-state="off">进入全屏</button>
                     </div>
                 </div>
                 <div class="setting-item">
@@ -14522,30 +14739,36 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
     </div>
 </div>
 
-<div id="reconfig-modal" class="modal-overlay" style="display: none; z-index: 99999999;">
+ <div id="reconfig-modal" class="modal-overlay" style="display: none; z-index: 99999999;">
     <div class="reconfig-modal-content">
-        <button id="reconfig-modal-close-btn" class="reconfig-modal-close">×</button>
-        <h2 class="reconfig-title">模组设定</h2>
- <p class="reconfig-subtitle">随时调整故事的规则。</p>
+
+        <div class="reconfig-header">
+            <div>
+                <h2 class="reconfig-title" style="font-size: 1.4em; margin:0; text-align:left;">模组设定</h2>
+                <p class="reconfig-subtitle" style="margin:0; text-align:left; font-size: 0.8em;">当前世界观: <span id="current-worldview-display" style="color: var(--primary-color);">读取中...</span></p>
+            </div>
+            <button id="reconfig-modal-close-btn" class="reconfig-modal-close" style="position:static;">×</button>
+        </div>
 
 
-<div class="reconfig-worldview-section">
-    <h3 class="reconfig-section-title">世界观选择 (当前: <span id="current-worldview-display" style="color: var(--accent-color);">读取中...</span>)</h3>
-    <div id="reconfig-worldview-container" class="reconfig-grid reconfig-grid-worldview">
+        <div class="reconfig-body">
 
+            <aside class="reconfig-sidebar" id="reconfig-sidebar">
+
+            </aside>
+
+
+            <main class="reconfig-content-area" id="reconfig-content-container">
+
+            </main>
+        </div>
+
+
+        <div class="reconfig-footer">
+            <span id="reconfig-feedback-msg" class="reconfig-feedback"></span>
+            <button id="apply-reconfig-btn" class="reconfig-apply-btn">应用更改</button>
+        </div>
     </div>
-</div>
-<h3 class="reconfig-section-title">模组开关</h3>
-
-
-<div id="reconfig-mod-container" class="reconfig-grid">
-    </div>
-
-    <div class="reconfig-footer">
-        <span id="reconfig-feedback-msg" class="reconfig-feedback"></span>
-        <button id="apply-reconfig-btn" class="reconfig-apply-btn">应用更改</button>
-    </div>
-</div>
 </div>
 
 <div id="group-chat-modal-container" class="group-chat-modal">
@@ -14805,7 +15028,7 @@ doubleapi-mode                 <input type="radio" id="behavior-on" name="behavi
 </body>
 
 <script>
-let current_game_version = '3.4.22';
+let current_game_version = '3.4.23';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -21929,6 +22152,8 @@ async function handleModeSelection() {
         
         // HTML: value="10" checked (对应 id="options-on")
         const selectedOptionsMode = getSafeValue('options-mode', '10');     
+
+         const selectedOptionshardMode = getSafeValue('optionshard-mode', 'off');    
         
         // HTML: value="55" checked (对应 id="private-chat-on")
         const privateChatMode = getSafeValue('private-chat-mode', '55'); 
@@ -22024,7 +22249,9 @@ async function handleModeSelection() {
             if (selectedRealWorldMode === 'on') {
                 uidsToEnable.push(12, 33);
             }
-
+    if (selectedOptionshardMode === 'on') {
+                uidsToEnable.push(84);
+            }
             if(spacialdatevalue === 'on'){
                 uidsToEnable.push(42, 73);
             }
@@ -22072,7 +22299,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -31317,13 +31544,32 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
             }
         }
 
-    if (targetObj && targetObj.hasOwnProperty(npcName)) {
+   if (targetObj && targetObj.hasOwnProperty(npcName)) {
             // 关键修正：只有当找到NPC的基础路径(checkPath)与当前指令的基础路径(currentBasePath)不同时，才进行重构
             if (checkPath !== currentBasePath) {
                 console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于不同的路径 '${checkPath}'，自动重构路径`);
 
-                // 新路径 = 找到的基础路径 + NPC名 + 原路径中NPC之后的部分
+                // =========== 🔽 修改开始 🔽 ===========
+                // 新路径 = 找到的基础路径 + NPC名 + (可选的)原路径中NPC之后的部分
                 path = `${checkPath}.${npcName}${pathAfterNpc}`;
+
+                // 关键后处理：如果 keyArg 和 npcName 相同，说明原指令没有更深层的路径，
+                // 此时 keyArg 就不应该再被当做一个独立的键来处理。
+                if (keyArg === npcName) {
+                 
+                    const pathAfterNpcParts = pathAfterNpc.replace(/^\./, '').split('.');
+                    const newKey = pathAfterNpcParts[0];
+
+                    if (newKey) {
+                        // 例如 memory('global_lore.npc.零号.事件', '想法', '...')
+                        // pathAfterNpc 是 .事件, newKey 是 '事件'
+                        path = `${checkPath}.${npcName}`;
+                        keyArg = newKey; // keyArg 变为 '事件'
+                        console.log(`[Core] ✨ 路径重构(深度): Path -> '${path}', Key -> '${keyArg}'`);
+                    }
+                    // 如果 pathAfterNpc 为空，则保持原样，后续的去重逻辑会处理 `path.零号` 和 `key.零号` 的问题。
+                }
+                // =========== 🔼 修改结束 🔼 ===========
 
                 console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
             } else {
@@ -31531,13 +31777,35 @@ if (lastPathSegment === key) {
             }
         }
 
-     if (targetObj && targetObj.hasOwnProperty(npcName)) {
+      if (targetObj && targetObj.hasOwnProperty(npcName)) {
             // 关键修正：只有当找到NPC的基础路径(checkPath)与当前指令的基础路径(currentBasePath)不同时，才进行重构
             if (checkPath !== currentBasePath) {
                 console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于不同的路径 '${checkPath}'，自动重构路径`);
 
-                // 新路径 = 找到的基础路径 + NPC名 + 原路径中NPC之后的部分
-                path = `${checkPath}.${npcName}${pathAfterNpc}`;
+                // =========== 🔽 修改开始 🔽 ===========
+
+                // 1. 初始重构：新路径 = 找到的基础路径 + NPC名 + 原路径中NPC之后的部分
+                let newPath = `${checkPath}.${npcName}${pathAfterNpc}`;
+                let newKey = key; // 保持原始 key 不变
+
+                // 2. 关键检查与修正：防止 'path.零号' 和 'key: 零号' 的情况发生
+                const newPathParts = newPath.split('.');
+                const lastPathSegment = newPathParts[newPathParts.length - 1];
+
+                if (lastPathSegment === newKey) {
+                    console.log(`[Core] 💖 智能审查(重构后去重): 检测到重构路径的最后部分 '${lastPathSegment}' 与 key '${newKey}' 重复，自动修正。`);
+                    // 修正：路径只取到父级，key 保持不变
+                    path = newPathParts.slice(0, -1).join('.');
+                    // key 保持 newKey 即可，因为后续逻辑会使用它
+                } else {
+                    // 如果没有重复，则直接使用重构后的路径
+                    path = newPath;
+                }
+
+                // key 保持不变，因为在二参数模式下，key 是从原始路径中分离出来的，已经是正确的。
+                // key = newKey;
+
+                // =========== 🔼 修改结束 🔼 ===========
 
                 console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
             } else {
@@ -34028,7 +34296,8 @@ modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数
         mainWrapper.style.minHeight = '100vh';
         bottombtn.style.bottom = '5%';
         topbtn.style.top = '17%';
-        fullscreenButton2.textContent = '退出全屏';
+        // fullscreenButton2.textContent = '退出全屏';
+            fullscreenButton2.dataset.state = 'on';
     } else {
         // 退出全屏时的代码
         if (document.exitFullscreen) {
@@ -34039,7 +34308,8 @@ modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数
         mainWrapper.style.minHeight = '80vh';
           bottombtn.style.bottom = '100px';
         topbtn.style.top = '100px';
-        fullscreenButton2.textContent = '进入全屏';
+        // fullscreenButton2.textContent = '进入全屏';
+         fullscreenButton2.dataset.state = 'off';
     }
 });
  
@@ -41915,7 +42185,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63 ];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -41938,7 +42208,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63 ];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -41964,19 +42234,24 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
     }
 }
 
- // ⭐ --- 全新修正版：妈妈为你编写的模组重置功能 v2.0 --- ⭐
+ // ⭐ --- 全新修正版：妈妈为你编写的模组重置功能 v2.1 (修复元素ID匹配问题) --- ⭐
 function setupReconfigModal() {
+ 
+    // 1. 获取元素 (注意：这里必须使用新的ID，否则会找不到元素而静默失败)
     const openBtn = document.getElementById('open-reconfig-modal-btn');
     const modal = document.getElementById('reconfig-modal');
     const closeBtn = document.getElementById('reconfig-modal-close-btn');
     const applyBtn = document.getElementById('apply-reconfig-btn');
-    const container = document.getElementById('reconfig-mod-container');
     const feedbackMsg = document.getElementById('reconfig-feedback-msg');
-    const worldviewContainer = document.getElementById('reconfig-worldview-container');
     const currentWorldviewDisplay = document.getElementById('current-worldview-display');
 
-    if (!openBtn || !modal || !closeBtn || !applyBtn || !container || !worldviewContainer) {
-        console.warn("宝贝别急，模组重置面板的某些元素没找到，妈妈正在检查。");
+    // 新的容器ID
+    const sidebar = document.getElementById('reconfig-sidebar');
+    const contentContainer = document.getElementById('reconfig-content-container');
+
+    // 检查关键元素是否存在
+    if (!openBtn || !modal || !closeBtn || !applyBtn || !sidebar || !contentContainer) {
+        console.warn("宝贝别急，模组重置面板的某些元素没找到，妈妈正在检查。(可能是HTML结构未更新或ID不匹配)");
         return;
     }
 
@@ -41986,158 +42261,283 @@ function setupReconfigModal() {
         { name: '轮回乐园', uid: 22 },
         { name: '无限恐怖', uid: 5 },
         { name: '快穿攻略', uid: 34 },
-        { name: '诸天群聊', uid: 41 ,extraUid: '50'},
+        { name: '诸天群聊', uid: 41, extraUid: '50' },
         { name: '末日', uid: 54 },
         { name: '无世界观', uid: 62 },
     ];
 
+    // 妈妈把模组分成了“小组”，并贴上了分类标签
+    const reconfigurableMods = [
+        // --- 核心规则 (Core) ---
+        { name: '骰子开', uid: 21, group: 'touzi', category: 'core', desc: '启用骰子系统' },
+        { name: '骰子关', uid: 89, group: 'touzi', category: 'core', desc: '关闭骰子系统' },
+        { name: '简单骰', uid: 61, group: 'dice', category: 'core', desc: '高成功率' },
+        { name: '困难骰', uid: 59, group: 'dice', category: 'core', desc: '标准难度' },
+        { name: '炼狱骰', uid: 60, group: 'dice', category: 'core', desc: '极低成功率' },
+             { name: '表现骰开', uid: 52, group: 'behavior', category: 'core', desc: '启用表现骰' },
+        { name: '表现骰关', uid: 53, group: 'behavior', category: 'core', desc: '关闭表现骰' },
+  { name: '选项区开', uid: 10, group: 'options', category: 'core', desc: '显示行动选项' },
+        { name: '选项区关', uid: 29, group: 'options', category: 'core', desc: '隐藏行动选项' },
+        { name: '防编造检定', uid: 84, category: 'core', desc: '防止伪造选项检定属性' },
 
-    // ✨ 妈妈把模组分成了“小组”，这样它们就不会打架了 ✨
-const reconfigurableMods = [
-    { name: '骰子开', uid: 21, group: 'touzi' },
-    { name: '骰子关', uid: 89, group: 'touzi' },
-    { name: '简单骰', uid: 61, group: 'dice' }, 
-    { name: '困难骰', uid: 59, group: 'dice' }, 
-    { name: '炼狱骰', uid: 60, group: 'dice' },
-    { name: '造物中立', uid: 19, group: 'attitude' }, 
-    { name: '造物恶意', uid: 4, group: 'attitude' }, 
-    { name: '造物崇敬', uid: 3, group: 'attitude' }, 
-    { name: '无造物', uid: 38, group: 'attitude' },
-    { name: '简单地图', uid: 15, group: 'map' }, 
-    { name: '复杂地图', uid: 66, group: 'map' }, 
-    { name: '无地图', uid: 'map-none-sentinel', group: 'map' },
-    { name: '选项区开', uid: 10, group: 'options' },
-    { name: '选项区关', uid: 29, group: 'options' },
-    { name: '私聊群聊开', uid: 55, group: 'private-chat' },
-    { name: '私聊群聊关', uid: 56, group: 'private-chat' },
-    { name: '距离合理+开', uid: 49, group: 'distance' },
-    { name: '距离合理+关', uid: 'distance-off-sentinel', group: 'distance' },
-    { name: '求生本能开', uid: 69, group: 'live' },
-    { name: '求生本能关', uid: 70, group: 'live' },
-    { name: '战斗模式开', uid: 74, group: 'battle' },
-    { name: '战斗模式关', uid: 75, group: 'battle' },
-    { name: '表现骰开', uid: 52, group: 'behavior' },
-    { name: '表现骰关', uid: 53, group: 'behavior' },
-    { name: '场景图开', uid: 45, group: 'cg' },
-    { name: '场景图关', uid: 46, group: 'cg' },
-     { name: '强调时间开', uid: 78, group: 'time' },
-    { name: '强调时间关', uid: 79, group: 'time' },
-     { name: '异步变量更新开', uid: 35,group: 'api'  },
-       { name: '异步变量更新关', uid: 40,group: 'api'  },
-    { name: 'npc立绘开', uid: 48, group: 'npccg' },
-    { name: 'npc立绘关', uid: 'npccg-off-sentinel', group: 'npccg' },
-    { name: '极简npc', uid: 44, group: 'npc-info' },
-         { name: '简单npc', uid: 72, group: 'npc-info' },
-    { name: '复杂npc', uid: 36, group: 'npc-info' },
+        // --- 游戏性 (Gameplay) ---
+        { name: '简单地图', uid: 15, group: 'map', category: 'gameplay', desc: '简单方块地图' },
+        { name: '复杂地图', uid: 66, group: 'map', category: 'gameplay', desc: '复杂资源地图' },
+        { name: '无地图', uid: 'map-none-sentinel', group: 'map', category: 'gameplay', desc: '关闭地图' },
+      
+        { name: '私聊群聊开', uid: 55, group: 'private-chat', category: 'gameplay', desc: '启用通讯系统' },
+        { name: '私聊群聊关', uid: 56, group: 'private-chat', category: 'gameplay', desc: '关闭通讯系统' },
+        { name: '战斗模式开', uid: 74, group: 'battle', category: 'gameplay', desc: '启用回合制战斗' },
+         { name: '造物中立', uid: 19, group: 'attitude', category: 'gameplay', desc: '造物态度中立' },
+        { name: '造物恶意', uid: 4, group: 'attitude', category: 'gameplay', desc: '造物充满敌意' },
+        { name: '造物崇敬', uid: 3, group: 'attitude', category: 'gameplay', desc: '你是造物主' },
+        { name: '无造物', uid: 38, group: 'attitude', category: 'gameplay', desc: '不再出现造物' },
+ { name: '人外增强', uid: 37, category: 'gameplay', desc: '有造物的时候才开。非人角色增强' },
+        { name: '战斗模式关', uid: 75, group: 'battle', category: 'gameplay', desc: '自由叙事战斗' },
+      { name: '求生本能开', uid: 69, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
+        { name: '求生本能关', uid: 70, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
 
- 
-    { name: '真实MOD', uid: 12 }, 
-    { name: '困难MOD', uid: 16 },
-    { name: '称号系统', uid: 51 }, 
-    { name: '人外增强', uid: 37 }, 
-    { name: '资源消耗', uid: 58 },
-    { name: '分阶段好感', uid: 65 },
-    { name: '弹幕', uid: 85 },
-    { name: 'bgm', uid: 88 },
-    { name: '特殊日期', uid: 42 },
-        { name: '根基体系', uid: 63 },
-];
+        { name: '资源消耗', uid: 58, category: 'gameplay', desc: '启用体力/物资消耗' },
+        { name: '分阶段好感', uid: 65, category: 'gameplay', desc: '好感度分级系统' },
+        { name: '称号系统', uid: 51, category: 'gameplay', desc: '启用玩家称号' },
 
- function createWorldviewItems() {
-        worldviewContainer.innerHTML = '';
-        worldviewMods.forEach(mod => {
-            const item = document.createElement('div');
-            item.className = 'reconfig-mod-item';
-            const radioId = `reconfig-world-${mod.uid}`;
-            item.innerHTML = `
-                <input type="radio" id="${radioId}" name="worldview-selection" data-uid="${mod.uid}" data-name="${mod.name}" ${mod.extraUid ? `data-extra-uid="${mod.extraUid}"` : ''}>
-                <label for="${radioId}">${mod.name}</label>
-            `;
-            worldviewContainer.appendChild(item);
+        // --- 视觉与表现 (Visual) ---
+   
+        { name: '场景图开', uid: 45, group: 'cg', category: 'visual', desc: '自动生成环境配图' },
+        { name: '场景图关', uid: 46, group: 'cg', category: 'visual', desc: '纯文字模式' },
+        { name: 'npc立绘开', uid: 48, group: 'npccg', category: 'visual', desc: '自动添加显示角色立绘' },
+        { name: 'npc立绘关', uid: 'npccg-off-sentinel', group: 'npccg', category: 'visual', desc: '不添加角色立绘' },
+        { name: '弹幕', uid: 85, category: 'visual', desc: '启用直播间弹幕' },
+        { name: 'bgm', uid: 88, category: 'visual', desc: '启用背景音乐' },
 
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                worldviewContainer.querySelectorAll('input').forEach(rb => rb.checked = false);
-                worldviewContainer.querySelectorAll('.reconfig-mod-item').forEach(it => it.classList.remove('is-active'));
+        // --- 系统设定 (System) ---
+        { name: '异步变量', uid: 35, group: 'api', category: 'system', desc: '额外调用一次api专门更新变量' },
+        { name: '同步变量', uid: 40, group: 'api', category: 'system', desc: '正文和变量在同一个回复中' },
+        { name: '强调时间开', uid: 78, group: 'time', category: 'system', desc: '小总结显示时间地点信息，同时给正文自动增加时间戳' },
+        { name: '强调时间关', uid: 79, group: 'time', category: 'system', desc: '没有以上功能' },
+        { name: '极简npc', uid: 44, group: 'npc-info', category: 'system', desc: '极少NPC信息' },
+        { name: '简单npc', uid: 72, group: 'npc-info', category: 'system', desc: '标准NPC信息' },
+        { name: '复杂npc', uid: 36, group: 'npc-info', category: 'system', desc: '详细NPC信息' },
+        { name: '真实MOD', uid: 12, category: 'system', desc: '启用真实模式' },
+        { name: '困难MOD', uid: 16, category: 'system', desc: '启用困难模式' },
+       
+        { name: '特殊日期', uid: 42, category: 'system', desc: '自动记录和提醒节日与特殊事件' },
+        { name: '根基体系', uid: 63, category: 'system', desc: '启用血统、改造、功法' },
+    ];
 
-                const currentRadio = item.querySelector('input');
-                currentRadio.checked = true;
-                item.classList.add('is-active');
-            });
-        });
-    }
+    // 定义分类元数据
+     const CATEGORIES = [
+        { id: 'world', name: '世界观' },
+        { id: 'core', name: '核心规则' },
+        { id: 'gameplay', name: '游戏性' },
+        { id: 'visual', name: '视觉表现' },
+        { id: 'system', name: '系统设定' },
+    ];
+  // 3. 全新重写的渲染函数：支持分组逻辑
     function createModItems() {
-        container.innerHTML = '';
-        reconfigurableMods.forEach(mod => {
-            const item = document.createElement('div');
-            item.className = 'reconfig-mod-item';
-            const checkboxId = `reconfig-mod-${mod.uid}`;
+        sidebar.innerHTML = '';
+        contentContainer.innerHTML = '';
 
-            item.innerHTML = `
-                <input type="checkbox" id="${checkboxId}" data-uid="${mod.uid}" ${mod.group ? `data-group="${mod.group}"` : ''}>
-                <label for="${checkboxId}">${mod.name}</label>
-            `;
+        // 生成分类结构
+        CATEGORIES.forEach((cat, index) => {
+            // --- 侧边栏按钮 (纯文字) ---
+            const btn = document.createElement('button');
+            btn.className = `reconfig-tab-btn ${index === 0 ? 'active' : ''}`;
+            btn.textContent = cat.name; // 只显示文字
+            btn.onclick = (e) => switchTab(e, cat.id);
+            sidebar.appendChild(btn);
 
-            // 为特殊模组添加额外数据
-            const checkbox = item.querySelector('input');
-            if (mod.name === '真实MOD') checkbox.dataset.extraUid = '33';
-            if (mod.name === '简单地图') checkbox.dataset.extraUid = '25,26';
-            if (mod.name === '复杂地图') checkbox.dataset.extraUid = '25,26';
-            if (mod.name === '分阶段好感') checkbox.dataset.extraUid = '64';
-if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
-            container.appendChild(item);
+            // --- 内容区块 ---
+            const section = document.createElement('div');
+            section.id = `section-${cat.id}`;
+            section.className = `reconfig-section ${index === 0 ? 'active' : ''}`;
 
-            item.addEventListener('click', (event) => {
-                event.preventDefault(); // 妈妈来完全接管点击，防止浏览器自己捣乱
-                const currentCheckbox = item.querySelector('input');
-                const isChecking = !currentCheckbox.checked;
+            // 标题也去掉图标
+            section.innerHTML = `<h3 class="reconfig-section-title">${cat.name}</h3>`;
 
-                if (currentCheckbox.dataset.group) {
-                    // 这是选项组，像收音机按钮一样
-                    container.querySelectorAll(`input[data-group="${currentCheckbox.dataset.group}"]`).forEach(cb => {
-                        cb.checked = false;
-                        cb.closest('.reconfig-mod-item').classList.remove('is-active');
+            // 这里不再直接放 grid，而是作为容器
+            const containerDiv = document.createElement('div');
+            containerDiv.id = `container-${cat.id}`;
+            section.appendChild(containerDiv);
+            contentContainer.appendChild(section);
+        });
+
+        // --- 渲染世界观 (作为单独的一个大组) ---
+        const worldContainer = document.getElementById('container-world');
+        if (worldContainer) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'reconfig-group-wrapper';
+            // wrapper.innerHTML = `<div class="reconfig-group-title">选择一个世界观</div>`; // 可选：加标题
+
+            // 这里的 ID 用于后续查找，保持兼容
+            wrapper.id = 'grid-world';
+
+            worldviewMods.forEach(mod => {
+                const card = createOptionCard(mod.name, '选择此世界观', `worldview-selection`, mod.uid, true);
+                const input = card.querySelector('input');
+                if (mod.extraUid) input.dataset.extraUid = mod.extraUid;
+
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    wrapper.querySelectorAll('.reconfig-option-card').forEach(c => {
+                        c.classList.remove('active');
+                        c.querySelector('input').checked = false;
                     });
-                    currentCheckbox.checked = true;
-                    item.classList.add('is-active');
+                    card.classList.add('active');
+                    input.checked = true;
+                    currentWorldviewDisplay.textContent = mod.name;
+                });
+                wrapper.appendChild(card);
+            });
+            worldContainer.appendChild(wrapper);
+        }
+
+        // --- 渲染普通模组 (核心分组逻辑) ---
+        // 我们需要按 Category -> Group 的层级来渲染
+        CATEGORIES.forEach(cat => {
+            if (cat.id === 'world') return; // 跳过世界观
+
+            const targetContainer = document.getElementById(`container-${cat.id}`);
+            if (!targetContainer) return;
+
+            // 1. 筛选出当前分类的所有模组
+            const modsInCat = reconfigurableMods.filter(m => m.category === cat.id);
+
+            // 2. 按 group 属性进行归类
+            const groups = {}; // Key: groupName, Value: [mods]
+            const singles = []; // 没有 group 的模组
+
+            modsInCat.forEach(mod => {
+                if (mod.group) {
+                    if (!groups[mod.group]) groups[mod.group] = [];
+                    groups[mod.group].push(mod);
                 } else {
-                    // 这是普通的开关
-                    currentCheckbox.checked = isChecking;
-                    item.classList.toggle('is-active', isChecking);
+                    singles.push(mod);
                 }
             });
+
+            // 3. 先渲染成组的模组 (每个组一个 wrapper)
+            Object.keys(groups).forEach(groupName => {
+                const groupMods = groups[groupName];
+                const wrapper = document.createElement('div');
+                wrapper.className = 'reconfig-group-wrapper';
+
+                // 可选：如果需要显示组名，可以在这里加。目前我们直接渲染选项。
+                // wrapper.innerHTML = `<div class="reconfig-group-title">设置组: ${groupName}</div>`;
+
+                groupMods.forEach(mod => {
+                    const card = createAndBindCard(mod);
+                    wrapper.appendChild(card);
+                });
+                targetContainer.appendChild(wrapper);
+            });
+
+            // 4. 再渲染单独的模组 (为了整齐，也可以把它们放在一个通用的 wrapper 里，或者直接放)
+            if (singles.length > 0) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'reconfig-group-wrapper'; // 复用样式，或者新建一个 'reconfig-singles-wrapper'
+                singles.forEach(mod => {
+                    const card = createAndBindCard(mod);
+                    wrapper.appendChild(card);
+                });
+                targetContainer.appendChild(wrapper);
+            }
         });
     }
 
- async function loadCurrentSettings(isRetry = false) {
+    // 辅助函数：创建并绑定事件 (提取出来减少重复代码)
+    function createAndBindCard(mod) {
+        const card = createOptionCard(mod.name, mod.desc || '', mod.group, mod.uid, false);
+        const input = card.querySelector('input');
+
+        // 特殊UID处理
+        if (mod.name === '真实MOD') input.dataset.extraUid = '33';
+        if (mod.name === '简单地图') input.dataset.extraUid = '25,26';
+        if (mod.name === '复杂地图') input.dataset.extraUid = '25,26';
+        if (mod.name === '分阶段好感') input.dataset.extraUid = '64';
+        if (mod.name === '特殊日期') input.dataset.extraUid = '73';
+
+        card.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (mod.group) {
+                // 组逻辑：找到当前 wrapper 内的所有同组 input
+                // 注意：这里我们利用 closest('.reconfig-group-wrapper') 来限定范围，比全局搜索更安全
+                const wrapper = card.closest('.reconfig-group-wrapper');
+                const allInGroup = wrapper.querySelectorAll(`input[data-group="${mod.group}"]`);
+
+                allInGroup.forEach(rb => {
+                    rb.checked = false;
+                    rb.closest('.reconfig-option-card').classList.remove('active');
+                });
+                input.checked = true;
+                card.classList.add('active');
+            } else {
+                // 开关逻辑
+                input.checked = !input.checked;
+                card.classList.toggle('active', input.checked);
+            }
+        });
+        return card;
+    }
+    // 辅助函数：创建卡片 HTML
+    function createOptionCard(title, desc, group, uid, isWorldview) {
+        const div = document.createElement('div');
+        div.className = 'reconfig-option-card';
+
+        const input = document.createElement('input');
+        input.type = isWorldview ? 'radio' : 'checkbox';
+        input.dataset.uid = uid;
+        input.dataset.name = title;
+        if (group) input.dataset.group = group;
+        if (isWorldview) input.name = 'worldview-selection';
+        input.style.display = 'none';
+
+        div.appendChild(input);
+
+        div.innerHTML += `
+            <div class="reconfig-option-info">
+                <span class="reconfig-option-name">${title}</span>
+                <span class="reconfig-option-desc">${desc}</span>
+            </div>
+            <div class="reconfig-toggle"></div>
+        `;
+        return div;
+    }
+
+    // 辅助函数：切换标签页
+    function switchTab(event, catId) {
+        document.querySelectorAll('.reconfig-tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        document.querySelectorAll('.reconfig-section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById(`section-${catId}`).classList.add('active');
+    }
+
+    async function loadCurrentSettings(isRetry = false) {
         try {
             const [firstMessage] = await TavernHelper.getChatMessages(0, { include_swipes: false });
             if (!firstMessage || !firstMessage.message) {
-                 throw new Error("这是一个全新的开始，还没有记忆呢。");
+                throw new Error("这是一个全新的开始，还没有记忆呢。");
             }
 
             const match = firstMessage.message.match(/<世界书条目>(.*?)<\/世界书条目>/);
 
             if (!match && !isRetry) {
-                
                 console.log("💖 哎呀，妈妈没找到我们的世界书，别怕，我来帮你创建一个默认的。");
                 feedbackMsg.textContent = "未找到配置，已为您创建默认设定，请检查并调整。";
                 feedbackMsg.style.opacity = '1';
 
-              const defaultUids = "1,38,10,53,45,48,55,59,70,75,77,79,72,21,6";
+                const defaultUids = "1,38,10,53,45,48,55,59,70,75,77,79,72,21,6";
                 const newWorldbookTag = `<世界书条目>${defaultUids}</世界书条目>`;
-
                 const newMessage = `${firstMessage.message.trim()}\n\n${newWorldbookTag}`;
 
                 await setChatMessages([{ message_id: 0, message: newMessage }], { refresh: 'none' });
-               await insertOrAssignVariables({bookItemSettings: defaultUids}, {type: 'chat'});
-                await loadWorldbookSettingsFromChat(); // 让世界书生效
+                await insertOrAssignVariables({ bookItemSettings: defaultUids }, { type: 'chat' });
+                await loadWorldbookSettingsFromChat();
 
-                // 再次尝试加载，这次肯定能找到了
                 await loadCurrentSettings(true);
                 return;
             } else if (!match && isRetry) {
-                // 如果重试了还是失败，那问题就比较奇怪了
                 throw new Error("创建默认世界书后仍然读取失败，妈妈也很困惑。");
             }
 
@@ -42145,24 +42545,30 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
 
             // --- 更新世界观显示 ---
             let worldFound = false;
-            worldviewContainer.querySelectorAll('.reconfig-mod-item').forEach(item => {
-                const radio = item.querySelector('input');
-                const uid = parseInt(radio.dataset.uid, 10);
-                const isActive = currentUids.has(uid);
-                radio.checked = isActive;
-                item.classList.toggle('is-active', isActive);
-                if (isActive) {
-                    currentWorldviewDisplay.textContent = radio.dataset.name;
-                    worldFound = true;
-                }
-            });
+            const worldGrid = document.getElementById('grid-world');
+            if (worldGrid) {
+                worldGrid.querySelectorAll('.reconfig-option-card').forEach(card => {
+                    const input = card.querySelector('input');
+                    const uid = parseInt(input.dataset.uid, 10);
+                    const isActive = currentUids.has(uid);
+
+                    input.checked = isActive;
+                    card.classList.toggle('active', isActive);
+
+                    if (isActive) {
+                        currentWorldviewDisplay.textContent = input.dataset.name;
+                        worldFound = true;
+                    }
+                });
+            }
             if (!worldFound) currentWorldviewDisplay.textContent = '未知';
 
             // --- 更新模组显示 ---
-            container.querySelectorAll('.reconfig-mod-item').forEach(item => {
-                const checkbox = item.querySelector('input');
-                const uid = checkbox.dataset.uid;
+            document.querySelectorAll('.reconfig-option-card:not(#grid-world .reconfig-option-card)').forEach(card => {
+                const input = card.querySelector('input');
+                const uid = input.dataset.uid;
                 let isActive = false;
+
                 if (uid === 'map-none-sentinel') {
                     isActive = !currentUids.has(15) && !currentUids.has(66);
                 } else if (uid === 'distance-off-sentinel') {
@@ -42172,8 +42578,9 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
                 } else {
                     isActive = currentUids.has(parseInt(uid, 10));
                 }
-                checkbox.checked = isActive;
-                item.classList.toggle('is-active', isActive);
+
+                input.checked = isActive;
+                card.classList.toggle('active', isActive);
             });
 
         } catch (error) {
@@ -42183,7 +42590,7 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
         }
     }
 
-  async function applyNewSettings() {
+    async function applyNewSettings() {
         applyBtn.disabled = true;
         applyBtn.textContent = '应用中...';
 
@@ -42198,7 +42605,6 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             const originalUids = new Set(match[1].split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
 
             const allWorldviewUids = new Set(worldviewMods.map(mod => mod.uid));
-            // 把世界观的 extraUid 也加入管理范围
             worldviewMods.forEach(mod => {
                 if (mod.extraUid) {
                     mod.extraUid.split(',').forEach(extra => allWorldviewUids.add(parseInt(extra, 10)));
@@ -42207,39 +42613,35 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
 
             const allManageableUids = new Set();
             reconfigurableMods.forEach(mod => {
-                 if(mod.uid !== 'map-none-sentinel' && mod.uid !== 'distance-off-sentinel' && mod.uid !== 'npccg-off-sentinel') {
-                     allManageableUids.add(parseInt(mod.uid));
-                 }
+                if (mod.uid !== 'map-none-sentinel' && mod.uid !== 'distance-off-sentinel' && mod.uid !== 'npccg-off-sentinel') {
+                    allManageableUids.add(parseInt(mod.uid));
+                }
             });
-            // 把extraUids也加进来
-            allManageableUids.add(33); allManageableUids.add(25); allManageableUids.add(26); allManageableUids.add(64);allManageableUids.add(73);
+            allManageableUids.add(33); allManageableUids.add(25); allManageableUids.add(26); allManageableUids.add(64); allManageableUids.add(73);
 
-            // 保留那些我们不管理的UID
             const preservedUids = new Set([...originalUids].filter(uid =>
                 !allManageableUids.has(uid) && !allWorldviewUids.has(uid)
             ));
 
             const newUidsFromPanel = new Set();
 
-            // --- 添加新的世界观UID ---
-            const selectedWorldview = worldviewContainer.querySelector('input[name="worldview-selection"]:checked');
-            if (selectedWorldview) {
-                newUidsFromPanel.add(parseInt(selectedWorldview.dataset.uid, 10));
-                // 添加世界观的 extraUid
-                if (selectedWorldview.dataset.extraUid) {
-                    selectedWorldview.dataset.extraUid.split(',').forEach(extra => newUidsFromPanel.add(parseInt(extra, 10)));
+            // --- 获取新的世界观UID ---
+            const selectedWorldviewInput = document.querySelector('#grid-world input:checked');
+            if (selectedWorldviewInput) {
+                newUidsFromPanel.add(parseInt(selectedWorldviewInput.dataset.uid, 10));
+                if (selectedWorldviewInput.dataset.extraUid) {
+                    selectedWorldviewInput.dataset.extraUid.split(',').forEach(extra => newUidsFromPanel.add(parseInt(extra, 10)));
                 }
             } else {
-                // 如果因为某种原因没有选上世界观,就从原来的UID里找一个,保证世界观不断档
                 const oldWorldUid = [...originalUids].find(uid => allWorldviewUids.has(uid));
                 if (oldWorldUid) newUidsFromPanel.add(oldWorldUid);
-                else newUidsFromPanel.add(1); // 最终备用方案:主神
+                else newUidsFromPanel.add(1);
             }
 
-            // --- 添加新的模组UID ---
-            container.querySelectorAll('.reconfig-mod-item input:checked').forEach(checkbox => {
+            // --- 获取新的模组UID ---
+            document.querySelectorAll('.reconfig-option-card:not(#grid-world .reconfig-option-card) input:checked').forEach(checkbox => {
                 const uidValue = checkbox.dataset.uid;
-                if(uidValue !== 'map-none-sentinel' && uidValue !== 'distance-off-sentinel' && uidValue !== 'npccg-off-sentinel'){
+                if (uidValue !== 'map-none-sentinel' && uidValue !== 'distance-off-sentinel' && uidValue !== 'npccg-off-sentinel') {
                     newUidsFromPanel.add(parseInt(uidValue, 10));
                     if (checkbox.dataset.extraUid) {
                         checkbox.dataset.extraUid.split(',').forEach(extra => newUidsFromPanel.add(parseInt(extra, 10)));
@@ -42248,19 +42650,17 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             });
 
             const finalUids = Array.from(new Set([...preservedUids, ...newUidsFromPanel]));
-            const  uidString= finalUids.filter(id => !isNaN(id)).sort((a, b) => a - b).join(',');
+            const uidString = finalUids.filter(id => !isNaN(id)).sort((a, b) => a - b).join(',');
             const newWorldbookTag = `<世界书条目>${uidString}</世界书条目>`;
             const newMessage = content.replace(/<世界书条目>.*?<\/世界书条目>/, newWorldbookTag);
 
             await setChatMessages([{ message_id: 0, message: newMessage }], { refresh: 'none' });
-             await insertOrAssignVariables({bookItemSettings: uidString}, {type: 'chat'});
+            await insertOrAssignVariables({ bookItemSettings: uidString }, { type: 'chat' });
             await loadWorldbookSettingsFromChat();
 
             feedbackMsg.textContent = "设置已更新！";
-            
             feedbackMsg.style.opacity = '1';
             setTimeout(() => {
-           
                 modal.style.display = 'none';
                 feedbackMsg.style.opacity = '0';
             }, 1200);
@@ -42274,7 +42674,8 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
             applyBtn.textContent = '应用更改';
         }
     }
-   // 事件绑定
+
+    // 事件绑定
     openBtn.addEventListener('click', () => {
         modal.style.display = 'flex';
         feedbackMsg.style.opacity = '0';
@@ -42285,7 +42686,7 @@ if (mod.name === '特殊日期') checkbox.dataset.extraUid = '73';
     modal.addEventListener('click', (event) => { if (event.target === modal) modal.style.display = 'none'; });
     applyBtn.addEventListener('click', applyNewSettings);
 
-    createWorldviewItems();
+    // 初始化渲染
     createModItems();
 }
 
@@ -46954,6 +47355,8 @@ card.onclick = function() {
  
         // --- 页面交互和布局逻辑 ---
         function setupUI(content) {
+             
+            content = content.replace(/<!--[\s\S]*?-->/gs, '');
       // 新代码：接受以数字和点开头的行 OR 任何非空行
       const options = content.split('\n').filter(line => line.trim() && (/^\d+\.\s*/.test(line.trim()) || !/^\s*$/.test(line.trim())));
             // const options = content.split('\n').filter(line => line.trim() && /^\d+\./.test(line.trim()));
@@ -53016,9 +53419,8 @@ const config = {
     }
     function updateToggleState(isEnabled) {
         els.toggle.dataset.state = isEnabled ? 'on' : 'off';
-        els.toggle.textContent = isEnabled ? '开启' : '关闭';
-        els.toggle.style.background = isEnabled ? 'var(--primary-color)' : 'transparent';
-        els.toggle.style.color = isEnabled ? 'var(--background-color)' : 'var(--text-color)';
+        // els.toggle.textContent = isEnabled ? '开启' : '关闭';
+    
         els.container.style.display = isEnabled ? 'block' : 'none';
     }
 
