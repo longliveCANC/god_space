@@ -205,9 +205,9 @@
     "id": "x-mod-物品技能图标评论",
     "name": "给物品技能加上图标和评论",
     "author": "assa",
-    "version": "1.0",
+    "version": "1.1",
     "tags": ["物品格式"],
-    "description": "挂载该世界书后，物品和技能会自带emoji和一个对物品的comment。适配所有我创意工坊的物品界面美化mod。非覆盖式，直接挂上或者改进你的自定义格式里就行。",
+    "description": "[1222肘击了哈基米可能会出现嵌套字段的bug]挂载该世界书后，物品和技能会自带emoji和一个对物品的comment。适配所有我创意工坊的物品界面美化mod。非覆盖式，直接挂上或者改进你的自定义格式里就行。",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-物品技能图标评论.json",
     "previewImage": ""
