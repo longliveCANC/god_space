@@ -314,6 +314,10 @@
                 border-radius: 4px; margin-right: 8px; font-size: 1.2em;
                 transition: 0.3s;
             }
+              @media (max-width: 768px) {
+             #mod07-entry-btn {
+               left:20%;
+            }   
             #mod07-entry-btn:hover { background: var(--m7-primary); color: #000; }
 
             /* 全屏容器 */
