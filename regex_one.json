@@ -15035,7 +15035,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.2';
+let current_game_version = '3.5.3';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -32721,7 +32721,7 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
         // 6. 启用第二 API 时的处理 (原有逻辑)
         console.log("[Nova] 使用第二API (sendApiRequest) 发送请求");
         const result = await sendApiRequest(promptText, {
-            max_tokens: 15000,
+            max_tokens: 30000,
             temperature: 0.8,
             top_p: 0.95
         });
@@ -33857,12 +33857,10 @@ let backupData = {};
                  await saveHistory();
  if(noBackup === "false"){
                  // B. 保存快照 (使用刚才冻结好的 snapshotData)
-                 if (isFirstSend) {
-                      
-                 } else {
+            
                       console.log(`[Nova的记忆保险箱] (后台) 保存常规快照 ID:${turnId}`);
                       await saveSnapshot(turnId, snapshotData);
-                 }
+            
 
                  // C. 保存 IndexedDB 备份
                  await saveSessionBackupToDB(backupData);
