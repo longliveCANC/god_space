@@ -15035,7 +15035,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.4';
+let current_game_version = '3.5.5';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -15065,6 +15065,7 @@ let is_restore_prompt = "true";
 let weneedshop = "false";
 let is_show_notifications = "true";
 let ifScanMemory = "false";
+let is_worldbook_lock = "false";
 let dice_use = "true";
 let bookItemSettings = null;
 let batches = 1;
@@ -33577,7 +33578,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
         }else{
                 continuationText = ``;
          const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
-          const thetext = `[\n\n\nDone.\n\n\n不输出任何正文。接收memory更新任务：遵循user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循全部更新规则。将以下文本当作'本轮输出的正文'，通读一遍，确保不输出任何新的正文，只专注memory更新: \n\n\n玩家输入:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n请直接从<statusAnalyze>开始分析并更新。summary的更新是重中之重，不得遗忘！]`;
+          const thetext = `[\n\n\nDone.\n\n\n不输出任何正文。接收memory更新任务：遵循user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循全部更新规则。将以下文本当作'本轮输出的正文'，通读一遍，确保不输出任何新的正文，只专注memory更新: \n\n\n玩家输入:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n将以上文本当作'本轮输出的正文'，通读一遍，确保不输出任何新的正文，用正确的指令进行memory的更新。请直接从<statusAnalyze>开始分析并更新。summary的更新是重中之重，不得遗忘！]`;
 
      
           // 1. 使用 await 来等待异步的提示词组装函数完成
@@ -39771,6 +39772,7 @@ enable_preset_2nd_pass = String(chatdata.enable_preset_2nd_pass||'true');
 noBackup = String(chatdata.is_no_backup||'false');
 ifScanMemory = String(chatdata.if_scan_memory||'false');
 dice_use= String(chatdata.dice_use||'true');
+is_worldbook_lock= String(chatdata.is_worldbook_lock||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
@@ -39882,8 +39884,13 @@ if (!worldAttitudeData || !characterStatusData) {
 userName = currentGameData.user.name || '用户';
      
         populateGeneralData(currentGameData, assaSettingsData,playCharacterData);
-     
+     if(GameAPI.populateCharacterPage){
+ GameAPI.populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
+     }else{
+         setupAllUpgradeListeners();
         populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
+     }
+       
 
    // 3. 缓存地图数据
         if (assaSettingsData && assaSettingsData.map) {
@@ -39896,11 +39903,8 @@ renderMap(assaSettingsData.map, updateDetails.mapUpdates);
              console.warn("未能找到地图数据 (assa_data.map)");
              renderMap(null, []);
         }
-
  
-     
-
-       setupAllUpgradeListeners();
+      
 
         // ========== 新增：成就系统UI交互 (开始) ==========
         const achievementBtn = document.getElementById('achievements-btn');
@@ -44684,6 +44688,10 @@ function renderNestedData(container, data, parentPath = '', rootTab = '', hideFa
 }
 
 function renderWorldBook() {
+    if(is_worldbook_lock === "true"){
+showNovaAlert("识小球不会渲染了");
+return;
+    }
     const { currentTab, currentPage, itemsPerPage } = worldBookState;
     const displayArea = document.getElementById('book-display-area');
     const pageInfo = document.getElementById('book-page-info');
@@ -54234,7 +54242,14 @@ window.GameAPI = {
         }
     },
  
-
+  populateCharacterPage: function(...args) {
+ 
+        if (typeof populateCharacterPage === 'function') {
+            return populateCharacterPage(...args);
+        } else {
+            console.error("populateCharacterPage 函数未定义");
+        }
+    } ,
   showUpdateNotification: function(...args) {
  
         if (typeof showUpdateNotification === 'function') {
