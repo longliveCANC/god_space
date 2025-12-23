@@ -317,7 +317,7 @@
               @media (max-width: 768px) {
              #mod07-entry-btn {
                left:20%;
-            }   
+            }   }
             #mod07-entry-btn:hover { background: var(--m7-primary); color: #000; }
 
             /* 全屏容器 */
