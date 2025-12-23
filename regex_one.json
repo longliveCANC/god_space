@@ -22092,7 +22092,7 @@ async function handleModeSelection() {
         const bgmvalue = getSafeValue('bgm-mode', 'on');
            const apivalue = getSafeValue('doubleapi-mode', 'off');
 
-                 const doublememoryalue = getSafeValue('doublememory-mode', 'on');
+                 const doublememoryalue = getSafeValue('doublememory-mode', 'off');
 
         // HTML: value="52" checked (对应 id="behavior-on")
         const behaviorValue = getSafeValue('behavior-mode', '52');
