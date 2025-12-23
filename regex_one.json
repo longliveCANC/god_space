@@ -9054,7 +9054,7 @@ input:checked + .slider:before {
 }
 
 /* --- 温柔的提示框样式 (可选) --- */
-.nova-alert {
+ .nova-alert {
     position: fixed;
     top: 20px;
     left: 50%;
@@ -9066,10 +9066,14 @@ input:checked + .slider:before {
     opacity: 1;
     transition: opacity 0.5s ease, transform 0.5s ease;
     z-index: 999999999;
+    text-shadow: 
+        0 0 3px rgba(0, 0, 0, 0.9),
+        0 0 5px rgba(0, 0, 0, 0.7),
+        1px 1px 2px rgba(255, 255, 255, 0.5);
 }
 .nova-alert.info {
     background-color: var(--primary-color);
-    
+     
 }
 .nova-alert.danger {
     background-color: var(--danger-color);
