@@ -369,7 +369,7 @@
     "id": "mod10",
     "name": "astro润色功能兼容",
     "author": "assa",
-    "version": "1.0",
+    "version": "1.1",
     "tags": ["功能脚本","astro兼容"],
     "description": "[需版本是3.5.4及其以上][润色内容会弹窗显示]astro最新版的润色需要关闭原生的润色2正则，然后开启这个脚本，来实现在同层中也能使用润色功能。开启该脚本后就不用管了。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod10.js",
