@@ -24067,7 +24067,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
                 if (messageMatch) {
                     const sender = messageMatch[1].trim();
                     const content = messageMatch[2].trim();
-                    groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+                    groupChatHtml += worldHelper.renderGroupChatToHtml(sender, content, userNickname);
                 }
             }
         }
@@ -26744,7 +26744,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
     // 步骤2.1：解析 <msg> 标签并替换为占位符
     let contentWithMsgPlaceholder = protectedHtmlContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
         const userNickname = currentGameData?.user?.nick_name || '你';
-        const renderedMsgHtml = renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, is_from_render);
+        const renderedMsgHtml = worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, is_from_render);
         const placeholder = `{{MSGCONTENTPLACEHOLDER${msgPlaceholderIndex}}}`;
         msgPlaceholders[placeholder] = renderedMsgHtml;
         msgPlaceholderIndex++;
@@ -26773,7 +26773,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
                 if (messageMatch) {
                     const sender = messageMatch[1].trim();
                     const content = messageMatch[2].trim();
-                    groupChatHtml += renderGroupChatToHtml(sender, content, userNickname);
+                    groupChatHtml += worldHelper.renderGroupChatToHtml(sender, content, userNickname);
                 }
             }
         }
@@ -33582,7 +33582,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
      
           // 1. 使用 await 来等待异步的提示词组装函数完成
             const promptPayload = await assembleComplexPrompt({ continuationText: thetext });
-                   const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
+              const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
             
             localStorage.setItem('last_captured_prompt', prompts_be_sent);
             // 检查 promptPayload 是否有效
@@ -53078,9 +53078,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // 尝试从localStorage或全局变量获取提示词
-            const promptData = (typeof prompts_be_sent !== 'undefined' && prompts_be_sent) 
-                ? prompts_be_sent 
-                : localStorage.getItem('last_captured_prompt');
+            const promptData =  localStorage.getItem('last_captured_prompt');
             
             if (promptData) {
                 // ===== 新增：处理转义字符 =====
