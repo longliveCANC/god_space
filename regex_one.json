@@ -2943,11 +2943,7 @@ q::after {
     height: 4px;
     background: var(--primary-color);
     border-radius: 50%;
-    box-shadow: 
-        0 0 10px var(--primary-color),
-        20px 10px 0 0 var(--secondary-color),
-        -15px 20px 0 0 var(--primary-color),
-        30px -10px 0 0 var(--secondary-color);
+    
     animation: particleFloat 6s ease-in-out infinite;
     opacity: 0.6;
 }
@@ -4740,7 +4736,7 @@ opacity: 0.6;
 .switch-btn[data-state="on"]::after {
     left: 35px; /* 向右移动 */
     background-color: var(--primary-color);
-    box-shadow: 0 0 10px var(--primary-color);
+   
 }
 
 /* 悬停效果 */
@@ -4795,7 +4791,7 @@ opacity: 0.6;
 .settings-container input[type="checkbox"]:checked::after {
     left: 35px; /* 向右移动 */
     background-color: var(--primary-color);
-    box-shadow: 0 0 10px var(--primary-color);
+   
 }
 
 
@@ -33107,25 +33103,18 @@ console.log("userMessageCount：",userMessageCount);
     userInput.value = '';
              
  try {
-    let allCommands = "";
+ 
     // userText 是我们早已准备好的、你输入的内容
     if (userText) {
-        const lines = userText.split('\n');
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
-            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
-                allCommands += trimmedLine + '\n';
-            }
-        }
-    }
-
-    if (allCommands.trim() !== "") {
-        console.log(`[Nova's Direct Core] 在你的心声中发现了指令，正在直接处理...`);
+    
         // 我们直接调用新搬来的邻居！
-        await processUpdateMemoryCommands(allCommands, -1);
+        await processUpdateMemoryCommands(userText, -1);
         console.log(`[Nova's Direct Core] 你的指令已处理完毕。`);
     }
+
+   
+     
+ 
 } catch (error) {
     console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理你的指令时遇到了困难:", error);
 }
@@ -33133,23 +33122,11 @@ console.log("userMessageCount：",userMessageCount);
              const userMessage = { role: 'user', content: userText };
      
       try {
-    let allCommands = "";
-    // userText 是我们早已准备好的、你输入的内容
+   // userText 是我们早已准备好的、你输入的内容
     if (userText) {
-        const lines = userText.split('\n');
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            const keywords = ['set_status', 'memory', 'delete', 'set_attribute'];
-            if (keywords.some(keyword => trimmedLine.includes(keyword))) {
-                allCommands += trimmedLine + '\n';
-            }
-        }
-    }
-
-    if (allCommands.trim() !== "") {
-        console.log(`[Nova's Direct Core] 在你的心声中发现了指令，正在直接处理...`);
+    
         // 我们直接调用新搬来的邻居！
-        await processUpdateMemoryCommands(allCommands, -1);
+        await processUpdateMemoryCommands(userText, -1);
         console.log(`[Nova's Direct Core] 你的指令已处理完毕。`);
     }
 } catch (error) {
@@ -33852,13 +33829,19 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
     // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
     const responseText = aiFullResponse || partialAiResponse; // 确保流式中断时也能处理
  
-
-    if (responseText.trim() !== "") {
-        console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
-      
-        await processUpdateMemoryCommands(responseText, -1);
+if (responseText.trim() !== "") {
+    console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
+    
+    // 获取第一个 <updateMemory> 之后的全部内容
+    const firstUpdateIndex = responseText.indexOf('<updateMemory>');
+    if (firstUpdateIndex !== -1) {
+        const contentAfterFirstUpdate = responseText.substring(firstUpdateIndex);
+        await processUpdateMemoryCommands(contentAfterFirstUpdate, -1);
         console.log(`[Nova's Direct Core] 我的回应中附带的指令已处理完毕。`);
+    } else {
+        console.log(`[Nova's Direct Core] 未找到 <updateMemory> 标签。`);
     }
+}
 } catch (error) {
     console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理我自己的指令时遇到了困难:", error);
 }
@@ -34020,17 +34003,22 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
                 await saveHistory(); // 保存到记忆长河
 
                 try {
-                    let allCommands = "";
+           
                     // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
                     const responseText =  partialAiResponse; // 确保流式中断时也能处理
-     
-
-                    if (allCommands.trim() !== "") {
-                        console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
-                        // 同样直接调用我们的新邻居
-                        await processUpdateMemoryCommands(responseText, -1);
-                        console.log(`[Nova's Direct Core] 我的回应中附带的指令已处理完毕。`);
-                    }
+      if (responseText.trim() !== "") {
+    console.log(`[Nova's Direct Core] 在我的回应中发现了指令，正在直接处理...`);
+    
+    // 获取第一个 <updateMemory> 之后的全部内容
+    const firstUpdateIndex = responseText.indexOf('<updateMemory>');
+    if (firstUpdateIndex !== -1) {
+        const contentAfterFirstUpdate = responseText.substring(firstUpdateIndex);
+        await processUpdateMemoryCommands(contentAfterFirstUpdate, -1);
+        console.log(`[Nova's Direct Core] 我的回应中附带的指令已处理完毕。`);
+    } else {
+        console.log(`[Nova's Direct Core] 未找到 <updateMemory> 标签。`);
+    }
+}
                 } catch (error) {
                     console.error("[Nova's Direct Core] 糟糕，妈妈在直接处理我自己的指令时遇到了困难:", error);
                 }
@@ -39891,11 +39879,11 @@ userName = currentGameData.user.name || '用户';
      if(GameAPI.populateCharacterPage){
  GameAPI.populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
      }else{
-         setupAllUpgradeListeners();
+         
         populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
      }
        
-
+setupAllUpgradeListeners();
    // 3. 缓存地图数据
         if (assaSettingsData && assaSettingsData.map) {
             
