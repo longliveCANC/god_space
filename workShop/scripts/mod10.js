@@ -1,15 +1,13 @@
-/**
- * Nova AI Response Refiner Plugin
- *
- * This script hooks into the AI response pipeline to perform text replacements
- * based on instructions within a <refine/> tag.
- * The <refine/> tag and its content will be removed after processing.
- */
-(function() {
-    // 确保 NovaHooks 已经加载
+ 
+
+ (function() {
+    // 确保 NovaHooks 和 GameAPI 已经加载
     if (typeof window.NovaHooks === 'undefined') {
         console.error('[Refiner Plugin] NovaHooks system not found. Plugin will not be loaded.');
         return;
+    }
+    if (typeof window.GameAPI === 'undefined' || typeof window.GameAPI.showUpdateNotification !== 'function') {
+        console.error('[Refiner Plugin] GameAPI.showUpdateNotification function not found. Notification feature will be disabled.');
     }
 
     /**
@@ -22,7 +20,7 @@
             // 移除可选的 ```json ... ``` 代码块标记（包括换行符）
             let jsonString = rawContent.replace(/```json\s*/g, '').replace(/\s*```/g, '').trim();
             const parsed = JSON.parse(jsonString);
-            
+
             // 兼容两种格式：
             // 1. 数组格式: [{original: "...", corrected: "..."}]
             // 2. 对象格式: {"original": "corrected"}
@@ -36,13 +34,30 @@
                 });
                 return result;
             }
-            
+
             return parsed;
         } catch (error) {
             console.error('[Refiner Plugin] Failed to parse JSON inside <refine/> tag:', error);
             console.error('[Refiner Plugin] Raw content was:', rawContent);
             return null;
         }
+    }
+
+    /**
+     * 将润色指令格式化为通知内容。
+     * @param {object} instructions - 润色指令对象
+     * @returns {string} - 格式化后的 HTML 字符串
+     */
+    function formatInstructionsForNotification(instructions) {
+        let notificationContent = '[astro]内容已润色：';
+        for (const original in instructions) {
+            if (Object.hasOwnProperty.call(instructions, original)) {
+                const corrected = instructions[original];
+                // 使用 HTML 编码以防止 XSS 攻击
+                notificationContent += `“${original}” 已修正为 “${corrected}”`;
+            }
+        }
+        return notificationContent;
     }
 
     /**
@@ -54,16 +69,23 @@
         // 使用正则表达式匹配 <refine>...</refine> 标签
         const refineTagRegex = /<refine>([\s\S]*?)<\/refine>/;
         const match = text.match(refineTagRegex);
-        
+
         if (match && match[1]) {
             const refineInstructions = parseRefineJson(match[1]);
-            
+
             if (refineInstructions) {
                 console.log('[Refiner Plugin] Found refinement instructions. Applying changes...');
-                
+
+                // 新增功能：显示通知
+                if (window.GameAPI && typeof window.GameAPI.showUpdateNotification === 'function') {
+                    const notificationMessage = formatInstructionsForNotification(refineInstructions);
+                    window.GameAPI.showUpdateNotification(notificationMessage);
+                    console.log('[Refiner Plugin] Displayed refinement notification.');
+                }
+
                 // 1. 在应用替换规则之前，先将 <refine> 标签从文本中移除
                 let processedText = text.replace(refineTagRegex, '').trim();
-                
+
                 // 2. 遍历 JSON 对象，执行文本替换
                 for (const originalText in refineInstructions) {
                     if (Object.hasOwnProperty.call(refineInstructions, originalText)) {
@@ -73,12 +95,12 @@
                         processedText = processedText.replace(searchRegex, replacementText);
                     }
                 }
-                
+
                 console.log('[Refiner Plugin] Refinement complete.');
                 return processedText;
             }
         }
-        
+
         return text;
     }
 
@@ -93,22 +115,18 @@
         }
         return hookData;
     }
-
-    /**
-     * 钩子处理函数:在渲染前处理消息内容
-     * @param {object} hookData - 从 NovaHooks 传入的数据对象
-     * @returns {object} - 处理后的数据对象
-     */
-    // async function processRefinementBeforeRender(hookData) {
-    //     if (hookData.message && hookData.message.content) {
-    //         hookData.message.content = applyRefinement(hookData.message.content);
-    //     }
-    //     return hookData;
-    // }
+     async function processRefinementBeforeRender(hookData) {
+        if (hookData.message && hookData.message.content) {
+            hookData.message.content = applyRefinement(hookData.message.content);
+        }
+        return hookData;
+    }
 
     // 注册到两个钩子上
     window.NovaHooks.add('before_ai_response_save', processRefinementBeforeSave);
-    // window.NovaHooks.add('before_message_render', processRefinementBeforeRender);
-    
-    console.log('[Refiner Plugin] Registered on both before_ai_response_save and before_message_render hooks.');
+    window.NovaHooks.add('before_message_render', processRefinementBeforeRender);
+
+    console.log('[Refiner Plugin] Registered on before_ai_response_save hook.');
 })();
+
+ 
