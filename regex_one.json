@@ -32737,7 +32737,7 @@ add_update: memory('path.key', 'new_value');//new_value can be string/num/json o
 rename: memory('path.old_key', 'path.new_key');
 move: memory('old_path.key', 'new_path.key');
 delete: delete('path', 'key');
-回顾完毕。开始执行。
+回顾完毕。开始执行。我将从<statusAnalyze>开始。
 </build>
                 `
             });
@@ -33593,10 +33593,12 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
         }else{
                 continuationText = ``;
          const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+const theAImessage  = formatAsTavernRegexedString(lastAiMessage.content,'ai_output', 'prompt', { depth: -1 });
+            
         const thetext = `请严格按照game给出的要求更新memory，不要输出其他内容：
 
 玩家输入: ${playerinput}
-AI回复: ${lastAiMessage.content}
+AI回复: ${theAImessage}
 
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
 在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令。`;
@@ -33754,10 +33756,17 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
                         overrides: { chat_history: { prompts: [] } }
                     });
         }else{
-                continuationText = ``;
+              continuationText = ``;
          const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
-          const thetext = `[\n\n\nDone.\n\n\n不输出任何正文。接收memory更新任务：遵循user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循全部更新规则。将以下文本当作'本轮输出的正文'，通读一遍，确保不输出任何新的正文，只专注memory更新: \n\n\n玩家输入:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n请直接从<statusAnalyze>开始分析并更新。summary的更新是重中之重，不得遗忘！]`;
+const theAImessage  = formatAsTavernRegexedString(lastAiMessage.content, 'ai_output', 'prompt', { depth: -1 });
+            
+        const thetext = `请严格按照game给出的要求更新memory，不要输出其他内容：
 
+玩家输入: ${playerinput}
+AI回复: ${theAImessage}
+
+仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
+在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令。`;
      
           // 1. 使用 await 来等待异步的提示词组装函数完成
             const promptPayload = await assembleComplexPrompt({ continuationText: thetext });
