@@ -7,6 +7,7 @@
 
     const LOREBOOK_NAME = "小蝌蚪找妈妈-同层版";
     const ENTRY_NAME = "[memoryinit]";
+    const DIY_ATTRIBUTE_ENTRY = "[diyattribute]"; // 新增：自定义属性词条标识
   const LOCAL_STORAGE_KEY = "mod07_custom_templates_v1";
     // 默认完整数据结构（防崩底包）
     const DEFAULT_FULL_DATA = {
@@ -588,6 +589,85 @@
         delete current[name];
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(current));
     }
+    async function autoImportDiyAttributes() {
+    try {
+        // 获取所有绑定的世界书
+        const charWorldbooks = getCharWorldbookNames('current');
+        const allBoundWorldbooks = [
+            ...new Set([
+                ...getGlobalWorldbookNames(),
+                ...charWorldbooks.additional,
+                getChatWorldbookName('current')
+            ].filter(Boolean))
+        ];
+
+        if (allBoundWorldbooks.length === 0) {
+            console.log('[MOD07] 没有找到绑定的世界书');
+            return;
+        }
+
+        let importCount = 0;
+        const existingTemplates = getLocalTemplates();
+
+        // 遍历所有世界书
+        for (const worldbookName of allBoundWorldbooks) {
+            try {
+                const allEntries = await getLorebookEntries(worldbookName);
+                const diyEntries = allEntries.filter(entry => 
+                    entry.comment === DIY_ATTRIBUTE_ENTRY && entry.content
+                );
+
+                for (const entry of diyEntries) {
+                    try {
+                        const templateData = JSON.parse(entry.content);
+                        
+                        // 验证数据结构
+                        if (!templateData.attr || !templateData.skill) {
+                            console.warn(`[MOD07] 世界书 "${worldbookName}" 中的 ${DIY_ATTRIBUTE_ENTRY} 数据格式不正确`);
+                            continue;
+                        }
+
+                        // 生成模板名称（带世界书来源标识）
+                        const templateName = templateData.name || `${worldbookName}_导入_${Date.now().toString().slice(-6)}`;
+                        
+                        // 如果模板已存在，跳过（避免覆盖用户修改）
+                        if (existingTemplates[templateName]) {
+                            console.log(`[MOD07] 模板 "${templateName}" 已存在，跳过导入`);
+                            continue;
+                        }
+
+                        // 保存到本地存储
+                        const current = getLocalTemplates();
+                        current[templateName] = {
+                            desc: templateData.desc || `从世界书"${worldbookName}"自动导入 (${new Date().toLocaleString()})`,
+                            attr: templateData.attr,
+                            skill: templateData.skill,
+                            source: worldbookName // 标记来源
+                        };
+                        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(current));
+                        
+                        importCount++;
+                        console.log(`[MOD07] 已导入模板: ${templateName}`);
+
+                    } catch (parseError) {
+                        console.warn(`[MOD07] 解析世界书 "${worldbookName}" 中的 ${DIY_ATTRIBUTE_ENTRY} 失败:`, parseError);
+                    }
+                }
+            } catch (e) {
+                console.warn(`[MOD07] 读取世界书 "${worldbookName}" 时出错:`, e);
+            }
+        }
+
+        if (importCount > 0) {
+            console.log(`[MOD07] ✅ 成功自动导入 ${importCount} 个自定义模板`);
+        } else {
+            console.log(`[MOD07] 未找到新的 ${DIY_ATTRIBUTE_ENTRY} 模板需要导入`);
+        }
+
+    } catch (error) {
+        console.error('[MOD07] 自动导入模板时出错:', error);
+    }
+}
     function init() {
         const observer = new MutationObserver(() => {
             const settingsModal = document.getElementById('settings-modal');
@@ -620,7 +700,7 @@
 
         // 提示用户
         worldHelper.showNovaAlert('正在连接世界本源...', 'info');
-
+ await autoImportDiyAttributes();
         try {
             const allEntries = await getLorebookEntries(LOREBOOK_NAME);
             const initEntry = allEntries.find(entry => entry.comment === ENTRY_NAME);
@@ -956,10 +1036,12 @@ container.querySelector('#m7-editor-area').onclick = () => {
 
                 // 左侧点击应用
                 const infoDiv = document.createElement('div');
-                infoDiv.innerHTML = `
-                    <div class="m7-card-title">📄 ${tmplName}</div>
-                    <div class="m7-card-desc" style="font-size:0.75em">${tmpl.desc}</div>
-                `;
+                    const sourceTag = tmpl.source ? `<span style="font-size:0.7em; color:var(--m7-warn); margin-left:5px;">[${tmpl.source}]</span>` : '';
+    infoDiv.innerHTML = `
+        <div class="m7-card-title">📄 ${tmplName}${sourceTag}</div>
+        <div class="m7-card-desc" style="font-size:0.75em">${tmpl.desc}</div>
+    `;
+   
                 infoDiv.onclick = async () => {
                     const confirmed = await showCustomConfirm('📂 读取本地模板', `确定要读取本地模板 <strong>"${tmplName}"</strong> 吗？<br>当前未保存的修改将被覆盖。`);
                     if (confirmed) {
