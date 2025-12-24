@@ -387,6 +387,6 @@
     "description": "<h3>以一个游戏机为主题，在游玩过程中，不断通关游戏提升现实中灵气复苏程度的世界。</h3>\n[需开启自定义属性，同时开启本dlc的脚本。需开启无世界观，外挂本世界书后并选择手动发送。\n如何应用自定义属性：将世界书挂载后，重新加载，去自定义属性那里就能看到本dlc的专属自定义属性模板，然后点击应用即可]",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod001小世界.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-小世界.json",
-    "previewImage": ""
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 23.png"
   } 
 ]
