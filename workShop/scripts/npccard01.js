@@ -1774,7 +1774,7 @@
             }
                      if(evtData.buff) {
                const st = document.createElement('div');
-               st.innerHTML = `<span style="font-size:12px; margin-right:5px; opacity:0.7;">STATUS:</span> <span class="mod01-event-status">${evtData.buff}</span>`;
+               st.innerHTML = `<span class="mod01-event-status">${evtData.buff}</span>`;
                st.style.marginBottom = '10px';
                box.appendChild(st);
             }
