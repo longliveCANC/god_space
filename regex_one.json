@@ -31122,7 +31122,7 @@ function cleanParam(param) {
                 continue;
             }
             
-            if (firstArgClean.startsWith('player_attr.')) {
+            if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attribute.')) {
                 console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'player_attr.' 开头，转发到 set_attribute 处理`);
                 // 移除 'player_attr.' 前缀
                 const newFirstArg = "'" + firstArgClean.substring(12) + "'";
