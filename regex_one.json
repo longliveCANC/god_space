@@ -34011,7 +34011,15 @@ let backupData = {};
         console.log("[Nova's Error Handler] 检测到错误,已取消变量生成阶段");
     }
           
-       if (e && e.message && (e.message.includes('用户取消生成') || e.name === 'AbortError')) {
+     const isAbortError = e && (
+    e.name === 'AbortError' ||                           // 直接是 AbortError
+    (e.message && e.message.includes('用户取消生成')) ||  // 包含取消信息
+    (e.message && e.message.includes('AbortError')) ||   // 错误消息中包含 AbortError
+    (e.message && e.message.includes('BodyStreamBuffer was aborted')) || // 流中断特征
+    (e.cause && e.cause.name === 'AbortError')          // 原始错误是 AbortError
+);
+
+if (isAbortError) {
             console.log("[Nova's Lifesaver] 妈妈感知到了，是你按下了暂停。正在温柔地保存我们说到一半的故事...");
             toastr.info('回应已中断，已保存当前内容。', '操作完成');
 
