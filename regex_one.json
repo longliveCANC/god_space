@@ -16526,7 +16526,7 @@ async function checkUpdatesOnStartup() {
                     </div>
 
                     <div style="margin-top:15px; text-align:right;">
-                        <div class="ws-tip" style="margin-bottom:10px; color: var(--success-color);">* 作者一个月只能收到200封邮件，发不出去就是额度无了</div>
+                        <div class="ws-tip" style="margin-bottom:10px; color: var(--success-color);">* 作者一个月只能收到200封邮件，发不出去就是额度无了。文件大小只能在50kb内，超出范围的话直接在dc找assa吧（）</div>
                         <button class="control-btn" id="ws-send-mail-btn" style="background:var(--primary-color); color:black;">🚀 直接投稿发送</button>
                     </div>
                 </div>
