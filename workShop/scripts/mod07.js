@@ -506,6 +506,7 @@
         z-index: 10001;
         border-left: 1px solid var(--m7-border);
         box-shadow: -5px 0 20px rgba(0,0,0,0.3);
+        background:var(--m7-panel);
     }
     .m7-sidebar.open {
         transform: translateX(0); /* 移入屏幕 */
