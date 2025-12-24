@@ -16766,7 +16766,7 @@ async function checkUpdatesOnStartup() {
  
             } catch (error) {
                 console.error("Upload failed:", error);
-                alert(`❌ 发送失败: ${error.message}\n\n如果是第一次使用，请检查邮箱是否收到激活邮件！`);
+                alert(`❌ 发送失败，文件大小大于50kb了？`);
             } finally {
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = originalBtnText;
