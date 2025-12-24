@@ -26750,17 +26750,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     .replace(/\*(.+?)\*/g, function(match, p1) { 
         return '<em>' + p1 + '</em>'; 
     });
-     processedContent = processedContent
-            .replace(/“/g, '<span class="dialogue-quote">“')
-            .replace(/”/g, '”</span>')
-            .replace(/「/g, '<span class="dialogue-quote">「')
-            .replace(/」/g, '」</span>') 
-     .replace(/\*\*(.+?)\*\*/g, function(match, p1) { 
-        return '<strong>' + p1 + '</strong>'; 
-    })
-    .replace(/\*(.+?)\*/g, function(match, p1) { 
-        return '<em>' + p1 + '</em>'; 
-    });
+
 
     processedContent = formatAsTavernRegexedString(
         processedContent,
