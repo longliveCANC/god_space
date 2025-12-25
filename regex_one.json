@@ -30523,7 +30523,7 @@ function handleNotificationsFromBatch(operations) {
       let  opsToProcess = operations || collectedBatchOps;
 
     if (!opsToProcess || opsToProcess.length === 0) {
-         showUpdateNotification(`没有发现变量更新指令，请在左下角按情况使用重roll/继续/继续[变量]`, 'danger');
+        //  showUpdateNotification(`没有发现变量更新指令，请在左下角按情况使用重roll/继续/继续[变量]`, 'danger');
          return;
     };
   const  uniqueOpsMap = new Map();
