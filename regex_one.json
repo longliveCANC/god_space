@@ -19281,7 +19281,7 @@ function handleUpdateNotifications(aiContent) {
         });
     });
     
-    // 检查必需的规则是否触发
+   
     if (!triggeredRules.has('summary-update')) {
         showUpdateNotification('没有正常输出小总结，掉变量了？请在左下角按情况使用重roll/继续/继续[变量]', 'danger');
         showNovaAlert('没有正常输出小总结', 'danger');
@@ -27458,6 +27458,7 @@ function manageBattleLifecycle(initialCombatDataFromPrompt) {
 
 
 async function renderHistory(is_entry = false) {
+    console.log("我将全部重新渲染。is_entry:",is_entry);
          cleanupGlobalUIState();
     const oldControls = document.getElementById('active-editing-controls');
     if (oldControls) oldControls.remove();
@@ -27570,8 +27571,8 @@ async function processFinalMessageModules() {
         const content = lastMessage.content;
        await processSpecialModulesInMessage(content);
         if(is_show_notifications === 'true'){
-        handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
-        //    handleNotificationsFromBatch();
+        // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
+           handleNotificationsFromBatch();
         }
     }
 
@@ -33338,9 +33339,7 @@ if (messageVars && messageVars.检定记忆) {
                     rollCardShownThisTurn = true; // 标记已显示，防止重复
  }
  
-                }else{
-                     console.log("messageVars.checkMemory不存在？");
-                }
+                } 
             } catch(e) {
                 console.warn("获取投骰变量失败，本轮可能无检定。", e);
             }
@@ -34028,9 +34027,11 @@ let backupData = {};
                 isContinuation: true,
                 isContinuationVar: true
             })
+
+       
         }, 500);
 
-        await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+  await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
         batches = 1;
         console.log("[Nova's Double API] 双重流程执行完毕。");
     }
@@ -34132,8 +34133,12 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
             await initDisplay();
                 
 if(double_api ==="false" || (double_api === "true" && batches === 2) ){
+console.log("当前批次：",batches);
+     if(is_show_notifications === 'true'){
+        // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
+          await  handleNotificationsFromBatch();
+        }
 
-  await  handleNotificationsFromBatch();
 
      if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
             const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
