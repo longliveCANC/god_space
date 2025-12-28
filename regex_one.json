@@ -2593,28 +2593,7 @@ input[type="range"]::-moz-range-thumb {
     display: none;
 }
 
-/* 代码 START: 添加在这里 */
-/* 新增：更新提示感叹号样式 */
-#update-notifier {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
-    background-color: var(--primary-color);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 0 10px var(--border-color);
-    animation: pulse 1.5s infinite;
-    z-index: 10;
-}
+ 
 
 @keyframes pulse {
     0% { transform: translateY(-50%) scale(1); }
@@ -13386,7 +13365,7 @@ pointer-events: auto;
  <div class="status-container">
     <header>
         <div class="header-content">
-            <div id="update-notifier" style="display: none;">!</div>
+     
             <h1 id="world-shard">SYSTEM TERMINAL</h1>
             <div class="header-info-bar">
     <div class="info-group">
@@ -25856,6 +25835,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         createMessageBubble:createMessageBubble,
         processSpecialModulesInMessage:processSpecialModulesInMessage,
         renderHistory:renderHistory,
+      
         processFinalMessageModules:processFinalMessageModules,
         showNovaAlert:showNovaAlert,
         processUpdateMemoryCommands:processUpdateMemoryCommands,
@@ -28481,11 +28461,7 @@ async function saveHistory() {
  async function handleReroll() {
     if (rerollButton.disabled) return;
 
-    // [修改] 移除原本在这里的“时光回溯信标检查”代码块。
-    // 原因：Reroll 操作本身就是一种更高级的时间回溯。
-    // 如果 deleteMessage 留下了一个指向“当前末尾”的信标，Reroll 需要覆盖它，
-    // 指向“当前末尾的前一个AI回合”，而不是被旧信标卡在原地。
-
+ 
     if (conversationHistory.length === 0) {
         toastr.warning("历史记录是空的，无法启动'重演'魔法哦。");
         return;
@@ -34167,11 +34143,8 @@ batches = 1;
    
     }
 }
+window.handleSend = handleSend;
  
-/**
- * @description 启动时检查是否有未被正常恢复的世界书，并从localStorage备份中恢复它们。
- * 这是为了防止因刷新、浏览器崩溃等意外情况导致世界书被EJS代码污染。
- */
  async function checkAndRestoreDirtyWorldbooks() {
     console.log("[Nova's Safety Net] 正在启动时检查是否有未恢复的世界书 (from IndexedDB)...");
 
