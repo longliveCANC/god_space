@@ -255,7 +255,7 @@ function navigateMessages(direction) {
         }
         if (!targetMessage) console.log('[ScrollBtn] 已是第一条AI消息。');
 
-    } else { // direction === 'next'
+      } else { // direction === 'next'
         // 从前往后遍历，找到第一个其顶部位置在当前滚动位置下方的消息
         for (let i = 0; i < aiMessages.length; i++) {
             const msg = aiMessages[i];
@@ -265,7 +265,11 @@ function navigateMessages(direction) {
                 break;
             }
         }
-        if (!targetMessage) console.log('[ScrollBtn] 已是最后一条AI消息。');
+        if (!targetMessage) {
+            console.log('[ScrollBtn] 已是最后一条AI消息，自动滚动到底部。');
+            doScroll('bottom'); // 已经是最后一条，滚动到底部
+            return;
+        }
     }
 
     // 关键优化：直接使用 offsetTop 进行精确滚动
