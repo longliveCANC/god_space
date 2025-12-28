@@ -388,5 +388,15 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod001小世界.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-小世界.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 23.png"
+  } ,{
+    "id": "mod002回顶",
+    "name": "消息楼层快捷滚动",
+    "author": "11",
+    "version": "1.0",
+    "tags": ["功能脚本"],
+    "description": "这个功能的两个面板都是可以拖动的，那四个按钮都可以隐藏的。中间两个按钮是对单条消息。左右两个按钮是彻底回顶和回底部，可以绑定键盘设置快捷键，试一下就明白了，很简单的功能",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod002回顶.js",
+    "worldBookUrl": "",
+    "previewImage": ""
   } 
 ]
