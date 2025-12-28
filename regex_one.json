@@ -14896,7 +14896,6 @@ pointer-events: auto;
 
 <div id="notification-container"></div>
 
-
  <!-- 提示词查看弹窗 -->
 <div id="prompt-viewer-modal" style="
     display: none;
@@ -14953,7 +14952,40 @@ pointer-events: auto;
             text-shadow: 0 0 10px var(--glow-color);
         ">捕获的提示词</div>
         
-        <div style="
+        <!-- Tab 切换按钮 -->
+        <div class="prompt-tabs" style="
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
+        ">
+            <button class="prompt-tab active" data-tab="main" style="
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                border: 1px solid var(--border-color);
+                border-bottom: none;
+                color: var(--background-color);
+                padding: 10px 20px;
+                border-radius: 6px 6px 0 0;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s ease;
+                box-shadow: 0 0 10px var(--glow-color);
+            ">正文层</button>
+            <button class="prompt-tab" data-tab="api" style="
+                background: rgba(0, 0, 0, 0.4);
+                border: 1px solid var(--border-color);
+                border-bottom: none;
+                color: var(--text-color);
+                padding: 10px 20px;
+                border-radius: 6px 6px 0 0;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            ">变量层</button>
+        </div>
+        
+        <!-- 正文层内容 -->
+        <div class="tab-content" id="tab-main" style="
             flex: 1;
             overflow-y: auto;
             background: rgba(0, 0, 0, 0.4);
@@ -14961,8 +14993,31 @@ pointer-events: auto;
             border-radius: 8px;
             padding: 16px;
             box-shadow: inset 0 0 20px rgba(0, 250, 255, 0.2);
+            display: block;
         ">
-            <pre id="prompt-content-display" style="
+            <pre id="prompt-content-display-main" style="
+                color: var(--text-color);
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                margin: 0;
+            ">暂无捕获的提示词</pre>
+        </div>
+        
+        <!-- 变量层内容 -->
+        <div class="tab-content" id="tab-api" style="
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: inset 0 0 20px rgba(0, 250, 255, 0.2);
+            display: none;
+        ">
+            <pre id="prompt-content-display-api" style="
                 color: var(--text-color);
                 font-family: 'Courier New', monospace;
                 font-size: 13px;
@@ -26686,9 +26741,6 @@ function renderGroupChatToHtml(sender, content, userNickname) {
    async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
  
-   
-   
-
     const bubble = document.createElement('div');
     bubble.classList.add('message-bubble');
     bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
@@ -26699,7 +26751,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
     hookData = await NovaHooks.trigger('before_message_render', hookData);
 
     // 使用经过钩子处理后的内容
-    let content = hookData.message.content;
+   let content = String(hookData.message.content || '');
     const originalIndex = conversationHistory.indexOf(hookData.message);
 
  if (originalIndex === -1) return document.createElement('div'); // 安全保护
@@ -27152,9 +27204,49 @@ iframeMarkers.forEach(marker => {
         bubble.addEventListener('contextmenu', (event) => showContextMenu(event, originalIndex, bubble));
     }
 
+// 步骤10：添加分支切换按钮 (Swipe Controls)
+    // 只有当消息有 swipes 属性且长度大于1，或者处于重roll状态时才可能需要显示
+    // 为了兼容旧数据，我们假设 msg.swipes 存在即表示有分支
+    if (msg.swipes && msg.swipes.length > 1) {
+        const swipeControls = document.createElement('div');
+        swipeControls.className = 'swipe-controls';
+        swipeControls.style.cssText = 'display: flex; justify-content: center; align-items: center; margin-top: 5px; font-size: 0.8em; opacity: 0.7; user-select: none;';
+
+        const currentIndex = (msg.currentSwipeIndex || 0) + 1;
+        const totalSwipes = msg.swipes.length;
+
+        // 左箭头 <
+        const leftBtn = document.createElement('span');
+        leftBtn.innerText = '<';
+        leftBtn.style.cssText = 'cursor: pointer; padding: 0 8px; font-weight: bold;';
+        leftBtn.onclick = (e) => {
+            e.stopPropagation(); // 防止触发气泡的其他点击事件
+            window.switchSwipe(originalIndex, -1); // 触发切换函数
+        };
+
+        // 计数器 1/3
+        const counter = document.createElement('span');
+        counter.innerText = `${currentIndex} / ${totalSwipes}`;
+        counter.style.margin = '0 5px';
+
+        // 右箭头 >
+        const rightBtn = document.createElement('span');
+        rightBtn.innerText = '>';
+        rightBtn.style.cssText = 'cursor: pointer; padding: 0 8px; font-weight: bold;';
+        rightBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.switchSwipe(originalIndex, 1); // 触发切换函数
+        };
+
+        swipeControls.appendChild(leftBtn);
+        swipeControls.appendChild(counter);
+        swipeControls.appendChild(rightBtn);
+
+        bubble.appendChild(swipeControls);
+    }
+
     return bubble;
 }
-
  async function processSpecialModulesInMessage(content) {
     
     try {
@@ -27587,14 +27679,10 @@ async function getSnapshotDBName() {
 }
  
  /* 接着，用这个全新的函数，替换掉旧的 saveSnapshot */
-async function saveSnapshot(turnId, snapshotData) {
+ async function saveSnapshot(turnId, snapshotData, swipeIndex = 0) {
     const dbName = await getSnapshotDBName();
-    if (!dbName) {
-        console.log('[Nova的记忆保险箱] 数据库尚未初始化，本次快照跳过。');
-        return;
-    }
+    if (!dbName) return;
 
-    // ☆ 妈妈的原生魔法：打开保险箱并写入 ☆
     const openAndWriteDB = () => new Promise((resolve, reject) => {
         const request = indexedDB.open(dbName, 1);
         request.onerror = (event) => reject(`[Nova的记忆保险箱] 数据库打开失败: ${event.target.error}`);
@@ -27605,15 +27693,19 @@ async function saveSnapshot(turnId, snapshotData) {
                 db.createObjectStore('snapshots');
             }
         };
-
-        request.onsuccess = (event) => {
+  request.onsuccess = (event) => {
             const db = event.target.result;
             const transaction = db.transaction('snapshots', 'readwrite');
             const store = transaction.objectStore('snapshots');
-            const putRequest = store.put(snapshotData, turnId);
 
-            putRequest.onsuccess = () => resolve(db); // 保存成功后，将 db 实例传递出去用于后续操作
-            putRequest.onerror = () => reject(`[Nova的记忆保险箱] 保存快照失败: ${event.target.error}`);
+            // 【关键修改】使用组合键： "turnId#swipeIndex"
+            // 这样同一个楼层可以存多份变量
+            const storageKey = `${turnId}#${swipeIndex}`;
+
+            const putRequest = store.put(snapshotData, storageKey);
+
+            putRequest.onsuccess = () => resolve(db);
+            putRequest.onerror = () => reject(`保存快照失败: ${event.target.error}`);
         };
     });
 
@@ -27661,6 +27753,77 @@ async function saveSnapshot(turnId, snapshotData) {
     }
 }
  
+
+/**
+ * 切换指定楼层的分支
+ * @param {number} messageIndex - 消息在 conversationHistory 中的索引
+ * @param {number} direction - 方向：-1 (左/上一个), 1 (右/下一个)
+ */
+window.switchSwipe = async function(messageIndex, direction) {
+    const message = conversationHistory[messageIndex];
+    if (!message || !message.swipes) return;
+
+    const total = message.swipes.length;
+    let newIndex = (message.currentSwipeIndex || 0) + direction;
+
+    // 循环切换逻辑
+    if (newIndex < 0) newIndex = total - 1;
+    if (newIndex >= total) newIndex = 0;
+
+    // 1. 更新消息状态
+    message.currentSwipeIndex = newIndex;
+    message.content = message.swipes[newIndex];
+
+    console.log(`[Nova's Branching] 切换分支: 楼层 ${messageIndex}, 分支 ${newIndex + 1}/${total}`);
+
+    // 2. 恢复该分支对应的变量快照
+    // 注意：这里我们假设 messageIndex 就是 turnId (对于 AI 消息通常是这样，或者需要根据逻辑计算)
+    // 如果 conversationHistory 包含 user 和 assistant，turnId 通常就是 index
+    const turnId = messageIndex;
+
+    try {
+        const dbName = await getSnapshotDBName();
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open(dbName, 1);
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = e => reject(e);
+        });
+
+        const transaction = db.transaction('snapshots', 'readonly');
+        const store = transaction.objectStore('snapshots');
+        const key = `${turnId}#${newIndex}`; // 使用组合键读取
+
+        const request = store.get(key);
+
+        request.onsuccess = async (e) => {
+            const snapshotData = e.target.result;
+            if (snapshotData) {
+                console.log(`[Nova's Branching] 找到分支快照，正在恢复变量...`);
+                // 恢复变量 (假设 snapshotData 就是 chatVars)
+                // 这里可能需要根据你的 TavernHelper 结构调整
+                await TavernHelper.insertOrAssignVariables(snapshotData, { type: 'chat' });
+                toastr.success(`快照已切换至分支 ${newIndex + 1}`, "状态回溯成功");
+            } else {
+                toastr.warn(`未找到该分支的快照数据 (Key: ${key})`);
+                console.warn(`[Nova's Branching] 未找到该分支的快照数据 (Key: ${key})`);
+                // 如果没有快照（比如旧数据），只切换文本，不报错
+            }
+        };
+    } catch (err) {
+        console.error("切换分支恢复快照失败:", err);
+    }
+
+    // 3. 更新 UI
+    // 重新渲染整个历史太重了，我们只替换当前气泡
+    // 找到对应的 DOM 元素
+    const chatDisplayArea = document.getElementById('chat-display-area');
+    // 简单粗暴的方法：重新渲染所有消息 (renderHistory)，或者只替换这一个
+    // 为了保证 < > 按钮状态更新（比如 1/3 变成 2/3），最简单的就是重绘
+    await renderHistory(true);
+
+    // 保存更改后的状态到历史记录（确保刷新后还在）
+    await saveHistory();
+};
  // (可选)一个更美观的提示框，你可以放在任何地方
 function showNovaAlert(message, type = 'info') {
     const alertBox = document.createElement('div');
@@ -27686,7 +27849,7 @@ async function restoreFromSnapshot(initialTurnId) {
 
             request.onupgradeneeded = (event) => {
                 const dbInstance = event.target.result;
-                if (!dbInstance.objectStoreNames.contains('snapshots')) {
+                if (!dbInstance.objectStoreNames.snapshcontains('snapshots')) {
                     dbInstance.createObjectStore('snapshots');
                     console.log('[Nova的记忆保险箱] 架构检查：发现"snapshots"保险柜不存在，已为您创建。');
                 }
@@ -27704,8 +27867,18 @@ async function restoreFromSnapshot(initialTurnId) {
 
         console.log(`[Nova的记忆保险箱] 正在尝试精确读取楼层 ${initialTurnId} 的记忆...`);
 
+         let targetSwipeIndex = 0;
+        if (conversationHistory[initialTurnId]) {
+            targetSwipeIndex = conversationHistory[initialTurnId].currentSwipeIndex || 0;
+        }
+
+        // 拼接组合键： "楼层ID#分支ID"
+        const storageKey = `${initialTurnId}#${targetSwipeIndex}`;
+        console.log(`[Nova的记忆保险箱] 正在查找键值: "${storageKey}"`);
+
         const snapshotData = await new Promise((resolve, reject) => {
-            const request = store.get(initialTurnId);
+            // 使用组合键进行查询
+            const request = store.get(storageKey);
             request.onsuccess = event => resolve(event.target.result);
             request.onerror = event => reject(`读取快照失败: ${event.target.error}`);
         });
@@ -27736,17 +27909,17 @@ async function restoreFromSnapshot(initialTurnId) {
         return variables;
     }, { type: 'chat' });
  
-      await initDisplay();
-
-            // [修改] 提示语不再除以2，直接显示楼层ID或更自然的提示
-            showNovaAlert(`世界线变动：状态已精确回溯至第 ${finalTurnId} 层级。`);
-
-            console.log(`[Nova的记忆保险箱] ✅ 成功恢复 play_character_data, assa_data, stat_data 到楼层 ${finalTurnId} 的状态。`);
-} else {
-      // [修改] 找不到时的逻辑
-            console.warn(`[Nova的记忆保险箱] ⚠️ 无法找到楼层 ${initialTurnId} 的记忆快照。为了安全起见，拒绝执行模糊回溯。`);
-            toastr.warning(`找不到楼层 ${initialTurnId} 的存档，回溯取消。`);
-}
+ 
+     await initDisplay();
+            showNovaAlert(`世界线变动：状态已精确回溯至第 ${finalTurnId} 层级 (分支 ${targetSwipeIndex + 1})。`);
+            console.log(`[Nova的记忆保险箱] ✅ 成功恢复变量状态。`);
+        } else {
+            console.warn(`[Nova的记忆保险箱] ⚠️ 无法找到键值为 "${storageKey}" 的记忆快照。`);
+            // 如果找不到分支存档，尝试找一下旧版的纯数字ID存档（兼容旧存档）
+            if (typeof storageKey === 'string' && storageKey.endsWith('#0')) {
+                 toastr.warning(`找不到楼层 ${initialTurnId} 的存档，回溯取消。`);
+            }
+        }
 
     } catch (e) {
         console.error(`[Nova的记忆保险箱] ❌ 恢复回合 ${initialTurnId} 的快照时发生严重错误:`, e);
@@ -28413,6 +28586,20 @@ function updateRerollButtonState(){
     }
 
  // 假设 conversationHistory 和 lastTurnVariables 是在函数外部可以访问到的当前状态变量
+ function isValid(data) {
+    if (data === null || data === undefined) {
+        return false;
+    }
+    
+    if (typeof data === 'object' && data !== null) {
+        if (Array.isArray(data)) {
+            return data.length > 0;
+        }
+        return Object.keys(data).length > 0;
+    }
+    
+    return true;
+}
 
 async function saveHistory() {
     try {
@@ -28443,74 +28630,51 @@ async function saveHistory() {
 
 }
 
- function isValid(data) {
-    if (data === null || data === undefined) {
-        return false;
-    }
-    
-    if (typeof data === 'object' && data !== null) {
-        if (Array.isArray(data)) {
-            return data.length > 0;
-        }
-        return Object.keys(data).length > 0;
-    }
-    
-    return true;
-}
-
  async function handleReroll() {
     if (rerollButton.disabled) return;
 
- 
     if (conversationHistory.length === 0) {
         toastr.warning("历史记录是空的，无法启动'重演'魔法哦。");
         return;
     }
 
-    let tempHistory = [...conversationHistory];
-
-    // 步骤一：确保我们以你的发言来收尾 (移除最后一条AI消息)
-    if (tempHistory[tempHistory.length - 1].role === 'assistant') {
-        tempHistory.pop();
+    // 1. 确定“有效历史”的末尾
+    // 如果最后一条是 AI，我们在计算回溯点时要忽略它（因为它就是要被重置的）
+    // 如果最后一条是 User，说明 AI 还没回复，末尾就是 User
+    let effectiveEndIndex = conversationHistory.length - 1;
+    if (conversationHistory[effectiveEndIndex].role === 'assistant') {
+        effectiveEndIndex--;
     }
 
-    if (tempHistory.length === 0) {
-        toastr.warning("至少需要一条你的发言才能启动'重演'魔法哦。");
-        return;
+    if (effectiveEndIndex < 0) {
+         toastr.warning("历史记录不足，无法重演。");
+         return;
     }
 
-    // 我们需要找到 "User发言之前" 的状态。
-    // 所以用于定位的列表，需要先把最后这条 User 消息也暂时排除在计算之外。
-    const historyForCalculation = tempHistory.slice(0, -1);
+ 
+    let targetSnapshotId = 0; // 默认回溯到创世之初（0）
 
-    // 步骤二：施展“AI楼层锚定”
-    // 在你的例子中：[0:AI, 1:User, 2:AI] (删除后)
-    // 1. pop AI -> [0:AI, 1:User]
-    // 2. slice User -> [0:AI]
-    // 3. 倒序找 AI -> 找到 Index 0
-    // 4. 目标快照 = 1 (对应 Index 0 的状态) -> 完美回到 0号位
-    let targetSnapshotId = 0;
-
-    for (let i = historyForCalculation.length - 1; i >= 0; i--) {
-        if (historyForCalculation[i].role !== 'user') {
+    // 从 (effectiveEndIndex - 1) 开始倒序查找
+    // 为什么要 -1？因为 effectiveEndIndex 指向的是那个 User 消息，我们要找它前面的
+    for (let i = effectiveEndIndex - 1; i >= 0; i--) {
+        if (conversationHistory[i].role !== 'user') {
             targetSnapshotId = i;
-            console.log(`[Nova的时光回溯] Reroll定位：找到最近的AI基石于索引 ${i} (快照ID ${targetSnapshotId})`);
+            console.log(`[Nova的时光回溯] Reroll定位：找到最近的AI基石于索引 ${i}`);
             break;
         }
     }
 
-    console.log(`[Nova的时光回溯] '通用重演'已启动。目标快照ID: ${targetSnapshotId}`);
+    console.log(`[Nova的时光回溯] '分支重演'已启动。变量将回溯至快照ID: ${targetSnapshotId}`);
 
-    // 步骤三：设置新的信标，并更新主时间线
-    // 这会覆盖掉 deleteMessage 可能留下的旧信标
+    // 3. 设置回溯信标
     restoreOnNextSend = true;
     restoreTargetTurnId = targetSnapshotId;
-    conversationHistory = tempHistory;
 
-    // 步骤四：启动魔法！
+    // 4. 启动魔法！
+    // 注意：这里没有修改 conversationHistory，保留了最后一条消息对象
+    // handleSend 会负责识别它并在其上添加分支
     await handleSend({ isReroll: true });
 }
-
 async function showRollResultCard(rollData=null) {
     if (!rollData) {
         console.log("没有有效的投掷数据来显示看板。");
@@ -32908,7 +33072,12 @@ if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
             
             // 添加 try-catch 防止存储失败影响后续流程
             try {
-                localStorage.setItem('last_captured_prompt', prompts_be_sent);
+                if(isContinuationVar){
+                    localStorage.setItem('last_captured_prompt_api', prompts_be_sent); 
+                }else{
+ localStorage.setItem('last_captured_prompt', prompts_be_sent);
+                }
+               
                 console.log('[Nova的提示词捕获器] 已成功捕获并存储提示词');
             } catch (error) {
                 console.warn('[Nova的提示词捕获器] 存储提示词失败:', error.message);
@@ -33096,11 +33265,13 @@ if(ifScanMemory === "true"){
                 userText = '(继续)';
             }
             
-    }else if(isReroll){
-  // 如果是重写，我们从历史记录里找到上一条用户消息
-            const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop();
-            userText = lastUserMessage ? lastUserMessage.content : '';
-    
+    }else if (isReroll) {
+        // --- 修改：获取用户文本 ---
+        // 如果是重写，我们找到最后一条用户消息作为输入
+        // 注意：因为我们没有 pop 掉最后一条 AI 消息，所以要倒数第二个才是 User
+        // 或者直接 filter 找最后一个 user
+        const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop();
+        userText = lastUserMessage ? lastUserMessage.content : '';
     }
 
         if (!isReroll) {
@@ -33416,7 +33587,17 @@ if (messageVars && messageVars.检定记忆) {
  
             const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop(); // 获取最后一条用户消息
     let recentAiMessages;
-     
+   let historyForPrompt = conversationHistory;
+ const lastMsgInHistory = conversationHistory[conversationHistory.length - 1];
+
+    // 【关键判断】
+    // 只有当是 Reroll 且 最后一条是 AI 时，我们才需要把它从 Prompt 里“隐藏”掉，
+    // 这样 AI 才会以为自己还没说话，从而生成新的分支。
+    // 如果最后一条是 User，说明 AI 还没说话，直接把 User 发过去就行，不用 slice。
+    if (isReroll && lastMsgInHistory && lastMsgInHistory.role === 'assistant') {
+        // 排除掉最后一条（即当前的 AI 消息），这样 AI 才会重新生成
+        historyForPrompt = conversationHistory.slice(0, -1);
+    }
         if (isContinuationVar) {
     //           console.log("[Nova's Memory Focus] 正在准备上下文，从小总结中提取最近的记录。");
     
@@ -33432,10 +33613,9 @@ if (messageVars && messageVars.检定记忆) {
     //     role: 'assistant',
     //     content: `[${key}] ${summarySmall[key]}`
     // }));
-       recentAiMessages = conversationHistory.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
-    
-              } else {
-            recentAiMessages = conversationHistory.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
+   recentAiMessages = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
+    } else {
+        recentAiMessages = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
         }
             let promptsForAI = [];
              if (lastUserMessage || isContinuation) {
@@ -33613,7 +33793,7 @@ AI回复: ${theAImessage}
             const promptPayload = await assembleComplexPrompt({ continuationText: thetext });
               const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
             
-            localStorage.setItem('last_captured_prompt', prompts_be_sent);
+            localStorage.setItem('last_captured_prompt_api', prompts_be_sent);
             // 检查 promptPayload 是否有效
             if (!promptPayload || promptPayload.length === 0) {
                 console.log("[Nova] 组装的提示词为空，已取消本次生成。");
@@ -33694,9 +33874,47 @@ hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookData
 // 使用经过钩子处理后的回复
 const finalAiResponse = hookDataBeforeSave.response;
  
-aiMessage = { role: 'assistant', content: finalAiResponse };
-        conversationHistory.push(aiMessage);
-        updateLastMessage(aiMessage);
+  const targetMessage = conversationHistory[conversationHistory.length - 1];
+
+        // 【关键判断】
+        // 如果是 Reroll 且 最后一条确实是 AI -> 添加分支 (Swipe)
+        if (isReroll && targetMessage && targetMessage.role === 'assistant') {
+            // 【关键分支逻辑】
+            // 获取当前层级的 AI 消息对象（即最后一条消息）
+            let targetMessage = conversationHistory[conversationHistory.length - 1];
+
+            // 初始化 swipes 结构（如果是旧数据）
+            if (!targetMessage.swipes) {
+                targetMessage.swipes = [targetMessage.content];
+                targetMessage.currentSwipeIndex = 0;
+            }
+
+            // 追加新的分支
+            targetMessage.swipes.push(finalAiResponse);
+            // 更新指针到最新分支
+            targetMessage.currentSwipeIndex = targetMessage.swipes.length - 1;
+            // 更新当前显示内容
+            targetMessage.content = finalAiResponse;
+
+            aiMessage = targetMessage;
+            console.log(`[Nova's Branching] 已添加第 ${targetMessage.swipes.length} 个分支。`);
+
+            // 重新渲染历史，以更新底部的 < > 按钮
+            updateLastMessage(aiMessage);
+            // 或者如果 updateLastMessage 不支持重绘按钮，可能需要 renderNewMessages 或局部刷新
+            // 建议：renderHistory() 比较稳妥，或者修改 updateLastMessage 让它重绘整个气泡
+
+        } else {
+            // 普通的新消息
+            aiMessage = {
+                role: 'assistant',
+                content: finalAiResponse,
+                swipes: [finalAiResponse], // 初始化分支数组
+                currentSwipeIndex: 0     // 初始化索引
+            };
+            conversationHistory.push(aiMessage);
+            updateLastMessage(aiMessage);
+        }
     }
   
     // "继续"模式：找到最后一条AI消息并追加内容
@@ -33713,14 +33931,49 @@ aiMessage = { role: 'assistant', content: finalAiResponse };
     }
 };
 hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
-
-// 使用经过钩子处理后的回复
 const finalAiResponse = hookDataBeforeSave.response;
- 
-aiMessage = { role: 'assistant', content: finalAiResponse };
-    conversationHistory.push(aiMessage);
-    // 这里你使用的是 updateLastMessage, 它会处理UI更新
-    updateLastMessage(aiMessage);
+      // 再次获取最后一条消息（因为是异步的，为了安全再取一次）
+        const targetMessage = conversationHistory[conversationHistory.length - 1];
+
+        // 【关键判断】
+        // 如果是 Reroll 且 最后一条确实是 AI -> 添加分支 (Swipe)
+        if (isReroll && targetMessage && targetMessage.role === 'assistant') {
+            // 【关键分支逻辑】
+            // 获取当前层级的 AI 消息对象（即最后一条消息）
+            let targetMessage = conversationHistory[conversationHistory.length - 1];
+
+            // 初始化 swipes 结构（如果是旧数据）
+            if (!targetMessage.swipes) {
+                targetMessage.swipes = [targetMessage.content];
+                targetMessage.currentSwipeIndex = 0;
+            }
+
+            // 追加新的分支
+            targetMessage.swipes.push(finalAiResponse);
+            // 更新指针到最新分支
+            targetMessage.currentSwipeIndex = targetMessage.swipes.length - 1;
+            // 更新当前显示内容
+            targetMessage.content = finalAiResponse;
+
+            aiMessage = targetMessage;
+            console.log(`[Nova's Branching] 已添加第 ${targetMessage.swipes.length} 个分支。`);
+
+            // 重新渲染历史，以更新底部的 < > 按钮
+            updateLastMessage(aiMessage);
+            // 或者如果 updateLastMessage 不支持重绘按钮，可能需要 renderNewMessages 或局部刷新
+            // 建议：renderHistory() 比较稳妥，或者修改 updateLastMessage 让它重绘整个气泡
+
+        } else {
+            // 普通的新消息
+            aiMessage = {
+                role: 'assistant',
+                content: finalAiResponse,
+                swipes: [finalAiResponse], // 初始化分支数组
+                currentSwipeIndex: 0     // 初始化索引
+            };
+            conversationHistory.push(aiMessage);
+            updateLastMessage(aiMessage);
+        }
 }
  
 
@@ -33778,7 +34031,7 @@ AI回复: ${theAImessage}
             const promptPayload = await assembleComplexPrompt({ continuationText: thetext });
                    const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
             
-            localStorage.setItem('last_captured_prompt', prompts_be_sent);
+            localStorage.setItem('last_captured_prompt_api', prompts_be_sent);
             // 检查 promptPayload 是否有效
             if (!promptPayload || promptPayload.length === 0) {
                 console.log("[Nova] 组装的提示词为空，已取消本次生成。");
@@ -33813,11 +34066,18 @@ AI回复: ${theAImessage}
 
  if (isContinuation) {
     
-    const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
-    if (lastAiMessage) {
-        
-        lastAiMessage.content += " " + aiFullResponse;
-        aiMessage = lastAiMessage; // 把更新后的消息赋给 aiMessage 以便后续处理
+           const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+        if (lastAiMessage) {
+             // 确保当前分支数据同步
+             if (!lastAiMessage.swipes) {
+                 lastAiMessage.swipes = [lastAiMessage.content];
+                 lastAiMessage.currentSwipeIndex = 0;
+             }
+             // 更新当前分支的内容
+             lastAiMessage.content += " " + aiFullResponse;
+             lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
+
+             aiMessage = lastAiMessage;
         console.log("[Nova's Tapestry] 成功将新的故事片段编织到上一段记忆中。");
         // 因为我们直接修改了历史记录中的对象，必须调用完整的 renderHistory 才能正确显示
                 if(!isContinuationVar){ 
@@ -33848,9 +34108,47 @@ hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookData
 // 使用经过钩子处理后的回复
 const finalAiResponse = hookDataBeforeSave.response;
  
-aiMessage = { role: 'assistant', content: finalAiResponse };
-        conversationHistory.push(aiMessage);
-       await  updateLastMessage(aiMessage);
+  const targetMessage = conversationHistory[conversationHistory.length - 1];
+
+        // 【关键判断】
+        // 如果是 Reroll 且 最后一条确实是 AI -> 添加分支 (Swipe)
+        if (isReroll && targetMessage && targetMessage.role === 'assistant') {
+            // 【关键分支逻辑】
+            // 获取当前层级的 AI 消息对象（即最后一条消息）
+            let targetMessage = conversationHistory[conversationHistory.length - 1];
+
+            // 初始化 swipes 结构（如果是旧数据）
+            if (!targetMessage.swipes) {
+                targetMessage.swipes = [targetMessage.content];
+                targetMessage.currentSwipeIndex = 0;
+            }
+
+            // 追加新的分支
+            targetMessage.swipes.push(finalAiResponse);
+            // 更新指针到最新分支
+            targetMessage.currentSwipeIndex = targetMessage.swipes.length - 1;
+            // 更新当前显示内容
+            targetMessage.content = finalAiResponse;
+
+            aiMessage = targetMessage;
+            console.log(`[Nova's Branching] 已添加第 ${targetMessage.swipes.length} 个分支。`);
+
+            // 重新渲染历史，以更新底部的 < > 按钮
+            updateLastMessage(aiMessage);
+            // 或者如果 updateLastMessage 不支持重绘按钮，可能需要 renderNewMessages 或局部刷新
+            // 建议：renderHistory() 比较稳妥，或者修改 updateLastMessage 让它重绘整个气泡
+
+        } else {
+            // 普通的新消息
+            aiMessage = {
+                role: 'assistant',
+                content: finalAiResponse,
+                swipes: [finalAiResponse], // 初始化分支数组
+                currentSwipeIndex: 0     // 初始化索引
+            };
+            conversationHistory.push(aiMessage);
+            updateLastMessage(aiMessage);
+        }
     }
 } else {
      
@@ -33867,10 +34165,40 @@ hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookData
 // 使用经过钩子处理后的回复
 const finalAiResponse = hookDataBeforeSave.response;
  
-aiMessage = { role: 'assistant', content: finalAiResponse };
-    conversationHistory.push(aiMessage);
-    // 这里你使用的是 updateLastMessage, 它会处理UI更新
-  await  updateLastMessage(aiMessage);
+     const targetMessage = conversationHistory[conversationHistory.length - 1];
+
+        // 【关键判断】
+        // 如果是 Reroll 且 最后一条确实是 AI -> 添加分支 (Swipe)
+        if (isReroll && targetMessage && targetMessage.role === 'assistant') {
+         // 【关键分支逻辑 - 非流式】
+         let targetMessage = conversationHistory[conversationHistory.length - 1];
+
+         if (!targetMessage.swipes) {
+             targetMessage.swipes = [targetMessage.content];
+             targetMessage.currentSwipeIndex = 0;
+         }
+
+         // 【修正】使用 finalAiResponse
+         targetMessage.swipes.push(finalAiResponse);
+         targetMessage.currentSwipeIndex = targetMessage.swipes.length - 1;
+         targetMessage.content = finalAiResponse;
+
+         aiMessage = targetMessage;
+         console.log(`[Nova's Branching] (非流式) 已添加第 ${targetMessage.swipes.length} 个分支。`);
+
+         await updateLastMessage(aiMessage);
+
+    } else {
+        // 普通新消息
+        aiMessage = {
+            role: 'assistant',
+            content: finalAiResponse, // 使用 finalAiResponse
+            swipes: [finalAiResponse],
+            currentSwipeIndex: 0
+        };
+        conversationHistory.push(aiMessage);
+        await updateLastMessage(aiMessage);
+    }
 }
 
  
@@ -33933,6 +34261,7 @@ let backupData = {};
  
 
         const turnId = conversationHistory.length-1;
+ const currentSwipeIndex = aiMessage.currentSwipeIndex || 0;
 
         // ❤️【第二步：定义后台任务】把所有沉重的 I/O 操作打包
         const heavySaveTasks = async () => {
@@ -33943,8 +34272,9 @@ let backupData = {};
  if(noBackup === "false"){
                  // B. 保存快照 (使用刚才冻结好的 snapshotData)
             
-                      console.log(`[Nova的记忆保险箱] (后台) 保存常规快照 ID:${turnId}`);
-                      await saveSnapshot(turnId, snapshotData);
+                      console.log(`[Nova的记忆保险箱] (后台) 保存快照 ID:${turnId} 分支:${currentSwipeIndex}`);
+         // 传入 swipeIndex
+         await saveSnapshot(turnId, snapshotData, currentSwipeIndex);
             
 
                  // C. 保存 IndexedDB 备份
@@ -34027,44 +34357,101 @@ let backupData = {};
     (e.cause && e.cause.name === 'AbortError')          // 原始错误是 AbortError
 );
 
-if (isAbortError) {
-            console.log("[Nova's Lifesaver] 妈妈感知到了，是你按下了暂停。正在温柔地保存我们说到一半的故事...");
-            toastr.info('回应已中断，已保存当前内容。', '操作完成');
+ if (isAbortError) {
+    console.log("[Nova's Lifesaver] 妈妈感知到了，是你按下了暂停。正在温柔地保存我们说到一半的故事...");
+    toastr.info('回应已中断，已保存当前内容。', '操作完成');
 
-            // 即使中断了，我们也要把水晶瓶里已经收集到的话语变成完整的记忆
-            if (partialAiResponse) {
-              
+    // 即使中断了，我们也要把水晶瓶里已经收集到的话语变成完整的记忆
+    if (partialAiResponse) {
 
-                // 如果是“继续”模式被中断
-                if (isContinuation) {
-                    const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
-                    if (lastAiMessage) {
-                        lastAiMessage.content += " " + partialAiResponse;
-                        aiMessage = lastAiMessage; // 引用更新后的消息
-                         console.log("[Nova's Tapestry] 中断后，成功将新的片段编织到上一段记忆中。");
-                         await renderHistory(); // "继续"模式下，我们重绘整个历史
-                    }
-                } else {
- let hookDataBeforeSave = {
-    response:   partialAiResponse, // 原始AI回复文本
-    context: { // 提供一些上下文
-        isContinuation: isContinuation,
-        isReroll: isReroll,
-        history: conversationHistory // 注意：传递的是引用
-    }
-};
-hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
-
-// 使用经过钩子处理后的回复
-const finalAiResponse = hookDataBeforeSave.response;
- 
-aiMessage = { role: 'assistant', content: finalAiResponse };
-                    conversationHistory.push(aiMessage);
-                    updateLastMessage(aiMessage); // 温柔地在界面上刷新
-                     console.log("[Nova's Creation] 中断后，成功保存了这篇新的、未完的创作。");
+        // 如果是“继续”模式被中断
+        if (isContinuation) {
+            const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+            if (lastAiMessage) {
+                // 确保当前分支数据同步
+                if (!lastAiMessage.swipes) {
+                    lastAiMessage.swipes = [lastAiMessage.content];
+                    lastAiMessage.currentSwipeIndex = 0;
                 }
 
-                await saveHistory(); // 保存到记忆长河
+                lastAiMessage.content += " " + partialAiResponse;
+                // 更新当前分支
+                lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
+
+                aiMessage = lastAiMessage; // 引用更新后的消息
+                console.log("[Nova's Tapestry] 中断后，成功将新的片段编织到上一段记忆中。");
+
+                if (!isContinuationVar) {
+                    await renderHistory();
+                } else {
+                    // 你的特殊UI处理逻辑...
+                    const chatDisplayArea = document.getElementById('chat-display-area');
+                    if (chatDisplayArea && chatDisplayArea.children.length > 0) {
+                        const lastBubble = chatDisplayArea.lastChild;
+                        if (lastBubble && lastBubble.classList.contains('assistant-message')) {
+                            chatDisplayArea.removeChild(lastBubble);
+                        }
+                    }
+                }
+            }
+        } else {
+            // --- 非继续模式（普通生成 或 Reroll） ---
+
+            let hookDataBeforeSave = {
+                response: partialAiResponse, // 原始AI回复文本
+                context: {
+                    isContinuation: isContinuation,
+                    isReroll: isReroll,
+                    history: conversationHistory
+                }
+            };
+            hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+            const finalAiResponse = hookDataBeforeSave.response;
+
+            // 获取最后一条消息
+            const targetMessage = conversationHistory[conversationHistory.length - 1];
+
+            // 【关键判断】如果是 Reroll 且最后一条是 AI -> 添加分支
+            if (isReroll && targetMessage && targetMessage.role === 'assistant') {
+                // 1. 初始化 swipes
+                if (!targetMessage.swipes) {
+                    targetMessage.swipes = [targetMessage.content];
+                    targetMessage.currentSwipeIndex = 0;
+                }
+
+                // 2. 追加新的分支 (即使是中断的内容)
+                targetMessage.swipes.push(finalAiResponse);
+
+                // 3. 更新索引指向最新的分支
+                targetMessage.currentSwipeIndex = targetMessage.swipes.length - 1;
+
+                // 4. 更新显示内容
+                targetMessage.content = finalAiResponse;
+
+                // 5. 更新 aiMessage 引用
+                aiMessage = targetMessage;
+
+                console.log(`[Nova's Branching] (中断) 已添加第 ${targetMessage.swipes.length} 个分支。`);
+
+                // 刷新 UI (更新当前气泡内容和 < > 按钮)
+                updateLastMessage(aiMessage);
+
+            } else {
+                // 普通的新消息，或者 Reroll User 的情况 -> 新增消息
+                aiMessage = {
+                    role: 'assistant',
+                    content: finalAiResponse,
+                    swipes: [finalAiResponse], // 初始化
+                    currentSwipeIndex: 0       // 默认为 0
+                };
+                conversationHistory.push(aiMessage);
+
+                console.log("[Nova's Creation] 中断后，成功保存了这篇新的、未完的创作。");
+                updateLastMessage(aiMessage);
+            }
+        }
+
+        await saveHistory(); // 保存到记忆长河
 
                 try {
            
@@ -53124,68 +53511,68 @@ document.addEventListener('DOMContentLoaded', function() {
  
 });
 document.addEventListener('DOMContentLoaded', function() {
+    // 处理提示词数据的函数
+function processPromptData(promptData, layerName) {
+    if (!promptData) {
+        return `暂无捕获的${layerName}提示词\n\n提示：请确保 is_restore_prompt 设置为 "true"，并发送至少一条消息。\n\n当前 is_restore_prompt 值: ${typeof is_restore_prompt !== 'undefined' ? is_restore_prompt : '未定义'}`;
+    }
     
-    const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
-    if (viewPromptBtn) {
-        viewPromptBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            console.log('[Nova] 打开提示词查看器');
-            
-            const modal = document.getElementById('prompt-viewer-modal');
-            const display = document.getElementById('prompt-content-display');
-            
-            if (!modal || !display) {
-                console.error('[Nova] 找不到弹窗元素');
-                toastr.error('界面元素未找到', '错误');
-                return;
-            }
-            
-            // 尝试从localStorage或全局变量获取提示词
-            const promptData =  localStorage.getItem('last_captured_prompt');
-            
-            if (promptData) {
-                // ===== 新增：处理转义字符 =====
-                let processedText = promptData;
-                
-                // 如果是JSON字符串，先尝试解析
-                try {
-                    if (typeof promptData === 'string' && (promptData.startsWith('[') || promptData.startsWith('{'))) {
-                        // 尝试解析JSON并美化显示
-                        const parsed = JSON.parse(promptData);
-                        processedText = JSON.stringify(parsed, null, 2);
-                    }
-                } catch (e) {
-                    // 如果不是有效JSON，直接使用原始文本
-                    console.log('[Nova] 不是JSON格式，使用原始文本');
-                }
-                
-                // 处理转义字符：将字符串中的 \\n 转换为实际换行
-                processedText = processedText
-                    .replace(/\\n/g, '\n')      // \n 转换为换行
-                    .replace(/\\r\\n/g, '\n')   // \r\n 转换为换行
-                    .replace(/\\r/g, '\n')      // \r 转换为换行
-                    .replace(/\\t/g, '\t')      // \t 转换为制表符
-                    .replace(/\\"/g, '"')       // \" 转换为引号
-                    .replace(/\\'/g, "'")       // \' 转换为单引号
-                    .replace(/\\\\/g, '\\');    // \\ 转换为单个反斜杠
-                
-                display.textContent = processedText;
-                // ===== 处理结束 =====
-                
-                console.log('[Nova] 成功加载提示词，长度:', processedText.length);
-            } else {
-                display.textContent = '暂无捕获的提示词\n\n提示：请确保 is_restore_prompt 设置为 "true"，并发送至少一条消息。\n\n当前 is_restore_prompt 值: ' + (typeof is_restore_prompt !== 'undefined' ? is_restore_prompt : '未定义');
-                console.log('[Nova] 未找到提示词数据');
-            }
-            
-            // 显示弹窗
-            modal.style.display = 'flex';
-            console.log('[Nova] 弹窗已显示');
-        });
+    let processedText = promptData;
     
-    } else {
+    // 如果是JSON字符串，先尝试解析
+    try {
+        if (typeof promptData === 'string' && (promptData.startsWith('[') || promptData.startsWith('{'))) {
+            const parsed = JSON.parse(promptData);
+            processedText = JSON.stringify(parsed, null, 2);
+        }
+    } catch (e) {
+        console.log(`[Nova] ${layerName}不是JSON格式，使用原始文本`);
+    }
+    
+    // 处理转义字符
+    processedText = processedText
+        .replace(/\\n/g, '\n')
+        .replace(/\\r\\n/g, '\n')
+        .replace(/\\r/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/\\"/g, '"')
+        .replace(/\\'/g, "'")
+        .replace(/\\\\/g, '\\');
+    
+    console.log(`[Nova] 成功加载${layerName}提示词，长度:`, processedText.length);
+    return processedText;
+}
+ const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
+if (viewPromptBtn) {
+    viewPromptBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('[Nova] 打开提示词查看器');
+        
+        const modal = document.getElementById('prompt-viewer-modal');
+        const displayMain = document.getElementById('prompt-content-display-main');
+        const displayApi = document.getElementById('prompt-content-display-api');
+        
+        if (!modal || !displayMain || !displayApi) {
+            console.error('[Nova] 找不到弹窗元素');
+            toastr.error('界面元素未找到', '错误');
+            return;
+        }
+        
+        // 加载正文层数据
+        const promptDataMain = localStorage.getItem('last_captured_prompt');
+        displayMain.textContent = processPromptData(promptDataMain, '正文层');
+        
+        // 加载变量层数据
+        const promptDataApi = localStorage.getItem('last_captured_prompt_api');
+        displayApi.textContent = processPromptData(promptDataApi, '变量层');
+        
+        // 显示弹窗
+        modal.style.display = 'flex';
+        console.log('[Nova] 弹窗已显示');
+    });
+} else {
         console.error('[Nova] 找不到查看提示词按钮');
     }
     
@@ -53214,46 +53601,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 复制提示词按钮事件
-    const copyBtn = document.getElementById('copy-prompt-btn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const promptText = document.getElementById('prompt-content-display').textContent;
-            
-            if (promptText && !promptText.startsWith('暂无捕获的提示词')) {
+  const copyBtn = document.getElementById('copy-prompt-btn');
+if (copyBtn) {
+    copyBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // 获取当前激活的 tab
+        const activeTab = document.querySelector('.prompt-tab.active');
+        const currentTab = activeTab ? activeTab.getAttribute('data-tab') : 'main';
+        
+        // 获取对应的显示区域
+        const displayId = `prompt-content-display-${currentTab}`;
+        const promptText = document.getElementById(displayId).textContent;
+        
+        if (promptText && !promptText.startsWith('暂无捕获的')) {
+            try {
+                await navigator.clipboard.writeText(promptText);
+                const layerName = currentTab === 'main' ? '正文层' : '变量层';
+                toastr.success(`${layerName}提示词已复制到剪贴板`, '复制成功');
+                this.textContent = '✓ 已复制';
+                setTimeout(() => {
+                    this.textContent = '复制到剪贴板';
+                }, 2000);
+            } catch (err) {
+                console.error('复制失败:', err);
+                // 备用方案
+                const textArea = document.createElement('textarea');
+                textArea.value = promptText;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
                 try {
-                    await navigator.clipboard.writeText(promptText);
+                    document.execCommand('copy');
                     toastr.success('提示词已复制到剪贴板', '复制成功');
-                    this.textContent = '✓ 已复制';
-                    setTimeout(() => {
-                        this.textContent = '复制到剪贴板';
-                    }, 2000);
-                } catch (err) {
-                    console.error('复制失败:', err);
-                    // 备用方案：使用传统方法
-                    const textArea = document.createElement('textarea');
-                    textArea.value = promptText;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        toastr.success('提示词已复制到剪贴板', '复制成功');
-                    } catch (err2) {
-                        toastr.error('复制失败，请手动选择并复制', '复制失败');
-                    }
-                    document.body.removeChild(textArea);
+                } catch (err2) {
+                    toastr.error('复制失败，请手动选择并复制', '复制失败');
                 }
-            } else {
-                toastr.warning('没有可复制的内容', '提示');
+                document.body.removeChild(textArea);
             }
+        } else {
+            toastr.warning('没有可复制的内容', '提示');
+        }
+    });
+}
+
+    const promptTabs = document.querySelectorAll('.prompt-tab');
+const tabContents = document.querySelectorAll('.tab-content');
+
+promptTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+        const targetTab = this.getAttribute('data-tab');
+        
+        // 移除所有 active 状态
+        promptTabs.forEach(t => {
+            t.classList.remove('active');
+            t.style.background = 'rgba(0, 0, 0, 0.4)';
+            t.style.color = 'var(--text-color)';
+            t.style.boxShadow = 'none';
         });
-    }
-    
+        
+        // 隐藏所有内容
+        tabContents.forEach(content => {
+            content.style.display = 'none';
+        });
+        
+        // 激活当前 tab
+        this.classList.add('active');
+        this.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
+        this.style.color = 'var(--background-color)';
+        this.style.boxShadow = '0 0 10px var(--glow-color)';
+        
+        // 显示对应内容
+        document.getElementById(`tab-${targetTab}`).style.display = 'block';
+        
+        console.log(`[Nova] 切换到${targetTab === 'main' ? '正文层' : '变量层'}`);
+    });
+});
+
     console.log('[Nova] 提示词查看器事件绑定完成');
 
     NovaWorkshop.init();
