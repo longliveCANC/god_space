@@ -228,41 +228,55 @@
         else if (direction === 'bottom') container.scrollTo({ top: container.scrollHeight, behavior: behavior });
     }
 
-    // --- 消息导航逻辑 (修改版：支持所有消息) ---
-    function navigateMessages(direction) {
-        const container = findTrueScrollContainer();
-        if (!container) return;
-        
-        // 修改选择器：.mes 是SillyTavern中包含 User 和 AI 消息的通用容器类
-        const messages = Array.from(container.querySelectorAll('.mes'));
-        if (messages.length === 0) return;
-
-        const currentScrollTop = container.scrollTop;
-        const threshold = 10; 
-        let targetMessage = null;
-
-        if (direction === 'prev') {
-            for (let i = messages.length - 1; i >= 0; i--) {
-                if (messages[i].offsetTop < currentScrollTop - threshold) {
-                    targetMessage = messages[i];
-                    break; 
-                }
-            }
-        } else {
-            for (let i = 0; i < messages.length; i++) {
-                if (messages[i].offsetTop > currentScrollTop + threshold) {
-                    targetMessage = messages[i];
-                    break;
-                }
-            }
-        }
-
-        if (targetMessage) {
-            container.scrollTo({ top: targetMessage.offsetTop, behavior: 'smooth' });
-        } else if (direction === 'next') {
-            doScroll('bottom');
-        }
+    // --- 消息导航逻辑 (修改版：仅AI消息，精确滚动) ---
+function navigateMessages(direction) {
+    const container = findTrueScrollContainer();
+    if (!container) return;
+    
+    // 使用正确的选择器：.assistant-message 是AI消息的类名
+    const aiMessages = Array.from(container.querySelectorAll('.assistant-message'));
+    if (aiMessages.length === 0) {
+        console.log('[ScrollBtn] 在 #chat-display-area 中未找到任何AI消息。');
+        return;
     }
+
+    const currentScrollTop = container.scrollTop;
+    let targetMessage = null;
+
+    if (direction === 'prev') {
+        // 从后往前遍历，找到第一个完全位于当前视口上方的消息
+        for (let i = aiMessages.length - 1; i >= 0; i--) {
+            const msg = aiMessages[i];
+            // 使用 -1 像素作为缓冲，确保精确定位
+            if (msg.offsetTop < currentScrollTop - 1) {
+                targetMessage = msg;
+                break;
+            }
+        }
+        if (!targetMessage) console.log('[ScrollBtn] 已是第一条AI消息。');
+
+    } else { // direction === 'next'
+        // 从前往后遍历，找到第一个其顶部位置在当前滚动位置下方的消息
+        for (let i = 0; i < aiMessages.length; i++) {
+            const msg = aiMessages[i];
+            // 使用 +1 像素作为缓冲
+            if (msg.offsetTop > currentScrollTop + 1) {
+                targetMessage = msg;
+                break;
+            }
+        }
+        if (!targetMessage) console.log('[ScrollBtn] 已是最后一条AI消息。');
+    }
+
+    // 关键优化：直接使用 offsetTop 进行精确滚动
+    if (targetMessage) {
+        console.log(`[ScrollBtn] 精确滚动到AI消息 (offsetTop: ${targetMessage.offsetTop})`);
+        container.scrollTo({
+            top: targetMessage.offsetTop,
+            behavior: 'smooth'
+        });
+    }
+}
 
     // --- 设置面板逻辑 ---
     function openSettingsPanel() {
