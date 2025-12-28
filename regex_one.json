@@ -23932,7 +23932,7 @@ const allBoundWorldbooks = [
                         break; // 找到第一个就停止
                     }
                 } catch (e) {
-                    toastr.warn(`读取世界书 "${worldbookName}" 时出错:`+e);
+                    toastr.warning(`读取世界书 "${worldbookName}" 时出错:`+e);
                 }
             }
         }
@@ -27804,7 +27804,7 @@ window.switchSwipe = async function(messageIndex, direction) {
                 await TavernHelper.insertOrAssignVariables(snapshotData, { type: 'chat' });
                 toastr.success(`快照已切换至分支 ${newIndex + 1}`, "状态回溯成功");
             } else {
-                toastr.warn(`未找到该分支的快照数据 (Key: ${key})`);
+                toastr.warning(`未找到该分支的快照数据 (Key: ${key})`);
                 console.warn(`[Nova's Branching] 未找到该分支的快照数据 (Key: ${key})`);
                 // 如果没有快照（比如旧数据），只切换文本，不报错
             }
