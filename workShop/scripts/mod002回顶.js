@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         SillyTavern Scroll Buttons & Keybindings
 // @namespace    http://tampermonkey.net/
-// @version      3.6_EmptyDefaults
-// @description  为SillyTavern添加回顶、回底、AI消息导航按钮，支持自定义键盘快捷键（含组合键）、隐藏UI及可拖拽设置按钮。
+// @version      3.8_AllMessages
+// @description  为SillyTavern添加回顶、回底、上一条/下一条消息导航按钮，支持自定义键盘快捷键（含组合键）、隐藏UI及可拖拽设置按钮。
 // @author       YourName
 // @match        *://*:8000/*
 // @match        *://127.0.0.1:*/*
@@ -14,20 +14,24 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = "V3.6_EmptyDefaults";
-    // 更新存储Key，确保新用户或更新后使用新的空白默认值
-    const STORAGE_KEY = "ST_Scroll_Config_v3_6"; 
+    const SCRIPT_VERSION = "V3.8_AllMessages";
+    // 更新存储Key
+    const STORAGE_KEY = "ST_Scroll_Config_v3_8"; 
     console.log(`[ScrollBtn] ${SCRIPT_VERSION}: Starting...`);
 
-    // --- 默认配置 (全空) ---
+    // --- 默认配置 ---
     const defaultConfig = {
         keyTop: "",
         keyPrev: "",
         keyNext: "",
         keyBottom: "",
         showButtons: true,
+        // 设置按钮的位置
         settingBtnLeft: "90%",
-        settingBtnTop: "80%"
+        settingBtnTop: "80%",
+        // 滚动面板的位置 (默认居中偏下)
+        panelLeft: "calc(50% - 110px)",
+        panelTop: "90%" 
     };
 
     let currentConfig = loadConfig();
@@ -58,26 +62,44 @@
     }
 
     // --- 样式定义 ---
-    const SCRIPT_STYLE_ID = 'sillytavern-scrollbuttons-styles-v3-6';
+    const SCRIPT_STYLE_ID = 'sillytavern-scrollbuttons-styles-v3-8';
     const customCSS = `
-        /* 1. 中间的功能按钮容器 */
-        #st-floating-scroll-container {
+        /* 1. 滚动功能面板 (容器) */
+        #st-scroll-panel-container {
             position: fixed !important;
-            bottom: 120px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
             display: flex !important;
-            gap: 10px !important;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 8px;
+            background: rgba(15, 15, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             z-index: 2000 !important;
-            pointer-events: none !important;
+            user-select: none;
+            backdrop-filter: blur(5px);
         }
+
+        /* 拖拽手柄 */
+        .st-panel-drag-handle {
+            cursor: grab;
+            color: #666;
+            font-size: 18px;
+            padding: 0 5px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+        }
+        .st-panel-drag-handle:hover { color: #fff; }
+        .st-panel-drag-handle:active { cursor: grabbing; color: #00ffaa; }
+
+        /* 功能按钮 */
         .st-floating-scroll-btn {
-            pointer-events: auto !important;
-            width: 45px;
-            height: 35px;
-            background: rgba(20, 20, 30, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
+            width: 40px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
             color: #ddd;
             display: flex;
             align-items: center;
@@ -85,10 +107,25 @@
             cursor: pointer;
             font-size: 16px;
             transition: all 0.2s;
-            user-select: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        .st-floating-scroll-btn:hover { background: rgba(255, 255, 255, 0.2); color: #fff; transform: scale(1.05); }
+        .st-floating-scroll-btn:hover { background: rgba(255, 255, 255, 0.25); color: #fff; transform: scale(1.05); }
+        .st-floating-scroll-btn:active { transform: scale(0.95); }
+
+        /* 面板上的关闭按钮 (X) */
+        .st-panel-close-btn {
+            margin-left: 5px;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            color: #888;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .st-panel-close-btn:hover { background: #d32f2f; color: white; }
 
         /* 2. 独立的设置按钮 (回) */
         #st-settings-trigger-btn {
@@ -119,7 +156,7 @@
             transform: scale(0.95);
         }
 
-        /* 3. 设置面板 */
+        /* 3. 设置面板 (Modal) */
         #st-scroll-settings-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 99999;
@@ -191,28 +228,30 @@
         else if (direction === 'bottom') container.scrollTo({ top: container.scrollHeight, behavior: behavior });
     }
 
-    function navigateAiMessages(direction) {
+    // --- 消息导航逻辑 (修改版：支持所有消息) ---
+    function navigateMessages(direction) {
         const container = findTrueScrollContainer();
         if (!container) return;
         
-        const aiMessages = Array.from(container.querySelectorAll('.assistant-message'));
-        if (aiMessages.length === 0) return;
+        // 修改选择器：.mes 是SillyTavern中包含 User 和 AI 消息的通用容器类
+        const messages = Array.from(container.querySelectorAll('.mes'));
+        if (messages.length === 0) return;
 
         const currentScrollTop = container.scrollTop;
         const threshold = 10; 
         let targetMessage = null;
 
         if (direction === 'prev') {
-            for (let i = aiMessages.length - 1; i >= 0; i--) {
-                if (aiMessages[i].offsetTop < currentScrollTop - threshold) {
-                    targetMessage = aiMessages[i];
+            for (let i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].offsetTop < currentScrollTop - threshold) {
+                    targetMessage = messages[i];
                     break; 
                 }
             }
         } else {
-            for (let i = 0; i < aiMessages.length; i++) {
-                if (aiMessages[i].offsetTop > currentScrollTop + threshold) {
-                    targetMessage = aiMessages[i];
+            for (let i = 0; i < messages.length; i++) {
+                if (messages[i].offsetTop > currentScrollTop + threshold) {
+                    targetMessage = messages[i];
                     break;
                 }
             }
@@ -221,7 +260,6 @@
         if (targetMessage) {
             container.scrollTo({ top: targetMessage.offsetTop, behavior: 'smooth' });
         } else if (direction === 'next') {
-            console.log("[ScrollBtn] No next message found. Going to bottom.");
             doScroll('bottom');
         }
     }
@@ -235,7 +273,7 @@
 
         const panel = document.createElement('div');
         panel.id = 'st-scroll-settings-panel';
-        panel.innerHTML = `<h3 style="margin-top:0; border-bottom:1px solid #444; padding-bottom:10px;">滚动功能设置 (支持组合键)</h3>`;
+        panel.innerHTML = `<h3 style="margin-top:0; border-bottom:1px solid #444; padding-bottom:10px;">滚动功能设置</h3>`;
 
         const createKeyRow = (label, configKey) => {
             const row = document.createElement('div');
@@ -254,7 +292,6 @@
             input.value = currentConfig[configKey];
             input.placeholder = "未设置 (点击录入)";
             
-            // 录入逻辑
             input.addEventListener('keydown', (e) => {
                 e.preventDefault(); e.stopPropagation();
                 if (e.code === 'Backspace' || e.code === 'Delete') {
@@ -262,23 +299,17 @@
                     return;
                 }
                 const combo = getEventKeyCombo(e);
-                if (combo) {
-                    input.value = combo;
-                }
+                if (combo) input.value = combo;
             });
 
-            // 清空按钮
             const clearBtn = document.createElement('div');
             clearBtn.className = 'st-clear-btn';
             clearBtn.innerHTML = '×';
             clearBtn.title = '清空此热键';
-            clearBtn.onclick = () => {
-                input.value = '';
-            };
+            clearBtn.onclick = () => { input.value = ''; };
 
             inputWrapper.appendChild(input);
             inputWrapper.appendChild(clearBtn);
-
             row.appendChild(lbl);
             row.appendChild(inputWrapper);
             return { row, input, configKey };
@@ -287,8 +318,8 @@
         const inputs = [];
         inputs.push(createKeyRow("回到底部", "keyBottom"));
         inputs.push(createKeyRow("回到顶部", "keyTop"));
-        inputs.push(createKeyRow("上一条AI", "keyPrev"));
-        inputs.push(createKeyRow("下一条AI", "keyNext"));
+        inputs.push(createKeyRow("上一条消息", "keyPrev")); // 修改了标签文本
+        inputs.push(createKeyRow("下一条消息", "keyNext")); // 修改了标签文本
         inputs.forEach(item => panel.appendChild(item.row));
 
         const toggleRow = document.createElement('div');
@@ -296,7 +327,7 @@
         toggleRow.innerHTML = `
             <label class="st-checkbox-wrapper">
                 <input type="checkbox" id="st-show-buttons-check" class="st-checkbox" ${currentConfig.showButtons ? 'checked' : ''}>
-                <span>显示底部四个功能按钮</span>
+                <span>显示底部四个功能按钮面板</span>
             </label>
         `;
         panel.appendChild(toggleRow);
@@ -309,7 +340,7 @@
         saveBtn.onclick = () => {
             inputs.forEach(item => { currentConfig[item.configKey] = item.input.value; });
             currentConfig.showButtons = document.getElementById('st-show-buttons-check').checked;
-            saveConfig();
+            saveConfig(); 
             overlay.remove();
         };
         const closeBtn = document.createElement('button');
@@ -332,26 +363,37 @@
         const currentCombo = getEventKeyCombo(e);
         if (!currentCombo) return; 
 
-        // 增加检查：只有当配置不为空时才触发
         if (currentConfig.keyTop && currentCombo === currentConfig.keyTop) { e.preventDefault(); doScroll('top'); }
         else if (currentConfig.keyBottom && currentCombo === currentConfig.keyBottom) { e.preventDefault(); doScroll('bottom'); }
-        else if (currentConfig.keyPrev && currentCombo === currentConfig.keyPrev) { e.preventDefault(); navigateAiMessages('prev'); }
-        else if (currentConfig.keyNext && currentCombo === currentConfig.keyNext) { e.preventDefault(); navigateAiMessages('next'); }
+        else if (currentConfig.keyPrev && currentCombo === currentConfig.keyPrev) { e.preventDefault(); navigateMessages('prev'); }
+        else if (currentConfig.keyNext && currentCombo === currentConfig.keyNext) { e.preventDefault(); navigateMessages('next'); }
     }
 
-    // --- 拖拽逻辑实现 ---
-    function makeDraggable(element) {
+    // --- 拖拽逻辑 (通用) ---
+    function makeDraggable(element, targetKeyPrefix) {
         let isDragging = false;
         let startX, startY;
         let hasMoved = false; 
 
-        element.addEventListener('mousedown', (e) => {
+        const dragHandler = (e) => {
+            if (e.target.classList.contains('st-floating-scroll-btn') || 
+                e.target.classList.contains('st-panel-close-btn')) {
+                return;
+            }
+
             isDragging = true;
             hasMoved = false;
             startX = e.clientX - element.offsetLeft;
             startY = e.clientY - element.offsetTop;
-            element.style.cursor = 'grabbing';
-        });
+            
+            if(element.querySelector('.st-panel-drag-handle')) {
+                element.querySelector('.st-panel-drag-handle').style.cursor = 'grabbing';
+            } else {
+                element.style.cursor = 'grabbing';
+            }
+        };
+
+        element.addEventListener('mousedown', dragHandler);
 
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
@@ -371,15 +413,20 @@
 
             element.style.left = `${left}px`;
             element.style.top = `${top}px`;
-            element.style.transform = 'none';
+            element.style.transform = 'none'; 
         });
 
         document.addEventListener('mouseup', () => {
             if (isDragging) {
                 isDragging = false;
-                element.style.cursor = 'grab';
-                currentConfig.settingBtnLeft = element.style.left;
-                currentConfig.settingBtnTop = element.style.top;
+                if(element.querySelector('.st-panel-drag-handle')) {
+                    element.querySelector('.st-panel-drag-handle').style.cursor = 'grab';
+                } else {
+                    element.style.cursor = 'grab';
+                }
+                
+                currentConfig[`${targetKeyPrefix}Left`] = element.style.left;
+                currentConfig[`${targetKeyPrefix}Top`] = element.style.top;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(currentConfig));
             }
         });
@@ -394,13 +441,21 @@
 
     // --- 界面渲染主函数 ---
     function renderInterface() {
-        const scrollContainerId = 'st-floating-scroll-container';
-        let scrollContainer = document.getElementById(scrollContainerId);
-        if (scrollContainer) scrollContainer.remove();
+        const panelId = 'st-scroll-panel-container';
+        let panel = document.getElementById(panelId);
+        if (panel) panel.remove();
 
         if (currentConfig.showButtons) {
-            scrollContainer = document.createElement('div');
-            scrollContainer.id = scrollContainerId;
+            panel = document.createElement('div');
+            panel.id = panelId;
+            panel.style.left = currentConfig.panelLeft;
+            panel.style.top = currentConfig.panelTop;
+
+            const handle = document.createElement('div');
+            handle.className = 'st-panel-drag-handle';
+            handle.innerHTML = '⋮'; 
+            handle.title = '按住拖动面板';
+
             const fmtKey = (k) => k ? k.replace('Key', '').replace('Digit', '') : '';
 
             const makeBtn = (text, title, action) => {
@@ -411,11 +466,27 @@
                 btn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); action(); };
                 return btn;
             };
-            scrollContainer.appendChild(makeBtn('▲', `回顶 ${fmtKey(currentConfig.keyTop)}`, () => doScroll('top')));
-            scrollContainer.appendChild(makeBtn('↑', `上个AI ${fmtKey(currentConfig.keyPrev)}`, () => navigateAiMessages('prev')));
-            scrollContainer.appendChild(makeBtn('↓', `下个AI ${fmtKey(currentConfig.keyNext)}`, () => navigateAiMessages('next')));
-            scrollContainer.appendChild(makeBtn('▼', `回底 ${fmtKey(currentConfig.keyBottom)}`, () => doScroll('bottom')));
-            document.body.appendChild(scrollContainer);
+
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'st-panel-close-btn';
+            closeBtn.innerHTML = '×';
+            closeBtn.title = '隐藏面板 (可在回字设置中重新开启)';
+            closeBtn.onmousedown = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                currentConfig.showButtons = false;
+                saveConfig(); 
+            };
+
+            // 组装面板 (文本已更新为 上条/下条)
+            panel.appendChild(handle);
+            panel.appendChild(makeBtn('▲', `回顶 ${fmtKey(currentConfig.keyTop)}`, () => doScroll('top')));
+            panel.appendChild(makeBtn('↑', `上条 ${fmtKey(currentConfig.keyPrev)}`, () => navigateMessages('prev')));
+            panel.appendChild(makeBtn('↓', `下条 ${fmtKey(currentConfig.keyNext)}`, () => navigateMessages('next')));
+            panel.appendChild(makeBtn('▼', `回底 ${fmtKey(currentConfig.keyBottom)}`, () => doScroll('bottom')));
+            panel.appendChild(closeBtn);
+
+            document.body.appendChild(panel);
+            makeDraggable(panel, 'panel');
         }
 
         const settingsBtnId = 'st-settings-trigger-btn';
@@ -428,9 +499,8 @@
             document.body.appendChild(settingsBtn);
             
             settingsBtn.addEventListener('click', openSettingsPanel);
-            makeDraggable(settingsBtn);
+            makeDraggable(settingsBtn, 'settingBtn');
         }
-
         settingsBtn.style.left = currentConfig.settingBtnLeft;
         settingsBtn.style.top = currentConfig.settingBtnTop;
     }
