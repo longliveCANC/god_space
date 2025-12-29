@@ -32413,10 +32413,15 @@ let hasSummarySmall = false; // 添加这个标志
         if (toastInstance) toastInstance.find('.toast-message').text(progressText);
         if (!turnData) continue;
 
-        const messageText = turnData.content || '';
+        let messageText = turnData.content || '';
 
         // =========== 🔽 修改开始 🔽 ===========
+    const firstUpdateIndex = messageText.indexOf('<updateMemory>');
+    if (firstUpdateIndex !== -1) {
+         messageText = messageText.substring(firstUpdateIndex);
 
+    } else {
+    }
         // 1. 💖 核心修改：先拍扁文本，去除换行符，就像 processUpdateMemoryCommands 做的那样
         const sanitizedText = messageText.replace(/[\r\n\t]+/g, ' ').trim();
 
