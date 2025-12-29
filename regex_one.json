@@ -24094,13 +24094,30 @@ function limitConsecutiveNewlines(text, maxNewlines = 2) {
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
     // 步骤1：提前处理引号、Markdown 并进行通用格式化
-    processedContent = processedContent
-        .replace(/“/g, '<span class="dialogue-quote">“')
-        .replace(/”/g, '”</span>')
-        .replace(/「/g, '<span class="dialogue-quote">「')
-        .replace(/」/g, '」</span>')
-        .replace(/\*\*(.+?)\*\*/g, (match, p1) => `<strong>${p1}</strong>`)
-        .replace(/\*(.+?)\*/g, (match, p1) => `<em>${p1}</em>`);
+ processedContent = processedContent.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '<span class="dialogue-quote">"';
+})
+.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '"</span>';
+})
+.replace(/<html>[\s\S]*?<\/html>|「/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '<span class="dialogue-quote">「';
+})
+.replace(/<html>[\s\S]*?<\/html>|」/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '」</span>';
+})
+.replace(/<html>[\s\S]*?<\/html>|\*\*(.+?)\*\*/g, function(match, p1) {
+    if (match.startsWith('<html>')) return match;
+    return '<strong>' + p1 + '</strong>';
+})
+.replace(/<html>[\s\S]*?<\/html>|\*(.+?)\*/g, function(match, p1) {
+    if (match.startsWith('<html>')) return match;
+    return '<em>' + p1 + '</em>';
+});
 
     processedContent = formatAsTavernRegexedString(
         processedContent,
@@ -24207,8 +24224,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
 
     // 将处理好的 HTML 放入 bubble
     bubble.innerHTML = finalHtml;
-
-    // 步骤7.2：查找所有标记并替换为 iframe
+  // 步骤7.2：查找所有标记并替换为 iframe
     const markers = bubble.querySelectorAll('.reading-mode-iframe-marker');
 
     markers.forEach(marker => {
@@ -24220,39 +24236,33 @@ processedContent = limitConsecutiveNewlines(processedContent);
         // 创建 iframe
         const iframe = document.createElement('iframe');
         iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+
+        // --- 修改点 1: 允许垂直拉伸和内部滚动 ---
         iframe.style.width = '100%';
         iframe.style.border = 'none';
-        iframe.style.overflow = 'hidden';
+        iframe.style.resize = 'vertical'; // 允许用户手动拉伸高度
+        iframe.style.overflow = 'auto';   // 允许内部出现滚动条
         iframe.style.display = 'block';
+        iframe.style.minHeight = '100px'; // 设置最小高度防止塌陷
 
         // 生成唯一 ID
         const frameId = 'reading-scroll-' + Date.now() + Math.random();
         iframe.id = frameId;
-// 监听高度变化消息
-window.addEventListener('message', function(event) {
-    if(event.data.frameId === frameId && event.data.height) {
-        const activeIframe = document.getElementById(frameId);
-        if (activeIframe) {
-            activeIframe.style.height = (event.data.height + 20) + 'px';
-        }
-    }
-}, false);
 
-// 处理 details 标签展开事件
-const detailsParent = iframe.closest('details');
-if (detailsParent) {
-    detailsParent.addEventListener('toggle', function() {
-        if (detailsParent.open) {
-            setTimeout(() => {
-                iframe.contentWindow.postMessage({
-                    action: 'recalculateHeight',
-                    frameId: frameId
-                }, '*');
-            }, 50);
-        }
-    });
-}
+        // --- 修改点 2: 监听器逻辑优化 ---
+        // 监听高度变化消息
+        window.addEventListener('message', function(event) {
+            if(event.data.frameId === frameId && event.data.height) {
+                const activeIframe = document.getElementById(frameId);
+                if (activeIframe) {
+                    // 给高度增加一点缓冲空间 (30px)，避免出现不必要的滚动条
+                    activeIframe.style.height = (event.data.height + 30) + 'px';
+                }
+            }
+        }, false);
+
         // 准备完整的 HTML 内容 (包含自动调整高度的脚本)
+        // --- 修改点 3: 内部样式优化，隐藏默认滚动条但允许滚动，增强脚本兼容性 ---
         const fullHtmlContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -24263,22 +24273,36 @@ if (detailsParent) {
             font-family: var(--base-font-family, sans-serif);
             color: black;
             background-color: transparent;
-            overflow: hidden;
             width: 100%;
+            /* 允许内容溢出计算 */
+            height: auto;
         }
-        body { padding: 5px; }
-        body::-webkit-scrollbar { width: 0px; height: 0px; }
+        body {
+            padding: 10px;
+            overflow-y: auto; /* 允许内部滚动 */
+        }
+        /* 美化滚动条，使其不突兀 */
+        body::-webkit-scrollbar { width: 6px; height: 6px; }
+        body::-webkit-scrollbar-track { background: transparent; }
+        body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        body::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.4); }
+
         img { max-width: 100%; height: auto; }
+
+        /* 修复 details 标签样式 */
+        details { margin-bottom: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     ${rawHtmlContent}
     <script>
         function reportHeight() {
+            // 获取更准确的高度：取 scrollHeight 和 offsetHeight 的最大值
             const height = Math.max(
                 document.body.scrollHeight,
                 document.body.offsetHeight,
-                document.documentElement.scrollHeight
+                document.documentElement.scrollHeight,
+                document.documentElement.offsetHeight
             );
             window.parent.postMessage({
                 frameId: "${frameId}",
@@ -24286,31 +24310,47 @@ if (detailsParent) {
             }, '*');
         }
 
-  window.onload = reportHeight;
-setTimeout(reportHeight, 50);
-setTimeout(reportHeight, 100);
-setTimeout(reportHeight, 300);
-setTimeout(reportHeight, 500);
-setTimeout(reportHeight, 1000);
+        // 1. 基础加载报告
+        window.onload = reportHeight;
 
+        // 2. 针对脚本动态生成内容的多次检测
+        setTimeout(reportHeight, 50);
+        setTimeout(reportHeight, 100);
+        setTimeout(reportHeight, 300);
+        setTimeout(reportHeight, 500);
+        setTimeout(reportHeight, 1000);
+        setTimeout(reportHeight, 2000); // 延长检测时间以适应慢速脚本
+
+        // 3. 监听图片加载
         Array.from(document.getElementsByTagName('img')).forEach(img => {
             if (!img.complete) {
                 img.addEventListener('load', reportHeight);
             }
         });
 
- // 监听动画和过渡结束
-document.addEventListener('animationend', reportHeight);
-document.addEventListener('transitionend', reportHeight);
+        // 4. 监听 details 标签的展开/收起
+        Array.from(document.getElementsByTagName('details')).forEach(detail => {
+            detail.addEventListener('toggle', function() {
+                setTimeout(reportHeight, 50); // 等待渲染完成后报告
+            });
+        });
 
-// 监听 DOM 变化
-const observer = new MutationObserver(reportHeight);
-observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    characterData: true
-});
+        // 5. 监听动画和过渡结束
+        document.addEventListener('animationend', reportHeight);
+        document.addEventListener('transitionend', reportHeight);
+
+        // 6. 使用 MutationObserver 监听 DOM 变化 (核心修复)
+        const observer = new MutationObserver((mutations) => {
+            reportHeight();
+        });
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+        });
+
+        // 接收父级强制重算的指令
         window.addEventListener('message', function(event) {
             if (event.data.action === 'recalculateHeight' && event.data.frameId === '${frameId}') {
                 reportHeight();
@@ -24320,25 +24360,9 @@ observer.observe(document.body, {
 </body>
 </html>`;
 
-        // 监听高度调整消息
-        // 注意：因为此函数返回的是 innerHTML 字符串，这个监听器会挂载在当前的 window 上
-        // 当返回的 HTML 字符串被插入到页面后，iframe 内部的脚本会发送消息到这个 window
-        window.addEventListener('message', function(event) {
-            if(event.data.frameId === frameId && event.data.height) {
-                // 这里我们无法直接操作 iframe 变量（因为它可能已经被序列化成字符串了）
-                // 但我们可以通过 ID 再次查找 DOM 中的元素（如果它已经被插入页面）
-                const activeIframe = document.getElementById(frameId);
-                if (activeIframe) {
-                    activeIframe.style.height = (event.data.height + 20) + 'px';
-                }
-            }
-        }, false);
-
-        // 关键：将内容直接写入 srcdoc，这样序列化为 innerHTML 字符串时内容会保留
+        // 关键：将内容直接写入 srcdoc
         iframe.srcdoc = fullHtmlContent;
-
-        // 替换标记
-        marker.replaceWith(iframe);
+          marker.replaceWith(iframe);
     });
 
     // 步骤8：返回最终渲染的 HTML 字符串
@@ -26804,17 +26828,30 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
- processedContent = processedContent
-            .replace(/“/g, '<span class="dialogue-quote">“')
-            .replace(/”/g, '”</span>')
-            .replace(/「/g, '<span class="dialogue-quote">「')
-            .replace(/」/g, '」</span>') 
-     .replace(/\*\*(.+?)\*\*/g, function(match, p1) { 
-        return '<strong>' + p1 + '</strong>'; 
-    })
-    .replace(/\*(.+?)\*/g, function(match, p1) { 
-        return '<em>' + p1 + '</em>'; 
-    });
+ processedContent = processedContent.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '<span class="dialogue-quote">"';
+})
+.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '"</span>';
+})
+.replace(/<html>[\s\S]*?<\/html>|「/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '<span class="dialogue-quote">「';
+})
+.replace(/<html>[\s\S]*?<\/html>|」/g, function(match) {
+    if (match.startsWith('<html>')) return match;
+    return '」</span>';
+})
+.replace(/<html>[\s\S]*?<\/html>|\*\*(.+?)\*\*/g, function(match, p1) {
+    if (match.startsWith('<html>')) return match;
+    return '<strong>' + p1 + '</strong>';
+})
+.replace(/<html>[\s\S]*?<\/html>|\*(.+?)\*/g, function(match, p1) {
+    if (match.startsWith('<html>')) return match;
+    return '<em>' + p1 + '</em>';
+});
 
 
     processedContent = formatAsTavernRegexedString(
