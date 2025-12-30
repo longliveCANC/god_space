@@ -22344,7 +22344,7 @@ async function handleModeSelection() {
     await insertOrAssignVariables({bookItemSettings: uidsToEnable.join(',')}, {type: 'chat'});
         } catch (worldbookError) {
              console.error('哎呀，在更新世界书时出错了，不过别怕，妈妈帮你跳过了它：', worldbookError);
-             alert('更新世界书设置失败了，但是没关系，我们仍然可以继续构建角色。');
+             alert('更新世界书设置失败了，但是没关系，我们仍然可以继续构建角色。报错信息：',worldbookError);
         }
 
         // --- “隔离咒”保护结束，准备切换页面 ---
