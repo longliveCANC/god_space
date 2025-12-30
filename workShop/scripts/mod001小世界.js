@@ -45,10 +45,10 @@
     const SHOP_CATEGORIES = [
         { key: '付费游戏', title: '付费游戏' },
         { key: '免费游戏', title: '免费游戏' },
-        { key: '游戏物品', title: '游戏物品' },
-        { key: '现实物品', title: '现实物品' },
+        { key: '商城道具', title: '🔮 商城道具' }, // ✨ 统一了
         { key: '购物车', title: '🛒 购物车' }
     ];
+
 
     // ====================================================================
     // ** 1. 工具函数 (Utils) **
@@ -139,14 +139,36 @@
         }
     }
 
-    function addToCart(name, type, cost) {
-        CART_ITEMS.push({ name, type, cost });
+    // 修改：增加了 target (目标仓库) 参数
+    function addToCart(name, type, baseCost, target) {
+        let finalCost = parseInt(baseCost);
+        let targetName = "";
+
+        // 计算逻辑：如果是道具，根据目标决定倍率
+        if (type === '商城道具') {
+            if (target === 'real') {
+                finalCost = finalCost * 2;
+                targetName = " (至现实仓库)";
+            } else {
+                targetName = " (至游戏仓库)";
+            }
+        }
+
+        // 构建购物车对象
+        CART_ITEMS.push({
+            name: name,
+            type: type,
+            target: target, // 记录目标：'game', 'real', 或 null (对于游戏本身)
+            cost: finalCost
+        });
+
         const cartTab = document.getElementById(`${PREFIX}_tab_btn_购物车`);
         if (cartTab && cartTab.classList.contains('active')) {
             renderCartSection();
         }
-        safeAlert(`已将 《${name}》 (${cost}) 加入购物车。`);
+        safeAlert(`已将 《${name}》${targetName} 加入购物车，花费 ${finalCost} 功勋。`);
     }
+
 
     function removeFromCart(index) {
         if (index >= 0 && index < CART_ITEMS.length) {
@@ -161,15 +183,25 @@
             safeAlert("购物车是空的！");
             return;
         }
-        const itemList = CART_ITEMS.map(i => `《${i.name}》 (${i.type}, ${i.cost})`).join('; ');
-        const totalCost = CART_ITEMS.reduce((sum, i) => sum + (parseInt(String(i.cost).match(/\d+/)) || 0), 0);
 
-        if (safeTrigger(`/setinput 李境结算了游戏商城购物车。总计花费 ${totalCost} 功勋。购买清单：${itemList}。`)) {
+        // 构建人类可读的清单，包含目标仓库信息
+        const itemList = CART_ITEMS.map(i => {
+            let targetDesc = "";
+            if (i.target === 'game') targetDesc = "[存入游戏仓库]";
+            if (i.target === 'real') targetDesc = "[存入现实仓库]";
+            return `《${i.name}》${targetDesc}(${i.cost})`;
+        }).join('; ');
+
+        const totalCost = CART_ITEMS.reduce((sum, i) => sum + i.cost, 0);
+
+        // 指令发送
+        if (safeTrigger(`/setinput 李境结算了商城购物车。总计花费 ${totalCost} 功勋。购买详细清单：${itemList}。请根据清单将物品分别写入[游戏仓库]或[现实仓库]，并扣除功勋。`)) {
             CART_ITEMS = [];
             renderCartSection();
             safeAlert(`结算指令已发送！总计消费 ${totalCost} 功勋。`);
         }
     }
+
 
     function handleWarehouseAction(name, actionKey, quantity) {
         if (!quantity || parseInt(quantity) <= 0) {
@@ -276,24 +308,61 @@
     function generateShopSection(data, title) {
         const safeData = data || {};
         if (Object.keys(safeData).length === 0) return `<div class="${PREFIX}_section" id="${PREFIX}_section_${title}"><h3>${title}</h3><p style="text-align:center;padding:20px;">暂无${title}。</p></div>`;
-        const itemType = title.includes('游戏') ? '游戏' : (title === '游戏物品' ? '游戏物品' : '现实物品');
+
         const cards = Object.entries(safeData).map(([name, item]) => {
             if (!item || typeof item !== 'object') return '';
-            const cost = item.所需功勋 || 'N/A';
-            if (cost === 'N/A' && title !== '免费游戏') return '';
+
+            // 获取基础数据
+            const baseCostStr = String(item.所需功勋 || item.基础功勋 || 'N/A');
+            const baseCostVal = parseInt(baseCostStr.match(/\d+/)) || 0;
             const desc = item.简介 || item.具体描述 || '暂无简介';
-            const reward = item.通关奖励 ? `<p style="font-size:11px; color:#418d2d;">🎁 通关奖励: ${item.通关奖励}</p>` : '';
             const starHtml = htmlStars(item.星级);
-            let metaHtml = item.类型 ? `<span style="color:#8a96a3">${item.类型}</span> <span style="color:#2a475e;margin:0 5px">|</span> ${starHtml}` : starHtml;
-            const displayCost = title === '免费游戏' ? '免费' : `${cost} 功勋`;
+            const source = item.来源游戏 ? `<div style="font-size:0.85em;color:#418d2d;margin-bottom:4px;">🌍 来源: ${item.来源游戏}</div>` : '';
+
+            // 🎨 区别渲染：根据栏目类型决定按钮样式
+            let actionHtml = '';
+
+            if (title === '商城道具') {
+                // ✨ 新逻辑：道具显示两个按钮
+                const gameCost = baseCostVal;
+                const realCost = baseCostVal * 2;
+
+                actionHtml = `
+                    <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
+                        <button class="${CLASSES.BTN_ADD_CART}"
+                            style="background-color:#2a475e; border:1px solid #418d2d;"
+                            data-name="${name}" data-type="${title}" data-cost="${gameCost}" data-target="game">
+                            🎒 买入游戏仓库 (${gameCost})
+                        </button>
+                        <button class="${CLASSES.BTN_ADD_CART}"
+                            style="background-color:#2a475e; border:1px solid #d4a017; color:#ffd700;"
+                            data-name="${name}" data-type="${title}" data-cost="${baseCostVal}" data-target="real">
+                            📦 买入现实仓库 (${realCost})
+                        </button>
+                    </div>
+                `;
+            } else {
+                // 旧逻辑：游戏本身（付费/免费）只有一个按钮
+                const displayCost = title === '免费游戏' ? '免费' : `${baseCostStr} 功勋`;
+                // 这里的 data-target 留空，因为买游戏不需要区分仓库
+                actionHtml = `<div class="${PREFIX}_card_actions"><button class="${CLASSES.BTN_ADD_CART}" data-name="${name}" data-type="${title}" data-cost="${baseCostVal}" data-target="game_media">加入购物车 (${displayCost})</button></div>`;
+            }
+
             return `
                 <div class="${PREFIX}_card">
-                    <div class="${PREFIX}_card_body"><div class="${PREFIX}_card_title">${name}</div><div class="${PREFIX}_card_meta">${metaHtml}</div><p style="font-size:13px; color:#c6d4df; margin-bottom: 10px; line-height:1.4;">${desc}</p>${reward}</div>
-                    <div class="${PREFIX}_card_actions"><button class="${CLASSES.BTN_ADD_CART}" data-name="${name}" data-type="${itemType}" data-cost="${displayCost}">加入购物车 (${displayCost})</button></div>
+                    <div class="${PREFIX}_card_body">
+                        <div class="${PREFIX}_card_title">${name}</div>
+                        <div class="${PREFIX}_card_meta">${starHtml}</div>
+                        ${source}
+                        <p style="font-size:13px; color:#c6d4df; margin-bottom: 10px; line-height:1.4;">${desc}</p>
+                    </div>
+                    ${actionHtml}
                 </div>`;
         }).join('');
+
         return `<div class="${PREFIX}_section" id="${PREFIX}_section_${title}"><h3>${title}</h3><div class="${PREFIX}_list">${cards}</div></div>`;
     }
+
 
     function renderCartSection() {
         const container = document.getElementById(`${PREFIX}_section_购物车`);
@@ -473,7 +542,10 @@
                     if (sec) sec.style.display = 'block';
                     if (key === '购物车') renderCartSection();
                 }
-                if (target.classList.contains(CLASSES.BTN_ADD_CART)) addToCart(target.dataset.name, target.dataset.type, target.dataset.cost);
+
+	if (target.classList.contains(CLASSES.BTN_ADD_CART)) {
+   	 addToCart(target.dataset.name, target.dataset.type, target.dataset.cost, target.dataset.target);
+	}
                 if (target.classList.contains(CLASSES.BTN_REMOVE_CART)) removeFromCart(parseInt(target.dataset.idx));
                 if (target.id === CLASSES.BTN_CHECKOUT) handleCheckout();
                 if (target.id === DOM_IDS.BTN_UPGRADE) handleUpgradeShop();
@@ -495,16 +567,33 @@
     }
 
     function openShop() {
+        // 1. 获取数据
         const data = getNestedData(PATHS.SHOP) || {};
+
+        // 🛠️ Debug工具：如果你想看看到底读到了什么，可以把下面这行注释取消掉，按F12在控制台看
+        // console.log("[Shop Debug] 读取到的原始数据:", data);
+
         const container = getOrCreateContainer(DOM_IDS.CONTAINER_SHOP, false);
         hideAllContainers();
+
+        // 生成标签页
         const tabs = SHOP_CATEGORIES.map(c => `<button id="${PREFIX}_tab_btn_${c.key}" class="${CLASSES.BTN_TAB}" data-tab-key="${c.key}">${c.title}</button>`).join('');
+
         const merit = data.当前功勋 || 0;
+
+        // 2. 生成内容 (这里是修改的重点！✨)
         let content = '';
         content += generateShopSection(data.付费游戏||{}, '付费游戏');
         content += generateShopSection(data.免费游戏||{}, '免费游戏');
-        content += generateShopSection(data.游戏物品||{}, '游戏物品');
-        content += generateShopSection(data.现实物品||{}, '现实物品');
+
+        // ❌ 删除旧的这两行：
+        // content += generateShopSection(data.游戏物品||{}, '游戏物品');
+        // content += generateShopSection(data.现实物品||{}, '现实物品');
+
+        // ✅ 新增这一行：读取新的 [商城道具] 字段
+        // 注意：这里的第二个参数 '商城道具' 必须和 SHOP_CATEGORIES 里的 key 完全一致！
+        content += generateShopSection(data.商城道具 || {}, '商城道具');
+
         content += `<div class="${PREFIX}_section" id="${PREFIX}_section_购物车"></div>`;
 
         container.innerHTML = `
