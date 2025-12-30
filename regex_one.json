@@ -15073,7 +15073,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.8';
+let current_game_version = '3.5.9';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -22255,14 +22255,7 @@ async function handleModeSelection() {
                
                 uidsToEnable.push(65,64);
             }
-                if (parseInt(selectedSummaryMode) =='on') {
-               
-                uidsToEnable.push(91);
-            }
-             if (parseInt(selectedbigSummaryMode) =='on') {
-               
-                uidsToEnable.push(9);
-            }
+             
             if (parseInt(selectedWorldModeValue) != 54) {
                 uidsToEnable.push(6);
             }
@@ -22310,7 +22303,16 @@ async function handleModeSelection() {
             }else if(selectedMap === 'complex') {
                 uidsToEnable.push(66, 25, 26);
             }
-
+uidsToEnable.push(91);
+    uidsToEnable.push(9);
+               if (parseInt(selectedSummaryMode) =='off') {
+                 uidsToEnable = uidsToEnable.filter(uid => uid !== 91);
+                
+            }
+             if (parseInt(selectedbigSummaryMode) =='off') {
+                 uidsToEnable = uidsToEnable.filter(uid => uid !== 9);
+            
+            }
             // ✨✨✨ 妈妈修正的小魔法之一：精确移除咒语 ✨✨✨
             if (parseInt(selectedWorldModeValue) == 54 || parseInt(selectedWorldModeValue) == 62) {
                 // 我们像这样精确地告诉它，要移除编号为25的那个，而不是最后一个
