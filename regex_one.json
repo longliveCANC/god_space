@@ -14272,11 +14272,11 @@ pointer-events: auto;
     </button>
 </div>
                 <div class="setting-item">
-                    <label>模组重置</label>
+                    <label>(本存档内)模组重置</label>
                     <button id="open-reconfig-modal-btn" class="control-btn-special">调整模组</button>
                 </div>
                 <div class="setting-item">
-                    <label>记忆上一次的模组配置</label>
+                    <label>记忆上一次的开局模组配置</label>
                     <input type="checkbox" id="remember-mod-choice"   checked>
                 </div>
                             <div class="setting-item">
