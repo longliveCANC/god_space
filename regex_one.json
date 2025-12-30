@@ -34092,27 +34092,33 @@ if (isContinuation) {
         const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
  
  
-  if (lastAiMessage) {
-        // 在末尾追加，加个空格更自然
+   if (lastAiMessage) {
+        // 【修改点：确保 swipes 存在并同步更新】
+        if (!lastAiMessage.swipes) {
+            lastAiMessage.swipes = [lastAiMessage.content];
+            lastAiMessage.currentSwipeIndex = 0;
+        }
+
+        // 在末尾追加内容
         lastAiMessage.content += " " + aiFullResponse;
-        aiMessage = lastAiMessage; // 把更新后的消息赋给 aiMessage 以便后续处理
-        console.log("[Nova's Tapestry] 成功将新的故事片段编织到上一段记忆中。");
-        // 因为我们直接修改了历史记录中的对象，必须调用完整的 renderHistory 才能正确显示
-           if(!isContinuationVar){ 
-             await renderHistory();
-            } else{
-      const chatDisplayArea = document.getElementById('chat-display-area');
- 
-        if (chatDisplayArea && chatDisplayArea.children.length > 0) {
-            const lastBubble = chatDisplayArea.lastChild;
-            // 只有当最后一个气泡是assistant-message时才删除
-            if (lastBubble && lastBubble.classList.contains('assistant-message')) {
-                chatDisplayArea.removeChild(lastBubble);
-                console.log("[Nova's Reroll] 已从UI中移除最后一条AI消息气泡。");
+        // 【关键：同步更新当前分支的内容】
+        lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
+
+        aiMessage = lastAiMessage;
+        console.log("[Nova's Tapestry] 成功将新的故事片段编织到当前分支中。");
+
+        if(!isContinuationVar){
+            await renderHistory();
+        } else {
+            const chatDisplayArea = document.getElementById('chat-display-area');
+            if (chatDisplayArea && chatDisplayArea.children.length > 0) {
+                const lastBubble = chatDisplayArea.lastChild;
+                if (lastBubble && lastBubble.classList.contains('assistant-message')) {
+                    chatDisplayArea.removeChild(lastBubble);
+                    console.log("[Nova's Reroll] 已从UI中移除变量更新的临时气泡。");
+                }
             }
         }
-            }
-      
     } else {
      let hookDataBeforeSave = {
     response: aiFullResponse || partialAiResponse, // 原始AI回复文本
@@ -34321,32 +34327,32 @@ AI回复: ${theAImessage}
     
            const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
         if (lastAiMessage) {
-             // 确保当前分支数据同步
-             if (!lastAiMessage.swipes) {
-                 lastAiMessage.swipes = [lastAiMessage.content];
-                 lastAiMessage.currentSwipeIndex = 0;
-             }
-             // 更新当前分支的内容
-             lastAiMessage.content += " " + aiFullResponse;
-             lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
+              // 【修改点：确保当前分支数据同步】
+        if (!lastAiMessage.swipes) {
+            lastAiMessage.swipes = [lastAiMessage.content];
+            lastAiMessage.currentSwipeIndex = 0;
+        }
 
-             aiMessage = lastAiMessage;
-        console.log("[Nova's Tapestry] 成功将新的故事片段编织到上一段记忆中。");
-        // 因为我们直接修改了历史记录中的对象，必须调用完整的 renderHistory 才能正确显示
-                if(!isContinuationVar){ 
-             await renderHistory();
-            } else{
-      const chatDisplayArea = document.getElementById('chat-display-area');
- 
-        if (chatDisplayArea && chatDisplayArea.children.length > 0) {
-            const lastBubble = chatDisplayArea.lastChild;
-            // 只有当最后一个气泡是assistant-message时才删除
-            if (lastBubble && lastBubble.classList.contains('assistant-message')) {
-                chatDisplayArea.removeChild(lastBubble);
-                console.log("[Nova's Reroll] 已从UI中移除最后一条AI消息气泡。");
+        // 更新内容
+        lastAiMessage.content += " " + aiFullResponse;
+        // 【关键：同步更新当前分支的内容】
+        lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
+
+        aiMessage = lastAiMessage;
+        console.log("[Nova's Tapestry] (非流式) 成功将新的故事片段编织到当前分支中。");
+
+        if(!isContinuationVar){
+            await renderHistory();
+        } else {
+            const chatDisplayArea = document.getElementById('chat-display-area');
+            if (chatDisplayArea && chatDisplayArea.children.length > 0) {
+                const lastBubble = chatDisplayArea.lastChild;
+                if (lastBubble && lastBubble.classList.contains('assistant-message')) {
+                    chatDisplayArea.removeChild(lastBubble);
+                    console.log("[Nova's Reroll] 已从UI中移除变量更新的临时气泡。");
+                }
             }
         }
-            }
     } else {
     let hookDataBeforeSave = {
     response: aiFullResponse || partialAiResponse, // 原始AI回复文本
