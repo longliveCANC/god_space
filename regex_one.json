@@ -29741,6 +29741,129 @@ _memoryOperation: function(currentData, path, key, value, operationType) {
             finalValue = value;
         }
     }
+
+     // ✨ 新增：也处理数组格式的 JSON 字符串
+    if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
+        try {
+            finalValue = JSON.parse(value);
+        } catch (e) {
+            finalValue = value;
+        }
+    }
+
+
+
+      // ============================================================
+    // 🛡️ 模板格式守护 (Template Guardian) - START
+    // ============================================================
+    if (currentData._template) {
+        try {
+            // 1. 导航到模板中的对应父节点
+            let templateNode = currentData._template;
+            const pathParts = path.split('.').filter(p => p);
+            let inTemplate = true;
+
+            for (const part of pathParts) {
+                if (templateNode && templateNode.hasOwnProperty(part)) {
+                    templateNode = templateNode[part];
+                } else {
+                    // 路径超出了模板定义的范围，进入自由区域
+                    inTemplate = false;
+                    break;
+                }
+            }
+
+            if (inTemplate && templateNode) {
+                // 处理数组索引情况 (例如 key 是 "name[0]")
+                const arrayMatch = key.match(/^(.+)\[(\d+)\]$/);
+                let checkKey = key;
+                let checkIndex = -1;
+
+                if (arrayMatch) {
+                    checkKey = arrayMatch[1];
+                    checkIndex = parseInt(arrayMatch[2], 10);
+                }
+
+                // 检查 Key 是否在模板中定义
+                if (templateNode.hasOwnProperty(checkKey)) {
+                    const rule = templateNode[checkKey];
+
+                    // --- 规则 A: 结构类型检查 (Structure Check) ---
+                    // 如果模板是对象，新值必须是对象（且不是数组）
+                    if (typeof rule === 'object' && rule !== null && !Array.isArray(rule)) {
+                        // 如果是对该节点整体赋值
+                        if (checkIndex === -1) {
+                            const isNewValueArray = Array.isArray(finalValue);
+                            const isNewValueObject = typeof finalValue === 'object' && finalValue !== null && !isNewValueArray;
+
+                            if (!isNewValueObject) {
+                                console.warn(`[Assa] 🛡️ 模板守护：路径 '${path}.${key}' 被锁定为 [Object] 结构。禁止写入 ${isNewValueArray ? '[Array]' : typeof finalValue}。`);
+                                return currentData;
+                            }
+                        }
+                    }
+                    // 如果模板是数组，新值必须是数组
+                    else if (Array.isArray(rule)) {
+                        if (checkIndex === -1) {
+                            if (!Array.isArray(finalValue)) {
+                                console.warn(`[Assa] 🛡️ 模板守护：路径 '${path}.${key}' 被锁定为 [Array] 结构。禁止写入 ${typeof finalValue}。`);
+                                return currentData;
+                            }
+                        } else {
+                            // 如果是修改数组中的某一项 (name[0])
+                            // 获取对应索引的规则
+                            const itemRule = rule[checkIndex] || rule[0]; // 如果没有对应索引，默认使用第一个规则，或者你可以设为自由
+                            if (typeof itemRule === 'string') {
+                                if (itemRule.includes('_can_not_change') || itemRule.includes('_readonly')) {
+                                    console.warn(`[Assa] 🛡️ 模板守护：路径 '${path}.${key}' (索引 ${checkIndex}) 是只读的。`);
+                                    return currentData;
+                                }
+                                if ((itemRule.includes('_can_only_number') || itemRule.includes('_number')) && isNaN(Number(finalValue))) {
+                                    console.warn(`[Assa] 🛡️ 模板守护：路径 '${path}.${key}' (索引 ${checkIndex}) 必须是数字。`);
+                                    return currentData;
+                                }
+                            }
+                        }
+                    }
+
+                    // --- 规则 B: 字符串规则检查 (String Rule Check) ---
+                    if (typeof rule === 'string') {
+                        // 1. 只读检查
+                        if (rule.includes('_can_not_change') || rule.includes('_readonly')) {
+                            console.warn(`[Assa] 🛡️ 模板守护：路径 '${path}.${key}' 是只读的，无法修改。`);
+                            return currentData;
+                        }
+                        // 2. 数字类型强制
+                        if (rule.includes('_can_only_number') || rule.includes('_number')) {
+                            if (isNaN(Number(finalValue))) {
+                                console.warn(`[Assa] 🛡️ 模板守护：路径 '${path}.${key}' 必须是数字，收到: ${finalValue}`);
+                                return currentData;
+                            }
+                            // 自动转换类型
+                            finalValue = Number(finalValue);
+                        }
+                    }
+
+                } else {
+                    // Key 不在模板中。
+                    // --- 规则 C: 严格模式检查 (Strict Mode) ---
+                    // 如果模板对象包含 _strict: true，则禁止添加新 Key
+                    if (templateNode._strict === true || templateNode._strict === 'true') {
+                        console.warn(`[Assa] 🛡️ 模板守护：路径 '${path}' 处于严格模式，禁止添加未定义的键 '${key}'。`);
+                        return currentData;
+                    }
+                    // 默认允许扩展 (key_can_expand)
+                }
+            }
+        } catch (err) {
+            console.error(`[Assa] 🛡️ 模板校验过程出错:`, err);
+            // 出错时为了安全，可以选择放行或拦截，这里选择放行但记录错误
+        }
+    }
+    // ============================================================
+    // 🛡️ 模板格式守护 (Template Guardian) - END
+    // ============================================================
+    
     if (operationType !== 'rename' && operationType !== 'move') {
      
     }
@@ -29880,6 +30003,28 @@ _memoryOperation: function(currentData, path, key, value, operationType) {
         }
     }
 
+if (path.startsWith('summary.')) {
+    console.log(`[Assa] 💖 summary审查：检测到summary路径 '${path}'，检查值类型...`);
+    
+    // 检查 finalValue 是否是对象或数组（不允许）
+    if (typeof finalValue === 'object' && finalValue !== null) {
+        if (Array.isArray(finalValue)) {
+            console.warn(`[Assa] 🚫 summary保护：拦截数组写入。路径: '${path}.${finalKey}'`);
+            return currentData; // 拒绝修改，直接返回
+        } else {
+            console.warn(`[Assa] 🚫 summary保护：拦截嵌套对象写入。路径: '${path}.${finalKey}'`);
+            return currentData; // 拒绝修改，直接返回
+        }
+    }
+    
+    // 只允许简单类型：string, number, boolean
+    if (typeof finalValue !== 'string' && typeof finalValue !== 'number' && typeof finalValue !== 'boolean') {
+        console.warn(`[Assa] 🚫 summary保护：只允许简单类型。路径: '${path}.${finalKey}'，当前类型: ${typeof finalValue}`);
+        return currentData;
+    }
+    
+    console.log(`[Assa] ✅ summary审查通过：值类型为 ${typeof finalValue}`);
+}
     // 💖 智能对象合并/设置
     if (typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
         if (typeof target[finalKey] === 'object' && target[finalKey] !== null && !Array.isArray(target[finalKey])) {
@@ -31749,6 +31894,7 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
         }
     }
 }
+
 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, finalValue);
   collectedBatchOps.push({
                                type: 'memory',
@@ -31872,7 +32018,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                             //      }
                                     let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
                  let key = unquote(clean(fullPath.substring(lastDotIndex1 + 1))); // 修改这里：确保有 unquote
-                                 // 💖 妈妈为你添加的路径别名魔法（升级版） 💖
+                     
 
                                  // 💖 新增：summary 路径特殊处理（二参数模式）💖
 if (path.startsWith('summary')) {
@@ -31987,6 +32133,10 @@ if (lastPathSegment === key) {
 
  
        const finalValue = tryParseJson(path2Str);
+
+ 
+
+
      assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
                         collectedBatchOps.push({
                                type: 'memory',
@@ -32938,14 +33088,39 @@ const endPrompts = INJECTED_PROMPTS.filter(p => p.position === 'end' && p.role &
  
         // --- [新增代码块结束] ---
         // --- 6. 内容净化 ---
-        finalPromptArray = finalPromptArray.map(prompt => {
-            let content = prompt.content;
-            content = content.replace(/\{\{.*?\}\}/g, ''); // 移除 {{...}}
-            if (typeof userName !== 'undefined' && userName) {
-             content = content.replace(/&lt;user&gt;/g, userName);
-            }
-            return { ...prompt, content };
-        });
+ finalPromptArray = finalPromptArray.map(prompt => {
+    let content = prompt.content;
+    
+    // 处理 {{random:...}} 或 {{random::...}} 格式
+    content = content.replace(/\{\{random::?(.*?)\}\}/g, (match, options) => {
+        // 优先检测 :: 分隔符
+        let items;
+        if (options.includes('::')) {
+            // 使用 :: 分割
+            items = options.split('::').map(item => item.trim()).filter(item => item);
+        } else {
+            // 使用逗号分割
+            items = options.split(',').map(item => item.trim()).filter(item => item);
+        }
+        
+        // 随机选择一个选项
+        if (items.length > 0) {
+            const randomIndex = Math.floor(Math.random() * items.length);
+            return items[randomIndex];
+        }
+        return ''; // 如果没有选项，返回空字符串
+    });
+    
+    // 移除其他 {{...}} 格式（非random的）
+    content = content.replace(/\{\{(?!random::?).*?\}\}/g, '');
+    
+    // 替换用户名
+    if (typeof userName !== 'undefined' && userName) {
+        content = content.replace(/&lt;user&gt;/g, userName);
+    }
+    
+    return { ...prompt, content };
+});
 
  
  // --- 7. 附加来自参数的最终提示词 ---
