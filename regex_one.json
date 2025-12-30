@@ -34466,7 +34466,7 @@ const finalAiResponse = hookDataBeforeSave.response;
  
  
  try {
- wsqa
+
     // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
     const responseText = aiFullResponse || partialAiResponse; // 确保流式中断时也能处理
  

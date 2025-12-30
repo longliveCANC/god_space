@@ -5,15 +5,13 @@
         return;
     }
 
-    /**
-     * 提取最后一个 <summary/> 标签的内容并转换为 updateMemory 格式
-     * @param {string} text - 要处理的文本
-     * @returns {string} - 处理后的文本
-     */
-    function processSummaryTag(text) {
+    
+
+ async function processSummaryBeforeSave(hookData) {
+    if (hookData.response) {
         // 使用正则表达式匹配所有 <summary>...</summary> 标签
         const summaryTagRegex = /<summary>([\s\S]*?)<\/summary>/g;
-        const matches = [...text.matchAll(summaryTagRegex)];
+        const matches = [...hookData.response.matchAll(summaryTagRegex)];
 
         if (matches.length > 0) {
             // 获取最后一个匹配
@@ -23,30 +21,26 @@
             // 去掉换行符
             const cleanedContent = summaryContent.replace(/\n/g, '').trim();
 
-            // 构建 updateMemory 标签
-            const updateMemoryTag = `<updateMemory>memory('summary.small.小摘要','${cleanedContent}')</updateMemory>`;
+            // 构建命令字符串
+            const commandString = `memory('summary.small.小摘要','${cleanedContent}')`;
 
-            // 将 updateMemory 标签添加到文本末尾
-            const processedText = text + '\n' + updateMemoryTag;
+            // 执行命令
+            try {
+                await window.worldHelper.processUpdateMemoryCommands(commandString, -1);
+                console.log('[Summary Plugin] UpdateMemory command executed successfully.');
+            } catch (error) {
+                console.error('[Summary Plugin] Failed to execute updateMemory command:', error);
+            }
 
+            // 构建 updateMemory 标签并添加到文本末尾
+            const updateMemoryTag = `<updateMemory>${commandString}</updateMemory>`;
+            hookData.response = hookData.response + '\n' + updateMemoryTag;
+            
             console.log('[Summary Plugin] Summary tag processed and updateMemory added.');
-            return processedText;
         }
-
-        return text;
     }
-
-    /**
-     * 钩子处理函数:在保存前处理 AI 响应
-     * @param {object} hookData - 从 NovaHooks 传入的数据对象
-     * @returns {object} - 处理后的数据对象
-     */
-    async function processSummaryBeforeSave(hookData) {
-        if (hookData.response) {
-            hookData.response = processSummaryTag(hookData.response);
-        }
-        return hookData;
-    }
+    return hookData;
+}
 
     /**
      * 钩子处理函数:在渲染前处理消息
