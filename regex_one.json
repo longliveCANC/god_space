@@ -14734,7 +14734,7 @@ pointer-events: auto;
 
         <div class="reconfig-header">
             <div>
-                <h2 class="reconfig-title" style="font-size: 1.4em; margin:0; text-align:left;">模组设定</h2>
+                <h2 class="reconfig-title" style="font-size: 1.4em; margin:0; text-align:left;">模组设定(开局不要在这里设置模组哦，请在开局左右两侧下方设置)</h2>
                 <p class="reconfig-subtitle" style="margin:0; text-align:left; font-size: 0.8em;">当前世界观: <span id="current-worldview-display" style="color: var(--primary-color);">读取中...</span></p>
             </div>
             <button id="reconfig-modal-close-btn" class="reconfig-modal-close" style="position:static;">×</button>
@@ -31461,6 +31461,17 @@ function cleanParam(param) {
             };
             
             const firstArgClean = clean(args[0]);
+
+                       if (firstArgClean === 'status') {
+    console.log(`[Core] 💖 导流：检测到 memory 的第一参数为 'status'（无子路径），转发到 set_status 处理`);
+    // 直接传递剩余参数，不做路径处理
+    const newArgs = args.slice(1);
+    const setStatusLine = `set_status(${newArgs.join(', ')})`;
+    lines.push(setStatusLine);
+    continue;
+}
+
+
              if (firstArgClean.startsWith('status.')) {
                 console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'status.' 开头，转发到 set_status 处理`);
                 // 移除 'status.' 前缀
