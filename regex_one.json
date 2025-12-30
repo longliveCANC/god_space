@@ -12721,7 +12721,8 @@ pointer-events: auto;
          <div class="mod-label">其他</div>
                 <div class="mod-tab" data-for="options-on" data-name="options-mode" data-off-id="options-off">选项区</div>
                    <div class="mod-tab" data-for="optionshard-on" data-name="optionshard-mode" data-off-id="optionshard-off">选项防编造检定</div>
-        <div class="mod-tab" data-for="summary-on" data-name="summary-mode" data-off-id="summary-off" style="display: none;">自动总结</div>
+                           <div class="mod-tab" data-for="summary-on" data-name="summary-mode" data-off-id="summary-off">自动小总结</div>
+                           <div class="mod-tab" data-for="bigsummary-on" data-name="bigsummary-mode" data-off-id="bigsummary-off">自动大总结</div>
 
 
 
@@ -12765,6 +12766,9 @@ pointer-events: auto;
 
         <input type="radio" id="summary-on" name="summary-mode" value="on" checked>
         <input type="radio" id="summary-off" name="summary-mode" value="off">
+
+              <input type="radio" id="bigsummary-on" name="bigsummary-mode" value="on" checked>
+        <input type="radio" id="bigsummary-off" name="bigsummary-mode" value="off">
         <input type="radio" id="title-on" name="title-mode" value="51">
         <input type="radio" id="title-off" name="title-mode" value="off" checked>
            <input type="radio" id="nohuman-on" name="nohuman-mode" value="37">
@@ -15069,7 +15073,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.5';
+let current_game_version = '3.5.6';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -15077,7 +15081,6 @@ let currentChapterIndex = 0;
 let isReadingModeOpen = false;
 
     // 全局变量存储数据
- 
     let currentGameData = null;
    // --- 全局变量和数据获取 ---
         let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
@@ -15181,7 +15184,6 @@ game = new Game();
 
 我会确保：
 - 不输出任何正文内容
-- 不遗漏summary的更新
 - 所有变化都同步到memory
 - 指令格式严格规范
 - 不遗漏任何需要更新/初始化的字段
@@ -22170,6 +22172,7 @@ async function handleModeSelection() {
         
         // HTML: value="on" checked
         const selectedSummaryMode = getSafeValue('summary-mode', 'on');
+ const selectedbigSummaryMode = getSafeValue('bigsummary-mode', 'on');
 
         // HTML: value="off" checked
         const selectedTitleValue = getSafeValue('title-mode', 'off');
@@ -22252,6 +22255,14 @@ async function handleModeSelection() {
                
                 uidsToEnable.push(65,64);
             }
+                if (parseInt(selectedSummaryMode) ==on) {
+               
+                uidsToEnable.push(91);
+            }
+             if (parseInt(selectedbigSummaryMode) ==on) {
+               
+                uidsToEnable.push(9);
+            }
             if (parseInt(selectedWorldModeValue) != 54) {
                 uidsToEnable.push(6);
             }
@@ -22314,7 +22325,7 @@ async function handleModeSelection() {
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -34449,7 +34460,7 @@ const finalAiResponse = hookDataBeforeSave.response;
  
  
  try {
- 
+ wsqa
     // aiFullResponse 是我们从 generate 函数得到的完整AI回复字符串
     const responseText = aiFullResponse || partialAiResponse; // 确保流式中断时也能处理
  
@@ -43199,7 +43210,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -43222,7 +43233,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -43339,6 +43350,8 @@ function setupReconfigModal() {
   { name: '选项区开', uid: 10, group: 'options', category: 'system', desc: '显示行动选项' },
         { name: '选项区关', uid: 29, group: 'options', category: 'system', desc: '隐藏行动选项' },
         { name: '防编造检定', uid: 84, category: 'system', desc: '防止伪造选项检定属性' },
+ { name: '自动大总结', uid: 9, category: 'system', desc: '使用卡的自动大总结' },
+ { name: '自动小总结', uid: 91, category: 'system', desc: '使用卡的自动小总结' },
 
     ];
 
@@ -43544,7 +43557,7 @@ function setupReconfigModal() {
                 feedbackMsg.textContent = "未找到配置，已为您创建默认设定，请检查并调整。";
                 feedbackMsg.style.opacity = '1';
 
-                const defaultUids = "1,38,10,53,45,48,55,59,70,75,77,79,72,21,6";
+                const defaultUids = "1,38,10,53,45,48,55,59,70,75,77,79,72,21,6,9,91";
                 const newWorldbookTag = `<世界书条目>${defaultUids}</世界书条目>`;
                 const newMessage = `${firstMessage.message.trim()}\n\n${newWorldbookTag}`;
 
