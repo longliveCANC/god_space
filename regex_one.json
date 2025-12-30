@@ -15830,8 +15830,8 @@ const NovaHooks = {
     }
 };
  window.NovaHooks = NovaHooks;
+try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
 
- emailjs.init('kDLEJZKjDhhihIqV1'); // 替换成你的 Public Key
   window.NovaWorkshop = (function() {
     const REMOTE_URL = 'https://longlivecanc.github.io/god_space/mods.json';
     // 【修改】升级数据库版本
@@ -24094,13 +24094,13 @@ function limitConsecutiveNewlines(text, maxNewlines = 2) {
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
     // 步骤1：提前处理引号、Markdown 并进行通用格式化
- processedContent = processedContent.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+  processedContent = processedContent.replace(/<html>[\s\S]*?<\/html>|“/g, function(match) {
     if (match.startsWith('<html>')) return match;
-    return '<span class="dialogue-quote">"';
+    return '<span class="dialogue-quote">“';
 })
-.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+.replace(/<html>[\s\S]*?<\/html>|”/g, function(match) {
     if (match.startsWith('<html>')) return match;
-    return '"</span>';
+    return '”</span>';
 })
 .replace(/<html>[\s\S]*?<\/html>|「/g, function(match) {
     if (match.startsWith('<html>')) return match;
@@ -25907,6 +25907,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
             if (userName) {
                 // _replaceUserPlaceholder 需要存在于这个作用域或全局
                 _replaceUserPlaceholder(vars.stat_data, userName);
+       _replaceUserPlaceholder(vars.assa_data, userName);
  
                  console.log(`[Nova's Love] ✅ 已在 chat 核心中将'user'替换为'${userName}'`);
             }
@@ -25929,6 +25930,7 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         const userName = SillyTavern.name1;
         if (userName) {
             _replaceUserPlaceholder(currentGameData, userName);
+                _replaceUserPlaceholder(assaSettingsData, userName);
         }
 
         console.log("[Nova's Love] ✅ 世界本源(chat)与临时数据(window)均已通过守护咒语成功初始化！");
@@ -26828,13 +26830,13 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
         .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
 
- processedContent = processedContent.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+ processedContent = processedContent.replace(/<html>[\s\S]*?<\/html>|“/g, function(match) {
     if (match.startsWith('<html>')) return match;
-    return '<span class="dialogue-quote">"';
+    return '<span class="dialogue-quote">“';
 })
-.replace(/<html>[\s\S]*?<\/html>|"/g, function(match) {
+.replace(/<html>[\s\S]*?<\/html>|”/g, function(match) {
     if (match.startsWith('<html>')) return match;
-    return '"</span>';
+    return '”</span>';
 })
 .replace(/<html>[\s\S]*?<\/html>|「/g, function(match) {
     if (match.startsWith('<html>')) return match;
@@ -31448,16 +31450,7 @@ function cleanParam(param) {
             };
             
             const firstArgClean = clean(args[0]);
-            if (firstArgClean === 'status') {
-    console.log(`[Core] 💖 导流：检测到 memory 的第一参数为 'status'（无子路径），转发到 set_status 处理`);
-    // 直接传递剩余参数，不做路径处理
-    const newArgs = args.slice(1);
-    const setStatusLine = `set_status(${newArgs.join(', ')})`;
-    lines.push(setStatusLine);
-    continue;
-}
-            
-            if (firstArgClean.startsWith('status.')) {
+             if (firstArgClean.startsWith('status.')) {
                 console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'status.' 开头，转发到 set_status 处理`);
                 // 移除 'status.' 前缀
                 const newFirstArg = "'" + firstArgClean.substring(7) + "'";
@@ -31467,7 +31460,6 @@ function cleanParam(param) {
                 lines.push(setStatusLine);
                 continue;
             }
-            
             if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attribute.')) {
                 console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'player_attr.' 开头，转发到 set_attribute 处理`);
                 // 移除 'player_attr.' 前缀
