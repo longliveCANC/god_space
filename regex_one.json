@@ -15073,7 +15073,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.7';
+let current_game_version = '3.5.8';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -22255,11 +22255,11 @@ async function handleModeSelection() {
                
                 uidsToEnable.push(65,64);
             }
-                if (parseInt(selectedSummaryMode) ==on) {
+                if (parseInt(selectedSummaryMode) =='on') {
                
                 uidsToEnable.push(91);
             }
-             if (parseInt(selectedbigSummaryMode) ==on) {
+             if (parseInt(selectedbigSummaryMode) =='on') {
                
                 uidsToEnable.push(9);
             }
