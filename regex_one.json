@@ -46484,7 +46484,7 @@ function handleRefactor(fullPath) {
 
     // 【修复格式】按钮
     document.getElementById('refactor-fix-btn').onclick = () => {
-        const command = `<request:该路径（${fullPath}）的内容有误（可能不是正确的compact json格式），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
+        const command = `<request:该路径（${fullPath}）的格式有误（不是正确的json格式，导致游戏无法正确解析），需要重写，请在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的正确内容>`;
         generateAndSendCommand(command, true);
         closeModal();
     };
