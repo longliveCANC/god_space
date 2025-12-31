@@ -2115,101 +2115,114 @@
             }
         }
   async loadCG(displayName) {
-            // 1. 查找或创建立绘容器 (挂载在 mod01-body 下，而不是 detail 下，以实现固定效果)
+            console.log(`[Nova][CG-LOG] 尝试为 '${displayName}' 加载立绘...`);
+
+            // 1. 查找或创建立绘容器
             const bodyEl = this.container.querySelector('.mod01-body');
             let cgContainer = bodyEl.querySelector('.mod01-cg-container');
-
-            // 如果不存在则创建
             if (!cgContainer) {
                 cgContainer = document.createElement('div');
                 cgContainer.className = 'mod01-cg-container';
                 cgContainer.innerHTML = '<img class="mod01-cg-image" src="" />';
-                // 插入到 sidebar 后面，detail 前面 (或者直接 append，CSS z-index 会控制层级)
                 bodyEl.appendChild(cgContainer);
             }
-
             const cgImg = cgContainer.querySelector('.mod01-cg-image');
-
-            // 切换角色时先隐藏，避免闪烁旧图
-            cgContainer.style.opacity = '0';
-
-            // 获取数据源 (兼容 window.GameAPI.assaData)
-            const assaData = window.GameAPI ? window.GameAPI.assaData : null;
-            const imgMap = assaData ? assaData.img_map : null;
-            // 远程映射表通常在 window.npcImageMap
-            const remoteMap = window.npcImageMap || {};
-
-            if (!imgMap || !imgMap[displayName]) {
-                console.log(`[Nova] 未找到 ${displayName} 的立绘映射`);
-                return;
-            }
-
-            const imageNameStr = String(imgMap[displayName]);
-            let imageBlob = null;
+            cgContainer.style.opacity = '0'; // 切换时先隐藏
 
             try {
-                // 1. 查本地库
-                if (window.imageDB) {
-                    imageBlob = await window.imageDB.get('CustomNpcs', imageNameStr);
+                // 2. 基础数据源检查 (兼容 assaData 和 assaSettingsData)
+                const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
+                if (!assaData || !assaData.img_map) {
+                    console.log('[Nova][CG-LOG] 状态：数据源(assaData/img_map) 尚未准备好。');
+                    return;
                 }
 
-                // 2. 查远程
+                const imageName = assaData.img_map[displayName];
+                if (!imageName) {
+                    console.log(`[Nova][CG-LOG] 状态：在映射表中未找到角色 '${displayName}'`);
+                    return;
+                }
+                const imageNameStr = String(imageName);
+                let imageBlob = null;
+
+                // 3. 尝试从本地库获取 (CustomNpcs)
+                if (window.imageDB) {
+                    try {
+                        imageBlob = await window.imageDB.get('CustomNpcs', imageNameStr);
+                        if (imageBlob) console.log(`[Nova][CG-LOG] ✨ 本地库命中: ${imageNameStr}`);
+                    } catch (e) { console.warn('[Nova][CG-LOG] 本地库读取异常', e); }
+                }
+
+                // 4. 如果本地没有，尝试从远程获取
                 if (!imageBlob) {
-                    const imageUrl = remoteMap[imageNameStr];
-                    if (imageUrl) {
-                        // 查远程缓存
-                        if (window.imageDB) {
-                            imageBlob = await window.imageDB.get('RemoteCache', imageUrl);
-                        }
-                        // 下载
-                        if (!imageBlob) {
-                            const res = await fetch(imageUrl);
-                            if (res.ok) {
-                                const blob = await res.blob();
-                                imageBlob = new Blob([blob], { type: 'image/png' });
-                                if (window.imageDB) {
-                                    await window.imageDB.set('RemoteCache', imageUrl, imageBlob);
+                    const remoteMap = window.GameAPI.npcImageMap;
+                    if (!remoteMap) {
+                        console.error('[Nova][CG-LOG] 错误：npcImageMap 未定义，无法检索远程资源');
+                    } else {
+                        const imageUrl = remoteMap[imageNameStr];
+                        if (imageUrl) {
+                            console.log(`[Nova][CG-LOG] 发现远程URL: ${imageUrl}`);
+                            // 4.1 查远程缓存
+                            if (window.imageDB) {
+                                try {
+                                    imageBlob = await window.imageDB.get('RemoteCache', imageUrl);
+                                } catch (e) { console.warn('[Nova][CG-LOG] 远程缓存读取失败'); }
+                            }
+
+                            // 4.2 执行下载
+                            if (!imageBlob) {
+                                console.log(`[Nova][CG-LOG] 缓存未命中，开始下载...`);
+                                const res = await fetch(imageUrl);
+                                if (res.ok) {
+                                    const originalBlob = await res.blob();
+                                    imageBlob = new Blob([originalBlob], { type: 'image/png' });
+                                    if (window.imageDB) {
+                                        await window.imageDB.set('RemoteCache', imageUrl, imageBlob);
+                                        console.log(`[Nova][CG-LOG] 下载成功并存入缓存`);
+                                    }
+                                } else {
+                                    console.error(`[Nova][CG-LOG] 下载失败: ${res.status}`);
                                 }
                             }
+                        } else {
+                            console.log(`[Nova][CG-LOG] 远程映射表中无此Key: ${imageNameStr}`);
                         }
                     }
                 }
 
+                // 5. 图片处理与显示
                 if (imageBlob) {
-                    // Blob 转 DataURL
                     const reader = new FileReader();
                     reader.readAsDataURL(imageBlob);
                     reader.onloadend = async () => {
-                        const rawUrl = reader.result;
-
-                        // 调用去背魔法 (enablePixelation = false 表示不像素化，只去背)
-                        // targetHeight 设为窗口高度的 80% 左右
-                        const targetH = window.innerHeight * 0.85;
-
+                        const stableImageUrl = reader.result;
                         try {
-                            // 确保 createPixelatedCharaImage 已定义
+                            // 这里的参数参考了你提供的 getPixelationSettings 逻辑
+                            // 如果没有动态设置函数，则默认不像素化，高度取窗口 85%
+                            const targetH = window.innerHeight * 0.85;
                             if (window.createPixelatedCharaImage) {
-                                // 参数: url, height, pixelSize(忽略), enablePixelation(false)
-                                const processedUrl = await window.createPixelatedCharaImage(rawUrl, targetH, 1, false);
+                                const processedUrl = await window.createPixelatedCharaImage(stableImageUrl, targetH, 1, false);
                                 cgImg.src = processedUrl;
                             } else {
-                                cgImg.src = rawUrl; // 降级
+                                cgImg.src = stableImageUrl;
                             }
 
-                            // 图片加载完成后显示
                             cgImg.onload = () => {
                                 cgContainer.style.opacity = '1';
+                                console.log(`[Nova][CG-LOG] ✅ 立绘渲染成功: ${displayName}`);
                             };
-                        } catch (e) {
-                            console.error("立绘处理失败", e);
-                            cgImg.src = rawUrl;
+                        } catch (pixelError) {
+                            console.error(`[Nova][CG-LOG] 像素化处理失败:`, pixelError);
+                            cgImg.src = stableImageUrl;
                             cgContainer.style.opacity = '1';
                         }
                     };
+                } else {
+                    console.error(`[Nova][CG-LOG] 流程结束，未能获取到任何图片数据。`);
                 }
 
-            } catch (e) {
-                console.error("[Nova] 立绘加载流程异常", e);
+            } catch (error) {
+                console.error(`[Nova][CG-LOG] 加载立绘时发生未捕获异常:`, error);
             }
         }
     }

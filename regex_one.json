@@ -15073,7 +15073,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.10';
+let current_game_version = '3.5.11';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -15085,6 +15085,8 @@ let isReadingModeOpen = false;
    // --- 全局变量和数据获取 ---
         let playCharacterData = TavernHelper.getVariables({ type: 'chat' }).play_character_data;
         let assaSettingsData = {};
+         let npcImageMap ={};
+
    let currentRollData = null;
   
  let conversationHistory = [];
@@ -15708,7 +15710,7 @@ const npcImageMap_fallbackData = {
     "女-青年-金发-长发-黑瞳-冷峻-平静": "https://files.catbox.moe/dylclb.png",
     "女-青年-金发-长发-黑瞳-温柔-平静": "https://files.catbox.moe/305pcy.png"
 };
- let npcImageMap ={};
+
  const memeImageMap_fallbackData = {
    "三只猫-震惊": "https://files.catbox.moe/c81ft9.jpg",
 "柴郡-没有烦恼":"https://files.catbox.moe/07h315.jpg",
@@ -54929,10 +54931,12 @@ async function sendStreamRequest(messages, onChunk, options = {}) {
         }
     }
 }
-
  
-
 window.GameAPI = {
+        get npcImageMap() {
+        // GameAPI.assaData 
+        return npcImageMap;
+    },
     // 定义一个属性 'settings'
     get assaData() {
         // GameAPI.assaData 
