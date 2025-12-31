@@ -15104,6 +15104,7 @@ let is_restore_prompt = "true";
 let weneedshop = "false";
 let is_show_notifications = "true";
 let ifScanMemory = "false";
+let if_render_after_2batch="false";
 let is_worldbook_lock = "false";
 let dice_use = "true";
 let bookItemSettings = null;
@@ -34779,6 +34780,15 @@ console.log("当前批次：",batches);
  
             }
         }
+if((double_api === "true" && batches === 2) ){
+         if (typeof if_render_after_2batch !== 'undefined' && if_render_after_2batch === 'true') {
+                    setTimeout(async () => {
+                        console.log("[Nova] 响应配置：双重API/生成结束后刷新历史界面...");
+                        await renderHistory();
+                    }, 100);
+                }
+}
+
   }
             // 使用 setTimeout 保持原来的后台恢复行为
             setTimeout(() => restoreWorldbookNow().catch(e => console.error("后台恢复世界书时出错:", e)), 500);
@@ -40481,6 +40491,7 @@ enable_preset_2nd_pass = String(chatdata.enable_preset_2nd_pass||'true');
 noBackup = String(chatdata.is_no_backup||'false');
 ifScanMemory = String(chatdata.if_scan_memory||'false');
 dice_use= String(chatdata.dice_use||'true');
+if_render_after_2batch= String(chatdata.if_render_after_2batch||'false');
 is_worldbook_lock= String(chatdata.is_worldbook_lock||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
