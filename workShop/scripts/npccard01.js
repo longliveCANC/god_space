@@ -1559,8 +1559,32 @@
             basicInfo.className = 'mod01-basic-info';
             basicInfo.style.flex = "1";
             basicInfo.innerHTML = `<h1>${npc.name}</h1>`;
-            if(data.外貌) basicInfo.innerHTML += `<div class="mod01-desc-box">${data.外貌}</div>`;
-            else basicInfo.innerHTML += `<div class="mod01-desc-box">...</div>`;
+     if(data.外貌) {
+    if (typeof data.外貌 === 'string') {
+        // 原有逻辑：直接显示字符串
+        basicInfo.innerHTML += `<div class="mod01-desc-box">${data.外貌}</div>`;
+    } else if (typeof data.外貌 === 'object' && data.外貌 !== null) {
+        // 新增逻辑：对象形式的外貌，分类展示
+        let appearanceHtml = '<div class="mod01-desc-box">';
+        
+        Object.entries(data.外貌).forEach(([key, value]) => {
+            if(key.startsWith('_')) return; // 过滤私有字段
+            
+            // 为每个子项添加标签样式
+            appearanceHtml += `
+                <div style="margin-bottom: 6px;">
+                    <span style="color: var(--secondary-color); font-weight: bold; font-size: 11px; text-transform: uppercase; margin-right: 6px;">${key}:</span>
+                    <span style="opacity: 0.95;">${value}</span>
+                </div>
+            `;
+        });
+        
+        appearanceHtml += '</div>';
+        basicInfo.innerHTML += appearanceHtml;
+    }
+} else {
+    basicInfo.innerHTML += `<div class="mod01-desc-box">...</div>`;
+}
             let favorHtml = '';
             if(data.好感度 !== undefined) {
                 let fVal = parseInt(data.好感度);
