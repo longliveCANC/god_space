@@ -1,3 +1,4 @@
+ 
 (function() {
     // ============================================================
     // 1. 样式定义 (CSS) - Mod14
@@ -9,7 +10,7 @@
         style.textContent = `
             /* --- 基础设置 --- */
             #chat-display-area {
-                // overflow: hidden !important;
+                overflow: hidden !important;
                 position: relative;
             }
             #options-module-container { display: none !important; }
@@ -414,7 +415,13 @@
         // 播放
         this.playNextChunk();
     }
-        initUI() {
+         initUI() {
+            // 【修改】如果舞台已存在，则不再重新创建，直接返回
+            if (document.querySelector('.mod14-stage-wrapper')) {
+                console.log('[Galgame] UI already initialized.');
+                return;
+            }
+
             const parent = document.getElementById('chat-display-area');
             if (!parent) return;
 
@@ -471,6 +478,7 @@
             dialogueBox.appendChild(nextIndicator);
 
             // 4. 全屏模态框
+           // 4. 全屏模态框
             const modal = document.createElement('div');
             modal.className = 'mod14-attachment-modal';
             modal.innerHTML = `
@@ -534,18 +542,40 @@
             document.body.appendChild(modal); // 模态框挂在 body 上以确保全屏
             parent.appendChild(stage);
 
-            // 交互
-            dialogueBox.addEventListener('click', (e) => {
-                // 如果点击的是按钮，不触发下一步
-                if (e.target.closest('.mod14-back-btn') || e.target.closest('.mod14-attachment-icon')) return;
-                this.handleInteraction();
-            });
+            
 
+           // 【修改】将事件绑定移到这里，确保只绑定一次
             this.ui = {
                 stage, cgLayer, cgImg: cgLayer.querySelector('.mod14-cg-image'),
                 optionsLayer, dialogueBox, nameTag, nameText: nameTag.querySelector('.mod14-name-text'),
                 textContent, nextIndicator, attachmentIcon, modal,
-                iframeContainer: modal.querySelector('.mod14-iframe-container')
+                iframeContainer: modal.querySelector('.mod14-iframe-container'),
+                autoBtn: autoBtn, // 将按钮也存起来
+                skipBtn: skipBtn
+            };
+              // 绑定交互事件
+            dialogueBox.addEventListener('click', (e) => {
+                if (e.target.closest('.mod14-back-btn') || e.target.closest('.mod14-attachment-icon')) return;
+                this.handleInteraction();
+            });
+            backBtn.onclick = (e) => { e.stopPropagation(); this.handleBackStep(); };
+            attachmentIcon.onclick = (e) => { e.stopPropagation(); this.showAttachmentModal(); };
+            autoBtn.onclick = (e) => { e.stopPropagation(); this.toggleAuto(this.ui.autoBtn); };
+            skipBtn.onclick = (e) => { e.stopPropagation(); this.skipToLatest(); };
+
+            // 绑定模态框关闭事件
+            const closeModal = () => {
+                this.ui.modal.style.display = 'none';
+                this.isShowingModal = false;
+                // 检查关闭时是否需要自动播放下一个
+                if (this.ui.modal.dataset.isAutoPlayFlow === 'true') {
+                    this.ui.modal.dataset.isAutoPlayFlow = 'false'; // 重置标记
+                    setTimeout(() => this.playNextChunk(), 100);
+                }
+            };
+            this.ui.modal.querySelector('.mod14-modal-close').onclick = closeModal;
+            this.ui.modal.onclick = (e) => {
+                if (e.target === this.ui.modal) closeModal();
             };
         }
 
@@ -569,7 +599,17 @@
 
         // --- 核心流程 ---
 
-   enqueueMessage(msg, rawContent, extractedOptions = []) {
+     enqueueMessage(msg, rawContent, extractedOptions = []) {
+    // 【新增】重绘时的智能过滤：
+    // 如果正在重绘(isBulkRendering)，且还没遇到刚才正在读的那条消息，
+    // 那么这条消息肯定是旧历史，直接丢弃，不加入队列。
+    if (this.isBulkRendering) {
+        if (msg !== this.savedState?.originalMsg && !this.hasReachedCurrentMsg) {
+            return;
+        }
+        // 一旦遇到了当前消息，标记一下，后续的消息（以及当前消息）都允许通过
+        this.hasReachedCurrentMsg = true;
+    }
     if (msg.role === 'user') return;
 
     const msgId = msg === this.lastEnqueuedMsg ? 'SAME_MSG' : Date.now();
@@ -775,8 +815,7 @@
     } catch (e) {
         console.error('[Galgame] BGM 解析/播放逻辑异常:', e);
     }
-    // 自动播放
-    if (!this.isTyping && this.ui.optionsLayer.style.display === 'none' && !this.isShowingModal) {
+    if (!this.isTyping && this.ui.optionsLayer.style.display === 'none' && !this.isShowingModal && !this.isBulkRendering) {
         this.playNextChunk();
     }
 }
@@ -1301,29 +1340,24 @@ playNextChunk() {
             }
         }
  // 【修改】showAttachmentModal
-        showAttachmentModal(isAutoPlayFlow = false) {
-            if (!this.currentAttachmentsContent) return;
+          showAttachmentModal(isAutoPlayFlow = false) {
+            if (!this.currentAttachmentsContent || !this.ui || !this.ui.modal) return;
 
             this.isShowingModal = true;
+
+            // 【修改】使用 dataset 传递状态，而不是在闭包里
+            this.ui.modal.dataset.isAutoPlayFlow = isAutoPlayFlow;
+
             const container = this.ui.iframeContainer;
-            container.innerHTML = '';
+            container.innerHTML = ''; // 清空旧内容
 
             const iframe = document.createElement('iframe');
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
-
-            // 【修改】iframe 背景透明
             iframe.style.background = 'transparent';
 
-            // 重置动画，确保每次打开都有动画效果
-            this.ui.modal.style.animation = 'none';
-            this.ui.modal.offsetHeight; /* trigger reflow */
-            this.ui.modal.style.animation = 'mod14-fade-in 0.3s ease-out forwards';
-
-            this.ui.modal.style.display = 'flex';
-
-            // 【修改】注入的 HTML 样式：背景透明，文字白色
+            // 注入HTML内容
             iframe.srcdoc = `
                 <!DOCTYPE html>
                 <html>
@@ -1358,30 +1392,13 @@ playNextChunk() {
             `;
             container.appendChild(iframe);
 
-            const closeModal = () => {
-                // 关闭时的淡出效果 (可选，简单起见直接隐藏)
-                this.ui.modal.style.display = 'none';
-                this.isShowingModal = false;
-                if (isAutoPlayFlow) {
-                    setTimeout(() => this.playNextChunk(), 100);
-                }
-            };
-
-            // 移除旧的关闭按钮逻辑（因为按钮被CSS隐藏了），主要靠点击背景关闭
-            // 但为了代码健壮性，保留 DOM 操作，只是 CSS 隐藏了它
-            const newCloseBtn = this.ui.modal.querySelector('.mod14-modal-close').cloneNode(true);
-            this.ui.modal.querySelector('.mod14-modal-close').replaceWith(newCloseBtn);
-            newCloseBtn.onclick = closeModal;
-
-            const newModal = this.ui.modal.cloneNode(true);
-            this.ui.modal.replaceWith(newModal);
-            this.ui = { ...this.ui, modal: newModal, iframeContainer: newModal.querySelector('.mod14-iframe-container') };
-
-            // 仍然保留点击背景关闭的功能
-            newModal.onclick = (e) => {
-                if (e.target === newModal) closeModal();
-            };
+              // 重置动画并显示
+            this.ui.modal.style.animation = 'none';
+            this.ui.modal.offsetHeight; /* trigger reflow */
+            this.ui.modal.style.animation = 'mod14-fade-in 0.3s ease-out forwards';
+            this.ui.modal.style.display = 'flex';
         }
+  
     }
 
     // ============================================================
@@ -1394,7 +1411,10 @@ window.GameAPI.displayEventTag =  function(){
 }
  window.worldHelper.createMessageBubble = async function(msg, mode = 'chat', is_from_render = false) {
     if (!galManager) galManager = new GalgameManager();
-    if (!document.querySelector('.mod14-stage-wrapper')) {
+
+    // 【修改点 1】: 只有当 galManager.ui 不存在，且 DOM 中也没有舞台时，才初始化。
+    // 这样当 renderHistory 临时移除 DOM 时，因为 galManager.ui 还在内存里，就不会重复创建。
+    if (!galManager.ui && !document.querySelector('.mod14-stage-wrapper')) {
         galManager.initUI();
         galManager.syncTheme();
     }
@@ -1475,4 +1495,135 @@ window.GameAPI.displayEventTag =  function(){
 };
 
     console.log('[Nova] Mod14 Galgame Engine (Refined) Loaded.');
+
+        // ============================================================
+    // 4. 拦截核心渲染函数 (新增部分)
+    // ============================================================
+    // 保存原始函数引用
+    const originalRenderHistory = window.worldHelper.renderHistory;
+
+   window.worldHelper.renderHistory = async function(is_entry = false) {
+        console.log("[Galgame] 拦截 renderHistory，正在保护舞台状态...");
+
+        const chatArea = document.getElementById('chat-display-area');
+        const stage = document.querySelector('.mod14-stage-wrapper');
+
+        // A. 暂存舞台 (防止被清空)
+        if (stage && chatArea && chatArea.contains(stage)) {
+            stage.remove();
+        }
+
+        // B. 【核心修改】快照当前状态
+        if (galManager) {
+            galManager.isBulkRendering = true;      // 开启重绘模式
+            galManager.hasReachedCurrentMsg = false; // 重置“是否遇到当前消息”的标记
+
+            // 记录当前正在读的块 (如果存在)
+            if (galManager.currentChunk) {
+                galManager.savedState = {
+                    originalMsg: galManager.currentChunk.originalMsg, // 哪条消息
+                    text: galManager.currentChunk.text,               // 哪段文字
+                    // 如果是最后一块且有选项，记录一下，恢复时可能需要重新触发选项渲染
+                    wasLast: galManager.currentChunk.isLast
+                };
+            } else {
+                galManager.savedState = null;
+            }
+
+            galManager.queue = []; // 清空队列，准备重新接收(经过筛选的)数据
+        }
+
+        // C. 执行原逻辑 (这会触发大量的 enqueueMessage)
+        if (originalRenderHistory) {
+            await originalRenderHistory.apply(this, arguments);
+        }
+
+        // D. 恢复舞台
+        if (chatArea) {
+            if (stage) {
+                chatArea.appendChild(stage);
+            } else if (galManager) {
+                galManager.initUI();
+                galManager.syncTheme();
+            }
+        }
+
+        // E. 【核心修改】恢复阅读进度
+        if (galManager) {
+            galManager.isBulkRendering = false; // 关闭重绘模式
+
+            if (galManager.savedState) {
+                // 在新生成的队列中，寻找内容匹配的块
+                // 因为我们之前过滤了旧消息，所以队列里现在装的应该是 [当前消息的重绘版, 未来消息...]
+                const matchIndex = galManager.queue.findIndex(c =>
+                    c.originalMsg === galManager.savedState.originalMsg &&
+                    c.text === galManager.savedState.text
+                );
+
+                if (matchIndex !== -1) {
+                    // 找到了！
+                    // 1. 把匹配块之前的块都扔掉（因为它们是当前消息中已经读过的部分）
+                    // 注意：这里我们不把它们加回 historyStack，避免回溯时重复
+                    galManager.queue.splice(0, matchIndex);
+
+                    // 2. 取出这个块作为当前块
+                    const restoredChunk = galManager.queue.shift();
+                    galManager.currentChunk = restoredChunk;
+
+                    // 3. 重新渲染它 (无打字机效果，瞬间显示)
+                    // 这样如果新版消息加了HTML/选项，这里也会包含在 restoredChunk 里
+                    galManager.renderChunkState(restoredChunk);
+                    galManager.finishTyping(); // 强制结束打字，直接显示全文
+
+                    console.log("[Galgame] 成功恢复阅读进度。");
+                } else {
+                    // 没找到完全匹配的（可能是文本被修改了），退而求其次
+                    // 播放队列里的第一个块（也就是当前消息的开头）
+                    console.log("[Galgame] 未找到精确匹配的块，重置到当前消息开头。");
+                    if (galManager.queue.length > 0) {
+                        galManager.playNextChunk();
+                    }
+                }
+            } else {
+                // 如果之前没在读任何东西，就尝试播放新的
+                if (galManager.queue.length > 0) {
+                    galManager.playNextChunk();
+                }
+            }
+        }
+    };
+
+     // 保存原始函数引用
+    const originalRenderNewMessages = window.renderNewMessages;
+
+    // 覆盖 renderNewMessages
+    window.renderNewMessages = async function(newMessages) {
+        console.log("[Galgame] 拦截 renderNewMessages...");
+
+        const chatArea = document.getElementById('chat-display-area');
+        // 【关键修改 1】在原函数执行前，先获取舞台引用
+        // 如果这时候去取，它还在 DOM 里，或者是 galManager.ui.stage
+        let stage = document.querySelector('.mod14-stage-wrapper');
+
+        // 如果 DOM 里找不到，但 Manager 里有，就用 Manager 里的（防止意外丢失）
+        if (!stage && galManager && galManager.ui) {
+            stage = galManager.ui.stage;
+        }
+
+        // 【关键修改 2】保护现场：先把舞台从 DOM 拿出来
+        // 这样原函数操作 DOM 时（比如清空或重排）就不会伤害到舞台元素
+        if (stage && chatArea && chatArea.contains(stage)) {
+            stage.remove();
+        }
+
+        // 执行原逻辑 (添加用户气泡、清理旧气泡等)
+        if (originalRenderNewMessages) {
+            await originalRenderNewMessages.apply(this, arguments);
+        }
+
+        // 【关键修改 3】恢复现场：把舞台放回去 (放在最上面)
+        if (chatArea && stage) {
+            chatArea.appendChild(stage);
+        }
+    };
 })();

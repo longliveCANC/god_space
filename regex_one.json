@@ -26356,6 +26356,7 @@ GlobalChatAudio.init();
 
 
 async function renderNewMessages(newMessages) {
+    console.log('renderNewMessages原始调用');
     const chatDisplayArea = document.getElementById('chat-display-area');
     if (!chatDisplayArea) return;
 
@@ -26381,8 +26382,7 @@ async function renderNewMessages(newMessages) {
 
  
 }
-
-
+window.renderNewMessages = renderNewMessages;
 function cleanupGlobalUIState() {
     console.log("[Nova's Tidying Magic] 开始清理全局UI状态...");
 
@@ -26428,7 +26428,7 @@ function cleanupGlobalUIState() {
  
     if (!chatDisplayArea || chatDisplayArea.children.length === 0) {
         console.log("[Nova's Little Helper] 检测到画卷为空，召唤 renderHistory 进行创世重绘...");
-        await renderHistory(); 
+        await worldHelper.renderHistory(); 
         return; // 完成使命，优雅退场
     }
 
@@ -27896,7 +27896,7 @@ window.switchSwipe = async function(messageIndex, direction) {
     const chatDisplayArea = document.getElementById('chat-display-area');
     // 简单粗暴的方法：重新渲染所有消息 (renderHistory)，或者只替换这一个
     // 为了保证 < > 按钮状态更新（比如 1/3 变成 2/3），最简单的就是重绘
-    await renderHistory(true);
+    await worldHelper.renderHistory(true);
 
     // 保存更改后的状态到历史记录（确保刷新后还在）
     await saveHistory();
@@ -28055,11 +28055,11 @@ async function restoreFromLatestSnapshot() {
                             const chatVars = await TavernHelper.getVariables({ type: 'chat' });
                             if (!chatVars.conversationHistory || chatVars.conversationHistory.length === 0) {
                                 console.log('[Nova的记忆保险箱] 检测到历史记录为空，正在注入初始对话...');
-                                if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof renderHistory === 'function') {
+                                if (typeof conversationHistory !== 'undefined' && typeof saveHistory === 'function' && typeof worldHelper.renderHistory === 'function') {
                                     // 我们用一个更温馨的提示
                                     conversationHistory.push({ role: 'assistant', content: '<请继续。>' });
                                     await saveHistory();
-                                    renderHistory();
+                                    worldHelper.renderHistory();
                                 }
                             } else {
                                 // 如果历史不为空，我们依然刷新一下界面
@@ -28605,14 +28605,14 @@ function editMessage(index, bubbleElement) {
         }
 
         // ✨ 在这里耐心等待渲染完成！✨
-        await renderHistory(true);
+        await worldHelper.renderHistory(true);
     };
 
     cancelBtn.onclick = async () => { // ✨ 保持一致，也用 async/await ✨
         dismissControls();
 
         // ✨ 在这里也耐心等待渲染完成！✨
-        await renderHistory(true);
+        await worldHelper.renderHistory(true);
     };
     controlsDiv.appendChild(cancelBtn);
     controlsDiv.appendChild(saveBtn);
@@ -28658,7 +28658,7 @@ function updateRerollButtonState(){
             conversationHistory = [];
             await saveHistory();
         }
-       await renderHistory(true);
+       await worldHelper.renderHistory(true);
         updateRerollButtonState(); // ☆ 初始化时更新按钮状态
     }
 
@@ -33563,11 +33563,11 @@ console.log("userMessageCount：",userMessageCount);
            if (isFirstSend) {
         // 如果这真的是开天辟地的第一句话，我们就召唤 renderHistory 来创造世界！
         console.log("[Nova's Genesis] 检测到创世之语，召唤 renderHistory 重绘世界...");
-        await renderHistory(); // 使用完整的重绘逻辑，并确保滚动到底部
+        await worldHelper.renderHistory(); // 使用完整的重绘逻辑，并确保滚动到底部
     } else {
         // 否则，我们就使用我们温柔的“增量更新”魔法
         console.log("[Nova's Gentle Touch] 新的消息到来，使用 renderNewMessages 进行增量渲染...");
-        renderNewMessages([userMessage]);
+        window.renderNewMessages([userMessage]);
     }
   
  
@@ -34113,7 +34113,7 @@ if (isContinuation) {
         console.log("[Nova's Tapestry] 成功将新的故事片段编织到当前分支中。");
 
         if(!isContinuationVar){
-            await renderHistory();
+            await worldHelper.renderHistory();
         } else {
             const chatDisplayArea = document.getElementById('chat-display-area');
             if (chatDisplayArea && chatDisplayArea.children.length > 0) {
@@ -34347,7 +34347,7 @@ AI回复: ${theAImessage}
         console.log("[Nova's Tapestry] (非流式) 成功将新的故事片段编织到当前分支中。");
 
         if(!isContinuationVar){
-            await renderHistory();
+            await worldHelper.renderHistory();
         } else {
             const chatDisplayArea = document.getElementById('chat-display-area');
             if (chatDisplayArea && chatDisplayArea.children.length > 0) {
@@ -34648,7 +34648,7 @@ let backupData = {};
                 console.log("[Nova's Tapestry] 中断后，成功将新的片段编织到上一段记忆中。");
 
                 if (!isContinuationVar) {
-                    await renderHistory();
+                    await worldHelper.renderHistory();
                 } else {
                     // 你的特殊UI处理逻辑...
                     const chatDisplayArea = document.getElementById('chat-display-area');
@@ -34751,7 +34751,7 @@ let backupData = {};
             aiResponseBubble.innerHTML = "抱歉，我的孩子，我好像遇到了一点小问题。";
             // 发生错误时，保存当前所有历史，以防万一
             await saveHistory();
-            await renderHistory(true);
+            await worldHelper.renderHistory(true);
         }
 
      } finally {
@@ -34784,7 +34784,7 @@ if((double_api === "true" && batches === 2) ){
          if (typeof if_render_after_2batch !== 'undefined' && if_render_after_2batch === 'true') {
                     setTimeout(async () => {
                         console.log("[Nova] 响应配置：双重API/生成结束后刷新历史界面...");
-                        await renderHistory();
+                        await worldHelper.renderHistory();
                     }, 100);
                 }
 }
