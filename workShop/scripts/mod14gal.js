@@ -313,6 +313,7 @@
             this.isTyping = false;
             this.currentText = '';
             this.typingTimer = null;
+                this.isShowingModal = false; // 新增：标记模态框是否显示
             this.ui = null;
   this.isAuto = false;      // 自动播放
         this.autoTimer = null;    // 自动播放倒计时
@@ -485,26 +486,26 @@
             // 新增：上一章按钮
             const prevChapBtn = document.createElement('div');
             prevChapBtn.className = 'mod14-ctrl-btn';
-            prevChapBtn.textContent = 'Prev';
+            prevChapBtn.textContent = '上一章';
             prevChapBtn.title = '上一章';
             prevChapBtn.onclick = (e) => { e.stopPropagation(); this.navigateChapter(-1); };
 
             // 原有：Auto
             const autoBtn = document.createElement('div');
             autoBtn.className = 'mod14-ctrl-btn';
-            autoBtn.textContent = 'AUTO';
+            autoBtn.textContent = '自动播放';
             autoBtn.onclick = (e) => { e.stopPropagation(); this.toggleAuto(autoBtn); };
 
             // 原有：Skip
             const skipBtn = document.createElement('div');
             skipBtn.className = 'mod14-ctrl-btn';
-            skipBtn.textContent = 'SKIP';
+            skipBtn.textContent = '跳过';
             skipBtn.onclick = (e) => { e.stopPropagation(); this.skipToLatest(); };
 
             // 新增：下一章按钮
             const nextChapBtn = document.createElement('div');
             nextChapBtn.className = 'mod14-ctrl-btn';
-            nextChapBtn.textContent = 'Next';
+            nextChapBtn.textContent = '下一章';
             nextChapBtn.title = '下一章';
             nextChapBtn.onclick = (e) => { e.stopPropagation(); this.navigateChapter(1); };
 
@@ -563,101 +564,149 @@
         // --- 核心流程 ---
 
    enqueueMessage(msg, rawContent, extractedOptions = []) {
-        // --- 新增：需求1 - 不读取和展示 role 是 user 的消息 ---
         if (msg.role === 'user') return;
-        // 简单的去重 ID：消息对象引用 + 内容长度
-        // 如果是 renderHistory 导致的重复调用，这能拦截大部分
+
         const msgId = msg === this.lastEnqueuedMsg ? 'SAME_MSG' : Date.now();
         if (msg === this.lastEnqueuedMsg && this.queue.length > 0) {
-             // 如果是同一条消息被重复调用（例如流式传输更新），这里可能需要更复杂的逻辑
-             // 暂时假设 renderHistory 是分块的，不会对同一 msg 调两次
+            // 简单的去重，防止重复调用
         }
         this.lastEnqueuedMsg = msg;
 
- 
-        let content = rawContent;
-        const attachments = [];
-  
-        const specialRegex = /<html>([\s\S]*?)<\/html>|<details>([\s\S]*?)<\/details>/gi;
-        content = content.replace(specialRegex, (m, htmlContent, detailsContent) => {
-            attachments.push(htmlContent || detailsContent);
-            return '{{ATTACHMENT_MARKER}}';
+        // --- 步骤1: 整合旧的解析逻辑，保护和解析特殊标签 ---
+        let processedContent = rawContent;
+        const htmlPlaceholders = {};
+        let placeholderIndex = 0;
+        const userNickname = window.currentGameData?.user?.nick_name || '你';
+
+        // 1.1 保护 <html> 和 ```代码块```
+        processedContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
+            const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
+            const rawHtml = htmlBlock || (markdownBlock ? `<pre><code class="language-${lang || ''}">${markdownBlock.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>` : '');
+            if (!rawHtml) return match;
+            htmlPlaceholders[placeholder] = rawHtml;
+            placeholderIndex++;
+            return placeholder;
         });
-        // --- 新增：判断是否为全局历史的最后一条消息 ---
-        const history = window.GameAPI.conversationHistory;
-        // 注意：这里判断 msg 对象是否全等于历史记录数组的最后一个元素
-        const isRealLastMsg = (history && history.length > 0 && msg === history[history.length - 1]);
 
-        // 分块逻辑
-        const lines = content.split('\n');
-        let currentAttachmentIndex = 0;
-        let createdChunks = 0;
+        // 1.2 解析 <msg>
+        processedContent = processedContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
+            return window.worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, true);
+        });
 
-        lines.forEach((line, index) => {
-            let trimmed = line.trim();
-            if (!trimmed) return;
-
-         
-            if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
-                // 可以在这里加个 console.log 确认过滤了什么
-                // console.log('Skipping tag line:', trimmed);
-                return;
-            }
-            let chunkAttachments = [];
-            if (trimmed.includes('{{ATTACHMENT_MARKER}}')) {
-                const count = (trimmed.match(/{{ATTACHMENT_MARKER}}/g) || []).length;
-                for(let i=0; i<count; i++) {
-                    if (attachments[currentAttachmentIndex]) {
-                        chunkAttachments.push(attachments[currentAttachmentIndex]);
-                        currentAttachmentIndex++;
+        // 1.3 解析 <group_chat>
+        processedContent = processedContent.replace(/<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs, (match, groupName, chatContent) => {
+            let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
+            if (typeof chatContent === 'string') {
+                const lines = chatContent.trim().split('\n');
+                for (const line of lines) {
+                    const cleanedLine = line.trim();
+                    if (!cleanedLine || cleanedLine.startsWith('summary|')) continue;
+                    const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/);
+                    if (messageMatch) {
+                        groupChatHtml += window.worldHelper.renderGroupChatToHtml(messageMatch[1].trim(), messageMatch[2].trim(), userNickname);
                     }
                 }
-                trimmed = trimmed.replace(/{{ATTACHMENT_MARKER}}/g, '');
             }
-
-            // ... (原有的名字解析逻辑) ...
-            let name = '';
-            let text = trimmed;
-            if (trimmed.includes('|') && trimmed.indexOf('|') < 20) {
-                const p = trimmed.split('|');
-                name = p[0].trim();
-                text = p.slice(1).join('|').trim();
-            } else if (msg.role === 'user') {
-                name = window.currentGameData?.user?.nick_name || '你';
-            } else {
-                if (trimmed.startsWith('(') || trimmed.startsWith('（')) name = '';
-                else name = msg.name || '';
-            }
-
-            this.queue.push({
-                name, text,
-                attachments: chunkAttachments,
-                isLast: false,
-                // 只有最后一个块才携带选项
-                options: [],
-                 isRealLastMsg: isRealLastMsg, // <--- 将标记存入 chunk
-                 originalMsg: msg // <--- 新增：绑定原始消息对象，用于查找上一条
-            });
-            createdChunks++;
+            return groupChatHtml;
         });
 
-        // 将选项挂载到刚才生成的最后一个块上
-        if (createdChunks > 0) {
+        // 1.4 恢复 HTML 占位符
+        for (const placeholder in htmlPlaceholders) {
+            processedContent = processedContent.replace(placeholder, htmlPlaceholders[placeholder]);
+        }
+
+          // --- 步骤2: 分块逻辑 ---
+        const history = window.GameAPI.conversationHistory;
+        const isRealLastMsg = (history && history.length > 0 && msg === history[history.length - 1]);
+
+        const attachmentRegex = /<html>([\s\S]*?)<\/html>|<details>([\s\S]*?)<\/details>/gi;
+        const attachmentMatch = processedContent.match(attachmentRegex);
+
+        // 定义一个通用的文本分块处理函数
+        const processTextLines = (textToProcess) => {
+            const lines = textToProcess.split('\n');
+            lines.forEach((line) => {
+                let trimmed = line.trim();
+                if (!trimmed) return;
+                if (trimmed.startsWith('<') && trimmed.endsWith('>')) return;
+
+                let name = '';
+                let text = trimmed;
+                if (trimmed.includes('|') && trimmed.indexOf('|') < 20) {
+                    const p = trimmed.split('|');
+                    name = p[0].trim();
+                    text = p.slice(1).join('|').trim();
+                } else {
+                    if (trimmed.startsWith('(') || trimmed.startsWith('（')) name = '';
+                    else name = msg.name || '';
+                }
+
+                this.queue.push({
+                    name,
+                    text,
+                    attachments: [],
+                    isAttachmentDisplay: false,
+                    isLast: false,
+                    options: [],
+                    isRealLastMsg: isRealLastMsg,
+                    originalMsg: msg
+                });
+            });
+        };
+
+        if (attachmentMatch) {
+            // 1. 先添加特殊的 "贴脸" 块
+            this.queue.push({
+                name: msg.name || '系统',
+                text: '',
+                attachments: attachmentMatch,
+                isAttachmentDisplay: true,
+                isLast: false, // 先设为 false，后面统一处理
+                options: [],
+                isRealLastMsg: isRealLastMsg,
+                originalMsg: msg
+            });
+
+            // 2. 【修复】处理剩余文本：使用 processTextLines 进行标准分行处理
+            const remainingText = processedContent.replace(attachmentRegex, '').trim();
+            if (remainingText) {
+                processTextLines(remainingText);
+            }
+
+        } else {
+            // 如果没有贴脸内容，直接处理全文
+            processTextLines(processedContent);
+        }
+
+        // --- 步骤3: 后处理 (设置最后一个块的属性) ---
+        // 无论上面走了哪条路，现在 queue 里已经有了所有块
+        // 我们需要找到属于当前消息的最后一个块，把选项挂上去
+
+        // 找到当前消息生成的最后一个块的索引
+        // 简单的做法是取 queue 的最后一个，因为我们刚刚 push 进去
+        if (this.queue.length > 0) {
             const lastChunk = this.queue[this.queue.length - 1];
-            lastChunk.isLast = true;
-            lastChunk.options = extractedOptions;
+            // 只有当这个块确实属于当前正在处理的消息时才挂载 (防止极端并发情况，虽然单线程不太可能)
+            if (lastChunk.originalMsg === msg) {
+                lastChunk.isLast = true;
+                lastChunk.options = extractedOptions;
+            }
         } else if (extractedOptions.length > 0) {
+            // 极端情况：消息全是空行或被过滤了，但有选项
             this.queue.push({
                 name: '系统',
                 text: '请做出选择...',
-                options: extractedOptions,
+                attachments: [],
+                isAttachmentDisplay: false,
                 isLast: true,
-                isRealLastMsg: isRealLastMsg // <--- 纯选项块也要标记
+                options: extractedOptions,
+                isRealLastMsg: isRealLastMsg,
+                originalMsg: msg
             });
         }
 
         // 自动播放
-        if (!this.isTyping && this.ui.optionsLayer.style.display === 'none') {
+        if (!this.isTyping && this.ui.optionsLayer.style.display === 'none' && !this.isShowingModal) {
             this.playNextChunk();
         }
     }
@@ -667,7 +716,10 @@
             return text.split('\n').filter(line => line.trim() && (/^\d+\.\s*/.test(line.trim()) || !/^\s*$/.test(line.trim())));
         }
 
-        handleInteraction() {
+   handleInteraction() {
+            // 【修复】如果在回溯加载中，禁止交互，防止触发 playNextChunk 导致当前句重播
+            if (this.isBacktracking) return;
+
             if (this.isTyping) {
                 this.finishTyping();
                 return;
@@ -677,7 +729,7 @@
             if (this.queue.length > 0) {
                 this.playNextChunk();
             } else {
-                // 队列空了，且没有选项显示中 -> 等待
+                // 队列空了
             }
         }
   toggleAuto(btn) {
@@ -740,7 +792,7 @@
             this.isSkipping = false;
         }, 200);
     }
-  async handleBackStep() {
+   async handleBackStep() {
         // 防止快速点击导致的逻辑混乱
         if (this.isBacktracking) return;
         this.isBacktracking = true;
@@ -749,9 +801,21 @@
         clearInterval(this.typingTimer);
         this.isTyping = false;
 
-        // 2. 如果当前有正在显示的块，把它放回"未来队列"的最前端
+        // 2. 处理当前块：从“正在阅读”变为“待阅读”
         if (this.currentChunk) {
+            // A. 把它放回"未来队列"的最前端，这样再次点击下一步时能看到它
             this.queue.unshift(this.currentChunk);
+
+            // B. 【关键修复】从历史栈顶移除这个“当前块”
+            // 因为 playNextChunk 播放时把 currentChunk 推入了 stack。
+            // 如果不移除，下面 stack.pop() 拿到的还是 currentChunk，导致原地重播。
+            if (this.historyStack.length > 0) {
+                // 双重保险：只有当栈顶确实是 currentChunk 时才移除
+                if (this.historyStack[this.historyStack.length - 1] === this.currentChunk) {
+                    this.historyStack.pop();
+                }
+            }
+
             this.currentChunk = null;
         }
 
@@ -771,17 +835,21 @@
         }
 
         // 4. 从历史栈中取出上一块
+        // 此时栈顶就是我们要回退到的目标块
         const prevChunk = this.historyStack.pop();
 
         // 5. 隐藏选项层 (防止回退时选项还卡在屏幕上)
         this.ui.optionsLayer.style.display = 'none';
 
         // 6. 播放上一块
-        // 注意：这里我们手动设置 currentChunk 并调用渲染，而不是走 playNextChunk
-        // 因为 playNextChunk 会把 chunk 再次 push 进 historyStack，导致死循环
         this.currentChunk = prevChunk;
 
-        // 渲染逻辑复用 playNextChunk 的一部分，但不推入 history
+        // 【关键修复】保持栈的一致性
+        // 因为 prevChunk 现在变成了“当前正在阅读的块”，它应该留在栈顶。
+        // 之前 pop 出来是为了获取它，现在要把它放回去，表示“它在当前屏幕上”。
+        this.historyStack.push(prevChunk);
+
+        // 渲染逻辑
         this.renderChunkState(prevChunk);
 
         this.isBacktracking = false;
@@ -827,24 +895,18 @@
         return true;
     }
 
-  renderChunkState(chunk) {
-        // UI 重置
-        this.ui.nextIndicator.classList.remove('active');
-        this.ui.textContent.innerHTML = ''; // 清空 HTML
-        this.ui.attachmentIcon.style.display = 'none';
-        clearTimeout(this.autoTimer); // 清除自动播放等待
+ renderChunkState(chunk) {
+    // UI 重置
+    this.ui.nextIndicator.classList.remove('active');
+    this.ui.textContent.innerHTML = '';
+   
+    clearTimeout(this.autoTimer);
 
-        // 更新名字 & 立绘
-        this.updateSpeaker(chunk.name);
+    // 更新名字 & 立绘
+    this.updateSpeaker(chunk.name);
 
-        // 处理附件
-        if (chunk.attachments && chunk.attachments.length > 0) {
-            this.ui.attachmentIcon.style.display = 'flex';
-            this.currentAttachmentsContent = chunk.attachments.join('<br><hr><br>');
-        }
-
-        // --- HTML 打字机逻辑 ---
-        this.isTyping = true;
+ 
+    this.isTyping = true;
         this.currentText = chunk.text; // 这里的 text 包含 HTML 标签
 
         // 如果是跳过模式，直接显示全部
@@ -887,15 +949,24 @@
         }, 30); // 打字速度
     }
 
-    playNextChunk() {
-        if (this.queue.length === 0) return;
+ 
+playNextChunk() {
+    if (this.queue.length === 0) return;
 
-        const chunk = this.queue.shift();
-        this.currentChunk = chunk;
-        this.historyStack.push(chunk); // 正常播放时，存入历史
+    const chunk = this.queue.shift();
+    this.currentChunk = chunk;
+    this.historyStack.push(chunk);
 
+    // 【关键修改】根据 isAttachmentDisplay 标记决定行为
+    if (chunk.isAttachmentDisplay) {
+        // 如果是贴脸展示块，直接显示模态框
+        this.currentAttachmentsContent = chunk.attachments.join('<br><hr><br>');
+        this.showAttachmentModal(true); // 传入 true 表示是自动播放流程
+    } else {
+        // 否则，走正常的打字机渲染流程
         this.renderChunkState(chunk);
     }
+}
   finishTyping() {
         clearInterval(this.typingTimer);
         this.ui.textContent.innerHTML = this.currentText;
@@ -1153,29 +1224,62 @@
                 }, 800);
             }
         }
+ 
+// 【重大修改】showAttachmentModal 增加一个参数并处理后续流程
+showAttachmentModal(isAutoPlayFlow = false) {
+    if (!this.currentAttachmentsContent) return;
 
-        showAttachmentModal() {
-            if (!this.currentAttachmentsContent) return;
-            const container = this.ui.iframeContainer;
-            container.innerHTML = '';
+    this.isShowingModal = true; // 标记模态框已打开
+    const container = this.ui.iframeContainer;
+    container.innerHTML = '';
 
-            const iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-            iframe.style.background = '#fff';
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.background = '#fff';
 
-            // 简单的 iframe 渲染
-            this.ui.modal.style.display = 'flex';
-            iframe.srcdoc = `
-                <!DOCTYPE html>
-                <html>
-                <head><style>body{font-family:sans-serif;padding:20px;line-height:1.6;}</style></head>
-                <body>${this.currentAttachmentsContent}</body>
-                </html>
-            `;
-            container.appendChild(iframe);
+    this.ui.modal.style.display = 'flex';
+    iframe.srcdoc = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+            img { max-width: 100%; height: auto; }
+            details { border: 1px solid #ccc; border-radius: 4px; padding: 10px; margin-bottom: 10px; }
+            summary { font-weight: bold; cursor: pointer; }
+          </style>
+        </head>
+        <body>${this.currentAttachmentsContent}</body>
+        </html>
+    `;
+    container.appendChild(iframe);
+
+    // 修改关闭逻辑
+    const closeModal = () => {
+        this.ui.modal.style.display = 'none';
+        this.isShowingModal = false; // 重置标记
+        // 【关键】如果是自动播放流程的一部分，关闭后自动播放下一条
+        if (isAutoPlayFlow) {
+            // 延迟一小段时间，避免快速点击问题
+            setTimeout(() => this.playNextChunk(), 100);
         }
+    };
+
+    // 确保只绑定一次事件或先移除旧事件
+    const newCloseBtn = this.ui.modal.querySelector('.mod14-modal-close').cloneNode(true);
+    this.ui.modal.querySelector('.mod14-modal-close').replaceWith(newCloseBtn);
+    newCloseBtn.onclick = closeModal;
+
+    const newModal = this.ui.modal.cloneNode(true);
+    this.ui.modal.replaceWith(newModal);
+    this.ui = { ...this.ui, modal: newModal, iframeContainer: newModal.querySelector('.mod14-iframe-container') }; // 更新UI引用
+    newModal.querySelector('.mod14-modal-close').onclick = closeModal;
+    newModal.onclick = (e) => {
+        if (e.target === newModal) closeModal();
+    };
+}
     }
 
     // ============================================================
@@ -1183,54 +1287,45 @@
     // ============================================================
       let galManager = null;
 
-    window.worldHelper.createMessageBubble = async function(msg, mode = 'chat', is_from_render = false) {
-        if (!galManager) galManager = new GalgameManager();
-        if (!document.querySelector('.mod14-stage-wrapper')) {
-            galManager.initUI();
-            galManager.syncTheme();
+ window.worldHelper.createMessageBubble = async function(msg, mode = 'chat', is_from_render = false) {
+    if (!galManager) galManager = new GalgameManager();
+    if (!document.querySelector('.mod14-stage-wrapper')) {
+        galManager.initUI();
+        galManager.syncTheme();
+    }
+
+    let hookData = { message: msg };
+    if (window.NovaHooks) hookData = await NovaHooks.trigger('before_message_render', hookData);
+
+    // 1. 获取原始文本
+    let rawContent = String(hookData.message.content || '');
+
+    // 2. 提取 <options>
+    let extractedOptions = [];
+    const optRegex = /<options>((?:(?!<options>)[\s\S])*?)<\/options>/gs;
+    rawContent = rawContent.replace(optRegex, (match, optContent) => {
+        const trimmedOpt = optContent.trim();
+        if (trimmedOpt.startsWith('[') || trimmedOpt.startsWith('{')) {
+            try { extractedOptions = JSON.parse(trimmedOpt); }
+            catch(e) { extractedOptions = galManager.parseRawOptions(trimmedOpt); }
+        } else {
+            extractedOptions = galManager.parseRawOptions(trimmedOpt);
         }
+        return '';
+    });
 
-        let hookData = { message: msg };
-        if (window.NovaHooks) hookData = await NovaHooks.trigger('before_message_render', hookData);
+    // 3. 移除其他无关的顶层标签
+    rawContent = rawContent
+        .replace(/<loc&time>[\s\S]*?<\/loc&time>/gs, '')
+        .replace(/<battle>[\s\S]*?<\/battle>/gs, '')
+        .replace(/<battle_log>[\s\S]*?<\/battle_log>/gs, '')
+        .replace(/<forum_threads>[\s\S]*?<\/forum_threads>/gs, '')
+        .replace(/<shop_item>[\s\S]*?<\/shop_item>/gs, '')
+        .replace(/<表现总结>[\s\S]*?<\/表现总结>/gs, '');
 
-        // 1. 获取原始文本
-        let rawContent = String(hookData.message.content || '');
 
-        // 2. 【关键修改】在此处提取 <options>，防止被 formatAsTavernRegexedString 吞掉
-        let extractedOptions = [];
-        const optRegex = /<options>([\s\S]*?)<\/options>/gs;
-
-        // 提取并从 rawContent 中移除 options 标签
-        rawContent = rawContent.replace(optRegex, (match, optContent) => {
-            // 尝试解析选项内容
-            const trimmedOpt = optContent.trim();
-            if (trimmedOpt.startsWith('[') || trimmedOpt.startsWith('{')) {
-                try {
-                    extractedOptions = JSON.parse(trimmedOpt);
-                } catch(e) {
-                    extractedOptions = galManager.parseRawOptions(trimmedOpt);
-                }
-            } else {
-                extractedOptions = galManager.parseRawOptions(trimmedOpt);
-            }
-            return ''; // 替换为空字符串
-        });
-
-        // 3. 移除其他完全无关的标签 (Battle, Shop 等)
-        rawContent = rawContent
-            .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
-            .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
-            .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '');
-
-        // 4. 调用格式化工具 (现在 options 已经被提走了，不会干扰，也不会被误删)
-        // 注意：formatAsTavernRegexedString 可能会处理引号等，我们传入处理后的 rawContent
-        let formattedContent = formatAsTavernRegexedString(
-            rawContent,
-            msg.role === 'user' ? 'user_input' : 'ai_output',
-            'display',
-            { depth: -1 }
-        );
-  formattedContent = formattedContent.replace(/<html>[\s\S]*?<\/html>|“/g, function(match) {
+            // 步骤1：提前处理引号、Markdown 并进行通用格式化
+  rawContent = rawContent.replace(/<html>[\s\S]*?<\/html>|“/g, function(match) {
     if (match.startsWith('<html>')) return match;
     return '<span class="dialogue-quote">“';
 })
@@ -1254,14 +1349,23 @@
     if (match.startsWith('<html>')) return match;
     return '<em>' + p1 + '</em>';
 });
-        // 5. 将处理好的 文本 和 选项 分别传给 Manager
-        galManager.enqueueMessage(msg, formattedContent, extractedOptions);
 
-        const dummy = document.createElement('div');
-        dummy.className = 'mod14-dummy-bubble';
-        dummy.style.display = 'none';
-        return dummy;
-    };
+    rawContent = formatAsTavernRegexedString(
+        rawContent,
+        'ai_output',
+        'display',
+        { depth: -1 } // 阅读模式固定深度为 -1
+    );
+    // 4. 将格式化后的内容和选项交给 Manager 处理
+    // 注意：这里不再需要 formatAsTavernRegexedString 和各种 replace，因为这些都在 enqueueMessage 内部处理了
+    galManager.enqueueMessage(msg, rawContent, extractedOptions);
+
+    // 5. 返回一个空的、不可见的元素，以欺骗原始调用流程
+    const dummy = document.createElement('div');
+    dummy.className = 'mod14-dummy-bubble';
+    dummy.style.display = 'none';
+    return dummy;
+};
 
     console.log('[Nova] Mod14 Galgame Engine (Refined) Loaded.');
 })();

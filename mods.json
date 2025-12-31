@@ -425,7 +425,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本"],
-    "description": "[需要版本是3.5.12及其以上]需要开脚本然后外挂这个世界书。可能有点立绘缓存或者啥的小问题啊，如果觉得事件有点挡了可以用{{setvar::is_show_notifications::true}}来不弹出事件那些啊。但是没空了，有空再修，现在试了试可以用，bgm和html的展示也不知道ok不ok，总之先这样有空修",
+    "description": "[需要版本是3.5.12及其以上]需要开脚本然后外挂这个世界书。如果觉得事件有点挡了可以用{{setvar::is_show_notifications::true}}来不弹出事件那些啊。但是没空了，有空再修，现在试了试可以用，bgm和html的展示也不知道ok不ok，总之先这样有空修。电脑空格和右键可以继续，左键是回去上一轮",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod14gal.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-galgame格式.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 27.png"
