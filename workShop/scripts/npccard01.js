@@ -1249,7 +1249,52 @@
             this.quickBtn.onclick = () => {             // 点击按钮 -> 记忆回廊
                 if(this.memoryGallery) this.memoryGallery.show();
             };
+    // --- 3. 事件绑定 (修改部分：添加拖拽逻辑) ---
+     // --- 3. 事件绑定 (修改版：同步移动快速入口) ---
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
 
+    this.floater.addEventListener('mousedown', (e) => {
+        isDragging = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        initialLeft = this.floater.offsetLeft;
+        initialTop = this.floater.offsetTop;
+
+        const onMouseMove = (moveEvent) => {
+            const dx = moveEvent.clientX - startX;
+            const dy = moveEvent.clientY - startY;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                isDragging = true;
+                const newLeft = initialLeft + dx;
+                const newTop = initialTop + dy;
+
+                // 移动悬浮球
+                this.floater.style.left = `${newLeft}px`;
+                this.floater.style.top = `${newTop}px`;
+                this.floater.style.right = 'auto';
+
+                // --- 新增：同步移动快速进入按钮 ---
+                if (this.quickBtn) {
+                    this.quickBtn.style.left = `${newLeft + 55}px`; // 保持在球右侧
+                    this.quickBtn.style.top = `${newTop + 10}px`;
+                }
+            }
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // 修改点击判定
+    this.floater.onclick = (e) => {
+        if (isDragging) return;
+        this.toggle();
+    };
             // 4. 主界面 (保持原有结构)
             this.container = document.createElement('div');
             this.container.className = 'mod01-overlay';
