@@ -13,6 +13,9 @@
                 overflow: hidden !important;
                 position: relative;
             }
+                #load-more-btn {
+ display:none;
+}
             #options-module-container { display: none !important; }
 
             /* --- 舞台容器 --- */
