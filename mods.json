@@ -415,7 +415,7 @@
     "author": "assa",
     "version": "1.1",
     "tags": ["功能脚本"],
-    "description": "如题。可以配置你的cot标签内容，代码提取，然后在悬浮小球点击查看。主要是流式的时候看完正文还想看看cot，但是懒得往上翻。还有就是可以可选的生成结束后直接删除正文的cot。这个功能主要是为了防止有些世界书绿灯会读取cot内部的文本，导致错误触发，有点烦。",
+    "description": "如题。可以配置你的cot标签内容，代码提取，然后在悬浮小球点击查看。主要是流式的时候看完正文还想看看cot，但是懒得往上翻。还有就是可以可选的生成结束后直接删除正文的cot。这个功能主要是为了防止有些世界书绿灯会读取cot内部的文本，导致错误触发，有点烦。\ncot频繁掉格式的不建议开自动删除，不然有可能错误的给你正文也删了",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod13getcot.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 25.png"
