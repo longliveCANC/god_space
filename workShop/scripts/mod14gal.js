@@ -68,6 +68,8 @@
                 pointer-events: auto;
                 /* 隐藏滚动条但允许滚动 */
                 scrollbar-width: none;
+
+                     animation: mod14-slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             }
             .mod14-options-layer::-webkit-scrollbar { display: none; }
 
@@ -224,59 +226,63 @@
                 align-items: center;
                 padding: 20px;
                 backdrop-filter: blur(5px);
+                       animation: mod14-fade-in 0.3s ease-out forwards;
             }
-            .mod14-modal-content {
+                .mod14-modal-content {
                 width: 95%; height: 90%;
-                background: #fff;
+
+                /* 【修改】内容容器背景透明 */
+                background: transparent;
+                box-shadow: none; /* 去除阴影以适应透明背景 */
+
                 border-radius: 8px;
                 overflow: hidden;
                 position: relative;
             }
+    
+            /* 【修改】隐藏右上角的 X 关闭按钮 */
             .mod14-modal-close {
-                position: absolute;
-                top: 10px; right: 10px;
-                background: red; color: white;
-                border: none; padding: 5px 10px;
-                cursor: pointer; z-index: 10;
-                border-radius: 4px;
+                display: none !important;
             }
 
             .mod14-dummy-bubble { display: none; }
 
-              .mod14-control-panel {
+                  /* --- 控制面板 --- */
+      .mod14-control-panel {
                 position: absolute;
-                top: 10px; left: 10px;
-                z-index: 50;
-                display: flex;
-                gap: 8px;
-                opacity: 0; /* 默认隐藏 */
-                transition: opacity 0.3s ease;
-                pointer-events: none; /* 隐藏时不阻挡点击 */
-            }
-            /* 鼠标移入左上角区域时显示 */
-            .mod14-stage-wrapper:hover .mod14-control-panel,
-            .mod14-control-panel:hover {
-                opacity: 1;
-                pointer-events: auto;
-            }
-
-        /* --- 控制面板 --- */
-            .mod14-control-panel {
-                position: absolute;
-                top: 10px; left: 10px;
+                top: 10px;
+                right: 60px;
+                left: auto;
                 z-index: 50;
                 display: flex;
                 gap: 8px;
                 opacity: 0;
                 transition: opacity 0.3s ease;
-                pointer-events: none;
-            }
-            .mod14-stage-wrapper:hover .mod14-control-panel,
-            .mod14-control-panel:hover {
-                opacity: 1;
+
+                /* 【修改】允许面板自身接收鼠标事件，否则无法触发 hover */
                 pointer-events: auto;
+
+                /* 【新增】增加透明内边距，扩大鼠标感应范围（即“附近”区域） */
+                padding: 20px;
+                margin: -20px;
             }
 
+            /* 【修改】仅保留面板自身的悬浮显示，移除 .mod14-stage-wrapper:hover 的触发 */
+            .mod14-control-panel:hover {
+                opacity: 1;
+            }
+
+            /* 【新增】动画关键帧 */
+            @keyframes mod14-slide-up {
+                0% { transform: translateY(30px); opacity: 0; }
+                100% { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes mod14-fade-in {
+                0% { opacity: 0; }
+                100% { opacity: 1; }
+            }
+
+       
             .mod14-ctrl-btn {
                 background: var(--mod14-container-bg-color); /* 纯变量 */
                 border: 1px solid var(--mod14-primary-color); /* 纯变量 */
@@ -564,152 +570,216 @@
         // --- 核心流程 ---
 
    enqueueMessage(msg, rawContent, extractedOptions = []) {
-        if (msg.role === 'user') return;
+    if (msg.role === 'user') return;
 
-        const msgId = msg === this.lastEnqueuedMsg ? 'SAME_MSG' : Date.now();
-        if (msg === this.lastEnqueuedMsg && this.queue.length > 0) {
-            // 简单的去重，防止重复调用
-        }
-        this.lastEnqueuedMsg = msg;
+    const msgId = msg === this.lastEnqueuedMsg ? 'SAME_MSG' : Date.now();
+    if (msg === this.lastEnqueuedMsg && this.queue.length > 0) {
+        // 简单的去重
+    }
+    this.lastEnqueuedMsg = msg;
 
-        // --- 步骤1: 整合旧的解析逻辑，保护和解析特殊标签 ---
-        let processedContent = rawContent;
-        const htmlPlaceholders = {};
-        let placeholderIndex = 0;
-        const userNickname = window.currentGameData?.user?.nick_name || '你';
+    let processedContent = rawContent;
+    const htmlPlaceholders = {};
+    let placeholderIndex = 0;
 
-        // 1.1 保护 <html> 和 ```代码块```
-        processedContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
-            const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
-            const rawHtml = htmlBlock || (markdownBlock ? `<pre><code class="language-${lang || ''}">${markdownBlock.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>` : '');
-            if (!rawHtml) return match;
-            htmlPlaceholders[placeholder] = rawHtml;
-            placeholderIndex++;
-            return placeholder;
-        });
+    // --- 新增：富文本 UI 占位符 (用于保护 msg 和 group_chat 生成的 HTML) ---
+    const richUiPlaceholders = {};
+    let richUiIndex = 0;
 
-        // 1.2 解析 <msg>
-        processedContent = processedContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
-            return window.worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, true);
-        });
+    // 辅助函数：生成并保存富文本占位符
+    const protectRichUi = (htmlContent) => {
+        const key = `###RICH_UI_BLOCK_${richUiIndex}###`;
+        richUiPlaceholders[key] = htmlContent;
+        richUiIndex++;
+        return key; // 返回占位符，而不是 HTML
+    };
 
-        // 1.3 解析 <group_chat>
-        processedContent = processedContent.replace(/<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs, (match, groupName, chatContent) => {
-            let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
-            if (typeof chatContent === 'string') {
-                const lines = chatContent.trim().split('\n');
-                for (const line of lines) {
-                    const cleanedLine = line.trim();
-                    if (!cleanedLine || cleanedLine.startsWith('summary|')) continue;
-                    const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/);
-                    if (messageMatch) {
-                        groupChatHtml += window.worldHelper.renderGroupChatToHtml(messageMatch[1].trim(), messageMatch[2].trim(), userNickname);
-                    }
+    const userNickname = window.currentGameData?.user?.nick_name || '你';
+
+    // 1.1 保护 <html> 和 ```代码块``` (保持原样)
+    processedContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
+        const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
+        const rawHtml = htmlBlock || (markdownBlock ? `<pre><code class="language-${lang || ''}">${markdownBlock.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>` : '');
+        if (!rawHtml) return match;
+        htmlPlaceholders[placeholder] = rawHtml;
+        placeholderIndex++;
+        return placeholder;
+    });
+
+    // 1.2 解析 <msg> -> 【修改】转换为 HTML 后立即用占位符保护
+  processedContent = processedContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
+        // 【修改点】将最后一个参数由 true 改为 false
+        // 这样 renderPrivateMsgToHtml 才会生成包含 BGM 信息的隐藏 div (js-music-autoplay-trigger)
+        // 从而让下方的 bgmMatch 正则能提取到歌曲信息
+        const html = window.worldHelper.renderPrivateMsgToHtml(sender.trim(), receiver.trim(), msgContent, userNickname, false);
+        return protectRichUi(html);
+    });
+
+    // 1.3 解析 <group_chat> -> 【修改】转换为 HTML 后立即用占位符保护
+    processedContent = processedContent.replace(/<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs, (match, groupName, chatContent) => {
+        let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
+        if (typeof chatContent === 'string') {
+            const lines = chatContent.trim().split('\n');
+            for (const line of lines) {
+                const cleanedLine = line.trim();
+                if (!cleanedLine || cleanedLine.startsWith('summary|')) continue;
+                const messageMatch = cleanedLine.match(/^([^|]+)\|([\s\S]*)/);
+                if (messageMatch) {
+                    groupChatHtml += window.worldHelper.renderGroupChatToHtml(messageMatch[1].trim(), messageMatch[2].trim(), userNickname);
                 }
             }
-            return groupChatHtml;
-        });
-
-        // 1.4 恢复 HTML 占位符
-        for (const placeholder in htmlPlaceholders) {
-            processedContent = processedContent.replace(placeholder, htmlPlaceholders[placeholder]);
         }
+        return protectRichUi(groupChatHtml);
+    });
 
-          // --- 步骤2: 分块逻辑 ---
-        const history = window.GameAPI.conversationHistory;
-        const isRealLastMsg = (history && history.length > 0 && msg === history[history.length - 1]);
+    // 1.4 恢复 HTML 占位符 (保持原样，用于处理 <html> 标签)
+    for (const placeholder in htmlPlaceholders) {
+        processedContent = processedContent.replace(placeholder, htmlPlaceholders[placeholder]);
+    }
 
-        const attachmentRegex = /<html>([\s\S]*?)<\/html>|<details>([\s\S]*?)<\/details>/gi;
-        const attachmentMatch = processedContent.match(attachmentRegex);
+    // --- 步骤2: 分块逻辑 ---
+    const history = window.GameAPI.conversationHistory;
+    const isRealLastMsg = (history && history.length > 0 && msg === history[history.length - 1]);
 
-        // 定义一个通用的文本分块处理函数
-        const processTextLines = (textToProcess) => {
-            const lines = textToProcess.split('\n');
-            lines.forEach((line) => {
-                let trimmed = line.trim();
-                if (!trimmed) return;
-                if (trimmed.startsWith('<') && trimmed.endsWith('>')) return;
+    const attachmentRegex = /<html>([\s\S]*?)<\/html>|<details>([\s\S]*?)<\/details>/gi;
+    const attachmentMatch = processedContent.match(attachmentRegex);
 
-                let name = '';
-                let text = trimmed;
-                if (trimmed.includes('|') && trimmed.indexOf('|') < 20) {
-                    const p = trimmed.split('|');
-                    name = p[0].trim();
-                    text = p.slice(1).join('|').trim();
-                } else {
-                    if (trimmed.startsWith('(') || trimmed.startsWith('（')) name = '';
-                    else name = msg.name || '';
+    // 定义一个通用的文本分块处理函数
+    const processTextLines = (textToProcess) => {
+        const lines = textToProcess.split('\n');
+        lines.forEach((line) => {
+            let trimmed = line.trim();
+            if (!trimmed) return;
+           if (trimmed.startsWith('<') && trimmed.endsWith('>') &&
+                !/^<(em|strong|span|p|div|b|i|u|s|font)/i.test(trimmed)) {
+                return;
+            }
+            let name = '';
+            let text = trimmed;
+
+            // 【新增】检查是否包含富文本占位符
+            let isRichContent = false;
+            // 简单的检查：如果这一行包含我们生成的占位符 key
+            for (const key in richUiPlaceholders) {
+                if (text.includes(key)) {
+                    text = text.replace(key, richUiPlaceholders[key]); // 恢复为完整的 HTML
+                    isRichContent = true;
                 }
+            }
 
-                this.queue.push({
-                    name,
-                    text,
-                    attachments: [],
-                    isAttachmentDisplay: false,
-                    isLast: false,
-                    options: [],
-                    isRealLastMsg: isRealLastMsg,
-                    originalMsg: msg
-                });
-            });
-        };
+            if (!isRichContent && trimmed.includes('|') && trimmed.indexOf('|') < 20) {
+                const p = trimmed.split('|');
+                name = p[0].trim();
+                text = p.slice(1).join('|').trim();
+            } else {
+                if (trimmed.startsWith('(') || trimmed.startsWith('（')) name = '';
+                else name = msg.name || '';
+            }
 
-        if (attachmentMatch) {
-            // 1. 先添加特殊的 "贴脸" 块
             this.queue.push({
-                name: msg.name || '系统',
-                text: '',
-                attachments: attachmentMatch,
-                isAttachmentDisplay: true,
-                isLast: false, // 先设为 false，后面统一处理
+                name,
+                text,
+                attachments: [],
+                isAttachmentDisplay: false,
+                isRichContent: isRichContent, // 【新增】标记为富文本
+                isLast: false,
                 options: [],
                 isRealLastMsg: isRealLastMsg,
                 originalMsg: msg
             });
+        });
+    };
 
-            // 2. 【修复】处理剩余文本：使用 processTextLines 进行标准分行处理
-            const remainingText = processedContent.replace(attachmentRegex, '').trim();
-            if (remainingText) {
-                processTextLines(remainingText);
-            }
+    if (attachmentMatch) {
+        this.queue.push({
+            name: msg.name || '系统',
+            text: '',
+            attachments: attachmentMatch,
+            isAttachmentDisplay: true,
+            isLast: false,
+            options: [],
+            isRealLastMsg: isRealLastMsg,
+            originalMsg: msg
+        });
 
-        } else {
-            // 如果没有贴脸内容，直接处理全文
-            processTextLines(processedContent);
+        const remainingText = processedContent.replace(attachmentRegex, '').trim();
+        if (remainingText) {
+            processTextLines(remainingText);
         }
 
-        // --- 步骤3: 后处理 (设置最后一个块的属性) ---
-        // 无论上面走了哪条路，现在 queue 里已经有了所有块
-        // 我们需要找到属于当前消息的最后一个块，把选项挂上去
-
-        // 找到当前消息生成的最后一个块的索引
-        // 简单的做法是取 queue 的最后一个，因为我们刚刚 push 进去
-        if (this.queue.length > 0) {
-            const lastChunk = this.queue[this.queue.length - 1];
-            // 只有当这个块确实属于当前正在处理的消息时才挂载 (防止极端并发情况，虽然单线程不太可能)
-            if (lastChunk.originalMsg === msg) {
-                lastChunk.isLast = true;
-                lastChunk.options = extractedOptions;
-            }
-        } else if (extractedOptions.length > 0) {
-            // 极端情况：消息全是空行或被过滤了，但有选项
-            this.queue.push({
-                name: '系统',
-                text: '请做出选择...',
-                attachments: [],
-                isAttachmentDisplay: false,
-                isLast: true,
-                options: extractedOptions,
-                isRealLastMsg: isRealLastMsg,
-                originalMsg: msg
-            });
-        }
-
-        // 自动播放
-        if (!this.isTyping && this.ui.optionsLayer.style.display === 'none' && !this.isShowingModal) {
-            this.playNextChunk();
-        }
+    } else {
+        processTextLines(processedContent);
     }
+
+    // --- 步骤3: 后处理 (设置最后一个块的属性) ---
+    if (this.queue.length > 0) {
+        const lastChunk = this.queue[this.queue.length - 1];
+        if (lastChunk.originalMsg === msg) {
+            lastChunk.isLast = true;
+            lastChunk.options = extractedOptions;
+        }
+    } else if (extractedOptions.length > 0) {
+        this.queue.push({
+            name: '系统',
+            text: '请做出选择...',
+            attachments: [],
+            isAttachmentDisplay: false,
+            isLast: true,
+            options: extractedOptions,
+            isRealLastMsg: isRealLastMsg,
+            originalMsg: msg
+        });
+    }
+      try {
+        // 1. 并不检查 rawContent，而是检查所有生成的富文本占位符内容
+        // 因为 BGM 触发器是在 renderPrivateMsgToHtml 中生成的，存在 placeholders 里
+        const allHtmlContent = Object.values(richUiPlaceholders).join('') + Object.values(htmlPlaceholders).join('');
+
+        // 使用正则直接提取信息，比创建 DOM 更快且能匹配到占位符中的内容
+        // 匹配格式: class="js-music-autoplay-trigger" ... data-song="..."
+        const bgmMatch = allHtmlContent.match(/class="js-music-autoplay-trigger"[\s\S]*?data-song="([^"]*)"[\s\S]*?data-artist="([^"]*)"[\s\S]*?data-dom-id="([^"]*)"/);
+
+        if (bgmMatch) {
+            const song = bgmMatch[1];
+            const artist = bgmMatch[2];
+            const domId = bgmMatch[3];
+
+            console.log(`[Galgame] 检测到 BGM 请求: ${song} (ID: ${domId})，正在等待 DOM 就绪...`);
+
+            // 2. 启动轮询机制 (最多等待 2 秒)
+            let attempts = 0;
+            const maxAttempts = 20; // 20次 * 100ms = 2秒
+
+            const checkTimer = setInterval(() => {
+                attempts++;
+
+                // 检查播放器 DOM 元素是否已挂载到页面上
+                // 这一点很重要，因为 GlobalChatAudio 通常需要获取该元素来更新进度条
+                const elementExists = document.getElementById(domId) || document.querySelector(`[data-dom-id="${domId}"]`);
+
+                if (window.GlobalChatAudio && elementExists) {
+                    // 成功：元素存在且音频引擎就绪
+                    clearInterval(checkTimer);
+                    console.log('[Galgame] BGM 元素就绪，开始播放。');
+                    window.GlobalChatAudio.playMusic(song, artist, domId, true);
+                } else if (attempts >= maxAttempts) {
+                    // 超时：强制尝试播放（防止因 DOM 问题导致完全没声音）
+                    clearInterval(checkTimer);
+                    console.warn('[Galgame] BGM 等待超时，尝试强制播放。');
+                    if (window.GlobalChatAudio) {
+                        window.GlobalChatAudio.playMusic(song, artist, domId, true);
+                    }
+                }
+            }, 100); // 每 100ms 检查一次
+        }
+    } catch (e) {
+        console.error('[Galgame] BGM 解析/播放逻辑异常:', e);
+    }
+    // 自动播放
+    if (!this.isTyping && this.ui.optionsLayer.style.display === 'none' && !this.isShowingModal) {
+        this.playNextChunk();
+    }
+}
 
         parseRawOptions(text) {
             // 兼容你的 generateChoices 逻辑：非空行，或数字开头
@@ -894,60 +964,66 @@
 
         return true;
     }
-
  renderChunkState(chunk) {
     // UI 重置
     this.ui.nextIndicator.classList.remove('active');
     this.ui.textContent.innerHTML = '';
-   
+
     clearTimeout(this.autoTimer);
 
     // 更新名字 & 立绘
     this.updateSpeaker(chunk.name);
 
- 
     this.isTyping = true;
-        this.currentText = chunk.text; // 这里的 text 包含 HTML 标签
+    this.currentText = chunk.text; // 这里的 text 包含 HTML 标签
 
-        // 如果是跳过模式，直接显示全部
-        if (this.isSkipping) {
+    // 如果是跳过模式，直接显示全部
+    if (this.isSkipping) {
+        this.finishTyping();
+        return;
+    }
+
+    // 【新增】如果是富文本内容（如短信、群聊界面），直接渲染，不使用打字机
+    if (chunk.isRichContent) {
+        this.ui.textContent.innerHTML = this.currentText;
+        // 稍微延迟一点结束，让 DOM 有时间渲染，避免闪烁
+        setTimeout(() => {
             this.finishTyping();
-            return;
-        }
+        }, 50);
+        return;
+    }
 
-        // 解析 HTML 为 Token 数组
-        // 正则含义：匹配 <...> 标签，或者 任意非 < 字符
-        const tokens = this.currentText.match(/<[^>]+>|[^<]/g) || [];
+    // --- 以下是原有的打字机逻辑 ---
 
-        let tokenIndex = 0;
-        let currentHTML = '';
+    // 解析 HTML 为 Token 数组
+    const tokens = this.currentText.match(/<[^>]+>|[^<]/g) || [];
 
-        clearInterval(this.typingTimer);
+    let tokenIndex = 0;
+    let currentHTML = '';
 
-        this.typingTimer = setInterval(() => {
-            if (tokenIndex < tokens.length) {
-                const token = tokens[tokenIndex];
-                currentHTML += token;
-                this.ui.textContent.innerHTML = currentHTML;
+    clearInterval(this.typingTimer);
 
-                // 如果当前 token 是标签（以 < 开头），不计入打字延迟，立即处理下一个
-                // 这样标签会瞬间渲染，不会把 < s p a n > 一个个打出来
-                if (token.startsWith('<')) {
-                    // 循环处理连续的标签 (如 </span><br><span>)
-                    tokenIndex++;
-                    while(tokenIndex < tokens.length && tokens[tokenIndex].startsWith('<')) {
-                        currentHTML += tokens[tokenIndex];
-                        this.ui.textContent.innerHTML = currentHTML;
-                        tokenIndex++;
-                    }
-                } else {
+    this.typingTimer = setInterval(() => {
+        if (tokenIndex < tokens.length) {
+            const token = tokens[tokenIndex];
+            currentHTML += token;
+            this.ui.textContent.innerHTML = currentHTML;
+
+            if (token.startsWith('<')) {
+                tokenIndex++;
+                while(tokenIndex < tokens.length && tokens[tokenIndex].startsWith('<')) {
+                    currentHTML += tokens[tokenIndex];
+                    this.ui.textContent.innerHTML = currentHTML;
                     tokenIndex++;
                 }
             } else {
-                this.finishTyping();
+                tokenIndex++;
             }
-        }, 30); // 打字速度
-    }
+        } else {
+            this.finishTyping();
+        }
+    }, 30); // 打字速度
+}
 
  
 playNextChunk() {
@@ -1224,69 +1300,98 @@ playNextChunk() {
                 }, 800);
             }
         }
- 
-// 【重大修改】showAttachmentModal 增加一个参数并处理后续流程
-showAttachmentModal(isAutoPlayFlow = false) {
-    if (!this.currentAttachmentsContent) return;
+ // 【修改】showAttachmentModal
+        showAttachmentModal(isAutoPlayFlow = false) {
+            if (!this.currentAttachmentsContent) return;
 
-    this.isShowingModal = true; // 标记模态框已打开
-    const container = this.ui.iframeContainer;
-    container.innerHTML = '';
+            this.isShowingModal = true;
+            const container = this.ui.iframeContainer;
+            container.innerHTML = '';
 
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.background = '#fff';
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
 
-    this.ui.modal.style.display = 'flex';
-    iframe.srcdoc = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-            img { max-width: 100%; height: auto; }
-            details { border: 1px solid #ccc; border-radius: 4px; padding: 10px; margin-bottom: 10px; }
-            summary { font-weight: bold; cursor: pointer; }
-          </style>
-        </head>
-        <body>${this.currentAttachmentsContent}</body>
-        </html>
-    `;
-    container.appendChild(iframe);
+            // 【修改】iframe 背景透明
+            iframe.style.background = 'transparent';
 
-    // 修改关闭逻辑
-    const closeModal = () => {
-        this.ui.modal.style.display = 'none';
-        this.isShowingModal = false; // 重置标记
-        // 【关键】如果是自动播放流程的一部分，关闭后自动播放下一条
-        if (isAutoPlayFlow) {
-            // 延迟一小段时间，避免快速点击问题
-            setTimeout(() => this.playNextChunk(), 100);
+            // 重置动画，确保每次打开都有动画效果
+            this.ui.modal.style.animation = 'none';
+            this.ui.modal.offsetHeight; /* trigger reflow */
+            this.ui.modal.style.animation = 'mod14-fade-in 0.3s ease-out forwards';
+
+            this.ui.modal.style.display = 'flex';
+
+            // 【修改】注入的 HTML 样式：背景透明，文字白色
+            iframe.srcdoc = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <style>
+                    /* 滚动条样式优化 (可选) */
+                    ::-webkit-scrollbar { width: 6px; }
+                    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
+                    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+
+                    body {
+                        font-family: "Microsoft YaHei", sans-serif;
+                        padding: 20px;
+                        line-height: 1.6;
+                        background: transparent; /* 透明背景 */
+                        color: #fff; /* 白字 */
+                        text-shadow: 0 1px 2px rgba(0,0,0,0.8); /* 增加文字阴影提高可读性 */
+                    }
+                    img { max-width: 100%; height: auto; border-radius: 4px; }
+                    details {
+                        border: 1px solid rgba(255,255,255,0.3);
+                        border-radius: 4px;
+                        padding: 10px;
+                        margin-bottom: 10px;
+                        background: rgba(0,0,0,0.2);
+                    }
+                    summary { font-weight: bold; cursor: pointer; color: #00faff; }
+                  </style>
+                </head>
+                <body>${this.currentAttachmentsContent}</body>
+                </html>
+            `;
+            container.appendChild(iframe);
+
+            const closeModal = () => {
+                // 关闭时的淡出效果 (可选，简单起见直接隐藏)
+                this.ui.modal.style.display = 'none';
+                this.isShowingModal = false;
+                if (isAutoPlayFlow) {
+                    setTimeout(() => this.playNextChunk(), 100);
+                }
+            };
+
+            // 移除旧的关闭按钮逻辑（因为按钮被CSS隐藏了），主要靠点击背景关闭
+            // 但为了代码健壮性，保留 DOM 操作，只是 CSS 隐藏了它
+            const newCloseBtn = this.ui.modal.querySelector('.mod14-modal-close').cloneNode(true);
+            this.ui.modal.querySelector('.mod14-modal-close').replaceWith(newCloseBtn);
+            newCloseBtn.onclick = closeModal;
+
+            const newModal = this.ui.modal.cloneNode(true);
+            this.ui.modal.replaceWith(newModal);
+            this.ui = { ...this.ui, modal: newModal, iframeContainer: newModal.querySelector('.mod14-iframe-container') };
+
+            // 仍然保留点击背景关闭的功能
+            newModal.onclick = (e) => {
+                if (e.target === newModal) closeModal();
+            };
         }
-    };
-
-    // 确保只绑定一次事件或先移除旧事件
-    const newCloseBtn = this.ui.modal.querySelector('.mod14-modal-close').cloneNode(true);
-    this.ui.modal.querySelector('.mod14-modal-close').replaceWith(newCloseBtn);
-    newCloseBtn.onclick = closeModal;
-
-    const newModal = this.ui.modal.cloneNode(true);
-    this.ui.modal.replaceWith(newModal);
-    this.ui = { ...this.ui, modal: newModal, iframeContainer: newModal.querySelector('.mod14-iframe-container') }; // 更新UI引用
-    newModal.querySelector('.mod14-modal-close').onclick = closeModal;
-    newModal.onclick = (e) => {
-        if (e.target === newModal) closeModal();
-    };
-}
     }
 
     // ============================================================
     // 3. 拦截 createMessageBubble
     // ============================================================
       let galManager = null;
+window.GameAPI.displayEventTag =  function(){
 
+    console.log("拦截了事件展示desu");
+}
  window.worldHelper.createMessageBubble = async function(msg, mode = 'chat', is_from_render = false) {
     if (!galManager) galManager = new GalgameManager();
     if (!document.querySelector('.mod14-stage-wrapper')) {
@@ -1356,6 +1461,8 @@ showAttachmentModal(isAutoPlayFlow = false) {
         'display',
         { depth: -1 } // 阅读模式固定深度为 -1
     );
+
+
     // 4. 将格式化后的内容和选项交给 Manager 处理
     // 注意：这里不再需要 formatAsTavernRegexedString 和各种 replace，因为这些都在 enqueueMessage 内部处理了
     galManager.enqueueMessage(msg, rawContent, extractedOptions);

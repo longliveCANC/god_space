@@ -18851,7 +18851,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
 
     // 确保 eventData 至少是能被 displayEventTag 尝试解析的 JSON 字符串
     if (eventData) {
-        displayEventTag(displayName, eventData);
+        window.GameAPI.displayEventTag(displayName, eventData);
     }
 }
         
@@ -26938,18 +26938,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
         return placeholder;
     });
 
-    // 步骤3：移除其他结构化标签
-    // const pureContent = contentWithGroupChatPlaceholder
-    //     .replace(/<options>(?:(?!<options>)[\s\S])*?<\/options>/gs, '')
-    //     .replace(/<loc&time>(?:(?!<loc&time>)[\s\S])*?<\/loc&time>/gs, '')
-    //     .replace(/<battle>(?:(?!<battle>)[\s\S])*?<\/battle>/gs, '')
-    //     .replace(/<battle_log>(?:(?!<battle_log>)[\s\S])*?<\/battle_log>/gs, '')
-    //     .replace(/<forum_threads>(?:(?!<forum_threads>)[\s\S])*?<\/forum_threads>/gs, '')
-    //     .replace(/<shop_item>(?:(?!<shop_item>)[\s\S])*?<\/shop_item>/gs, '')
-    //     .replace(/<表现总结>(?:(?!<表现总结>)[\s\S])*?<\/表现总结>/gs, '');
-
-
-
+ 
     // 步骤5：替换占位符（修复：正确的累积替换）
     let finalHtml = contentWithGroupChatPlaceholder;
     
@@ -27003,7 +26992,7 @@ for (const placeholder in htmlPlaceholders) {
 // 设置HTML
 bubble.innerHTML = finalHtmlWithMarkers;
 
-// 步骤7（新版本）：找到所有标记并替换为iframe
+// 步骤7 ：找到所有标记并替换为iframe
 iframeMarkers.forEach(marker => {
     const markerElement = bubble.querySelector(`[data-iframe-marker="${marker.markerId}"]`);
     if (!markerElement) return;
@@ -31003,7 +30992,7 @@ function handleNotificationsFromBatch(operations) {
                     }
                 }
 
-                displayEventTag(displayName, finalValue);
+                window.GameAPI.displayEventTag(displayName, finalValue);
             }
             // 🎒 规则：背包更新
      else if (path.includes('global_lore.背包') || path.includes('global_lore.其他技能')) {
@@ -54972,7 +54961,7 @@ window.GameAPI = {
         return conversationHistory;
     },
  
-    
+
     performGacha: function(...args) {
         // 修改：优先查找 window.performGacha
         if (typeof window.performGacha === 'function') {
@@ -55004,7 +54993,16 @@ window.GameAPI = {
             console.error("triggerassa 函数未定义");
         }
     },
+     
+
+       displayEventTag: function(...args) {
  
+        if (typeof displayEventTag === 'function') {
+            return displayEventTag(...args);
+        } else {
+            console.error("displayEventTag 函数未定义");
+        }
+    } ,
   populateCharacterPage: function(...args) {
  
         if (typeof populateCharacterPage === 'function') {
