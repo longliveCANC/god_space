@@ -50,7 +50,7 @@
       left: 0;
       right: 0;
       top: -45px;    /* 向上扩展45px */
-      bottom: -45px; /* 向下扩展45px */
+      /* bottom: -45px; 向下扩展45px */
       pointer-events: auto;
     }
     
