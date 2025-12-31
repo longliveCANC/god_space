@@ -15073,7 +15073,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.11';
+let current_game_version = '3.5.12';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -26363,7 +26363,7 @@ async function renderNewMessages(newMessages) {
 
     for (const msg of newMessages) {
         // 我们从`renderHistory`中借用创造“气泡”的魔法
-        const bubble = await createMessageBubble(msg);
+        const bubble = await worldHelper.createMessageBubble(msg);
         chatDisplayArea.appendChild(bubble);
     }
 
@@ -26438,7 +26438,7 @@ function cleanupGlobalUIState() {
     chatDisplayArea.removeChild(chatDisplayArea.lastChild);
 
     // 创建并添加最终的、完整的AI消息气泡
-    const finalBubble = await createMessageBubble(finalMessage);
+    const finalBubble = await worldHelper.createMessageBubble(finalMessage);
     chatDisplayArea.appendChild(finalBubble);
 
     // 处理AI消息中可能包含的特殊模块（选项、论坛等）
@@ -27704,7 +27704,7 @@ if (typeof window.initializationDone === 'undefined') {
                 return;
             }
 
-            const bubbles = await Promise.all(chunk.map(msg => createMessageBubble(msg, "chat", true)));
+            const bubbles = await Promise.all(chunk.map(msg => worldHelper.createMessageBubble(msg, "chat", true)));
             bubbles.forEach(bubble => chatDisplayArea.appendChild(bubble));
 
             setTimeout(() => renderChunk(messages, index + chunkSize), 0);
