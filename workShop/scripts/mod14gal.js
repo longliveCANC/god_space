@@ -178,7 +178,7 @@
             /* 回溯按钮 (左下角) */
            .mod14-back-btn {
                 position: absolute;
-                bottom: 15px; right: 80px; /* 位置调整 */
+                bottom: 15px; left: 20px; /* 位置调整 */
                 width: 0; height: 0;
                 border-left: 8px solid transparent;
                 border-right: 8px solid transparent;
