@@ -29,25 +29,29 @@
     };
 
     // 3. 核心逻辑：内容提取
-    function escapeRegExp(string) {
+ function escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    function processMessage(text) {
+   // 修改点：增加 isSavePhase 参数
+    function processMessage(text, isSavePhase = false) {
         if (!text) return text;
 
         let startPattern = settings.startTag === '(无标签)' ? '^' : escapeRegExp(settings.startTag);
         let endPattern = escapeRegExp(settings.endTag);
 
-        // 构建正则：匹配标签及其内部内容
-        // 如果是(无标签)，则匹配从开头到结束标签的内容
         const regex = new RegExp(`${startPattern}([\\s\\S]*?)${endPattern}`, 'm');
         const match = text.match(regex);
 
         if (match) {
-            // 提取内容（match[1] 是括号捕获的内容）
-            settings.lastContent = match[1].trim();
-            ui.updateContent(settings.lastContent);
+            // 修改点：控制 UI 更新时机
+            // 1. 如果是保存阶段 (isSavePhase=true)，说明是刚生成的最新消息，必须更新 UI。
+            // 2. 如果未开启删除 (!settings.shouldDelete)，说明历史记录里保留了标签，浏览历史时允许更新 UI。
+            // 3. 反之，如果开启了删除且处于渲染阶段，说明扫描到的是漏网的旧消息，忽略它，防止覆盖最新内容。
+            if (isSavePhase || !settings.shouldDelete) {
+                settings.lastContent = match[1].trim();
+                ui.updateContent(settings.lastContent);
+            }
 
             // 如果开启了删除功能
             if (settings.shouldDelete) {
@@ -362,14 +366,14 @@ document.addEventListener('touchstart', (e) => {
     const ui = new ExtractorUI();
 
     // 6. 钩子处理
-    async function handleHook(hookData) {
-        // 处理保存前的响应
+     async function handleHook(hookData) {
+        // 处理保存前的响应 (这是最新生成的内容，传入 true)
         if (hookData.response) {
-            hookData.response = processMessage(hookData.response);
+            hookData.response = processMessage(hookData.response, true);
         }
-        // 处理渲染前的消息
+        // 处理渲染前的消息 (这是历史渲染，传入 false)
         if (hookData.message && hookData.message.content) {
-            hookData.message.content = processMessage(hookData.message.content);
+            hookData.message.content = processMessage(hookData.message.content, false);
         }
         return hookData;
     }
