@@ -97,9 +97,9 @@
                 display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;
             }
             .mod14-choice-card .tag {
-                background: rgba(0,0,0,0.3);
+             
                 padding: 2px 6px; border-radius: 4px; font-size: 0.8em;
-                border: 1px solid rgba(255,255,255,0.2);
+               
             }
             .mod14-choice-card .description { margin: 0; font-size: 1em; }
 
@@ -309,6 +309,7 @@
         constructor() {
             this.queue = []; // 待播放队列
             this.historyStack = []; // 已播放历史 (用于回溯)
+             this.activeCG = { name: null, imgId: null }; 
             this.isTyping = false;
             this.currentText = '';
             this.typingTimer = null;
@@ -323,8 +324,89 @@
             this.initUI();
             this.syncTheme();
             window.addEventListener('resize', () => this.syncTheme());
+
+         document.addEventListener('keydown', (e) => {
+                // 避免在输入框打字时触发
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+                if (e.code === 'Space' || e.code === 'ArrowRight') {
+                    e.preventDefault(); // 防止空格滚动页面
+                    this.handleInteraction();
+                } else if (e.code === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.handleBackStep();
+                }
+            });
         }
 
+           buildFullCommand(descriptionText, tags) {
+            let fullCommand = `/send ${descriptionText}`;
+
+            // 如果没有标签，直接返回 /send 指令
+            if (!tags || tags.length === 0) {
+                return fullCommand;
+            }
+
+            // 只有在存在标签时才添加检定属性指令
+            const attributes = tags.join(';');
+            const updateVariableCmd = `set_status('检定属性', 'old_value_placeholder', '${attributes}');`;
+
+            // 将 updateMemory 指令块附加到主指令后面
+            fullCommand += `\n<updateMemory>\n${updateVariableCmd}\n</updateMemory>`;
+
+            return fullCommand;
+        }
+ // --- 新增：章节切换逻辑 ---
+    async navigateChapter(direction) {
+        // direction: -1 (上一章), 1 (下一章)
+
+        // 1. 确定当前参考消息
+        let referenceMsg = null;
+        if (this.currentChunk) referenceMsg = this.currentChunk.originalMsg;
+        else if (this.queue.length > 0) referenceMsg = this.queue[0].originalMsg;
+
+        // 如果还没开始播放，取历史最后一条
+        const history = window.GameAPI.conversationHistory;
+        if (!referenceMsg && history.length > 0) referenceMsg = history[history.length - 1];
+        if (!referenceMsg) return;
+
+        let currentIndex = history.indexOf(referenceMsg);
+        if (currentIndex === -1) return;
+
+        // 2. 寻找目标消息 (跳过 User)
+        let targetIndex = currentIndex + direction;
+
+        // 循环查找直到找到非 User 消息或越界
+        while (targetIndex >= 0 && targetIndex < history.length) {
+            if (history[targetIndex].role !== 'user') {
+                break; // 找到了
+            }
+            targetIndex += direction;
+        }
+
+        // 3. 检查是否有效
+        if (targetIndex < 0 || targetIndex >= history.length) {
+            console.log('[Galgame] 没有更多章节了');
+            return;
+        }
+
+        const targetMsg = history[targetIndex];
+
+        // 4. 执行跳转
+        console.log(`[Galgame] 跳转章节: ${currentIndex} -> ${targetIndex}`);
+
+        // 停止当前动作
+        clearInterval(this.typingTimer);
+        this.isTyping = false;
+        this.queue = [];
+        this.ui.optionsLayer.style.display = 'none'; // 隐藏选项
+
+        // 加载目标消息
+        await window.worldHelper.createMessageBubble(targetMsg, 'chat', true);
+
+        // 播放
+        this.playNextChunk();
+    }
         initUI() {
             const parent = document.getElementById('chat-display-area');
             if (!parent) return;
@@ -396,27 +478,42 @@
             modal.querySelector('.mod14-modal-close').onclick = () => modal.style.display = 'none';
 
 
-             // --- 新增：控制面板 ---
-        const controlPanel = document.createElement('div');
-        controlPanel.className = 'mod14-control-panel';
+       // --- 修改：控制面板 ---
+            const controlPanel = document.createElement('div');
+            controlPanel.className = 'mod14-control-panel';
 
-        // 按钮1: Auto (自动播放)
-        const autoBtn = document.createElement('div');
-        autoBtn.className = 'mod14-ctrl-btn';
-        autoBtn.textContent = 'AUTO';
-        autoBtn.onclick = (e) => {
-            e.stopPropagation();
-            this.toggleAuto(autoBtn);
-        };
+            // 新增：上一章按钮
+            const prevChapBtn = document.createElement('div');
+            prevChapBtn.className = 'mod14-ctrl-btn';
+            prevChapBtn.textContent = 'Prev';
+            prevChapBtn.title = '上一章';
+            prevChapBtn.onclick = (e) => { e.stopPropagation(); this.navigateChapter(-1); };
 
-        // 按钮2: Skip (跳到最新/快进)
-        const skipBtn = document.createElement('div');
-        skipBtn.className = 'mod14-ctrl-btn';
-        skipBtn.textContent = 'SKIP';
-        skipBtn.onclick = (e) => {
-            e.stopPropagation();
-            this.skipToLatest();
-        };
+            // 原有：Auto
+            const autoBtn = document.createElement('div');
+            autoBtn.className = 'mod14-ctrl-btn';
+            autoBtn.textContent = 'AUTO';
+            autoBtn.onclick = (e) => { e.stopPropagation(); this.toggleAuto(autoBtn); };
+
+            // 原有：Skip
+            const skipBtn = document.createElement('div');
+            skipBtn.className = 'mod14-ctrl-btn';
+            skipBtn.textContent = 'SKIP';
+            skipBtn.onclick = (e) => { e.stopPropagation(); this.skipToLatest(); };
+
+            // 新增：下一章按钮
+            const nextChapBtn = document.createElement('div');
+            nextChapBtn.className = 'mod14-ctrl-btn';
+            nextChapBtn.textContent = 'Next';
+            nextChapBtn.title = '下一章';
+            nextChapBtn.onclick = (e) => { e.stopPropagation(); this.navigateChapter(1); };
+
+            controlPanel.appendChild(prevChapBtn);
+            controlPanel.appendChild(autoBtn);
+            controlPanel.appendChild(skipBtn);
+            controlPanel.appendChild(nextChapBtn);
+
+ 
 
         controlPanel.appendChild(autoBtn);
         controlPanel.appendChild(skipBtn);
@@ -466,6 +563,8 @@
         // --- 核心流程 ---
 
    enqueueMessage(msg, rawContent, extractedOptions = []) {
+        // --- 新增：需求1 - 不读取和展示 role 是 user 的消息 ---
+        if (msg.role === 'user') return;
         // 简单的去重 ID：消息对象引用 + 内容长度
         // 如果是 renderHistory 导致的重复调用，这能拦截大部分
         const msgId = msg === this.lastEnqueuedMsg ? 'SAME_MSG' : Date.now();
@@ -475,17 +574,19 @@
         }
         this.lastEnqueuedMsg = msg;
 
-        // ... (原有的提取附件逻辑保持不变) ...
-        // 注意：这里不再提取 <options>，因为参数里传进来了
-
+ 
         let content = rawContent;
         const attachments = [];
-        // ... (原有的 HTML/Details 提取逻辑) ...
+  
         const specialRegex = /<html>([\s\S]*?)<\/html>|<details>([\s\S]*?)<\/details>/gi;
         content = content.replace(specialRegex, (m, htmlContent, detailsContent) => {
             attachments.push(htmlContent || detailsContent);
             return '{{ATTACHMENT_MARKER}}';
         });
+        // --- 新增：判断是否为全局历史的最后一条消息 ---
+        const history = window.GameAPI.conversationHistory;
+        // 注意：这里判断 msg 对象是否全等于历史记录数组的最后一个元素
+        const isRealLastMsg = (history && history.length > 0 && msg === history[history.length - 1]);
 
         // 分块逻辑
         const lines = content.split('\n');
@@ -496,9 +597,7 @@
             let trimmed = line.trim();
             if (!trimmed) return;
 
-            // --- 新增修改开始：过滤掉被 <> 包裹的整行内容 ---
-            // 例如 <game>, <battle_start>, <turn_1> 等
-            // 注意：这会过滤掉所有以 < 开头并以 > 结尾的单行内容
+         
             if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
                 // 可以在这里加个 console.log 确认过滤了什么
                 // console.log('Skipping tag line:', trimmed);
@@ -536,6 +635,7 @@
                 isLast: false,
                 // 只有最后一个块才携带选项
                 options: [],
+                 isRealLastMsg: isRealLastMsg, // <--- 将标记存入 chunk
                  originalMsg: msg // <--- 新增：绑定原始消息对象，用于查找上一条
             });
             createdChunks++;
@@ -545,14 +645,14 @@
         if (createdChunks > 0) {
             const lastChunk = this.queue[this.queue.length - 1];
             lastChunk.isLast = true;
-            lastChunk.options = extractedOptions; // 使用传入的选项
+            lastChunk.options = extractedOptions;
         } else if (extractedOptions.length > 0) {
-            // 只有选项没有文本的情况
             this.queue.push({
                 name: '系统',
                 text: '请做出选择...',
                 options: extractedOptions,
-                isLast: true
+                isLast: true,
+                isRealLastMsg: isRealLastMsg // <--- 纯选项块也要标记
             });
         }
 
@@ -593,7 +693,7 @@
             clearTimeout(this.autoTimer);
         }
     }
-   async skipToLatest() {
+    async skipToLatest() {
         const history = window.GameAPI.conversationHistory;
         if (!history || history.length === 0) return;
 
@@ -610,38 +710,29 @@
 
         // 4. 检查：如果我们已经在显示最后一条消息的最后一段，就不用重载了
         if (this.currentChunk && this.currentChunk.originalMsg === lastMsg && this.currentChunk.isLast) {
-             this.finishTyping();
+             this.finishTyping(); // 确保当前内容完全显示
+             // 延迟重置跳过状态
              setTimeout(() => { this.isSkipping = false; }, 100);
              return;
         }
 
         console.log('[Galgame] Skipping to latest message...');
 
-        // 5. 重新解析最后一条消息
-        // 注意：这里我们临时借用 createMessageBubble 来填充 queue
+        // 5. 重新解析最后一条消息，填充 this.queue
         await window.worldHelper.createMessageBubble(lastMsg, 'chat', true);
 
-        // 6. 【关键修改】合并所有块，确保显示完整消息
+        // 6. 【关键修改】直接播放队列中的最后一个块
         if (this.queue.length > 0) {
-            // 提取所有文本并合并
-            const fullText = this.queue.map(c => c.text).join('');
-            // 获取最后一个块（包含选项和附件信息）
-            const lastChunk = this.queue[this.queue.length - 1];
-            // 合并所有附件
-            const allAttachments = this.queue.flatMap(c => c.attachments || []);
+            // 从队列中取出最后一块
+            const finalChunk = this.queue.pop();
 
-            // 创建一个合并后的超级块
-            const mergedChunk = {
-                name: lastChunk.name, // 沿用最后一块的名字
-                text: fullText,       // 完整文本
-                attachments: allAttachments,
-                options: lastChunk.options, // 选项
-                isLast: true,
-                originalMsg: lastMsg
-            };
+            // 清空队列，确保只播放最后一块
+            this.queue = [];
 
-            this.queue = [mergedChunk]; // 队列只剩这一个完整块
-            this.playNextChunk(); // 播放 (由于 isSkipping=true，会瞬间完成)
+            // 将最后一块设置为当前要播放的块并立即播放
+            // 我们直接调用 playNextChunk，但因为队列是空的，它只会播放我们手动添加的这一块
+            this.queue.push(finalChunk);
+            this.playNextChunk();
         }
 
         // 7. 稍微延迟后重置跳过状态
@@ -697,9 +788,7 @@
     }
 
     // 新增：辅助方法，用于从 conversationHistory 加载上一条消息
-    async loadPreviousMessage() {
-        // 获取当前队列头部的消息（如果队列为空，尝试用刚才被回退的 currentChunk）
-        // 我们需要找到"当前正在读的这条消息"在全局历史中的位置
+      async loadPreviousMessage() {
         let referenceMsg = null;
         if (this.queue.length > 0) referenceMsg = this.queue[0].originalMsg;
         else if (this.currentChunk) referenceMsg = this.currentChunk.originalMsg;
@@ -707,30 +796,27 @@
         if (!referenceMsg) return false;
 
         const history = window.GameAPI.conversationHistory;
-        const currentIndex = history.indexOf(referenceMsg);
+        let currentIndex = history.indexOf(referenceMsg);
 
-        if (currentIndex <= 0) return false; // 已经是第一条了
+        if (currentIndex <= 0) return false;
 
-        const prevMsg = history[currentIndex - 1];
+        // --- 修改：向前查找直到找到非 User 消息 ---
+        let prevIndex = currentIndex - 1;
+        while (prevIndex >= 0 && history[prevIndex].role === 'user') {
+            prevIndex--;
+        }
 
-        // 使用 createMessageBubble 的逻辑重新解析这条旧消息
-        // 但我们需要拦截它，不让它直接渲染 DOM，而是只获取 chunks
-        // 这里我们手动调用解析逻辑 (简化版，复用 enqueueMessage 的解析部分会比较复杂，
-        // 建议直接调用 createMessageBubble 但传入一个特殊标记，或者我们把解析逻辑抽离)
+        if (prevIndex < 0) return false; // 找不到更早的 AI 消息了
 
-        // 为了简单且复用现有逻辑，我们模拟一次解析：
-        // 注意：这里假设 createMessageBubble 已经被我们拦截并挂载了 galManager
-        // 我们临时清空 queue，让 createMessageBubble 把 chunks 填进去，然后我们把这些 chunks 转移到 historyStack
-
+        const prevMsg = history[prevIndex];
+ 
         const tempQueueBackup = [...this.queue];
         this.queue = []; // 临时清空
 
         // 调用拦截后的 createMessageBubble，它会调用 galManager.enqueueMessage 填充 this.queue
         await window.worldHelper.createMessageBubble(prevMsg, 'chat', true);
 
-        // 现在 this.queue 里装的是 prevMsg 的所有 chunks (顺序是 1,2,3)
-        // 我们需要把它们放入 historyStack (顺序应该是 1,2,3，这样 pop 出来是 3)
-        // 这样点击"上一步"时，会先看到 3，再点看到 2...
+       
 
         const newChunks = [...this.queue];
         this.historyStack.push(...newChunks);
@@ -812,19 +898,24 @@
     }
   finishTyping() {
         clearInterval(this.typingTimer);
-        this.ui.textContent.innerHTML = this.currentText; // 确保最终 HTML 完整
+        this.ui.textContent.innerHTML = this.currentText;
         this.isTyping = false;
 
-        // 如果有选项且是最后一句，显示选项
-        if (this.currentChunk.isLast && this.currentChunk.options && this.currentChunk.options.length > 0) {
+        // --- 修改：需求2 - 只有在最后一条消息的时候，才显示选项和停止下一步 ---
+        // 判断条件：是当前消息的最后一块 && 有选项 && 是全局历史的最后一条消息
+        if (this.currentChunk.isLast &&
+            this.currentChunk.options &&
+            this.currentChunk.options.length > 0 &&
+            this.currentChunk.isRealLastMsg) { // <--- 关键判断
+
             this.renderOptions(this.currentChunk.options);
-            // 选项出现时，自动播放暂停，等待用户选择
+            // 选项出现时，自动播放暂停
         } else {
+            // 如果不是最后一条，或者没有选项，显示下一步指示器，允许继续
             this.ui.nextIndicator.classList.add('active');
 
             // --- 处理自动播放 ---
             if (this.isAuto) {
-                // 根据文本长度计算阅读时间，最少 1 秒，最多 5 秒
                 const readTime = Math.min(5000, Math.max(1000, this.currentText.length * 20));
                 this.autoTimer = setTimeout(() => {
                     this.handleInteraction();
@@ -843,146 +934,128 @@
                 // 旁白不清除立绘
             }
         }
+ async loadCG(displayName) {
+    // 【关键修正】将 assaData 的获取移入函数内部，确保每次都获取最新数据
+    const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
+    const cgImg = this.ui.cgImg;
 
-  async loadCG(displayName) {
-        // 避免重复加载同一张图
-        if (!displayName || this.ui.cgImg.dataset.charName === displayName) return;
-
-        console.log(`[Nova][CG-LOG] 尝试为 '${displayName}' 加载立绘...`);
-        const cgImg = this.ui.cgImg;
-
-        // 切换时先隐藏，等待加载完成
+    // 1. 数据源检查
+    if (!assaData || !assaData.img_map) {
+        console.log('[Nova][CG-LOG] 数据源(assaData/img_map) 尚未准备好。');
+        // 如果没有数据源，也应该隐藏立绘
+        this.activeCG = { name: null, imgId: null };
         cgImg.style.opacity = '0';
+        return;
+    }
 
-        try {
-            // 1. 基础数据源检查
-            const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
-            if (!assaData || !assaData.img_map) {
-                console.log('[Nova][CG-LOG] 状态：数据源(assaData/img_map) 尚未准备好。');
-                return;
-            }
+    // 2. 获取资源映射 ID
+    const imageName = displayName ? assaData.img_map[displayName] : null;
+    const imageNameStr = imageName ? String(imageName) : null;
 
-            const imageName = assaData.img_map[displayName];
-            if (!imageName) {
-                console.log(`[Nova][CG-LOG] 状态：在映射表中未找到角色 '${displayName}'`);
-                return;
-            }
-            const imageNameStr = String(imageName);
-            let imageBlob = null;
+    // 3. 核心判断：检查请求的资源是否与当前激活的资源相同
+    if (this.activeCG.name === displayName && this.activeCG.imgId === imageNameStr) {
+        return; // 角色和资源ID都一样，无需任何操作
+    }
 
-            // 2. 尝试从本地库获取 (CustomNpcs)
-            if (window.imageDB) {
-                try {
-                    imageBlob = await window.imageDB.get('CustomNpcs', imageNameStr);
-                    if (imageBlob) console.log(`[Nova][CG-LOG] ✨ 本地库命中: ${imageNameStr}`);
-                } catch (e) { console.warn('[Nova][CG-LOG] 本地库读取异常', e); }
-            }
+    // 4. 更新激活状态，表示我们“意图”加载这个新立绘
+    this.activeCG = { name: displayName, imgId: imageNameStr };
+    const currentRequest = { ...this.activeCG }; // 捕获本次请求的状态
 
-            // 3. 如果本地没有，尝试从远程获取
-            if (!imageBlob) {
-                const remoteMap = window.GameAPI.npcImageMap;
-                if (!remoteMap) {
-                    console.error('[Nova][CG-LOG] 错误：npcImageMap 未定义');
-                } else {
-                    const imageUrl = remoteMap[imageNameStr];
-                    if (imageUrl) {
-                        // 3.1 查远程缓存
-                        if (window.imageDB) {
-                            try {
-                                imageBlob = await window.imageDB.get('RemoteCache', imageUrl);
-                            } catch (e) { console.warn('[Nova][CG-LOG] 远程缓存读取失败'); }
-                        }
+    // 如果没有有效的资源ID，直接隐藏并返回
+    if (!imageNameStr) {
+        cgImg.style.opacity = '0';
+        console.log(`[Nova][CG-LOG] 角色 '${displayName}' 无有效立绘，已隐藏。`);
+        return;
+    }
 
-                        // 3.2 执行下载
-                        if (!imageBlob) {
-                            console.log(`[Nova][CG-LOG] 缓存未命中，开始下载...`);
-                            const res = await fetch(imageUrl);
-                            if (res.ok) {
-                                const originalBlob = await res.blob();
-                                imageBlob = new Blob([originalBlob], { type: 'image/png' });
-                                if (window.imageDB) {
-                                    await window.imageDB.set('RemoteCache', imageUrl, imageBlob);
-                                }
-                            } else {
-                                console.error(`[Nova][CG-LOG] 下载失败: ${res.status}`);
-                            }
-                        }
-                    }
-                }
-            }
+    console.log(`[Nova][CG-LOG] 请求加载: '${displayName}' (ID: ${imageNameStr})`);
 
-            // 4. 图片处理与显示 (还原您的逻辑)
-            if (imageBlob) {
-                const reader = new FileReader();
-                reader.readAsDataURL(imageBlob);
-                reader.onloadend = async () => {
-                    const stableImageUrl = reader.result;
-                    try {
-                        // 还原：使用 createPixelatedCharaImage 或直接显示
-                        const targetH = window.innerHeight * 0.85;
-                        if (window.createPixelatedCharaImage) {
-                            const processedUrl = await window.createPixelatedCharaImage(stableImageUrl, targetH, 1, false);
-                            cgImg.src = processedUrl;
-                        } else {
-                            cgImg.src = stableImageUrl;
-                        }
+    // 切换时先隐藏
+    cgImg.style.opacity = '0';
 
-                        // 记录当前角色名
-                        cgImg.dataset.charName = displayName;
+    try {
+        let imageBlob = null;
 
-                        cgImg.onload = () => {
-                            cgImg.style.opacity = '1';
-                            console.log(`[Nova][CG-LOG] ✅ 立绘渲染成功: ${displayName}`);
-                        };
-                    } catch (pixelError) {
-                        console.error(`[Nova][CG-LOG] 图片处理失败:`, pixelError);
-                        cgImg.src = stableImageUrl;
-                        cgImg.style.opacity = '1';
-                    }
-                };
-            } else {
-                console.error(`[Nova][CG-LOG] 未能获取到图片数据。`);
-                // 没图时保持透明或清空
-                cgImg.dataset.charName = '';
-            }
-
-        } catch (error) {
-            console.error(`[Nova][CG-LOG] 加载立绘时发生未捕获异常:`, error);
+        // 5. 缓存检查 (本地库优先)
+        if (window.imageDB) {
+            try {
+                imageBlob = await window.imageDB.get('CustomNpcs', imageNameStr);
+                if (imageBlob) console.log(`[Nova][CG-LOG] ✨ 本地库命中: ${imageNameStr}`);
+            } catch (e) { console.warn('[Nova][CG-LOG] 本地库读取异常', e); }
         }
-    }
 
- processImageTransparent(imgSrc) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "Anonymous"; // 允许跨域处理
-            img.src = imgSrc;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
+        // 6. 远程资源获取 (如果本地没有)
+        if (!imageBlob) {
+            const remoteMap = window.GameAPI.npcImageMap;
+            if (remoteMap && remoteMap[imageNameStr]) {
+                const imageUrl = remoteMap[imageNameStr];
+                console.log(`[Nova][CG-LOG] 发现远程URL: ${imageUrl}`);
 
-                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imgData.data;
-
-                // 遍历像素，去除白色背景
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-                    // 阈值可调，这里设为 240
-                    if (r > 240 && g > 240 && b > 240) {
-                        data[i + 3] = 0; // Alpha设为0
-                    }
+                // 6.1 检查远程缓存
+                if (window.imageDB) {
+                    try {
+                        imageBlob = await window.imageDB.get('RemoteCache', imageUrl);
+                        if (imageBlob) console.log(`[Nova][CG-LOG] 远程缓存命中: ${imageUrl}`);
+                    } catch (e) { console.warn('[Nova][CG-LOG] 远程缓存读取失败'); }
                 }
 
-                ctx.putImageData(imgData, 0, 0);
-                resolve(canvas.toDataURL());
+                // 6.2 执行下载 (如果缓存没有)
+                if (!imageBlob) {
+                    console.log(`[Nova][CG-LOG] 缓存未命中，开始下载...`);
+                    const res = await fetch(imageUrl);
+                    if (res.ok) {
+                        const originalBlob = await res.blob();
+                        imageBlob = new Blob([originalBlob], { type: 'image/png' });
+                        if (window.imageDB) {
+                            await window.imageDB.set('RemoteCache', imageUrl, imageBlob);
+                            console.log(`[Nova][CG-LOG] 下载成功并存入缓存`);
+                        }
+                    } else {
+                        console.error(`[Nova][CG-LOG] 下载失败: ${res.status}`);
+                    }
+                }
+            } else {
+                console.log(`[Nova][CG-LOG] 远程映射表中无此Key: ${imageNameStr}`);
+            }
+        }
+
+        // 7. 图片处理与显示
+        if (imageBlob) {
+            const reader = new FileReader();
+            reader.readAsDataURL(imageBlob);
+            reader.onloadend = async () => {
+                if (this.activeCG.name !== currentRequest.name || this.activeCG.imgId !== currentRequest.imgId) {
+                    console.log(`[Nova][CG-LOG] 渲染被中断：已有新的立绘请求。`);
+                    return;
+                }
+
+                const stableImageUrl = reader.result;
+                try {
+                    const targetH = window.innerHeight * 0.85;
+                    const finalUrl = window.createPixelatedCharaImage
+                        ? await window.createPixelatedCharaImage(stableImageUrl, targetH, 1, false)
+                        : stableImageUrl;
+
+                    cgImg.src = finalUrl;
+                    cgImg.onload = () => {
+                        cgImg.style.opacity = '1';
+                        console.log(`[Nova][CG-LOG] ✅ 立绘渲染成功: ${displayName}`);
+                    };
+                } catch (pixelError) {
+                    console.error(`[Nova][CG-LOG] 图片处理失败:`, pixelError);
+                    cgImg.src = stableImageUrl;
+                    cgImg.style.opacity = '1';
+                }
             };
-            img.onerror = () => resolve(imgSrc); // 失败则返回原图
-        });
+        } else {
+            console.error(`[Nova][CG-LOG] 流程结束，未能获取到 '${displayName}' 的任何图片数据。`);
+        }
+
+    } catch (error) {
+        console.error(`[Nova][CG-LOG] 加载立绘时发生未捕获异常:`, error);
     }
+}   
+ 
         // --- 选项渲染 (移植逻辑) ---
         renderOptions(options) {
             const container = this.ui.optionsLayer;
@@ -1023,15 +1096,19 @@
                 let pressTimer;
                 let isLongPress = false;
 
-                const startPress = () => {
+     const startPress = () => {
                     if (card.classList.contains('disabled')) return;
                     isLongPress = false;
                     pressTimer = setTimeout(() => {
                         isLongPress = true;
                         card.classList.add('long-press-fired');
-                        // 执行置入指令
-                        const cmd = `/setinput ${descriptionText}`; // 简化版
-                        this.executeChoice(cmd, card, '[ 指令已置入 ]', true);
+
+                        // 【修改点】长按置入的指令也需要包含标签信息
+                        // 我们构建完整指令，然后移除 /send 部分
+                        const fullCommand = this.buildFullCommand(descriptionText, tags);
+                        const setInputCommand = fullCommand.replace('/send ', '/setinput ');
+
+                        this.executeChoice(setInputCommand, card, '[ 指令已置入 ]', true);
                         setTimeout(() => card.classList.remove('long-press-fired'), 100);
                     }, 500);
                 };
@@ -1040,11 +1117,14 @@
                 card.onmousedown = startPress; card.onmouseup = endPress; card.onmouseleave = endPress;
                 card.ontouchstart = startPress; card.ontouchend = endPress;
 
-                card.onclick = () => {
+      card.onclick = () => {
                     if (isLongPress || card.classList.contains('disabled')) return;
+
                     // 第一次点击聚焦，第二次发送
                     if (card.classList.contains('focused')) {
-                        this.executeChoice(`/send ${descriptionText}`, card, '已抉择');
+                        // 【修改点】调用 buildFullCommand 来构建完整指令
+                        const fullCommand = this.buildFullCommand(descriptionText, tags);
+                        this.executeChoice(fullCommand, card, '已抉择');
                     } else {
                         container.querySelectorAll('.focused').forEach(c => c.classList.remove('focused'));
                         card.classList.add('focused');
