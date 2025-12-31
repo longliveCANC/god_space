@@ -207,7 +207,7 @@ document.addEventListener('touchstart', (e) => {
             this.panel.className = 'mod13-panel';
             this.panel.innerHTML = `
                 <div class="mod13-header">
-                    <span>内容提取器</span>
+                    <span>cot提取器</span>
                     <div style="display:flex; gap:10px;">
                         <span class="mod13-tab-btn" id="mod13-toggle-set">设置</span>
                         <span class="mod13-tab-btn" id="mod13-close">关闭</span>
