@@ -827,7 +827,6 @@
             // 兼容你的 generateChoices 逻辑：非空行，或数字开头
             return text.split('\n').filter(line => line.trim() && (/^\d+\.\s*/.test(line.trim()) || !/^\s*$/.test(line.trim())));
         }
-
    handleInteraction() {
             // 【修复】如果在回溯加载中，禁止交互，防止触发 playNextChunk 导致当前句重播
             if (this.isBacktracking) return;
@@ -836,7 +835,23 @@
                 this.finishTyping();
                 return;
             }
-            if (this.ui.optionsLayer.style.display !== 'none') return; // 必须选选项
+
+            // ==================== 修改开始 ====================
+            // 原逻辑：if (this.ui.optionsLayer.style.display !== 'none') return;
+
+            // 新逻辑：检查选项层是否显示
+            if (this.ui.optionsLayer.style.display !== 'none') {
+                // 关键判断：如果队列里有新东西（说明历史记录更新了，有新的AI回复），
+                // 或者当前不是真正的最后一条消息，则允许跳过选项继续。
+                if (this.queue.length > 0) {
+                    // 隐藏选项层，允许流程继续
+                    this.ui.optionsLayer.style.display = 'none';
+                } else {
+                    // 队列是空的，说明真的卡在选项处了，必须做出选择
+                    return;
+                }
+            }
+            // ==================== 修改结束 ====================
 
             if (this.queue.length > 0) {
                 this.playNextChunk();
