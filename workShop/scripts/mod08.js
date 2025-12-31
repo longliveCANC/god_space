@@ -20,7 +20,7 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      left: -45px;  /* 向左扩展45px */
+     /*  left: -45px;  向左扩展45px */
       right: -45px; /* 向右扩展45px */
       pointer-events: auto;
     }
