@@ -428,9 +428,10 @@
     "description": "[需要版本是3.5.12及其以上]需要开脚本然后外挂这个世界书。其实不外挂也行，不挂世界书的话就看不到立绘了。电脑空格和右键可以继续，左键是回去上一轮",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod14gal.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-galgame格式.json",
-    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 27.png"
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 27.png",
+    "is_dowload_raw_name":true
   }  ,{
-    "id": "简单coc7检定",
+    "id": "x-mod-简单coc7检定",
     "name": "简单coc7检定",
     "author": "11",
     "version": "1.0",
