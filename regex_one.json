@@ -19666,7 +19666,14 @@ if (teammateCountLabel) teammateCountLabel.textContent = '人数';
             store.get(key).onsuccess = e => resolve(e.target.result);
         });
     },
-
+    // ✨【新增】专门用来获取所有钥匙（文件名）的方法 ✨
+    async keys(storeName) {
+        if (!this.stores.includes(storeName)) throw new Error(`未知的保险箱: ${storeName}`);
+        return this._transaction(storeName, 'readonly', (store, resolve) => {
+            // getAllKeys 只获取键名，不获取图片内容，速度极快
+            store.getAllKeys().onsuccess = e => resolve(e.target.result);
+        });
+    },
     async delete(storeName, key) {
         if (!this.stores.includes(storeName)) throw new Error(`未知的保险箱: ${storeName}`);
         return this._transaction(storeName, 'readwrite', (store, resolve) => {

@@ -379,6 +379,8 @@
                     this.handleBackStep();
                 }
             });
+
+             this.scanAndSyncExpressions();
         }
     toggleOptionsLayer(show) {
             if (!this.ui || !this.ui.optionsLayer) return;
@@ -463,7 +465,74 @@
         // 播放
         this.playNextChunk();
     }
+
+   async scanAndSyncExpressions() {
+            // 稍微延迟以确保 GameAPI 和 imageDB 就绪
+            await new Promise(r => setTimeout(r, 2000));
+
+            const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
+            // 即使缺少数据源，我们也尝试存一个空对象，防止 EJS 报错
+            if (!assaData || !assaData.img_map || !window.imageDB || !window.TavernHelper) {
+                console.log('[Galgame] 无法扫描差分：缺少必要的数据源或工具，重置为空。');
+                await window.TavernHelper.insertOrAssignVariables(
+                    { 'available_expressions_json': '{}' },
+                    { type: 'chat' }
+                );
+                return;
+            }
+
+            try {
+                const imgMap = assaData.img_map;
+                let allKeys = [];
+
+                // 尝试获取 CustomNpcs 库中的所有图片键值
+                if (typeof window.imageDB.keys === 'function') {
+                    allKeys = await window.imageDB.keys('CustomNpcs');
+                } else {
+                    console.warn('[Galgame] imageDB 不支持 keys() 方法。');
+                    // 无法读取时也重置为空
+                    await window.TavernHelper.insertOrAssignVariables(
+                        { 'available_expressions_json': '{}' },
+                        { type: 'chat' }
+                    );
+                    return;
+                }
+
+                // 1. 初始化结果对象（而不是数组）
+                const expressionMap = {};
+
+                if (allKeys && allKeys.length > 0) {
+                    // 遍历映射表
+                    for (const [charName, baseCode] of Object.entries(imgMap)) {
+                        if (!baseCode) continue;
+
+                        const prefix = `${baseCode}-`;
+                        // 筛选出符合 "代码-差分" 格式的图片，并提取差分名
+                        const variants = allKeys
+                            .filter(key => String(key).startsWith(prefix))
+                            .map(key => String(key).substring(prefix.length));
+
+                        // 2. 如果存在差分，存入对象
+                        if (variants.length > 0) {
+                            expressionMap[charName] = variants;
+                        }
+                    }
+                }
+
+                // 3. 无论是否为空，都更新变量 (存为 JSON 字符串)
+                console.log('[Galgame] 差分扫描完成，更新变量:', expressionMap);
+                await window.TavernHelper.insertOrAssignVariables(
+                    { 'available_expressions_json': JSON.stringify(expressionMap) },
+                    { type: 'chat' }
+                );
+
+            } catch (e) {
+                console.error('[Galgame] 扫描差分时发生错误:', e);
+            }
+        }
+
          initUI() {
+            
             // 【修改】如果舞台已存在，则不再重新创建，直接返回
             if (document.querySelector('.mod14-stage-wrapper')) {
                 console.log('[Galgame] UI already initialized.');
@@ -732,17 +801,19 @@
     const attachmentMatch = processedContent.match(attachmentRegex);
 
     // 定义一个通用的文本分块处理函数
-    const processTextLines = (textToProcess) => {
+  const processTextLines = (textToProcess) => {
         const lines = textToProcess.split('\n');
         lines.forEach((line) => {
             let trimmed = line.trim();
             if (!trimmed) return;
-           if (trimmed.startsWith('<') && trimmed.endsWith('>') &&
+            if (trimmed.startsWith('<') && trimmed.endsWith('>') &&
                 !/^<(em|strong|span|p|div|b|i|u|s|font)/i.test(trimmed)) {
                 return;
             }
+
             let name = '';
             let text = trimmed;
+            let expression = null; // 【新增】用于存储差分/表情
 
             // 【新增】检查是否包含富文本占位符
             let isRichContent = false;
@@ -753,22 +824,53 @@
                     isRichContent = true;
                 }
             }
+   const cleanLine = trimmed.replace(/｜/g, '|');
+            const firstPipeIndex = cleanLine.indexOf('|');
 
-            if (!isRichContent && trimmed.includes('|') && trimmed.indexOf('|') < 20) {
-                const p = trimmed.split('|');
-                name = p[0].trim();
-                text = p.slice(1).join('|').trim();
+            // 检查是否有竖线，且竖线位置靠前（避免误判长句中的竖线）
+            if (!isRichContent && firstPipeIndex > 0 && firstPipeIndex < 30) {
+
+   
+                const match3 = cleanLine.match(/^([^|]+)\|([^|]+)\|([\s\S]*)$/);
+
+                if (match3) {
+                    // 命中三段式
+                    name = match3[1].trim().replace(/-/g, '');
+                    expression = match3[2].trim();
+                    text = match3[3].trim();
+
+                    // 【调试日志】让你在控制台确认解析结果
+                    console.log(`[Galgame] 解析成功(3段): 名字=[${name}], 差分=[${expression}]`);
+                } else {
+                    // 尝试匹配二段式：名字|内容
+                    const match2 = cleanLine.match(/^([^|]+)\|([\s\S]*)$/);
+                    if (match2) {
+                        // 命中二段式
+                        name = match2[1].trim().replace(/-/g, '');
+                        text = match2[2].trim();
+                        // expression 保持为 null
+                    } else {
+                        // 有竖线但格式不对，当作普通文本处理
+                        if (trimmed.startsWith('(') || trimmed.startsWith('（')) name = '';
+                        else name = (msg.name || '').replace(/-/g, '');
+                    }
+                }
             } else {
-                if (trimmed.startsWith('(') || trimmed.startsWith('（')) name = '';
-                else name = msg.name || '';
+                // 没有竖线，走默认逻辑
+                if (trimmed.startsWith('(') || trimmed.startsWith('（')) {
+                    name = '';
+                } else {
+                    name = (msg.name || '').replace(/-/g, '');
+                }
             }
 
             this.queue.push({
                 name,
                 text,
+                expression, // 【新增】存入队列
                 attachments: [],
                 isAttachmentDisplay: false,
-                isRichContent: isRichContent, // 【新增】标记为富文本
+                isRichContent: isRichContent,
                 isLast: false,
                 options: [],
                 isRealLastMsg: isRealLastMsg,
@@ -1094,15 +1196,15 @@
 
         return true;
     }
- renderChunkState(chunk) {
-    // UI 重置
-    this.ui.nextIndicator.classList.remove('active');
-    this.ui.textContent.innerHTML = '';
+   renderChunkState(chunk) {
+        // UI 重置
+        this.ui.nextIndicator.classList.remove('active');
+        this.ui.textContent.innerHTML = '';
 
-    clearTimeout(this.autoTimer);
+        clearTimeout(this.autoTimer);
 
-    // 更新名字 & 立绘
-    this.updateSpeaker(chunk.name);
+        // 【修改】传入 expression 参数
+        this.updateSpeaker(chunk.name, chunk.expression);
 
     this.isTyping = true;
     this.currentText = chunk.text; // 这里的 text 包含 HTML 标签
@@ -1200,18 +1302,18 @@ playNextChunk() {
             }
         }
     }
-
-        updateSpeaker(name) {
+  updateSpeaker(name, expression) {
             if (name && name !== '旁白' && name !== '系统') {
                 this.ui.nameText.textContent = name;
                 this.ui.nameTag.style.display = 'block';
-                this.loadCG(name);
+                // 【修改】传递 expression 给 loadCG
+                this.loadCG(name, expression);
             } else {
                 this.ui.nameTag.style.display = 'none';
                 // 旁白不清除立绘
             }
         }
- async loadCG(displayName) {
+ async loadCG(displayName, expression = null) {
     // 【关键修正】将 assaData 的获取移入函数内部，确保每次都获取最新数据
     const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
     const cgImg = this.ui.cgImg;
@@ -1224,19 +1326,29 @@ playNextChunk() {
         cgImg.style.opacity = '0';
         return;
     }
+        // 【修改开始】构建资源 ID 逻辑
+        // 1. 获取基础映射 (例如 "不死川实弥" -> "sm")
+        const baseMapId = displayName ? assaData.img_map[displayName] : null;
 
-    // 2. 获取资源映射 ID
-    const imageName = displayName ? assaData.img_map[displayName] : null;
-    const imageNameStr = imageName ? String(imageName) : null;
+        // 2. 构建最终 ID
+        // 如果有差分，变成 "sm-哭泣"；如果没有，保持 "sm"
+        let finalImageId = baseMapId;
+        if (baseMapId && expression) {
+            finalImageId = `${baseMapId}-${expression}`;
+        }
 
-    // 3. 核心判断：检查请求的资源是否与当前激活的资源相同
-    if (this.activeCG.name === displayName && this.activeCG.imgId === imageNameStr) {
-        return; // 角色和资源ID都一样，无需任何操作
-    }
+        const imageNameStr = finalImageId ? String(finalImageId) : null;
+        // 【修改结束】
 
-    // 4. 更新激活状态，表示我们“意图”加载这个新立绘
-    this.activeCG = { name: displayName, imgId: imageNameStr };
-    const currentRequest = { ...this.activeCG }; // 捕获本次请求的状态
+        // 3. 核心判断：检查请求的资源是否与当前激活的资源相同
+        // 注意：这里比较的是最终计算出的 imageNameStr (即 sm-哭泣)
+        if (this.activeCG.name === displayName && this.activeCG.imgId === imageNameStr) {
+            return;
+        }
+
+        // 4. 更新激活状态
+        this.activeCG = { name: displayName, imgId: imageNameStr };
+        const currentRequest = { ...this.activeCG };
 
     // 如果没有有效的资源ID，直接隐藏并返回
     if (!imageNameStr) {
