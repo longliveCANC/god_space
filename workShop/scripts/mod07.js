@@ -5,10 +5,12 @@
     // 1. 数据常量与预设库
     // ==========================================================================
 
-    const LOREBOOK_NAME = "小蝌蚪找妈妈-同层版";
+   const LOREBOOK_NAME = "小蝌蚪找妈妈-同层版";
     const ENTRY_NAME = "[memoryinit]";
-    const DIY_ATTRIBUTE_ENTRY = "[diyattribute]"; // 新增：自定义属性词条标识
-  const LOCAL_STORAGE_KEY = "mod07_custom_templates_v1";
+    const DIY_ATTRIBUTE_ENTRY = "[diyattribute]";
+    const LOCAL_STORAGE_KEY = "mod07_custom_templates_v1";
+    // --- 新增：联动规则的本地存储Key ---
+    const RULES_STORAGE_KEY = "mod07_linkage_rules_live_v1";
     // 默认完整数据结构（防崩底包）
     const DEFAULT_FULL_DATA = {
         "stat_data": {}, // (省略其他字段，保持原有逻辑，只关注 play_character_data)
@@ -785,9 +787,20 @@
         });
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // 尝试立即注入
+  // 尝试立即注入按钮
         const settingsModal = document.getElementById('settings-modal');
         if (settingsModal) injectButton(settingsModal);
+
+        // --- 新增：启动时自动读取本地规则并生效 ---
+        try {
+            const savedRules = localStorage.getItem(RULES_STORAGE_KEY);
+            if (savedRules) {
+                currentLinkageRules = JSON.parse(savedRules);
+                // 延迟一点执行以确保 GameAPI 数据就绪
+                setTimeout(() => injectCustomLogic(), 1000);
+                console.log('[MOD07] 自动加载联动规则成功');
+            }
+        } catch (e) { console.error('[MOD07] 自动加载规则失败', e); }
     }
 
     function injectButton(modal) {
@@ -802,13 +815,28 @@
         }
     }
 
-    // 打开编辑器
-    async function openEditor(e) {
+     async function openEditor(e) {
         e.preventDefault();
 
         // 提示用户
         worldHelper.showNovaAlert('正在连接世界本源...', 'info');
- await autoImportDiyAttributes();
+        await autoImportDiyAttributes();
+
+        // --- 新增/修改：读取本地联动规则 ---
+        try {
+            const savedRules = localStorage.getItem(RULES_STORAGE_KEY);
+            if (savedRules) {
+                currentLinkageRules = JSON.parse(savedRules);
+               
+            } else {
+                currentLinkageRules = {};
+            }
+            // 提示用户规则存储位置
+ 
+        } catch (e) {
+            console.error("读取本地规则失败", e);
+            currentLinkageRules = {};
+        }
         try {
             const allEntries = await getLorebookEntries(LOREBOOK_NAME);
             const initEntry = allEntries.find(entry => entry.comment === ENTRY_NAME);
@@ -875,6 +903,9 @@
         // 绑定事件
         container.querySelector('#m7-close').onclick = () => container.remove();
         container.querySelector('#m7-save').onclick = async () => {
+            // --- 新增：保存规则到本地 ---
+            localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(currentLinkageRules));
+            // --------------------------
             await saveData();
             container.remove();
         };
@@ -1333,6 +1364,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
                 currentLinkageRules[activeTarget.path] = ruleStr;
                 document.querySelector(`.target-node[data-path="${activeTarget.path}"]`).classList.add('has-rule');
             }
+             localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(currentLinkageRules));
             injectCustomLogic();
             worldHelper.showNovaAlert('规则已更新', 'success');
         };
@@ -1702,18 +1734,17 @@ container.querySelector('#m7-editor-area').onclick = () => {
             container.appendChild(card);
         });
     }
-      // --- 新增：动态生成并注入逻辑 ---
- function injectCustomLogic() {
+     // --- 修改：动态生成并注入逻辑 (修复路径解析) ---
+    function injectCustomLogic() {
         if (!window.worldHelper) return;
 
-        console.log('[MOD07] 正在注入自定义联动逻辑...', currentLinkageRules);
+        console.log('[MOD07] 正在注入联动逻辑...', currentLinkageRules);
 
         const generateCode = () => {
-            // 1. 定义通用头部，包含 safeGet 工具函数
             let code = `
     if (!data || !data.基础属性) return;
+    if (!window._m7_rule_cache) window._m7_rule_cache = {};
 
-    // 工具函数：安全获取路径值
     const safeGet = (path) => {
         try {
             return path.split('.').reduce((o, k) => o && o[k], data)?.[0] ?? 0;
@@ -1721,65 +1752,91 @@ container.querySelector('#m7-editor-area').onclick = () => {
     };
             `;
 
-            // 2. 遍历规则生成代码 (用户自定义的联动)
             Object.keys(currentLinkageRules).forEach(targetPath => {
                 let formula = currentLinkageRules[targetPath];
                 if (!formula) return;
 
-                const parsedFormula = formula
-                    .replace(/\{this\}/g, 'targetOldVal')
-                    .replace(/\{([^}]+)\}/g, "safeGet('$1')");
-
+                // 解析路径：货币.积分 -> parentPath="货币", lastKey="积分"
                 const pathParts = targetPath.split('.');
                 const lastKey = pathParts.pop();
                 const parentPath = pathParts.join('.');
 
-                code += `
+                const isDeltaMode = formula.includes('{this}');
+
+                if (isDeltaMode) {
+                    // === 增量模式 ===
+                    const parsedFormula = formula
+                        .replace(/\{this\}/g, '0')
+                        .replace(/\{([^}]+)\}/g, "safeGet('$1')");
+
+                    code += `
     try {
-        const targetOldVal = safeGet('${targetPath}');
+        const currentContrib = ${parsedFormula};
+        const lastContrib = window._m7_rule_cache['${targetPath}'] ?? currentContrib;
+        const delta = currentContrib - lastContrib;
+        window._m7_rule_cache['${targetPath}'] = currentContrib;
+
+        if (delta !== 0) {
+            // --- 修复：更安全的父级查找 ---
+            const parent = '${parentPath}'.split('.').reduce((o, k) => (o && o[k]) ? o[k] : {}, data);
+
+            if (parent && parent['${lastKey}']) {
+                const oldVal = parent['${lastKey}'][0] || 0;
+
+                if ('${lastKey}' === '上限') {
+                    parent['上限'][0] = Math.floor(oldVal + delta);
+                    // 只有当存在当前值结构时才更新
+                    if (parent['当前值'] && Array.isArray(parent['当前值'])) {
+                        parent['当前值'][0] = Math.floor((parent['当前值'][0] || 0) + delta);
+                    }
+                } else {
+                    parent['${lastKey}'][0] = Math.floor(oldVal + delta);
+                }
+            }
+        }
+    } catch (e) { console.warn('增量联动错误 [${targetPath}]:', e); }
+                    `;
+                } else {
+                    // === 绝对模式 ===
+                    const parsedFormula = formula.replace(/\{([^}]+)\}/g, "safeGet('$1')");
+
+                    code += `
+    try {
         const val = ${parsedFormula};
-        const parent = '${parentPath}'.split('.').reduce((o, k) => {
-            if (!o[k]) o[k] = {};
-            return o[k];
-        }, data);
+        // --- 修复：更安全的父级查找 ---
+        const parent = '${parentPath}'.split('.').reduce((o, k) => (o && o[k]) ? o[k] : {}, data);
 
         if (parent && parent['${lastKey}']) {
             if ('${lastKey}' === '上限') {
-                const oldMax = parent['上限'][0] || 0;
-                const oldCur = parent['当前值'] ? parent['当前值'][0] : 0;
-                parent['上限'][0] = Math.floor(val);
-                if (parent['当前值']) {
-                    const diff = Math.floor(val) - oldMax;
-                    if (diff > 0) parent['当前值'][0] = oldCur + diff;
-                    if (parent['当前值'][0] > parent['上限'][0]) parent['当前值'][0] = parent['上限'][0];
+                const newVal = Math.floor(val);
+                parent['上限'][0] = newVal;
+                // 绝对模式下，如果当前值超过上限，则削减
+                if (parent['当前值'] && Array.isArray(parent['当前值']) && parent['当前值'][0] > newVal) {
+                    parent['当前值'][0] = newVal;
                 }
             } else {
                 parent['${lastKey}'][0] = Math.floor(val);
             }
         }
-    } catch (e) { console.warn('联动计算错误 [${targetPath}]:', e); }
-                `;
+    } catch (e) { console.warn('绝对联动错误 [${targetPath}]:', e); }
+                    `;
+                }
             });
 
-            // --- 新增：自动处理传奇属性逻辑 (基础 - 8) ---
+            // 传奇属性逻辑保持不变...
             code += `
-    // 自动维护传奇属性：若存在传奇字段，则强制等于 基础 - 8
     try {
         if (data.基础属性) {
             Object.values(data.基础属性).forEach(category => {
                 Object.values(category).forEach(attr => {
-                    // 检查该属性是否有“传奇”字段
                     if (attr['基础'] && attr['传奇']) {
-                        const baseVal = attr['基础'][0] || 0;
-                        // 核心逻辑：传奇 = 基础 - 8，最小为0
-                        attr['传奇'][0] = Math.max(0, baseVal - 8);
+                        attr['传奇'][0] = Math.max(0, (attr['基础'][0] || 0) - 8);
                     }
                 });
             });
         }
-    } catch (e) { console.warn('传奇属性自动计算错误:', e); }
+    } catch (e) {}
             `;
-            // -------------------------------------------
 
             return code;
         };
@@ -1788,7 +1845,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
             window.worldHelper._updateDerivedAttributes = new Function('data', generateCode());
         } catch (e) {
             console.error("生成代码错误:", e);
-            worldHelper.showNovaAlert('联动规则语法错误，请检查公式！', 'danger');
+            worldHelper.showNovaAlert('联动规则语法错误！', 'danger');
         }
     }
     // 保存数据
@@ -1809,7 +1866,8 @@ container.querySelector('#m7-editor-area').onclick = () => {
 
     // 启动
     init();
-
+ 
+  
 })();
 
  
