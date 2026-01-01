@@ -55,8 +55,7 @@
                 opacity: 0;
             }
 
-            /* --- 选项层 (垂直滚动) --- */
-            .mod14-options-layer {
+             .mod14-options-layer {
                 position: absolute;
                 bottom: 36%; /* 位于对话框上方 */
                 left: 0;
@@ -69,12 +68,27 @@
                 gap: 10px;
                 padding: 20px;
                 overflow-y: auto;
-                pointer-events: auto;
+
+                /* --- 【修改】 --- */
+                /* 默认隐藏，但允许动画播放 */
+                opacity: 0;
+                pointer-events: none; /* 隐藏时不可交互 */
+
                 /* 隐藏滚动条但允许滚动 */
                 scrollbar-width: none;
-
-                     animation: mod14-slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
             }
+            /* --- 【新增】用于控制显示/隐藏和动画的类 --- */
+            .mod14-options-layer.show {
+                opacity: 1;
+                pointer-events: auto; /* 显示时可交互 */
+                animation: mod14-slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            }
+            .mod14-options-layer.hide {
+                opacity: 0;
+                pointer-events: none;
+                animation: mod14-slide-down-fade-out 0.3s ease-out forwards;
+            }
+
             .mod14-options-layer::-webkit-scrollbar { display: none; }
 
             /* --- 选项卡片样式 (移植自你的代码) --- */
@@ -284,8 +298,7 @@
                 opacity: 1;
             }
 
-            /* 【新增】动画关键帧 */
-            @keyframes mod14-slide-up {
+        @keyframes mod14-slide-up {
                 0% { transform: translateY(30px); opacity: 0; }
                 100% { transform: translateY(0); opacity: 1; }
             }
@@ -293,7 +306,17 @@
                 0% { opacity: 0; }
                 100% { opacity: 1; }
             }
-
+            /* --- 新增的退场动画 --- */
+            @keyframes mod14-slide-down-fade-out {
+                0% {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(30px);
+                    opacity: 0;
+                }
+            }
        
             .mod14-ctrl-btn {
                 background: var(--mod14-container-bg-color); /* 纯变量 */
@@ -357,7 +380,21 @@
                 }
             });
         }
+    toggleOptionsLayer(show) {
+            if (!this.ui || !this.ui.optionsLayer) return;
+            const layer = this.ui.optionsLayer;
 
+            if (show) {
+                layer.classList.remove('hide');
+                layer.classList.add('show');
+            } else {
+                // 只有在选项区当前可见时才播放退场动画
+                if (layer.classList.contains('show')) {
+                    layer.classList.remove('show');
+                    layer.classList.add('hide');
+                }
+            }
+        }
            buildFullCommand(descriptionText, tags) {
             let fullCommand = `/send ${descriptionText}`;
 
@@ -418,7 +455,7 @@
         clearInterval(this.typingTimer);
         this.isTyping = false;
         this.queue = [];
-        this.ui.optionsLayer.style.display = 'none'; // 隐藏选项
+        this.toggleOptionsLayer(false); // 隐藏选项
 
         // 加载目标消息
         await window.worldHelper.createMessageBubble(targetMsg, 'chat', true);
@@ -447,8 +484,7 @@
             // 2. 选项层
             const optionsLayer = document.createElement('div');
             optionsLayer.className = 'mod14-options-layer';
-            optionsLayer.style.display = 'none';
-
+           
             // 3. 对话框
             const dialogueBox = document.createElement('div');
             dialogueBox.className = 'mod14-dialogue-box';
@@ -826,7 +862,7 @@
     } catch (e) {
         console.error('[Galgame] BGM 解析/播放逻辑异常:', e);
     }
-    if (!this.isTyping && this.ui.optionsLayer.style.display === 'none' && !this.isShowingModal && !this.isBulkRendering) {
+    if (!this.isTyping && this.ui.optionsLayer.classList.contains('show') && !this.isShowingModal && !this.isBulkRendering) {
         this.playNextChunk();
     }
 }
@@ -848,7 +884,7 @@
         // 【修改】更安全的选项层检查
         // 只有当选项层显示，且队列为空（意味着真的到了该选的时候）才拦截
         // 如果队列里还有剧情（this.queue.length > 0），说明是“跳过”后的残留状态，允许点击继续
-        const isOptionsVisible = this.ui.optionsLayer.style.display !== 'none';
+        const isOptionsVisible = this.ui.optionsLayer.classList.contains('show');
 
         if (isOptionsVisible && this.queue.length === 0) {
             return; // 真的卡在选项了，必须选，不能点背景
@@ -856,7 +892,7 @@
 
         // 如果选项层显示但队列里还有东西，强制隐藏选项层继续播放
         if (isOptionsVisible && this.queue.length > 0) {
-            this.ui.optionsLayer.style.display = 'none';
+            this.toggleOptionsLayer(false);
         }
 
         if (this.queue.length > 0) {
@@ -871,7 +907,7 @@
         if (this.isAuto) {
             btn.classList.add('active');
             // 如果当前不在打字且没有选项，触发下一步
-            if (!this.isTyping && this.ui.optionsLayer.style.display === 'none') {
+            if (!this.isTyping && this.ui.optionsLayer.classList.contains('show')) {
                 this.handleInteraction();
             }
         } else {
@@ -888,7 +924,7 @@
         // 1. 强制重置 UI 和状态 (防止卡死)
         clearInterval(this.typingTimer);
         clearTimeout(this.autoTimer);
-        if (this.ui && this.ui.optionsLayer) this.ui.optionsLayer.style.display = 'none';
+        if (this.ui && this.ui.optionsLayer) this.toggleOptionsLayer(false);
         if (this.ui && this.ui.nextIndicator) this.ui.nextIndicator.classList.remove('active');
 
         this.isBulkRendering = false;
@@ -1003,7 +1039,7 @@
         const prevChunk = this.historyStack.pop();
 
         // 5. 隐藏选项层 (防止回退时选项还卡在屏幕上)
-        this.ui.optionsLayer.style.display = 'none';
+        this.toggleOptionsLayer(false);
 
         // 6. 播放上一块
         this.currentChunk = prevChunk;
@@ -1375,7 +1411,7 @@ playNextChunk() {
                 container.appendChild(card);
             });
 
-            container.style.display = 'flex';
+             this.toggleOptionsLayer(true);
             this.ui.nextIndicator.classList.remove('active');
         }
 
@@ -1387,11 +1423,7 @@ playNextChunk() {
             }
             card.querySelector('.description').textContent = successText;
             if (!keepUi) {
-                this.ui.optionsLayer.style.pointerEvents = 'none';
-                setTimeout(() => {
-                    this.ui.optionsLayer.style.display = 'none';
-                    this.ui.optionsLayer.style.pointerEvents = 'auto';
-                }, 800);
+        this.toggleOptionsLayer(false);
             }
         }
  // 【修改】showAttachmentModal
@@ -1657,6 +1689,10 @@ window.GameAPI.displayEventTag =  function(){
     window.renderNewMessages = async function(newMessages) {
         console.log("[Galgame] 拦截 renderNewMessages...");
 
+          if (galManager && galManager.ui && galManager.ui.optionsLayer) {
+            galManager.toggleOptionsLayer(false);
+        }
+
         const chatArea = document.getElementById('chat-display-area');
         // 【关键修改 1】在原函数执行前，先获取舞台引用
         // 如果这时候去取，它还在 DOM 里，或者是 galManager.ui.stage
@@ -1683,4 +1719,5 @@ window.GameAPI.displayEventTag =  function(){
             chatArea.appendChild(stage);
         }
     };
+ 
 })();
