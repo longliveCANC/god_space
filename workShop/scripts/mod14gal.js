@@ -1,3 +1,4 @@
+ 
 (function() {
     // ============================================================
     // 1. 样式定义 (CSS) - Mod14
@@ -834,38 +835,37 @@
             // 兼容你的 generateChoices 逻辑：非空行，或数字开头
             return text.split('\n').filter(line => line.trim() && (/^\d+\.\s*/.test(line.trim()) || !/^\s*$/.test(line.trim())));
         }
-   handleInteraction() {
-            // 【修复】如果在回溯加载中，禁止交互，防止触发 playNextChunk 导致当前句重播
-            if (this.isBacktracking) return;
+    handleInteraction() {
+        // 防止回溯时点击
+        if (this.isBacktracking) return;
 
-            if (this.isTyping) {
-                this.finishTyping();
-                return;
-            }
-
-            // ==================== 修改开始 ====================
-            // 原逻辑：if (this.ui.optionsLayer.style.display !== 'none') return;
-
-            // 新逻辑：检查选项层是否显示
-            if (this.ui.optionsLayer.style.display !== 'none') {
-                // 关键判断：如果队列里有新东西（说明历史记录更新了，有新的AI回复），
-                // 或者当前不是真正的最后一条消息，则允许跳过选项继续。
-                if (this.queue.length > 0) {
-                    // 隐藏选项层，允许流程继续
-                    this.ui.optionsLayer.style.display = 'none';
-                } else {
-                    // 队列是空的，说明真的卡在选项处了，必须做出选择
-                    return;
-                }
-            }
-            // ==================== 修改结束 ====================
-
-            if (this.queue.length > 0) {
-                this.playNextChunk();
-            } else {
-                // 队列空了
-            }
+        // 如果正在打字，瞬间完成
+        if (this.isTyping) {
+            this.finishTyping();
+            return;
         }
+
+        // 【修改】更安全的选项层检查
+        // 只有当选项层显示，且队列为空（意味着真的到了该选的时候）才拦截
+        // 如果队列里还有剧情（this.queue.length > 0），说明是“跳过”后的残留状态，允许点击继续
+        const isOptionsVisible = this.ui.optionsLayer.style.display !== 'none';
+
+        if (isOptionsVisible && this.queue.length === 0) {
+            return; // 真的卡在选项了，必须选，不能点背景
+        }
+
+        // 如果选项层显示但队列里还有东西，强制隐藏选项层继续播放
+        if (isOptionsVisible && this.queue.length > 0) {
+            this.ui.optionsLayer.style.display = 'none';
+        }
+
+        if (this.queue.length > 0) {
+            this.playNextChunk();
+        } else {
+            // 队列空了，等待用户操作或自动播放结束
+        }
+    }
+
   toggleAuto(btn) {
         this.isAuto = !this.isAuto;
         if (this.isAuto) {
@@ -879,52 +879,79 @@
             clearTimeout(this.autoTimer);
         }
     }
-    async skipToLatest() {
+ async skipToLatest() {
         const history = window.GameAPI.conversationHistory;
         if (!history || history.length === 0) return;
 
-        // 1. 标记跳过状态 (这将使 renderChunkState 瞬间完成打字)
-        this.isSkipping = true;
+        console.log('[Galgame] 正在寻找最近的有效剧情...');
 
-        // 2. 停止当前所有动作
+        // 1. 强制重置 UI 和状态 (防止卡死)
         clearInterval(this.typingTimer);
-        this.isTyping = false;
-        this.queue = []; // 清空待播放队列
+        clearTimeout(this.autoTimer);
+        if (this.ui && this.ui.optionsLayer) this.ui.optionsLayer.style.display = 'none';
+        if (this.ui && this.ui.nextIndicator) this.ui.nextIndicator.classList.remove('active');
 
-        // 3. 获取最后一条消息
-        const lastMsg = history[history.length - 1];
+        this.isBulkRendering = false;
+        this.hasReachedCurrentMsg = false;
+        this.savedState = null;
+        this.lastEnqueuedMsg = null;
+        this.isSkipping = true;
+        this.isTyping = true; // 加锁
+        this.queue = [];
 
-        // 4. 检查：如果我们已经在显示最后一条消息的最后一段，就不用重载了
-        if (this.currentChunk && this.currentChunk.originalMsg === lastMsg && this.currentChunk.isLast) {
-             this.finishTyping(); // 确保当前内容完全显示
-             // 延迟重置跳过状态
+        // 2. 【核心修复】从后往前找，找到第一条非 User 的消息
+        // 这样即使最后一条是你发的，它也会跳到 AI 回复的上一条
+        let targetIndex = history.length - 1;
+        while (targetIndex >= 0) {
+            const msg = history[targetIndex];
+            // 排除用户消息，且排除被隐藏的消息(如果有的话)
+            if (msg.role !== 'user') {
+                break;
+            }
+            targetIndex--;
+        }
+
+        if (targetIndex < 0) {
+            console.warn('[Galgame] 未找到任何 AI 消息');
+            this.isTyping = false;
+            this.isSkipping = false;
+            return;
+        }
+
+        const targetMsg = history[targetIndex];
+        console.log(`[Galgame] 锁定目标消息索引: ${targetIndex}, 角色: ${targetMsg.role}`);
+
+        // 3. 检查是否已经在显示这条消息的最后部分
+        if (this.currentChunk &&
+            this.currentChunk.originalMsg === targetMsg &&
+            this.currentChunk.isLast) {
+             console.log('[Galgame] 已在最新处');
+             this.finishTyping();
+             this.isTyping = false;
              setTimeout(() => { this.isSkipping = false; }, 100);
              return;
         }
 
-        console.log('[Galgame] Skipping to latest message...');
+        // 4. 解析目标消息
+        await window.worldHelper.createMessageBubble(targetMsg, 'chat', true);
 
-        // 5. 重新解析最后一条消息，填充 this.queue
-        await window.worldHelper.createMessageBubble(lastMsg, 'chat', true);
+        // 5. 执行播放
+        this.isTyping = false; // 解锁
 
-        // 6. 【关键修改】直接播放队列中的最后一个块
         if (this.queue.length > 0) {
-            // 从队列中取出最后一块
+            // 只保留最后一块
             const finalChunk = this.queue.pop();
-
-            // 清空队列，确保只播放最后一块
             this.queue = [];
-
-            // 将最后一块设置为当前要播放的块并立即播放
-            // 我们直接调用 playNextChunk，但因为队列是空的，它只会播放我们手动添加的这一块
             this.queue.push(finalChunk);
             this.playNextChunk();
+        } else {
+            // 如果这条 AI 消息解析出来也是空的（比如纯指令），尝试递归找上一条？
+            // 这里简单处理：提示无法跳过
+            console.warn('[Galgame] 目标消息解析为空 (可能是纯指令或被过滤)');
+            this.finishTyping();
         }
 
-        // 7. 稍微延迟后重置跳过状态
-        setTimeout(() => {
-            this.isSkipping = false;
-        }, 200);
+        setTimeout(() => { this.isSkipping = false; }, 200);
     }
    async handleBackStep() {
         // 防止快速点击导致的逻辑混乱
@@ -953,32 +980,24 @@
             this.currentChunk = null;
         }
 
- 
- 
-if (this.historyStack.length === 0) {
+        // 3. 检查历史栈
+ if (this.historyStack.length === 0) {
     // 历史栈为空,尝试加载更早的消息
     const success = await this.loadPreviousMessage();
     if (!success) {
         console.log('已到达历史记录起点');
-        // 如果到头了, 检查队列是否还有内容可以恢复
+        // 【关键修复】如果到头了,把刚才放回队列的 currentChunk 重新播放出来
         if (this.queue.length > 0) {
             const restoredChunk = this.queue.shift();
             this.currentChunk = restoredChunk;
             this.historyStack.push(restoredChunk); // 重新入栈
             this.renderChunkState(restoredChunk);
             this.finishTyping(); // 直接显示完整内容
-            this.ui.nextIndicator.classList.add('active');
         }
-        // ==================== BUG修复：在这里修改 ====================
-        // 无论队列是否为空，都必须终止回溯状态并退出函数。
-        // 之前这个代码块在 if 内部，导致队列为空时，函数继续向下执行，
-        // 最终可能导致其他逻辑错误。
         this.isBacktracking = false;
         return;
-        // ==========================================================
     }
 }
-
         // 4. 从历史栈中取出上一块
         // 此时栈顶就是我们要回退到的目标块
         const prevChunk = this.historyStack.pop();
@@ -1628,6 +1647,8 @@ window.GameAPI.displayEventTag =  function(){
             }
         }
     };
+
+ 
 
      // 保存原始函数引用
     const originalRenderNewMessages = window.renderNewMessages;
