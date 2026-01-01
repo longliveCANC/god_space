@@ -368,13 +368,13 @@
                     </div>
                     
                     <div class="mod05-config-form-group">
-                        <label class="mod05-config-form-label">描述 (desc)</label>
+                        <label class="mod05-config-form-label">描述 (desc)若异步，则都发送</label>
                         <textarea class="mod05-config-form-textarea" id="mod05-bookmark-desc" placeholder="描述这个数据的用途，例如：出现过的全部设定信息/世界观信息/势力信息等+出现的陌生名词+敌怪信息+剧情伏笔"></textarea>
                     </div>
                     
                     <div class="mod05-config-form-group">
-                        <label class="mod05-config-form-label">更新规则 (update_rule)</label>
-                        <textarea class="mod05-config-form-textarea" id="mod05-bookmark-update-rule" placeholder="描述其更新规则,如:仅当<user>知道该设定时才更新.可为空,空则按照默认规则更新"></textarea>
+                        <label class="mod05-config-form-label">更新规则 (update_rule)若异步，则只在异步层发送</label>
+                        <textarea class="mod05-config-form-textarea" id="mod05-bookmark-update-rule" placeholder="描述其更新规则/更新格式,可为空,空则按照默认规则更新"></textarea>
                     </div>
                     
                     <div class="mod05-config-buttons-row">
@@ -811,7 +811,7 @@ memory.load('${pathPrefix}', {
     if (double_api === "false" || (double_api === "true" && batches === 2)) {
     _%> update_rule: '${updateRule || '实时追踪更新'}'<%_
     }
-    _%>,
+    _%>
     path: '${pathPrefix} <%=${varName}%>'
 });`;
 
