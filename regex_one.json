@@ -15106,6 +15106,7 @@ let is_show_notifications = "true";
 let ifScanMemory = "false";
 let if_render_after_2batch="false";
 let is_worldbook_lock = "false";
+let if_waiting_roll= "false";
 let dice_use = "true";
 let bookItemSettings = null;
 let batches = 1;
@@ -33261,7 +33262,96 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
     }
 };
 
+function createConfirmationModal(title, message) {
+    return new Promise((resolve) => {
+        // --- 创建弹窗结构 ---
+        const modalOverlay = document.createElement('div');
+        modalOverlay.id = 'nova-confirmation-overlay';
+        modalOverlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+           
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;  
+        `;
 
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: var(--container-bg-color, rgba(10, 25, 47, 0.75));
+            border: 1px solid var(--border-color, rgba(0, 250, 255, 0.3));
+            box-shadow: 0 0 15px var(--glow-color, rgba(0, 250, 255, 0.5));
+            border-radius: 8px;
+            padding: 25px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            font-family: var(--base-font-family, sans-serif);
+            color: var(--text-color, #e6f1ff);
+        `;
+
+        const modalTitle = document.createElement('h3');
+        modalTitle.textContent = title;
+        modalTitle.style.cssText = `
+            color: var(--primary-color, #00faff);
+            margin-top: 0; margin-bottom: 15px;
+            font-size: 1.5em;
+        `;
+
+        const modalMessage = document.createElement('p');
+        modalMessage.textContent = message;
+        modalMessage.style.cssText = `
+            color: var(--text-secondary-color, #a8c0e1);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        `;
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `display: flex; justify-content: space-around; gap: 15px;`;
+
+        // --- 创建按钮 ---
+        const createButton = (text, isAccept) => {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.style.cssText = `
+                flex: 1; padding: 12px 20px; border-radius: 5px;
+                font-size: 1em; font-weight: bold; cursor: pointer;
+                transition: all 0.3s ease;
+                color: var(--text-color, #e6f1ff);
+                border: 1px solid ${isAccept ? 'var(--success-color, #4dff88)' : 'var(--danger-color, #ff4d4d)'};
+                background-color: transparent;
+            `;
+            button.onmouseover = () => {
+                button.style.boxShadow = `0 0 10px ${isAccept ? 'var(--success-glow-color, rgba(77, 255, 136, 0.5))' : 'var(--danger-glow-color, rgba(255, 77, 77, 0.5))'}`;
+                button.style.backgroundColor = isAccept ? 'rgba(77, 255, 136, 0.1)' : 'rgba(255, 77, 77, 0.1)';
+            };
+            button.onmouseout = () => {
+                button.style.boxShadow = 'none';
+                button.style.backgroundColor = 'transparent';
+            };
+            return button;
+        };
+
+        const acceptButton = createButton('接受结果', true);
+        const rejectButton = createButton('拒绝并中断', false);
+
+        // --- 事件处理 ---
+        const cleanupAndResolve = (value) => {
+            document.body.removeChild(modalOverlay);
+            resolve(value);
+        };
+
+        acceptButton.onclick = () => cleanupAndResolve(true);
+        rejectButton.onclick = () => cleanupAndResolve(false);
+
+        // --- 组装并显示 ---
+        buttonContainer.appendChild(rejectButton);
+        buttonContainer.appendChild(acceptButton);
+        modalContent.appendChild(modalTitle);
+        modalContent.appendChild(modalMessage);
+        modalContent.appendChild(buttonContainer);
+        modalOverlay.appendChild(modalContent);
+        document.body.appendChild(modalOverlay);
+    });
+}
 async function handleSend(options = {}) {
   const abortSignal = NovaAbortController.start();
    setTimeout(() => console.log('等待锁释放'), 50);
@@ -33732,23 +33822,54 @@ for (const entry of worldInfoForProcessing) {
             }else{
 
             }
-     
-  try {
- const messageVars = await TavernHelper.getVariables({ type: 'chat' });
-if (messageVars && messageVars.检定记忆) {
-    checkMemoryData = messageVars.检定记忆;
+      try {
+        const messageVars = await TavernHelper.getVariables({ type: 'chat' });
+        if (messageVars && messageVars.检定记忆) {
+            checkMemoryData = messageVars.检定记忆;
+            console.log("已捕获到投骰结果，准备展示看板。", checkMemoryData);
 
-    console.log("已捕获到投骰结果，准备展示看板。", checkMemoryData);
-           if (!rollCardShownThisTurn && checkMemoryData) {
-                    showRollResultCard(checkMemoryData);
-                    rollCardShownThisTurn = true; // 标记已显示，防止重复
- }
+            if (!rollCardShownThisTurn && checkMemoryData) {
+                // 1. 先显示看板，让用户看到结果
+                showRollResultCard(checkMemoryData);
+                rollCardShownThisTurn = true;
+
+                // 2. 后门逻辑：如果开启了等待确认
+                if (typeof if_waiting_roll !== 'undefined' && if_waiting_roll === 'true') {
+                    console.log("[Nova's Gatekeeper] 看板已显示，正在等待用户确认...");
+
+                    // 稍微延迟一点点弹窗，让看板动画先出来
+                    await new Promise(r => setTimeout(r, 1000));
+
+                    const userAccepted = await createConfirmationModal(
+                        '检定结果确认',
+                        'AI已完成检定（如背景所示）。是否接受此结果并继续生成剧情？拒绝将回溯至发送前。'
+                    );
+
+                    if (!userAccepted) {
+                        // 关闭看板（可选，如果需要的话）
+                        const container = document.getElementById('roll-result-card-container');
+                        if (container) container.style.display = 'none';
  
-                } 
-            } catch(e) {
-                console.warn("获取投骰变量失败，本轮可能无检定。", e);
+                        if (aiResponseBubble && aiResponseBubble.parentNode) {
+                            aiResponseBubble.parentNode.removeChild(aiResponseBubble);
+                            console.log("[Nova's Gatekeeper] 已移除临时的'正在回应'气泡。");
+                        }
+                        console.warn("[Nova's Gatekeeper] 用户拒绝了投骰结果，抛出中断错误。");
+                        // 抛出特定错误，必须与外层捕获的字符串一致
+                        throw new Error("用户取消生成");
+                    }
+                    console.log("[Nova's Gatekeeper] 用户接受结果，继续流程。");
+                }
             }
-
+        }
+    } catch (e) {
+        // 【关键修正】如果是用户主动取消，必须向上抛出，不能被这里的 catch 吃掉！
+        if (e.message === "用户取消生成") {
+            throw e;
+        }
+        // 其他普通的获取变量错误，只打印警告，不中断流程
+        console.warn("获取投骰变量失败，本轮可能无检定。", e);
+    }
             // } 
             // else {
             //     //console.log(`[Nova's Log] 世界书为空或不存在，跳过渲染步骤。`);
@@ -40486,6 +40607,7 @@ is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
 is_show_notifications = String(chatdata.is_show_notifications||'true');
 double_api = String(chatdata.double_api||'false');
 batches = Number(chatdata.batches||1);
+
 playerinput= String(chatdata.玩家输入||"");
 enable_preset_2nd_pass = String(chatdata.enable_preset_2nd_pass||'true');
 noBackup = String(chatdata.is_no_backup||'false');
@@ -40493,6 +40615,7 @@ ifScanMemory = String(chatdata.if_scan_memory||'false');
 dice_use= String(chatdata.dice_use||'true');
 if_render_after_2batch= String(chatdata.if_render_after_2batch||'false');
 is_worldbook_lock= String(chatdata.is_worldbook_lock||'false');
+if_waiting_roll= String(chatdata.if_waiting_roll||'false');
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
