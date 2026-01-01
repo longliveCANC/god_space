@@ -13,8 +13,8 @@
                 overflow: hidden !important;
                 position: relative;
             }
-                #load-more-btn {
- display:none;
+ #load-more-btn {
+    display: none !important;
 }
             #options-module-container { display: none !important; }
 
