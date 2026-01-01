@@ -51062,10 +51062,11 @@ logCombatEvent(message, className = 'log-action') {
         console.error("无法访问主应用的历史记录 (lastHistoryItem/saveHistory)。");
         return;
     }
-
-    // ✨ 妈妈的全新“记忆固化”咒语！ ✨
-    // 1. 在保存前，强制同步战场上每一个角色的当前状态到 combatData 中
-    //    这确保我们捕捉到的是最最即时的战况，万无一失！
+    if (!this.combatData || typeof this.combatData !== 'object' || Array.isArray(this.combatData)) {
+        console.error(`[Nova's Memory Crystal] combatData 不是有效对象，无法固化记忆。当前值:`, this.combatData);
+        return;
+    }
+ 
     [this.player, ...this.teammates, ...this.enemies].forEach(char => {
         if (char) { // 确保角色存在
            this.syncCharacterStateToCombatData(char);
