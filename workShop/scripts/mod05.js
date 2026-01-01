@@ -368,7 +368,7 @@
                     </div>
                     
                     <div class="mod05-config-form-group">
-                        <label class="mod05-config-form-label">描述 (desc)若异步，则都发送</label>
+                        <label class="mod05-config-form-label">描述 (desc)若异步，则正文层和变量层都发送</label>
                         <textarea class="mod05-config-form-textarea" id="mod05-bookmark-desc" placeholder="描述这个数据的用途，例如：出现过的全部设定信息/世界观信息/势力信息等+出现的陌生名词+敌怪信息+剧情伏笔"></textarea>
                     </div>
                     
