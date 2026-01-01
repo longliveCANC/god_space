@@ -520,51 +520,112 @@
     .m7-input-box.item-name {
     min-width: 120px; /* 设置一个合理的最小宽度 */
 }
-      /* --- 新增：联动编辑器样式 --- */
+        /* --- 新增：联动编辑器样式 (积木版) --- */
+            /* --- 新增：联动编辑器样式 (悬浮窗版) --- */
             .m7-linkage-container {
-                display: flex; height: 100%; position: relative; background: #050f1e;
-                overflow: hidden;
+                display: flex; height: 100%; position: relative; background: #0b1015;
+                overflow: hidden; font-family: 'Segoe UI', monospace;
             }
             .m7-col {
-                width: 250px; display: flex; flex-direction: column;
-                padding: 10px; overflow-y: auto; z-index: 2;
-                background: rgba(0,0,0,0.2); border-right: 1px solid var(--m7-border);
+                width: 260px; display: flex; flex-direction: column;
+                padding: 10px; overflow-y: auto; z-index: 1;
+                background: rgba(20, 30, 40, 0.9); border-right: 1px solid var(--m7-border);
             }
             .m7-col.right { border-left: 1px solid var(--m7-border); border-right: none; margin-left: auto; }
 
-            .m7-node {
-                padding: 8px 12px; margin-bottom: 8px; background: var(--m7-panel);
-                border: 1px solid var(--m7-border); border-radius: 4px; cursor: pointer;
-                font-size: 0.9em; user-select: none; position: relative;
-                transition: 0.2s;
+            .m7-col-header {
+                font-weight: bold; color: var(--m7-primary); margin-bottom: 10px;
+                padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.1);
             }
-            .m7-node:hover { border-color: var(--m7-primary); background: rgba(0, 250, 255, 0.1); }
-            .m7-node.active { background: var(--m7-primary); color: #000; border-color: var(--m7-primary); }
+
+            .m7-node {
+                padding: 6px 10px; margin-bottom: 6px; background: rgba(255,255,255,0.05);
+                border: 1px solid transparent; border-radius: 4px; cursor: pointer;
+                font-size: 0.85em; user-select: none; display: flex; justify-content: space-between;
+                transition: 0.2s; color: var(--m7-text-dim);
+            }
+            .m7-node:hover { border-color: var(--m7-primary); color: var(--m7-text); background: rgba(0, 250, 255, 0.05); }
+            .m7-node.active { background: rgba(0, 250, 255, 0.2); color: #fff; border-color: var(--m7-primary); }
             .m7-node.has-rule { border-left: 3px solid var(--m7-success); }
+            .m7-node-val { font-family: monospace; opacity: 0.5; }
+
+            .m7-workspace {
+                flex: 1; position: relative;
+                background: radial-gradient(circle at center, #1a253a 0%, #0b1015 100%);
+                overflow: hidden;
+            }
 
             .m7-canvas-layer {
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                pointer-events: none; z-index: 1;
+                pointer-events: none; z-index: 0;
+            }
+            .link-line { fill: none; stroke: var(--m7-primary); stroke-width: 2; opacity: 0.6; filter: drop-shadow(0 0 2px var(--m7-primary)); }
+
+             /* 悬浮编辑器面板 (优化版) */
+            .m7-editor-panel {
+                position: fixed; /* 改为 fixed 防止滚动影响 */
+                top: 50%; left: 50%; transform: translate(-50%, -50%);
+                width: 700px; /* 足够宽，覆盖左右也没关系 */
+                height: 500px; /* 固定高度，内部滚动 */
+                background: rgba(15, 23, 35, 0.98);
+                border: 1px solid var(--m7-primary); border-radius: 8px;
+                display: flex; flex-direction: column; gap: 0;
+                z-index: 2000; /* 确保在最上层 */
+                box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+                display: none;
+            }
+            .m7-editor-panel.active { display: flex; }
+
+            /* 拖拽时移除居中变换，防止闪烁 */
+            .m7-editor-panel.dragging { transform: none; transition: none; }
+
+            .m7-panel-header {
+                padding: 12px 20px; background: rgba(0, 250, 255, 0.1);
+                border-bottom: 1px solid var(--m7-border);
+                cursor: move; font-weight: bold; color: var(--m7-primary);
+                display: flex; justify-content: space-between; align-items: center;
+                user-select: none;
             }
 
-            .m7-formula-panel {
-                position: absolute; bottom: 0; left: 250px; right: 250px; height: 180px;
-                background: var(--m7-panel); border-top: 1px solid var(--m7-border);
-                padding: 15px; z-index: 3; display: flex; flex-direction: column;
-                transform: translateY(100%); transition: transform 0.3s;
+            .m7-panel-body {
+                padding: 20px; display: flex; flex-direction: column; gap: 15px;
+                flex: 1; overflow-y: auto;
             }
-            .m7-formula-panel.open { transform: translateY(0); }
-
-            .m7-formula-editor {
-                width: 100%; height: 60px; background: rgba(0,0,0,0.3);
-                border: 1px solid var(--m7-border); color: var(--m7-text);
-                padding: 10px; font-family: monospace; margin: 10px 0;
-                resize: none;
+            .m7-token-box {
+                min-height: 80px; max-height: 150px; overflow-y: auto;
+                padding: 10px; background: rgba(0,0,0,0.3);
+                border: 1px solid var(--m7-text-dim); border-radius: 4px;
+                display: flex; flex-wrap: wrap; gap: 5px; align-items: center; align-content: flex-start;
+                cursor: text; transition: 0.2s;
             }
+            .m7-token-box.error { border-color: var(--m7-danger); }
 
-            /* 连线 SVG 样式 */
-            .link-line { fill: none; stroke: var(--m7-text-dim); stroke-width: 1; opacity: 0.3; transition: 0.3s; }
-            .link-line.active { stroke: var(--m7-primary); stroke-width: 2; opacity: 1; }
+            .m7-token {
+                padding: 4px 8px; border-radius: 4px; font-size: 0.9em; cursor: pointer;
+                user-select: none; display: inline-block; transition: 0.2s; margin: 2px;
+            }
+            .m7-token:hover { transform: scale(1.05); }
+            .tok-var { background: rgba(0, 250, 255, 0.15); color: var(--m7-primary); border: 1px solid rgba(0, 250, 255, 0.3); }
+            .tok-self { background: rgba(255, 95, 95, 0.15); color: var(--m7-danger); border: 1px solid rgba(255, 95, 95, 0.3); }
+            .tok-op { background: rgba(255, 255, 255, 0.1); color: #fff; font-weight: bold; }
+            .tok-num { background: rgba(255, 183, 77, 0.15); color: var(--m7-warn); border: 1px solid rgba(255, 183, 77, 0.3); }
+
+            .m7-calc-pad { display: flex; gap: 8px; flex-wrap: wrap; }
+            .m7-calc-btn {
+                padding: 8px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                color: var(--m7-text); border-radius: 4px; cursor: pointer; font-family: monospace; flex: 1;
+                min-width: 40px; text-align: center;
+            }
+            .m7-calc-btn:hover { background: rgba(255,255,255,0.15); border-color: var(--m7-text); }
+
+            /* 数字输入层 */
+            .m7-num-modal {
+                position: absolute; bottom: 70px; right: 20px;
+                background: var(--m7-panel); border: 1px solid var(--m7-border);
+                padding: 10px; border-radius: 6px; display: none;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 101;
+            }
+            .m7-num-modal.show { display: flex; gap: 5px; }
             `;
         document.head.appendChild(style);
     }
@@ -798,10 +859,13 @@
     <div class="m7-body">
         <div class="m7-editor" id="m7-editor-area"></div>
          <div class="m7-linkage-container" id="m7-linkage-area" style="display:none; flex:3;"></div> 
-        <div class="m7-sidebar" id="m7-sidebar-panel">
-            <div class="m7-sidebar-header">📦 模板商店</div>
-            <div class="m7-sidebar-content" id="m7-store-area"></div>
+          <div class="m7-sidebar" id="m7-sidebar-panel">
+        <div class="m7-sidebar-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>📦 模板商店</span>
+            <button class="m7-btn m7-btn-sm" id="m7-export-btn" title="导出当前模板">📤 导出</button>
         </div>
+        <div class="m7-sidebar-content" id="m7-store-area"></div>
+    </div>
     </div>
     <button class="m7-drawer-toggle" id="m7-drawer-btn">📦</button>
 `;
@@ -849,195 +913,429 @@ container.querySelector('#m7-editor-area').onclick = () => {
                 btn.classList.remove('primary');
             }
         };
+
+          container.querySelector('#m7-export-btn').onclick = () => {
+            const exportData = {
+                name: "自定义模板_" + new Date().toLocaleDateString(),
+                desc: "玩家导出的自定义属性模板",
+                attr: currentFullData.play_character_data.基础属性,
+                skill: currentFullData.play_character_data.基础技能,
+                rules: currentLinkageRules
+            };
+            const jsonStr = JSON.stringify(exportData, null, 2);
+
+            // 创建导出弹窗
+            const overlay = document.createElement('div');
+            overlay.className = 'm7-confirm-overlay';
+            overlay.innerHTML = `
+                <div class="m7-confirm-box" style="max-width:600px; text-align:left;">
+                    <div class="m7-confirm-title">📤 导出模板数据</div>
+                    <div class="m7-confirm-text" style="font-size:0.9em;">
+                        请复制下方代码，在世界书中新建词条。<br>
+                        <strong>词条名：</strong><span style="color:var(--m7-warn); user-select:all;">[diyattribute]</span><br>
+                        <strong>这个词条一直关着就行，位置随意</strong>
+                    </div>
+                    <textarea class="m7-input-box" style="height:200px; font-family:monospace; font-size:0.8em; margin-bottom:15px;" readonly>${jsonStr}</textarea>
+                    <div class="m7-confirm-actions">
+                        <button class="m7-btn" id="m7-export-close">关闭</button>
+                        <button class="m7-btn primary" id="m7-export-copy">📋 复制并关闭</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(overlay);
+
+            overlay.querySelector('#m7-export-close').onclick = () => overlay.remove();
+            overlay.querySelector('#m7-export-copy').onclick = () => {
+                const textarea = overlay.querySelector('textarea');
+                textarea.select();
+                document.execCommand('copy');
+                worldHelper.showNovaAlert('已复制到剪贴板！', 'success');
+                overlay.remove();
+            };
+        };
     }
-  function renderLinkageEditor() {
+     function renderLinkageEditor() {
         const container = document.getElementById('m7-linkage-area');
         if (!container) return;
         container.innerHTML = '';
 
-        // 1. 准备数据：扁平化所有可用路径
-        const sources = []; // { name: '力量', path: '基础属性.生理属性.力量.基础' }
-        const targets = []; // { name: '生命值上限', path: '衍生属性.生命值.上限' }
+        // --- 1. 数据准备 (修改：增强取值逻辑) ---
 
-        // 递归提取函数
-        const extractNodes = (obj, prefix, list, type) => {
+        // 新增：优先获取游戏内实时数据，匹配不到则回退到模板数据
+        const getLiveValue = (path) => {
+            let val = null;
+
+            // A. 尝试从 GameAPI 获取 (实时)
+            if (window.GameAPI && window.GameAPI.playCharacterData) {
+                try {
+                    const liveNode = path.split('.').reduce((o, k) => (o && o[k] !== undefined) ? o[k] : undefined, window.GameAPI.playCharacterData);
+                    if (Array.isArray(liveNode)) val = liveNode[0];
+                    else if (typeof liveNode === 'number') val = liveNode;
+                } catch (e) { /* 忽略路径匹配错误 */ }
+            }
+
+            // B. 回退到当前模板数据 (预览/新建时)
+            if (val === null || val === undefined) {
+                try {
+                    val = path.split('.').reduce((o, k) => o && o[k], currentFullData.play_character_data)?.[0];
+                } catch { }
+            }
+
+            return Number(val) || 0; // 确保返回数字
+        };
+
+        const sources = [];
+        const targets = [];
+
+        const extractNodes = (obj, prefix, list, rootName) => {
             for (const key in obj) {
+                // --- 修改：过滤掉“传奇”属性 ---
+                if (key === '传奇') continue;
+                // ---------------------------
+
                 const val = obj[key];
                 const currentPath = prefix ? `${prefix}.${key}` : key;
 
-                // 判定是否为叶子节点 (数组且第一个元素是数字)
                 if (Array.isArray(val) && typeof val[0] === 'number') {
-                    // 忽略描述字段，只取数值路径
-                    list.push({ name: key, path: currentPath, fullPath: currentPath });
-                } else if (typeof val === 'object' && val !== null) {
-                    // 特殊处理：属性里的 "基础" 和 "传奇"
-                    if (key === '基础' || key === '传奇') {
-                         // 这里的上一级才是属性名，如 "力量"
-                         const parentName = prefix.split('.').pop();
-                         list.push({ name: `${parentName}.${key}`, path: currentPath, fullPath: currentPath });
-                    } else {
-                        extractNodes(val, currentPath, list, type);
+                    let displayName = key;
+                    if (['基础', '上限', '当前值'].includes(key)) {
+                        const parent = prefix.split('.').pop();
+                        displayName = `${parent} (${key})`;
+                    } else if (rootName === '技能') {
+                        displayName = `${key} (技能)`;
                     }
+                    // 使用 getLiveValue 获取实时值
+                    list.push({ name: displayName, path: currentPath, val: getLiveValue(currentPath) });
+                } else if (typeof val === 'object' && val !== null) {
+                    extractNodes(val, currentPath, list, rootName);
                 }
             }
         };
 
-        extractNodes(currentFullData.play_character_data.基础属性, '基础属性', sources);
-        extractNodes(currentFullData.play_character_data.基础技能, '基础技能', sources);
-        extractNodes(currentFullData.play_character_data.衍生属性, '衍生属性', targets);
-        extractNodes(currentFullData.play_character_data.货币, '货币', targets);
+        extractNodes(currentFullData.play_character_data.基础属性, '基础属性', sources, '属性');
+        extractNodes(currentFullData.play_character_data.基础技能, '基础技能', sources, '技能');
+        extractNodes(currentFullData.play_character_data.衍生属性, '衍生属性', targets, '衍生');
+        extractNodes(currentFullData.play_character_data.货币, '货币', targets, '货币');
 
-        // 2. 构建DOM结构
+        // --- 2. 构建 UI (保持原有结构，仅微调) ---
         const leftCol = document.createElement('div'); leftCol.className = 'm7-col';
-        const rightCol = document.createElement('div'); rightCol.className = 'm7-col right';
-        const svgLayer = document.createElement('svg'); svgLayer.className = 'm7-canvas-layer';
-        const formulaPanel = document.createElement('div'); formulaPanel.className = 'm7-formula-panel';
+        leftCol.innerHTML = `
+            <div class="m7-col-header">📥 来源 (实时值)</div>
+            <div class="m7-node" id="m7-src-self" style="border-left:3px solid var(--m7-danger);">
+                <span>🔴 当前目标旧值</span><span class="m7-node-val">Self</span>
+            </div>
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:5px 0;">
+        `;
 
-        // 渲染左侧源节点
+        const workspace = document.createElement('div'); workspace.className = 'm7-workspace';
+        const rightCol = document.createElement('div'); rightCol.className = 'm7-col right';
+        rightCol.innerHTML = `<div class="m7-col-header">📤 目标 (实时值)</div>`;
+
+        const svgLayer = document.createElement('svg'); svgLayer.className = 'm7-canvas-layer';
+        workspace.appendChild(svgLayer);
+
+        // ... (中间的 editorPanel 创建代码保持不变，省略以节省篇幅) ...
+        // 务必保留 editorPanel 的创建代码
+        const editorPanel = document.createElement('div');
+        editorPanel.className = 'm7-editor-panel';
+        // ... editorPanel.innerHTML 内容保持不变 ...
+        editorPanel.innerHTML = `
+            <div class="m7-panel-header" id="m7-drag-handle">
+                <span id="m7-edit-title">编辑规则</span>
+                <button class="m7-btn m7-btn-sm danger" id="m7-btn-close-panel">×</button>
+            </div>
+            <div class="m7-panel-body">
+                <div class="m7-token-box" id="m7-token-area" tabindex="0"></div>
+                <div style="display:flex; justify-content:space-between; font-size:0.9em; color:var(--m7-text-dim);">
+                    <span>预览: <span id="m7-formula-text" style="color:var(--m7-primary)"></span></span>
+                    <span>结果: <span id="m7-result-val" style="font-weight:bold; color:var(--m7-success)">0</span></span>
+                </div>
+                <!-- 计算器按钮区域保持不变 -->
+                <div class="m7-calc-pad">
+                    <button class="m7-calc-btn" data-op="+">+</button>
+                    <button class="m7-calc-btn" data-op="-">-</button>
+                    <button class="m7-calc-btn" data-op="*">×</button>
+                    <button class="m7-calc-btn" data-op="/">÷</button>
+                    <button class="m7-calc-btn" data-op="(">(</button>
+                    <button class="m7-calc-btn" data-op=")">)</button>
+                    <button class="m7-calc-btn" data-op="Math.max(">Max</button>
+                    <button class="m7-calc-btn" data-op="Math.min(">Min</button>
+                    <button class="m7-calc-btn" data-op="Math.floor(">取整</button>
+                </div>
+                <div class="m7-calc-pad">
+                    <button class="m7-calc-btn" id="m7-btn-num" style="flex:2; color:var(--m7-warn);">🔢 输入数字</button>
+                    <button class="m7-calc-btn danger" id="m7-btn-backspace">⌫ 退格</button>
+                    <button class="m7-calc-btn danger" id="m7-btn-clear">🗑️ 清空</button>
+                    <button class="m7-calc-btn primary" id="m7-btn-save" style="flex:2;">💾 保存</button>
+                </div>
+            </div>
+            <div class="m7-num-modal" id="m7-num-input-box">
+                <input type="number" class="m7-input-box" style="width:80px;" placeholder="0">
+                <button class="m7-btn primary m7-btn-sm">OK</button>
+            </div>
+        `;
+        workspace.appendChild(editorPanel);
+
+        container.appendChild(leftCol);
+        container.appendChild(workspace);
+        container.appendChild(rightCol);
+
+        // ... (拖拽逻辑 makeDraggable 保持不变) ...
+        const makeDraggable = (el, handle) => { /* ...原代码... */
+             let isDragging = false;
+            let startX, startY, startLeft, startTop;
+            handle.onmousedown = (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = el.getBoundingClientRect();
+                el.classList.add('dragging');
+                el.style.transform = 'none';
+                el.style.left = rect.left + 'px';
+                el.style.top = rect.top + 'px';
+                startLeft = rect.left;
+                startTop = rect.top;
+                document.body.style.userSelect = 'none';
+            };
+            document.onmousemove = (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                el.style.left = (startLeft + dx) + 'px';
+                el.style.top = (startTop + dy) + 'px';
+            };
+            document.onmouseup = () => {
+                if (isDragging) {
+                    isDragging = false;
+                    el.classList.remove('dragging');
+                    document.body.style.userSelect = '';
+                }
+            };
+        };
+        makeDraggable(editorPanel, editorPanel.querySelector('#m7-drag-handle'));
+
+        // --- 4. 状态与渲染 ---
+        let activeTarget = null;
+        let tokens = [];
+
+        // 渲染左侧 (Sources)
         sources.forEach(src => {
             const el = document.createElement('div');
             el.className = 'm7-node source-node';
-            el.innerText = src.name;
             el.dataset.path = src.path;
-            el.onclick = () => addToFormula(src.path); // 点击添加到公式
+            el.innerHTML = `<span>${src.name}</span><span class="m7-node-val">${src.val}</span>`;
+            el.onclick = () => addToken('var', src.path, src.name);
             leftCol.appendChild(el);
         });
 
-        // 渲染右侧目标节点
-        let activeTarget = null;
+        // 绑定“旧值”按钮
+        leftCol.querySelector('#m7-src-self').onclick = () => {
+            if (activeTarget) addToken('self', 'this', activeTarget.name + '(旧)');
+        };
+
+        // 渲染右侧 (Targets)
         targets.forEach(tgt => {
             const el = document.createElement('div');
             el.className = 'm7-node target-node';
-            if (currentLinkageRules[tgt.path]) el.classList.add('has-rule');
-            el.innerText = tgt.name;
             el.dataset.path = tgt.path;
+            if (currentLinkageRules[tgt.path]) el.classList.add('has-rule');
+            el.innerHTML = `<span>${tgt.name}</span><span class="m7-node-val">${tgt.val}</span>`;
             el.onclick = () => selectTarget(tgt, el);
             rightCol.appendChild(el);
         });
 
-        // 公式编辑面板
-        formulaPanel.innerHTML = `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span id="m7-formula-title" style="font-weight:bold; color:var(--m7-primary)">请选择右侧目标...</span>
-                <div>
-                    <button class="m7-btn m7-btn-sm danger" id="m7-clear-rule">清除规则</button>
-                    <button class="m7-btn m7-btn-sm primary" id="m7-save-rule">确认规则</button>
-                </div>
-            </div>
-            <div style="font-size:0.8em; color:var(--m7-text-dim)">点击左侧属性可插入变量。支持 + - * / ( ) 及 Math.max 等函数。</div>
-            <textarea class="m7-formula-editor" id="m7-formula-input"></textarea>
-        `;
-
-        container.appendChild(svgLayer);
-        container.appendChild(leftCol);
-        container.appendChild(rightCol);
-        container.appendChild(formulaPanel);
-
-        // 3. 交互逻辑
-        const input = formulaPanel.querySelector('#m7-formula-input');
-
+        // ... (selectTarget, parseRuleToTokens, addToken 保持不变) ...
         function selectTarget(tgt, el) {
-            // UI更新
+            activeTarget = tgt;
             document.querySelectorAll('.target-node').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
-            activeTarget = tgt;
-
-            // 面板显示
-            formulaPanel.classList.add('open');
-            formulaPanel.querySelector('#m7-formula-title').innerText = `编辑: ${tgt.name}`;
-
-            // 加载现有规则
-            let rule = currentLinkageRules[tgt.path] || '';
-            // 将存储的 {path} 转换为显示用的 {name} (可选，这里为了简单直接显示路径，或者你可以做一个映射)
-            input.value = rule;
-
-            drawLines();
-        }
-
-        function addToFormula(path) {
-            if (!activeTarget) return;
-            const tag = `{${path}}`;
-            // 在光标处插入
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            const text = input.value;
-            input.value = text.substring(0, start) + tag + text.substring(end);
-            input.focus();
-            input.selectionStart = input.selectionEnd = start + tag.length;
-        }
-
-        formulaPanel.querySelector('#m7-save-rule').onclick = () => {
-            if (!activeTarget) return;
-            const val = input.value.trim();
-            if (val) {
-                currentLinkageRules[activeTarget.path] = val;
-                document.querySelector(`.target-node[data-path="${activeTarget.path}"]`).classList.add('has-rule');
-            } else {
-                delete currentLinkageRules[activeTarget.path];
-                document.querySelector(`.target-node[data-path="${activeTarget.path}"]`).classList.remove('has-rule');
+            editorPanel.classList.add('active');
+            if (!editorPanel.style.left || editorPanel.style.left === '50%') {
+                editorPanel.style.top = '50%';
+                editorPanel.style.left = '50%';
+                editorPanel.style.transform = '';
+                editorPanel.classList.remove('dragging');
             }
-            drawLines();
-            // 实时注入测试
-            injectCustomLogic();
-        };
-
-        formulaPanel.querySelector('#m7-clear-rule').onclick = () => {
-            input.value = '';
-            formulaPanel.querySelector('#m7-save-rule').click();
-        };
-
-        // 4. 绘制连线 (SVG)
-        function drawLines() {
-            svgLayer.innerHTML = ''; // 清空
-            if (!activeTarget) return;
-
-            const rule = currentLinkageRules[activeTarget.path] || input.value;
+            document.getElementById('m7-edit-title').innerText = `编辑: ${tgt.name} = `;
+            const rule = currentLinkageRules[tgt.path] || '';
+            parseRuleToTokens(rule);
+            renderTokens();
+        }
+        function parseRuleToTokens(rule) { /* ...原代码... */
+             tokens = [];
             if (!rule) return;
-
-            // 找出规则中引用的所有源路径
-            const regex = /\{([^}]+)\}/g;
+            const regex = /\{this\}|\{([^}]+)\}|([0-9]+(\.[0-9]+)?)|(Math\.[a-z]+\()|([+\-*/(),])/g;
             let match;
-            const usedPaths = new Set();
             while ((match = regex.exec(rule)) !== null) {
-                usedPaths.add(match[1]);
+                if (match[0] === '{this}') {
+                    tokens.push({ type: 'self', val: 'this', label: '旧值' });
+                } else if (match[1]) {
+                    const path = match[1];
+                    const src = sources.find(s => s.path === path);
+                    tokens.push({ type: 'var', val: path, label: src ? src.name : path });
+                } else if (match[2]) {
+                    tokens.push({ type: 'num', val: match[2], label: match[2] });
+                } else if (match[4]) {
+                    tokens.push({ type: 'op', val: match[4], label: match[4].replace('Math.', '') });
+                } else {
+                    tokens.push({ type: 'op', val: match[0], label: match[0] });
+                }
             }
+        }
+        function addToken(type, val, label) {
+            if (!activeTarget) return;
+            tokens.push({ type, val, label });
+            renderTokens();
+        }
 
-            // 获取目标节点坐标
+        // --- 修改：updatePreview 使用 getLiveValue ---
+        function updatePreview() {
+            const formulaText = document.getElementById('m7-formula-text');
+            const resultVal = document.getElementById('m7-result-val');
+            const box = document.getElementById('m7-token-area');
+
+            let evalStr = '';
+            let displayStr = '';
+
+            tokens.forEach(tok => {
+                if (tok.type === 'var') {
+                    // 修改：使用 getLiveValue 获取实时值进行预览计算
+                    evalStr += getLiveValue(tok.val);
+                    displayStr += `{${tok.label}}`;
+                } else if (tok.type === 'self') {
+                    evalStr += getLiveValue(activeTarget.path);
+                    displayStr += `{旧值}`;
+                } else {
+                    evalStr += tok.val;
+                    displayStr += tok.label;
+                }
+                evalStr += ' ';
+            });
+
+            formulaText.innerText = displayStr;
+
+            try {
+                if (!evalStr.trim()) {
+                    resultVal.innerText = getLiveValue(activeTarget.path);
+                    box.classList.remove('error');
+                    return;
+                }
+                const res = new Function(`return ${evalStr}`)();
+                if (isNaN(res)) throw new Error("NaN");
+                resultVal.innerText = Math.floor(res * 100) / 100;
+                box.classList.remove('error');
+            } catch (e) {
+                resultVal.innerText = "Err";
+                box.classList.add('error');
+            }
+        }
+
+        function renderTokens() {
+            const box = document.getElementById('m7-token-area');
+            box.innerHTML = '';
+            tokens.forEach((tok, idx) => {
+                const span = document.createElement('span');
+                span.className = `m7-token tok-${tok.type}`;
+                span.innerText = tok.label;
+                span.onclick = () => { tokens.splice(idx, 1); renderTokens(); };
+                box.appendChild(span);
+            });
+            updatePreview();
+            drawLines();
+        }
+
+
+        function drawLines() {
+            svgLayer.innerHTML = '';
+            if (!activeTarget) return;
             const targetEl = document.querySelector(`.target-node[data-path="${activeTarget.path}"]`);
             if (!targetEl) return;
-            const targetRect = targetEl.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
 
-            const tX = targetRect.left - containerRect.left;
-            const tY = targetRect.top - containerRect.top + targetRect.height / 2;
+            const cRect = container.getBoundingClientRect();
+            const tRect = targetEl.getBoundingClientRect();
+            const tX = tRect.left - cRect.left;
+            const tY = tRect.top - cRect.top + tRect.height / 2;
 
-            // 遍历源节点绘制
+            const usedPaths = new Set(tokens.filter(t => t.type === 'var').map(t => t.val));
             usedPaths.forEach(path => {
-                const sourceEl = document.querySelector(`.source-node[data-path="${path}"]`);
-                if (sourceEl) {
-                    const sRect = sourceEl.getBoundingClientRect();
-                    const sX = sRect.right - containerRect.left;
-                    const sY = sRect.top - containerRect.top + sRect.height / 2;
-
-                    // 贝塞尔曲线
+                const srcEl = document.querySelector(`.source-node[data-path="${path}"]`);
+                if (srcEl) {
+                    const sRect = srcEl.getBoundingClientRect();
+                    const sX = sRect.right - cRect.left;
+                    const sY = sRect.top - cRect.top + sRect.height / 2;
                     const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                    const c1 = sX + 50;
-                    const c2 = tX - 50;
-                    const d = `M ${sX} ${sY} C ${c1} ${sY}, ${c2} ${tY}, ${tX} ${tY}`;
-
+                    const d = `M ${sX} ${sY} C ${sX + 80} ${sY}, ${tX - 80} ${tY}, ${tX} ${tY}`;
                     pathEl.setAttribute("d", d);
-                    pathEl.setAttribute("class", "link-line active");
+                    pathEl.setAttribute("class", "link-line");
                     svgLayer.appendChild(pathEl);
-
-                    // 高亮源节点
-                    sourceEl.classList.add('active'); // 临时高亮
-                    setTimeout(() => sourceEl.classList.remove('active'), 1000);
                 }
             });
         }
 
-        // 监听输入框变化以实时更新连线（可选）
-        input.onkeyup = drawLines;
+        // --- 5. 事件绑定 ---
+        document.querySelectorAll('.m7-calc-btn[data-op]').forEach(btn => {
+            btn.onclick = () => addToken('op', btn.dataset.op, btn.innerText);
+        });
+
+        document.getElementById('m7-btn-backspace').onclick = () => {
+            if (tokens.length > 0) { tokens.pop(); renderTokens(); }
+        };
+        document.getElementById('m7-btn-clear').onclick = () => {
+            tokens = []; renderTokens();
+        };
+        document.getElementById('m7-btn-close-panel').onclick = () => {
+            editorPanel.classList.remove('active');
+            document.querySelectorAll('.target-node').forEach(n => n.classList.remove('active'));
+            activeTarget = null;
+            svgLayer.innerHTML = '';
+        };
+
+        // 数字输入逻辑
+        const numModal = document.getElementById('m7-num-input-box');
+        const numInput = numModal.querySelector('input');
+        const numBtn = document.getElementById('m7-btn-num');
+
+        numBtn.onclick = (e) => {
+            e.stopPropagation();
+            numModal.classList.add('show');
+            numInput.value = '';
+            numInput.focus();
+        };
+
+        const confirmNum = () => {
+            const val = numInput.value;
+            if (val !== '') addToken('num', val, val);
+            numModal.classList.remove('show');
+        };
+
+        numModal.querySelector('button').onclick = confirmNum;
+        numInput.onkeydown = (e) => { if (e.key === 'Enter') confirmNum(); };
+
+        // 点击外部关闭数字框
+        document.addEventListener('click', (e) => {
+            if (!numModal.contains(e.target) && e.target !== numBtn) {
+                numModal.classList.remove('show');
+            }
+        });
+
+        document.getElementById('m7-btn-save').onclick = () => {
+            if (!activeTarget) return;
+            if (tokens.length === 0) {
+                delete currentLinkageRules[activeTarget.path];
+                document.querySelector(`.target-node[data-path="${activeTarget.path}"]`).classList.remove('has-rule');
+            } else {
+                let ruleStr = '';
+                tokens.forEach(tok => {
+                    if (tok.type === 'var') ruleStr += `{${tok.val}}`;
+                    else if (tok.type === 'self') ruleStr += `{this}`;
+                    else ruleStr += tok.val;
+                });
+                currentLinkageRules[activeTarget.path] = ruleStr;
+                document.querySelector(`.target-node[data-path="${activeTarget.path}"]`).classList.add('has-rule');
+            }
+            injectCustomLogic();
+            worldHelper.showNovaAlert('规则已更新', 'success');
+        };
     }
     // 渲染左侧编辑区
     function renderEditorContent() {
@@ -1404,84 +1702,94 @@ container.querySelector('#m7-editor-area').onclick = () => {
             container.appendChild(card);
         });
     }
-     // --- 新增：动态生成并注入逻辑 ---
-    function injectCustomLogic() {
+      // --- 新增：动态生成并注入逻辑 ---
+ function injectCustomLogic() {
         if (!window.worldHelper) return;
 
         console.log('[MOD07] 正在注入自定义联动逻辑...', currentLinkageRules);
 
-        // 构建新的函数体
-        // 我们需要把 {路径} 替换为 data.路径[0] 的安全访问形式
         const generateCode = () => {
+            // 1. 定义通用头部，包含 safeGet 工具函数
             let code = `
     if (!data || !data.基础属性) return;
+
+    // 工具函数：安全获取路径值
     const safeGet = (path) => {
         try {
             return path.split('.').reduce((o, k) => o && o[k], data)?.[0] ?? 0;
         } catch(e) { return 0; }
     };
-
-    // 1. 预计算所有基础值 (可选优化，这里直接在公式里取)
-
-    // 2. 应用用户自定义规则
             `;
 
+            // 2. 遍历规则生成代码 (用户自定义的联动)
             Object.keys(currentLinkageRules).forEach(targetPath => {
                 let formula = currentLinkageRules[targetPath];
                 if (!formula) return;
 
-                // 将占位符 {基础属性.xxx} 转换为 safeGet('基础属性.xxx')
-                // 正则匹配 {...}
-                const parsedFormula = formula.replace(/\{([^}]+)\}/g, (match, p1) => {
-                    return `safeGet('${p1}')`;
-                });
+                const parsedFormula = formula
+                    .replace(/\{this\}/g, 'targetOldVal')
+                    .replace(/\{([^}]+)\}/g, "safeGet('$1')");
 
-                // 构建赋值语句
-                // 注意：我们需要处理目标路径，确保它存在
                 const pathParts = targetPath.split('.');
                 const lastKey = pathParts.pop();
                 const parentPath = pathParts.join('.');
 
                 code += `
     try {
-        // 目标: ${targetPath}
+        const targetOldVal = safeGet('${targetPath}');
         const val = ${parsedFormula};
-
-        // 获取父对象
         const parent = '${parentPath}'.split('.').reduce((o, k) => {
-            if (!o[k]) o[k] = {}; // 自动补全路径
+            if (!o[k]) o[k] = {};
             return o[k];
         }, data);
 
         if (parent && parent['${lastKey}']) {
-            // 特殊处理：生命值/意志力/能量池 的当前值联动
-            // 如果是上限改变，尝试调整当前值
             if ('${lastKey}' === '上限') {
                 const oldMax = parent['上限'][0] || 0;
                 const oldCur = parent['当前值'] ? parent['当前值'][0] : 0;
                 parent['上限'][0] = Math.floor(val);
                 if (parent['当前值']) {
-                    // 差值修正法
                     const diff = Math.floor(val) - oldMax;
                     if (diff > 0) parent['当前值'][0] = oldCur + diff;
-                    // 封顶修正
                     if (parent['当前值'][0] > parent['上限'][0]) parent['当前值'][0] = parent['上限'][0];
                 }
             } else {
-                // 普通赋值
-                parent['${lastKey}'][0] = Math.floor(val); // 默认向下取整，可根据需求修改
+                parent['${lastKey}'][0] = Math.floor(val);
             }
         }
-    } catch (e) { console.warn('联动计算错误:', '${targetPath}', e); }
+    } catch (e) { console.warn('联动计算错误 [${targetPath}]:', e); }
                 `;
             });
+
+            // --- 新增：自动处理传奇属性逻辑 (基础 - 8) ---
+            code += `
+    // 自动维护传奇属性：若存在传奇字段，则强制等于 基础 - 8
+    try {
+        if (data.基础属性) {
+            Object.values(data.基础属性).forEach(category => {
+                Object.values(category).forEach(attr => {
+                    // 检查该属性是否有“传奇”字段
+                    if (attr['基础'] && attr['传奇']) {
+                        const baseVal = attr['基础'][0] || 0;
+                        // 核心逻辑：传奇 = 基础 - 8，最小为0
+                        attr['传奇'][0] = Math.max(0, baseVal - 8);
+                    }
+                });
+            });
+        }
+    } catch (e) { console.warn('传奇属性自动计算错误:', e); }
+            `;
+            // -------------------------------------------
 
             return code;
         };
 
-        // 覆盖原有函数
-        window.worldHelper._updateDerivedAttributes = new Function('data', generateCode());
-        worldHelper.showNovaAlert('自定义联动逻辑已生效！', 'success');
+        try {
+            window.worldHelper._updateDerivedAttributes = new Function('data', generateCode());
+        } catch (e) {
+            console.error("生成代码错误:", e);
+            worldHelper.showNovaAlert('联动规则语法错误，请检查公式！', 'danger');
+        }
     }
     // 保存数据
     async function saveData() {
@@ -1503,3 +1811,5 @@ container.querySelector('#m7-editor-area').onclick = () => {
     init();
 
 })();
+
+ 
