@@ -1,4 +1,3 @@
- 
 (function() {
     // ============================================================
     // 1. 样式定义 (CSS) - Mod14
@@ -1041,12 +1040,6 @@ if (this.historyStack.length === 0) {
         return true;
     }
  renderChunkState(chunk) {
-      if (!chunk) {
-        console.warn('[Galgame] 尝试渲染空的 Chunk，已跳过');
-        this.isTyping = false;
-        this.isBacktracking = false;
-        return;
-    }
     // UI 重置
     this.ui.nextIndicator.classList.remove('active');
     this.ui.textContent.innerHTML = '';
