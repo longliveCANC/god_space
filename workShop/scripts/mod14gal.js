@@ -178,24 +178,32 @@
                 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 250, 255, 0); }
             }
 
-            /* 回溯按钮 (左下角) */
-           .mod14-back-btn {
-                position: absolute;
-                bottom: 15px; left: 20px; /* 位置调整 */
-                width: 0; height: 0;
-                border-left: 8px solid transparent;
-                border-right: 8px solid transparent;
-                border-bottom: 12px solid var(--mod14-text-secondary-color, #a8c0e1); /* 向上箭头 */
-                cursor: pointer;
-                opacity: 0.5;
-                transition: all 0.2s;
-                animation: mod14-bounce-reverse 1s infinite;
-                z-index: 20;
-            }
-            .mod14-back-btn:hover {
-                border-bottom-color: var(--mod14-primary-color, #00faff);
-                opacity: 1;
-            }
+ .mod14-back-btn {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 33%; /* 占据左下角三分之一 */
+    height: 33%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 15px 20px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s;
+    z-index: 20;
+}
+.mod14-back-btn::after {
+    content: '';
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 12px solid var(--mod14-text-secondary-color, #a8c0e1);
+    animation: mod14-bounce-reverse 1s infinite;
+}
+.mod14-back-btn:hover::after {
+    border-bottom-color: var(--mod14-primary-color, #00faff);
+}
+     
             @keyframes mod14-bounce-reverse {
                 0%, 100% { transform: translateY(0); }
                 50% { transform: translateY(-5px); }
@@ -947,20 +955,23 @@
         }
 
         // 3. 检查历史栈
-        if (this.historyStack.length === 0) {
-            // 历史栈为空，尝试加载更早的消息
-            const success = await this.loadPreviousMessage();
-            if (!success) {
-                console.log('已到达历史记录起点');
-                // 如果没有更早的消息，且刚才把 currentChunk 放回去了，需要重新把它拿出来显示（否则界面会空）
-                if (this.queue.length > 0) {
-                    this.playNextChunk();
-                }
-                this.isBacktracking = false;
-                return;
-            }
+ if (this.historyStack.length === 0) {
+    // 历史栈为空,尝试加载更早的消息
+    const success = await this.loadPreviousMessage();
+    if (!success) {
+        console.log('已到达历史记录起点');
+        // 【关键修复】如果到头了,把刚才放回队列的 currentChunk 重新播放出来
+        if (this.queue.length > 0) {
+            const restoredChunk = this.queue.shift();
+            this.currentChunk = restoredChunk;
+            this.historyStack.push(restoredChunk); // 重新入栈
+            this.renderChunkState(restoredChunk);
+            this.finishTyping(); // 直接显示完整内容
         }
-
+        this.isBacktracking = false;
+        return;
+    }
+}
         // 4. 从历史栈中取出上一块
         // 此时栈顶就是我们要回退到的目标块
         const prevChunk = this.historyStack.pop();
