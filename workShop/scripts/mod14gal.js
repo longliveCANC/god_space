@@ -954,24 +954,32 @@
             this.currentChunk = null;
         }
 
-        // 3. 检查历史栈
- if (this.historyStack.length === 0) {
+ 
+ 
+if (this.historyStack.length === 0) {
     // 历史栈为空,尝试加载更早的消息
     const success = await this.loadPreviousMessage();
     if (!success) {
         console.log('已到达历史记录起点');
-        // 【关键修复】如果到头了,把刚才放回队列的 currentChunk 重新播放出来
+        // 如果到头了, 检查队列是否还有内容可以恢复
         if (this.queue.length > 0) {
             const restoredChunk = this.queue.shift();
             this.currentChunk = restoredChunk;
             this.historyStack.push(restoredChunk); // 重新入栈
             this.renderChunkState(restoredChunk);
             this.finishTyping(); // 直接显示完整内容
+            this.ui.nextIndicator.classList.add('active');
         }
+        // ==================== BUG修复：在这里修改 ====================
+        // 无论队列是否为空，都必须终止回溯状态并退出函数。
+        // 之前这个代码块在 if 内部，导致队列为空时，函数继续向下执行，
+        // 最终可能导致其他逻辑错误。
         this.isBacktracking = false;
         return;
+        // ==========================================================
     }
 }
+
         // 4. 从历史栈中取出上一块
         // 此时栈顶就是我们要回退到的目标块
         const prevChunk = this.historyStack.pop();
@@ -1033,6 +1041,12 @@
         return true;
     }
  renderChunkState(chunk) {
+      if (!chunk) {
+        console.warn('[Galgame] 尝试渲染空的 Chunk，已跳过');
+        this.isTyping = false;
+        this.isBacktracking = false;
+        return;
+    }
     // UI 重置
     this.ui.nextIndicator.classList.remove('active');
     this.ui.textContent.innerHTML = '';

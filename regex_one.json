@@ -23958,7 +23958,7 @@ const allBoundWorldbooks = [
         }
         // 6. 如果没找到[开局]词条,使用原来的默认提示
         if (!foundOpening) {
-            conversationHistory.push({ role: 'assistant', content: '<系统提示:等待用户输入要求...>' });
+            conversationHistory.push({ role: 'assistant', content: '[系统提示:等待用户输入要求...]' });
         }
        
     }
