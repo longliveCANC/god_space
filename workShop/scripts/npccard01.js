@@ -1289,7 +1289,43 @@
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     });
+this.floater.addEventListener('touchstart', (e) => {
+    isDragging = false;
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    initialLeft = this.floater.offsetLeft;
+    initialTop = this.floater.offsetTop;
 
+    const onTouchMove = (moveEvent) => {
+        const moveTouch = moveEvent.touches[0];
+        const dx = moveTouch.clientX - startX;
+        const dy = moveTouch.clientY - startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            isDragging = true;
+            moveEvent.preventDefault(); // 阻止页面滚动
+            const newLeft = initialLeft + dx;
+            const newTop = initialTop + dy;
+
+            this.floater.style.left = `${newLeft}px`;
+            this.floater.style.top = `${newTop}px`;
+            this.floater.style.right = 'auto';
+
+            if (this.quickBtn) {
+                this.quickBtn.style.left = `${newLeft + 55}px`;
+                this.quickBtn.style.top = `${newTop + 10}px`;
+            }
+        }
+    };
+
+    const onTouchEnd = () => {
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
+    };
+
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd);
+}, { passive: false });
     // 修改点击判定
     this.floater.onclick = (e) => {
         if (isDragging) return;
