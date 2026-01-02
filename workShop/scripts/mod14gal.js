@@ -246,12 +246,20 @@
                 0%, 100% { transform: translateY(0); }
                 50% { transform: translateY(5px); }
             }
+@keyframes mod14-fade-out {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
 
+.mod14-attachment-modal.closing {
+    animation: mod14-fade-out 0.3s ease-out forwards;
+    pointer-events: none; /* 退场时禁止再次点击 */
+}
             /* --- 全屏附件模态框 --- */
             .mod14-attachment-modal {
                 position: fixed;
                 top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.85);
+                
                 z-index: 2000;
                 display: none;
                 justify-content: center;
@@ -343,7 +351,31 @@
             .mod14-ctrl-btn:hover {
                 background: var(--mod14-border-color);
             }
+.mod14-cg-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
 
+.mod14-cg-display-img {
+    display: block;
+    /* 核心需求：防止宽高超出，等比例缩放 */
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+
+    /* 核心需求：防止太窄/太小 (根据需求设定一个最小值，或者利用 flex 居中即可) */
+    min-width: 300px;
+    min-height: 200px;
+
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    border-radius: 4px;
+}
 
         `;
         document.head.appendChild(style);
@@ -386,8 +418,43 @@
                 }
             });
 
-             this.scanAndSyncExpressions();
+      
         }
+
+ async handleCGEvent(cgName) {
+    console.log(`[Galgame] 触发 CG: ${cgName}`);
+    const searchKey = `cg-${cgName}`;
+    let imageSrc = '';
+
+    // 1. 查找图片 (本地库 -> 远程映射)
+    try {
+        if (window.imageDB) {
+            const blob = await window.imageDB.get('CustomNpcs', searchKey);
+            if (blob) imageSrc = URL.createObjectURL(blob);
+        }
+        if (!imageSrc && window.GameAPI && window.GameAPI.npcImageMap && window.GameAPI.npcImageMap[searchKey]) {
+            imageSrc = window.GameAPI.npcImageMap[searchKey];
+        }
+    } catch (e) { console.error(e); }
+
+    if (!imageSrc) {
+        console.warn(`[Galgame] 未找到 CG: ${searchKey}`);
+        this.playNextChunk();
+        return;
+    }
+
+    // 2. 构建 HTML
+    // 注意：onclick="event.stopPropagation()" 防止点击图片时触发 body 的关闭事件
+    const htmlContent = `
+        <div style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;">
+            <img src="${imageSrc}" class="mod14-cg-display-img" onclick="event.stopPropagation()" />
+        </div>
+    `;
+
+    this.currentAttachmentsContent = htmlContent;
+    // 传入 'cg' 标记，用于在 showAttachmentModal 里做特殊处理 (如果需要)
+    this.showAttachmentModal(true);
+}
     toggleOptionsLayer(show) {
             if (!this.ui || !this.ui.optionsLayer) return;
             const layer = this.ui.optionsLayer;
@@ -472,70 +539,79 @@
         this.playNextChunk();
     }
 
-   async scanAndSyncExpressions() {
-            // 稍微延迟以确保 GameAPI 和 imageDB 就绪
-            await new Promise(r => setTimeout(r, 2000));
+ async scanAndSyncExpressions() {
+    // 稍微延迟以确保 GameAPI 和 imageDB 就绪
+    await new Promise(r => setTimeout(r, 2000));
 
-            const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
-            // 即使缺少数据源，我们也尝试存一个空对象，防止 EJS 报错
-            if (!assaData || !assaData.img_map || !window.imageDB || !window.TavernHelper) {
-                console.log('[Galgame] 无法扫描差分：缺少必要的数据源或工具，重置为空。');
-                await window.TavernHelper.insertOrAssignVariables(
-                    { 'available_expressions_json': '{}' },
-                    { type: 'chat' }
-                );
-                return;
-            }
+    const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
 
-            try {
-                const imgMap = assaData.img_map;
-                let allKeys = [];
+    // 初始化空数据
+    let expressionMap = {};
+    let cgList = []; // 【新增】用于存储 CG 列表
 
-                // 尝试获取 CustomNpcs 库中的所有图片键值
-                if (typeof window.imageDB.keys === 'function') {
-                    allKeys = await window.imageDB.keys('CustomNpcs');
-                } else {
-                    console.warn('[Galgame] imageDB 不支持 keys() 方法。');
-                    // 无法读取时也重置为空
-                    await window.TavernHelper.insertOrAssignVariables(
-                        { 'available_expressions_json': '{}' },
-                        { type: 'chat' }
-                    );
-                    return;
-                }
+    // 即使缺少数据源，我们也尝试存一个空对象，防止 EJS 报错
+    if (!window.imageDB || !window.TavernHelper) {
+        console.log('[Galgame] 无法扫描：缺少必要的数据源或工具。');
+        await window.TavernHelper.insertOrAssignVariables(
+            {
+                'available_expressions_json': '{}',
+                'available_cgs_json': '[]' // 【新增】
+            },
+            { type: 'chat' }
+        );
+        return;
+    }
 
-                // 1. 初始化结果对象（而不是数组）
-                const expressionMap = {};
+    try {
+        const imgMap = assaData ? assaData.img_map : {};
+        let allKeys = [];
 
-                if (allKeys && allKeys.length > 0) {
-                    // 遍历映射表
-                    for (const [charName, baseCode] of Object.entries(imgMap)) {
-                        if (!baseCode) continue;
-
-                        const prefix = `${baseCode}-`;
-                        // 筛选出符合 "代码-差分" 格式的图片，并提取差分名
-                        const variants = allKeys
-                            .filter(key => String(key).startsWith(prefix))
-                            .map(key => String(key).substring(prefix.length));
-
-                        // 2. 如果存在差分，存入对象
-                        if (variants.length > 0) {
-                            expressionMap[charName] = variants;
-                        }
-                    }
-                }
-
-                // 3. 无论是否为空，都更新变量 (存为 JSON 字符串)
-                console.log('[Galgame] 差分扫描完成，更新变量:', expressionMap);
-                await window.TavernHelper.insertOrAssignVariables(
-                    { 'available_expressions_json': JSON.stringify(expressionMap) },
-                    { type: 'chat' }
-                );
-
-            } catch (e) {
-                console.error('[Galgame] 扫描差分时发生错误:', e);
-            }
+        // 尝试获取 CustomNpcs 库中的所有图片键值
+        if (typeof window.imageDB.keys === 'function') {
+            allKeys = await window.imageDB.keys('CustomNpcs');
+        } else {
+            console.warn('[Galgame] imageDB 不支持 keys() 方法。');
+            return;
         }
+
+        if (allKeys && allKeys.length > 0) {
+            // 1. 扫描差分 (原有逻辑)
+            for (const [charName, baseCode] of Object.entries(imgMap)) {
+                if (!baseCode) continue;
+                const prefix = `${baseCode}-`;
+                const variants = allKeys
+                    .filter(key => String(key).startsWith(prefix))
+                    .map(key => String(key).substring(prefix.length));
+                if (variants.length > 0) {
+                    expressionMap[charName] = variants;
+                }
+            }
+
+            // ============================================================
+            // 2. 【新增】扫描 CG
+            // ============================================================
+            // 筛选出以 "cg-" 开头的图片，并去掉前缀
+            cgList = allKeys
+                .filter(key => String(key).startsWith('cg-'))
+                .map(key => String(key).substring(3)); // 去掉 "cg-" (3个字符)
+
+            console.log('[Galgame] CG 扫描结果:', cgList);
+            // ============================================================
+        }
+
+        // 3. 更新变量 (同时存入差分和 CG)
+        await window.TavernHelper.insertOrAssignVariables(
+            {
+                'available_expressions_json': JSON.stringify(expressionMap),
+                'available_cgs_json': JSON.stringify(cgList) // 【新增】存入 CG 列表
+            },
+            { type: 'chat' }
+        );
+
+    } catch (e) {
+        console.error('[Galgame] 扫描资源时发生错误:', e);
+    }
+}
 
          initUI() {
             
@@ -609,10 +685,31 @@
                     <div class="mod14-iframe-container" style="width:100%;height:100%;"></div>
                 </div>
             `;
-            modal.onclick = (e) => {
-                if (e.target === modal) modal.style.display = 'none';
-            };
-            modal.querySelector('.mod14-modal-close').onclick = () => modal.style.display = 'none';
+       this.closeAttachmentModal = () => {
+    if (!this.ui.modal || this.ui.modal.style.display === 'none') return;
+
+    // 添加退场动画类
+    this.ui.modal.classList.add('closing');
+
+    // 等待动画结束后隐藏
+    setTimeout(() => {
+        this.ui.modal.style.display = 'none';
+        this.ui.modal.classList.remove('closing');
+        this.isShowingModal = false;
+
+        // 检查是否需要自动播放下一个
+        if (this.ui.modal.dataset.isAutoPlayFlow === 'true') {
+            this.ui.modal.dataset.isAutoPlayFlow = 'false';
+            setTimeout(() => this.playNextChunk(), 100);
+        }
+    }, 300); // 对应 CSS 动画时长
+};
+
+// 绑定点击事件
+modal.onclick = (e) => {
+    if (e.target === modal) this.closeAttachmentModal();
+};
+modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentModal();
 
 
        // --- 修改：控制面板 ---
@@ -816,7 +913,24 @@
                 !/^<(em|strong|span|p|div|b|i|u|s|font)/i.test(trimmed)) {
                 return;
             }
-
+ if (trimmed.toLowerCase().startsWith('cg|')) {
+            const cgName = trimmed.substring(3).trim(); // 获取 cg| 后面的内容
+            if (cgName) {
+                this.queue.push({
+                    type: 'cg_event', // 标记为 CG 事件
+                    cgName: cgName,   // 图片名
+                    text: '',
+                    name: '系统',
+                    attachments: [],
+                    isAttachmentDisplay: false,
+                    isLast: false,
+                    options: [],
+                    isRealLastMsg: isRealLastMsg,
+                    originalMsg: msg
+                });
+            }
+            return; // 拦截成功，跳过后续常规解析
+        }
             let name = '';
             let text = trimmed;
             let expression = null; // 【新增】用于存储差分/表情
@@ -1281,7 +1395,10 @@ playNextChunk() {
     const chunk = this.queue.shift();
     this.currentChunk = chunk;
     this.historyStack.push(chunk);
-
+ if (chunk.type === 'cg_event') {
+        this.handleCGEvent(chunk.cgName);
+        return; // 暂停播放，等待用户关闭 CG
+    }
     // 【关键修改】根据 isAttachmentDisplay 标记决定行为
     if (chunk.isAttachmentDisplay) {
         // 如果是贴脸展示块，直接显示模态框
@@ -1584,28 +1701,42 @@ playNextChunk() {
                     ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
                     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
 
-                    body {
-                        font-family: "Microsoft YaHei", sans-serif;
-                        padding: 20px;
-                        line-height: 1.6;
-                        background: transparent; /* 透明背景 */
-                        color: #fff; /* 白字 */
-                        text-shadow: 0 1px 2px rgba(0,0,0,0.8); /* 增加文字阴影提高可读性 */
-                         white-space: pre-wrap; /* <--- 【在此处添加这一行】 --- */
-                    }
-                    img { max-width: 100%; height: auto; border-radius: 4px; }
-                    details {
-                        border: 1px solid rgba(255,255,255,0.3);
-                        border-radius: 4px;
-                        padding: 10px;
-                        margin-bottom: 10px;
-                        background: rgba(0,0,0,0.2);
-                    }
-                    summary { font-weight: bold; cursor: pointer; color: #00faff; }
-                  </style>
-                </head>
-                <body>${this.currentAttachmentsContent}</body>
-                </html>
+                           body {
+            margin: 0;
+            padding: 0; /* CG 模式下清除内边距 */
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer; /* 提示可点击关闭 */
+        }
+
+        /* 【新增】CG 图片样式注入 */
+        .mod14-cg-display-img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            min-width: 200px; /* 防止太窄 */
+            min-height: 200px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            border-radius: 4px;
+        }
+
+        /* 非 CG 内容的样式兼容 */
+        body > *:not(div) { padding: 20px; color: #fff; }
+      </style>
+    </head>
+    <!-- 【关键】点击 body 调用父级关闭方法 -->
+    <body onclick="window.parent.galManager.closeAttachmentModal()">
+        ${this.currentAttachmentsContent}
+    </body>
+    </html>
             `;
             container.appendChild(iframe);
 
@@ -1627,10 +1758,11 @@ window.GameAPI.displayEventTag =  function(){
     console.log("拦截了事件展示desu");
 }
  window.worldHelper.createMessageBubble = async function(msg, mode = 'chat', is_from_render = false) {
-    if (!galManager) galManager = new GalgameManager();
-
-    // 【修改点 1】: 只有当 galManager.ui 不存在，且 DOM 中也没有舞台时，才初始化。
-    // 这样当 renderHistory 临时移除 DOM 时，因为 galManager.ui 还在内存里，就不会重复创建。
+        if (!galManager) {
+            galManager = new GalgameManager();
+            window.galManager = galManager; // <--- 关键修复：让 iframe 能通过 window.parent.galManager 访问到它
+        }
+    
     if (!galManager.ui && !document.querySelector('.mod14-stage-wrapper')) {
         galManager.initUI();
         galManager.syncTheme();
@@ -1818,7 +1950,13 @@ window.GameAPI.displayEventTag =  function(){
     // 覆盖 renderNewMessages
     window.renderNewMessages = async function(newMessages) {
         console.log("[Galgame] 拦截 renderNewMessages...");
-
+    if (galManager) {
+        // 使用 setTimeout 0 将其放入宏任务队列，避免阻塞当前的渲染主线程
+        setTimeout(() => {
+            console.log("[Galgame] 触发后台差分扫描...");
+            galManager.scanAndSyncExpressions();
+        }, 0);
+    }
           if (galManager && galManager.ui && galManager.ui.optionsLayer) {
             galManager.toggleOptionsLayer(false);
         }

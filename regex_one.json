@@ -14660,6 +14660,11 @@ pointer-events: auto;
                         </div>
                         <button type="submit" class="control-btn primary">上传立绘</button>
                     </form>
+                        <div class="batch-upload-container" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color, #ccc);">
+        <p>批量导入文件夹 (自动使用文件名)</p>
+        <input type="file" id="npc-batch-input" webkitdirectory directory multiple style="display:none">
+        <button type="button" onclick="document.getElementById('npc-batch-input').click()" class="control-btn secondary" style="width:100%">选择立绘文件夹</button>
+    </div>
                     <div class="asset-list-container">
                         <p>已上传的立绘</p>
                         <div id="custom-npc-list" class="asset-list">正在加载...</div>
@@ -14676,6 +14681,11 @@ pointer-events: auto;
                         </div>
                         <button type="submit" class="control-btn primary">上传表情</button>
                     </form>
+                        <div class="batch-upload-container" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color, #ccc);">
+        <p>批量导入文件夹 (自动使用文件名)</p>
+        <input type="file" id="meme-batch-input" webkitdirectory directory multiple style="display:none">
+        <button type="button" onclick="document.getElementById('meme-batch-input').click()" class="control-btn secondary" style="width:100%">选择表情文件夹</button>
+    </div>
                     <div class="asset-list-container">
                         <p>已上传的表情</p>
                         <div id="custom-meme-list" class="asset-list">正在加载...</div>
@@ -36232,6 +36242,11 @@ function setupCustomAssetManager() {
             }
         });
     }
+
+     const npcBatchInput = document.getElementById('npc-batch-input');
+    const memeBatchInput = document.getElementById('meme-batch-input');
+
+
     setupFileInputDisplay('npc-file-input', '.file-name-display');
     setupFileInputDisplay('meme-file-input', '.file-name-display');
 
@@ -36301,7 +36316,53 @@ function setupCustomAssetManager() {
             submitBtn.textContent = storeName === 'CustomNpcs' ? '上传立绘' : '上传表情';
         }
     }
+ // [新增代码] 咒语4.5：批量上传文件夹的魔法仪式
+    async function handleBatchUpload(event, storeName, listElement) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
 
+        const total = files.length;
+        let successCount = 0;
+        let failCount = 0;
+
+        // 简单的加载提示
+        const originalText = listElement.innerHTML;
+        listElement.innerHTML = `<div style="padding:20px; text-align:center;">正在批量施法中... (0/${total})</div>`;
+
+        for (let i = 0; i < total; i++) {
+            const file = files[i];
+
+            // 1. 检查是否为图片
+            if (!file.type.startsWith('image/')) {
+                continue; // 跳过非图片文件
+            }
+
+            // 2. 自动提取文件名作为 Key (去除后缀)
+            // 例如: "白发魔女.png" -> "白发魔女"
+            const key = file.name.replace(/\.[^/.]+$/, "");
+
+            try {
+                // 3. 存入数据库
+                await imageDB.set(storeName, key, file);
+                successCount++;
+            } catch (error) {
+                console.error(`导入 ${file.name} 失败:`, error);
+                failCount++;
+            }
+
+            // 更新进度显示
+            if (i % 5 === 0) { // 每处理5张更新一次UI，避免过于频繁
+                 listElement.innerHTML = `<div style="padding:20px; text-align:center;">正在批量施法中... (${i+1}/${total})</div>`;
+            }
+        }
+
+        // 4. 完成后刷新列表并提示
+        await renderAssetList(storeName, listElement);
+        alert(`批量导入完成！\n成功: ${successCount} 张\n失败/跳过: ${failCount} 张`);
+
+        // 清空 input 允许重复上传同一文件夹
+        event.target.value = '';
+    }
     // 咒语5：处理删除的魔法仪式
     async function handleDelete(event, storeName, listElement){
         const deleteBtn = event.target.closest('.asset-item-delete-btn');
@@ -36310,7 +36371,7 @@ function setupCustomAssetManager() {
         const itemEl = deleteBtn.closest('.asset-item');
         const key = itemEl.dataset.key;
 
-        if(confirm(`确定要永远删除 "${key}" 吗？这个操作无法撤销。`)){
+   
             try {
                 await imageDB.delete(storeName, key);
                 itemEl.remove(); // 立即从界面移除
@@ -36318,7 +36379,7 @@ function setupCustomAssetManager() {
                 alert('删除失败!');
                 console.error('删除失败:', error);
             }
-        }
+ 
     }
 
     // 将魔法仪式绑定到对应的工坊区域
@@ -36326,7 +36387,12 @@ function setupCustomAssetManager() {
     memeForm.addEventListener('submit', (e) => handleUpload(e, 'CustomMemes', memeList));
     npcList.addEventListener('click', (e) => handleDelete(e, 'CustomNpcs', npcList));
     memeList.addEventListener('click', (e) => handleDelete(e, 'CustomMemes', memeList));
-
+  if(npcBatchInput) {
+        npcBatchInput.addEventListener('change', (e) => handleBatchUpload(e, 'CustomNpcs', npcList));
+    }
+    if(memeBatchInput) {
+        memeBatchInput.addEventListener('change', (e) => handleBatchUpload(e, 'CustomMemes', memeList));
+    }
     // 初始加载列表
     renderAssetList('CustomNpcs', npcList);
     renderAssetList('CustomMemes', memeList);
