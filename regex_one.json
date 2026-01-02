@@ -13638,7 +13638,7 @@ pointer-events: auto;
      <div class="orb-divider"></div>
      
     <div class="orb" id="skill-choice-orb">術</div>
-    <div class="orb" data-modal-id="page-character-modal" id="page-character-orb">能</div>
+  <div class="orb" id="page-character-orb">能</div>
  
      <div class="orb-divider"></div>
      <div class="orb" data-modal-id="summary-modal" id="summary-modal-orb">综</div>
@@ -40591,6 +40591,106 @@ async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层�
         console.error('执行灵魂链接守护咒语时发生错误:', error);
     }
 }
+// --- 新增：能小球点击处理函数 ---
+function handleCharacterOrbClick() {
+    
+    if (typeof GameAPI !== 'undefined' && GameAPI.populateCharacterPage) {
+        GameAPI.populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
+    } else {
+        populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
+    }
+
+    // 2. 重新绑定升级按钮监听器
+    // 虽然使用了事件委托，但为了保险起见，确保每次打开时监听器都是活跃的
+    setupAllUpgradeListeners();
+function setupAllUpgradeListeners() {
+    const charPage = document.getElementById('page-character');// 我们先移除所有可能存在的旧监听器，确保干净
+charPage.removeEventListener('dblclick', upgradeEventHandler);
+// 如果有旧的点击监听器也一并移除（为了安全起见）
+// charPage.removeEventListener('click', newUpgradeHandler); // 假设之前的 handler 叫这个名字
+
+// 创建一个新的、聪明的点击处理器
+const newUpgradeHandler = (e) => {
+    // 我们只关心点击到 "upgrade-btn" 的事件
+    if (e.target.classList.contains('upgrade-btn')) {
+        upgradeEventHandler(e);
+    }
+};
+
+// 替换原有的 const target = e.target.closest('.upgradeable');
+function upgradeEventHandler(e) {
+    const target = e.target; // 现在直接就是我们点击的那个 "+" 按钮
+    if (target) { // 简单检查一下
+        const { path, name, level, type } = target.dataset;
+        handleUpgrade(path, name, parseInt(level, 10), type);
+    }
+}
+
+// 触摸事件处理器
+let lastTouchEnd = 0;
+let touchTarget = null;
+let touchTimeout = null;
+
+function touchUpgradeHandler(event) {
+    const now = Date.now();
+    const target = event.target;
+    
+    // 检查是否是可升级的元素
+    const upgradeableElement = target.closest('.upgradeable');
+    if (!upgradeableElement) return;
+    
+    // 双击检测逻辑
+    if (touchTarget === upgradeableElement && now - lastTouchEnd <= 500) {
+        // 清除可能的单击延时
+        if (touchTimeout) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+        }
+        
+        // 阻止默认行为和事件冒泡
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // 触发升级事件
+        upgradeEventHandler.call(upgradeableElement, event);
+        
+        // 重置状态
+        lastTouchEnd = 0;
+        touchTarget = null;
+    } else {
+        // 记录这次触摸
+        touchTarget = upgradeableElement;
+        lastTouchEnd = now;
+        
+        // 设置延时清除，避免误触发
+        touchTimeout = setTimeout(() => {
+            touchTarget = null;
+            lastTouchEnd = 0;
+        }, 500);
+    }
+}
+
+ 
+ 
+
+// 为了防止重复绑定，我们可以在 page 元素上存储这个处理器
+if (charPage._upgradeHandler) {
+    charPage.removeEventListener('click', charPage._upgradeHandler);
+}
+charPage._upgradeHandler = newUpgradeHandler;
+charPage.addEventListener('click', newUpgradeHandler);
+
+ 
+
+//console.log('升级监听器已更新为 “点击加号” 模式');
+}
+
+    // 3. 打开模态框
+    // 显式调用 showModal，这样我们可以确保数据渲染完成后才显示窗口
+    showModal('page-character-modal');
+}
+
+
 
 async function initDisplay(is_first=true) {
   
@@ -40751,16 +40851,16 @@ if (!worldAttitudeData || !characterStatusData) {
     console.warn("部分非核心数据(跨世界声望说明, 当前人物状态)缺失，但不影响主要功能。");
 }
 userName = currentGameData.user.name || '用户';
-     
-        populateGeneralData(currentGameData, assaSettingsData,playCharacterData);
-     if(GameAPI.populateCharacterPage){
- GameAPI.populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
-     }else{
-         
-        populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
-     }
+       populateGeneralData(currentGameData, assaSettingsData,playCharacterData);
+ const charOrb = document.getElementById('page-character-orb');
+    if (charOrb) {
+        // 先移除旧的监听器，防止 initDisplay 多次运行导致重复绑定
+        charOrb.removeEventListener('click', handleCharacterOrbClick);
+        // 绑定新的点击事件
+        charOrb.addEventListener('click', handleCharacterOrbClick);
+    }
        
-setupAllUpgradeListeners();
+ 
    // 3. 缓存地图数据
         if (assaSettingsData && assaSettingsData.map) {
             
@@ -40843,90 +40943,7 @@ if (debugClearBtn) {
         // 你可以在这里添加一些用户友好的错误提示
     }
 
- 
-
- // 替换整个 setupAllUpgradeListeners 函数
-function setupAllUpgradeListeners() {
-    const charPage = document.getElementById('page-character');// 我们先移除所有可能存在的旧监听器，确保干净
-charPage.removeEventListener('dblclick', upgradeEventHandler);
-// 如果有旧的点击监听器也一并移除（为了安全起见）
-// charPage.removeEventListener('click', newUpgradeHandler); // 假设之前的 handler 叫这个名字
-
-// 创建一个新的、聪明的点击处理器
-const newUpgradeHandler = (e) => {
-    // 我们只关心点击到 "upgrade-btn" 的事件
-    if (e.target.classList.contains('upgrade-btn')) {
-        upgradeEventHandler(e);
-    }
-};
-
-// 为了防止重复绑定，我们可以在 page 元素上存储这个处理器
-if (charPage._upgradeHandler) {
-    charPage.removeEventListener('click', charPage._upgradeHandler);
-}
-charPage._upgradeHandler = newUpgradeHandler;
-charPage.addEventListener('click', newUpgradeHandler);
-
-// 如果你的 touchend 事件处理器 touchUpgradeHandler 存在，也在这里移除
-// charPage.removeEventListener('touchend', touchUpgradeHandler);
-
-//console.log('升级监听器已更新为 “点击加号” 模式');
-}
-
-// 触摸事件处理器
-let lastTouchEnd = 0;
-let touchTarget = null;
-let touchTimeout = null;
-
-function touchUpgradeHandler(event) {
-    const now = Date.now();
-    const target = event.target;
-    
-    // 检查是否是可升级的元素
-    const upgradeableElement = target.closest('.upgradeable');
-    if (!upgradeableElement) return;
-    
-    // 双击检测逻辑
-    if (touchTarget === upgradeableElement && now - lastTouchEnd <= 500) {
-        // 清除可能的单击延时
-        if (touchTimeout) {
-            clearTimeout(touchTimeout);
-            touchTimeout = null;
-        }
-        
-        // 阻止默认行为和事件冒泡
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // 触发升级事件
-        upgradeEventHandler.call(upgradeableElement, event);
-        
-        // 重置状态
-        lastTouchEnd = 0;
-        touchTarget = null;
-    } else {
-        // 记录这次触摸
-        touchTarget = upgradeableElement;
-        lastTouchEnd = now;
-        
-        // 设置延时清除，避免误触发
-        touchTimeout = setTimeout(() => {
-            touchTarget = null;
-            lastTouchEnd = 0;
-        }, 500);
-    }
-}
-
- 
- 
-// 替换原有的 const target = e.target.closest('.upgradeable');
-function upgradeEventHandler(e) {
-    const target = e.target; // 现在直接就是我们点击的那个 "+" 按钮
-    if (target) { // 简单检查一下
-        const { path, name, level, type } = target.dataset;
-        handleUpgrade(path, name, parseInt(level, 10), type);
-    }
-}
+  
 
 await applyThemeAndData(); 
 }
