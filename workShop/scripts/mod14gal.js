@@ -417,7 +417,7 @@
                     this.handleBackStep();
                 }
             });
-
+this.scanAndSyncExpressions();
       
         }
 
@@ -856,15 +856,28 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
     const userNickname = window.currentGameData?.user?.nick_name || '你';
 
     // 1.1 保护 <html> 和 ```代码块``` (保持原样)
-    processedContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
+     processedContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
         const placeholder = `HTMLCONTENTPLACEHOLDER${placeholderIndex}`;
-        const rawHtml = htmlBlock || (markdownBlock ? `<pre><code class="language-${lang || ''}">${markdownBlock.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>` : '');
-        if (!rawHtml) return match;
+
+        // ============================================================
+        // 【修改开始】修复 HTML 标签被剥离导致无法识别为附件的问题
+        // ============================================================
+        let rawHtml = '';
+
+        // 如果 htmlBlock 不为 undefined，说明正则匹配到了第一部分(<html>...</html>)
+        // 此时必须使用 match (即包含 <html> 标签的完整字符串)，而不是 htmlBlock (仅包含内部内容)
+        if (htmlBlock !== undefined) {
+            rawHtml = match;
+        }
+        // 否则是代码块匹配
+        else if (markdownBlock) {
+            rawHtml = `<pre><code class="language-${lang || ''}">${markdownBlock.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+        }
+      if (!rawHtml) return match;
         htmlPlaceholders[placeholder] = rawHtml;
         placeholderIndex++;
         return placeholder;
     });
-
     // 1.2 解析 <msg> -> 【修改】转换为 HTML 后立即用占位符保护
   processedContent = processedContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
         // 【修改点】将最后一个参数由 true 改为 false
@@ -999,26 +1012,31 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
         });
     };
 
-    if (attachmentMatch) {
-        this.queue.push({
-            name: msg.name || '系统',
-            text: '',
-            attachments: attachmentMatch,
-            isAttachmentDisplay: true,
-            isLast: false,
-            options: [],
-            isRealLastMsg: isRealLastMsg,
-            originalMsg: msg
-        });
+     const splitRegex = /(<html>[\s\S]*?<\/html>|<details>[\s\S]*?<\/details>)/gi;
+    const parts = processedContent.split(splitRegex);
 
-        const remainingText = processedContent.replace(attachmentRegex, '').trim();
-        if (remainingText) {
-            processTextLines(remainingText);
+    parts.forEach(part => {
+        // 跳过空字符串
+        if (!part) return;
+
+        // 检查这一部分是否是 HTML/附件
+        if (/^(<html>[\s\S]*?<\/html>|<details>[\s\S]*?<\/details>)$/i.test(part)) {
+            this.queue.push({
+                name: msg.name || '系统',
+                text: '',
+                attachments: [part], // 将当前这个块作为附件放入
+                isAttachmentDisplay: true,
+                isLast: false,
+                options: [],
+                isRealLastMsg: isRealLastMsg,
+                originalMsg: msg
+            });
+        } else {
+            // 如果不是附件，则是普通文本（包含 cg| 指令），交给 processTextLines 处理
+            // processTextLines 内部会处理空行过滤和 cg 指令解析
+            processTextLines(part);
         }
-
-    } else {
-        processTextLines(processedContent);
-    }
+    });
 
     // --- 步骤3: 后处理 (设置最后一个块的属性) ---
     if (this.queue.length > 0) {
@@ -1797,7 +1815,13 @@ window.GameAPI.displayEventTag =  function(){
         .replace(/<shop_item>[\s\S]*?<\/shop_item>/gs, '')
         .replace(/<表现总结>[\s\S]*?<\/表现总结>/gs, '');
 
-
+    const htmlProtectionMap = {};
+    let htmlProtIndex = 0;
+    rawContent = rawContent.replace(/<html>[\s\S]*?<\/html>/gi, (match) => {
+        const key = `###HTML_PROTECTED_BLOCK_${htmlProtIndex++}###`;
+        htmlProtectionMap[key] = match;
+        return key;
+    });
             // 步骤1：提前处理引号、Markdown 并进行通用格式化
   rawContent = rawContent.replace(/<html>[\s\S]*?<\/html>|“/g, function(match) {
     if (match.startsWith('<html>')) return match;
@@ -1830,7 +1854,9 @@ window.GameAPI.displayEventTag =  function(){
         'display',
         { depth: -1 } // 阅读模式固定深度为 -1
     );
-
+    for (const key in htmlProtectionMap) {
+        rawContent = rawContent.replace(key, htmlProtectionMap[key]);
+    }
 
     // 4. 将格式化后的内容和选项交给 Manager 处理
     // 注意：这里不再需要 formatAsTavernRegexedString 和各种 replace，因为这些都在 enqueueMessage 内部处理了
