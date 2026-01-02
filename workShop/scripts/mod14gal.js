@@ -1073,15 +1073,26 @@
         // 4. 解析目标消息
         await window.worldHelper.createMessageBubble(targetMsg, 'chat', true);
 
-        // 5. 执行播放
+  // 5. 执行播放
         this.isTyping = false; // 解锁
 
         if (this.queue.length > 0) {
-            // 只保留最后一块
-            const finalChunk = this.queue.pop();
-            this.queue = [];
+            // --- 【修改开始】 ---
+            // 原逻辑：只保留最后一块，清空其余的 -> 导致回溯时中间层丢失
+            // 新逻辑：将中间的块直接推入历史栈，模拟“已读”状态
+
+            const finalChunk = this.queue.pop(); // 取出最后一块作为当前展示目标
+
+            // 将剩余在队列中的块（即中间过程块）全部转移到历史栈
+            while (this.queue.length > 0) {
+                const skippedChunk = this.queue.shift();
+                this.historyStack.push(skippedChunk);
+            }
+
+            // 将最后一块放回队列头部，准备播放
             this.queue.push(finalChunk);
             this.playNextChunk();
+            // --- 【修改结束】 ---
         } else {
             // 如果这条 AI 消息解析出来也是空的（比如纯指令），尝试递归找上一条？
             // 这里简单处理：提示无法跳过
@@ -1574,6 +1585,7 @@ playNextChunk() {
                         background: transparent; /* 透明背景 */
                         color: #fff; /* 白字 */
                         text-shadow: 0 1px 2px rgba(0,0,0,0.8); /* 增加文字阴影提高可读性 */
+                         white-space: pre-wrap; /* <--- 【在此处添加这一行】 --- */
                     }
                     img { max-width: 100%; height: auto; border-radius: 4px; }
                     details {
