@@ -167,6 +167,12 @@
                 overflow-y: auto;
             }
 
+            .mod14-text-content i, .mod14-text-content em {
+    color: var(--text-secondary-color);
+    font-style: italic;
+    position: relative;
+}
+
             /* --- 功能按钮区 --- */
 
             /* 附件闪烁图标 (左上角) */
