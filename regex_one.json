@@ -15073,7 +15073,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.13';
+let current_game_version = '3.5.14';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -31497,16 +31497,23 @@ function cleanParam(param) {
                 lines.push(setStatusLine);
                 continue;
             }
-            if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attribute.')) {
-                console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'player_attr.' 开头，转发到 set_attribute 处理`);
-                // 移除 'player_attr.' 前缀
-                const newFirstArg = "'" + firstArgClean.substring(12) + "'";
-                // 重新构造参数列表
-                const newArgs = [newFirstArg, ...args.slice(1)];
-                const setAttrLine = `set_attribute(${newArgs.join(', ')})`;
-                lines.push(setAttrLine);
-                continue;
-            }
+if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attribute.')) {
+    console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'player_attr.' 或 'attribute.' 开头，转发到 set_attribute 处理`);
+    
+    // 根据实际的前缀长度移除
+    let newFirstArg;
+    if (firstArgClean.startsWith('player_attr.')) {
+        newFirstArg = "'" + firstArgClean.substring('player_attr.'.length) + "'";
+    } else if (firstArgClean.startsWith('attribute.')) {
+        newFirstArg = "'" + firstArgClean.substring('attribute.'.length) + "'";
+    }
+    
+    // 重新构造参数列表
+    const newArgs = [newFirstArg, ...args.slice(1)];
+    const setAttrLine = `set_attribute(${newArgs.join(', ')})`;
+    lines.push(setAttrLine);
+    continue;
+}
         }
    
         // if (args.length < 2) {
@@ -37469,8 +37476,7 @@ function populateCharacterPage(playData, statData, assaData) {
         titleContainer.onclick = () => showTitleManager(assaData);
     }
 
-
-    // --- 左侧和中间面板 (基本不变) ---
+ 
     document.getElementById('char-display-name').textContent = SafeGetValue(charStat.name);
     //document.getElementById('char-display-status').textContent = SafeGetValue(charStat.status) || '正常';
     document.getElementById('char-display-prestige').textContent = SafeGetValue(charStat.Cross_world_prestige);
