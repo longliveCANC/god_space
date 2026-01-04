@@ -686,24 +686,35 @@ this.scanAndSyncExpressions();
                 </div>
             `;
        this.closeAttachmentModal = () => {
-    if (!this.ui.modal || this.ui.modal.style.display === 'none') return;
+                if (!this.ui.modal || this.ui.modal.style.display === 'none') return;
 
-    // 添加退场动画类
-    this.ui.modal.classList.add('closing');
+                // 添加退场动画类
+                this.ui.modal.classList.add('closing');
 
-    // 等待动画结束后隐藏
-    setTimeout(() => {
-        this.ui.modal.style.display = 'none';
-        this.ui.modal.classList.remove('closing');
-        this.isShowingModal = false;
+                setTimeout(() => {
+                    this.ui.modal.style.display = 'none';
+                    this.ui.modal.classList.remove('closing');
+                    this.isShowingModal = false;
 
-        // 检查是否需要自动播放下一个
-        if (this.ui.modal.dataset.isAutoPlayFlow === 'true') {
-            this.ui.modal.dataset.isAutoPlayFlow = 'false';
-            setTimeout(() => this.playNextChunk(), 100);
-        }
-    }, 300); // 对应 CSS 动画时长
-};
+                    // ============================================================
+                    // 【修改】移除 queue.length === 0 的限制
+                    // ============================================================
+                    // 只要有挂起的选项(pendingOptions) 或者 选项层里已经有渲染好的按钮(children.length > 0)
+                    // 关闭模态框时都应该尝试显示选项层
+                    const hasRenderedOptions = this.ui.optionsLayer && this.ui.optionsLayer.children.length > 0;
+
+                    if (this.pendingOptions || hasRenderedOptions) {
+                        this.toggleOptionsLayer(true);
+                    }
+                    // ============================================================
+
+                    // 检查是否需要自动播放下一个
+                    if (this.ui.modal.dataset.isAutoPlayFlow === 'true') {
+                        this.ui.modal.dataset.isAutoPlayFlow = 'false';
+                        setTimeout(() => this.playNextChunk(), 100);
+                    }
+                }, 300); // 对应 CSS 动画时长
+            };
 
 // 绑定点击事件
 modal.onclick = (e) => {
@@ -1817,7 +1828,7 @@ window.GameAPI.displayEventTag =  function(){
 
     const htmlProtectionMap = {};
     let htmlProtIndex = 0;
-    rawContent = rawContent.replace(/<html>[\s\S]*?<\/html>/gi, (match) => {
+   rawContent = rawContent.replace(/<html>[\s\S]*?<\/html>|<details[\s\S]*?<\/details>/gi, (match) => {
         const key = `###HTML_PROTECTED_BLOCK_${htmlProtIndex++}###`;
         htmlProtectionMap[key] = match;
         return key;
