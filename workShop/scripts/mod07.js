@@ -778,7 +778,7 @@
         console.error('[MOD07] 自动导入模板时出错:', error);
     }
 }
-    function init() {
+  function init() {
         const observer = new MutationObserver(() => {
             const settingsModal = document.getElementById('settings-modal');
             if (settingsModal && !document.getElementById('mod07-entry-btn')) {
@@ -787,7 +787,7 @@
         });
         observer.observe(document.body, { childList: true, subtree: true });
 
-  // 尝试立即注入按钮
+        // 尝试立即注入按钮
         const settingsModal = document.getElementById('settings-modal');
         if (settingsModal) injectButton(settingsModal);
 
@@ -796,9 +796,18 @@
             const savedRules = localStorage.getItem(RULES_STORAGE_KEY);
             if (savedRules) {
                 currentLinkageRules = JSON.parse(savedRules);
-                // 延迟一点执行以确保 GameAPI 数据就绪
-                setTimeout(() => injectCustomLogic(), 1000);
-                console.log('[MOD07] 自动加载联动规则成功');
+
+                // =========== 修改开始 ===========
+                // 原代码: setTimeout(() => injectCustomLogic(), 1000);
+                // 修改后: 使用定时器轮询，直到 worldHelper 出现才注入
+                const waitTimer = setInterval(() => {
+                    if (window.worldHelper) {
+                        clearInterval(waitTimer);
+                        injectCustomLogic();
+                        console.log('[MOD07] 自动加载联动规则成功');
+                    }
+                }, 500); // 每0.5秒检查一次
+                // =========== 修改结束 ===========
             }
         } catch (e) { console.error('[MOD07] 自动加载规则失败', e); }
     }
@@ -1192,14 +1201,18 @@ container.querySelector('#m7-editor-area').onclick = () => {
             parseRuleToTokens(rule);
             renderTokens();
         }
-        function parseRuleToTokens(rule) { /* ...原代码... */
+        function parseRuleToTokens(rule) {  
              tokens = [];
             if (!rule) return;
             const regex = /\{this\}|\{([^}]+)\}|([0-9]+(\.[0-9]+)?)|(Math\.[a-z]+\()|([+\-*/(),])/g;
             let match;
             while ((match = regex.exec(rule)) !== null) {
                 if (match[0] === '{this}') {
-                    tokens.push({ type: 'self', val: 'this', label: '旧值' });
+                       tokens.push({
+                        type: 'self',
+                        val: 'this',
+                        label: activeTarget ? (activeTarget.name + '(旧)') : '旧值'
+                    });
                 } else if (match[1]) {
                     const path = match[1];
                     const src = sources.find(s => s.path === path);
@@ -1823,7 +1836,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
                 }
             });
 
-            // 传奇属性逻辑保持不变...
+            
             code += `
     try {
         if (data.基础属性) {
