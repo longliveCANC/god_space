@@ -1476,137 +1476,144 @@ playNextChunk() {
                 // 旁白不清除立绘
             }
         }
- async loadCG(displayName, expression = null) {
-    // 【关键修正】将 assaData 的获取移入函数内部，确保每次都获取最新数据
-    const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
-    const cgImg = this.ui.cgImg;
+   async loadCG(displayName, expression = null) {
+            // 1. 获取数据源
+            const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
+            const cgImg = this.ui.cgImg;
 
-    // 1. 数据源检查
-    if (!assaData || !assaData.img_map) {
-        console.log('[Nova][CG-LOG] 数据源(assaData/img_map) 尚未准备好。');
-        // 如果没有数据源，也应该隐藏立绘
-        this.activeCG = { name: null, imgId: null };
-        cgImg.style.opacity = '0';
-        return;
-    }
-        // 【修改开始】构建资源 ID 逻辑
-        // 1. 获取基础映射 (例如 "不死川实弥" -> "sm")
-        const baseMapId = displayName ? assaData.img_map[displayName] : null;
+            // 2. 【关键修复】先检查数据源是否存在
+            // 必须先确保 img_map 存在，才能进行后续的 ID 计算，否则会报 "reading '玄弥' of undefined"
+            if (!assaData || !assaData.img_map) {
+                // console.log('[Nova][CG-LOG] 数据源尚未准备好，跳过立绘加载。');
+                this.activeCG = { name: null, imgId: null };
+                cgImg.style.opacity = '0';
+                return;
+            }
 
-        // 2. 构建最终 ID
-        // 如果有差分，变成 "sm-哭泣"；如果没有，保持 "sm"
-        let finalImageId = baseMapId;
-        if (baseMapId && expression) {
-            finalImageId = `${baseMapId}-${expression}`;
-        }
+            // 3. 计算资源 ID (此时已确保 img_map 存在，安全)
+            // 获取基础映射 (例如 "玄弥" -> "xm")
+            const baseMapId = displayName ? assaData.img_map[displayName] : null;
 
-        const imageNameStr = finalImageId ? String(finalImageId) : null;
-        // 【修改结束】
+            // 如果这个角色在映射表中不存在，直接隐藏并返回
+            if (!baseMapId) {
+                // console.log(`[Nova][CG-LOG] 角色 '${displayName}' 未配置立绘映射。`);
+                cgImg.style.opacity = '0';
+                return;
+            }
 
-        // 3. 核心判断：检查请求的资源是否与当前激活的资源相同
-        // 注意：这里比较的是最终计算出的 imageNameStr (即 sm-哭泣)
-        if (this.activeCG.name === displayName && this.activeCG.imgId === imageNameStr) {
-            return;
-        }
+            // 构建最终 ID (处理差分)
+            let finalImageId = baseMapId;
+            if (baseMapId && expression) {
+                finalImageId = `${baseMapId}-${expression}`;
+            }
+            const imageNameStr = finalImageId ? String(finalImageId) : null;
 
-        // 4. 更新激活状态
-        this.activeCG = { name: displayName, imgId: imageNameStr };
-        const currentRequest = { ...this.activeCG };
+            // 4. 【新增】检查内存缓存
+            // 确保缓存容器已初始化
+            if (!this.processedImageCache) this.processedImageCache = {};
 
-    // 如果没有有效的资源ID，直接隐藏并返回
-    if (!imageNameStr) {
-        cgImg.style.opacity = '0';
-        console.log(`[Nova][CG-LOG] 角色 '${displayName}' 无有效立绘，已隐藏。`);
-        return;
-    }
+            if (imageNameStr && this.processedImageCache[imageNameStr]) {
+                // 更新当前状态
+                this.activeCG = { name: displayName, imgId: imageNameStr };
+                console.log(`[Nova][CG-LOG] ⚡ 内存缓存命中: ${imageNameStr}`);
 
-    console.log(`[Nova][CG-LOG] 请求加载: '${displayName}' (ID: ${imageNameStr})`);
+                // 直接使用缓存的 URL
+                cgImg.src = this.processedImageCache[imageNameStr];
+                cgImg.style.opacity = '1';
+                return;
+            }
 
-    // 切换时先隐藏
-    cgImg.style.opacity = '0';
+            // 5. 检查是否需要重新加载 (防止重复请求同一张图)
+            if (this.activeCG.name === displayName && this.activeCG.imgId === imageNameStr) {
+                return;
+            }
 
-    try {
-        let imageBlob = null;
+            // 6. 更新激活状态，准备开始异步加载
+            this.activeCG = { name: displayName, imgId: imageNameStr };
+            const currentRequest = { ...this.activeCG };
 
-        // 5. 缓存检查 (本地库优先)
-        if (window.imageDB) {
+            console.log(`[Nova][CG-LOG] 请求加载: '${displayName}' (ID: ${imageNameStr})`);
+            cgImg.style.opacity = '0'; // 加载期间先隐藏
+
             try {
-                imageBlob = await window.imageDB.get('CustomNpcs', imageNameStr);
-                if (imageBlob) console.log(`[Nova][CG-LOG] ✨ 本地库命中: ${imageNameStr}`);
-            } catch (e) { console.warn('[Nova][CG-LOG] 本地库读取异常', e); }
-        }
+                let imageBlob = null;
 
-        // 6. 远程资源获取 (如果本地没有)
-        if (!imageBlob) {
-            const remoteMap = window.GameAPI.npcImageMap;
-            if (remoteMap && remoteMap[imageNameStr]) {
-                const imageUrl = remoteMap[imageNameStr];
-                console.log(`[Nova][CG-LOG] 发现远程URL: ${imageUrl}`);
-
-                // 6.1 检查远程缓存
+                // 7. 本地库检查 (CustomNpcs)
                 if (window.imageDB) {
                     try {
-                        imageBlob = await window.imageDB.get('RemoteCache', imageUrl);
-                        if (imageBlob) console.log(`[Nova][CG-LOG] 远程缓存命中: ${imageUrl}`);
-                    } catch (e) { console.warn('[Nova][CG-LOG] 远程缓存读取失败'); }
+                        imageBlob = await window.imageDB.get('CustomNpcs', imageNameStr);
+                        if (imageBlob) console.log(`[Nova][CG-LOG] ✨ 本地库命中: ${imageNameStr}`);
+                    } catch (e) { console.warn('[Nova][CG-LOG] 本地库读取异常', e); }
                 }
 
-                // 6.2 执行下载 (如果缓存没有)
+                // 8. 远程资源获取
                 if (!imageBlob) {
-                    console.log(`[Nova][CG-LOG] 缓存未命中，开始下载...`);
-                    const res = await fetch(imageUrl);
-                    if (res.ok) {
-                        const originalBlob = await res.blob();
-                        imageBlob = new Blob([originalBlob], { type: 'image/png' });
+                    const remoteMap = window.GameAPI.npcImageMap;
+                    if (remoteMap && remoteMap[imageNameStr]) {
+                        const imageUrl = remoteMap[imageNameStr];
+
+                        // 8.1 远程缓存检查
                         if (window.imageDB) {
-                            await window.imageDB.set('RemoteCache', imageUrl, imageBlob);
-                            console.log(`[Nova][CG-LOG] 下载成功并存入缓存`);
+                            try {
+                                imageBlob = await window.imageDB.get('RemoteCache', imageUrl);
+                            } catch (e) {}
                         }
-                    } else {
-                        console.error(`[Nova][CG-LOG] 下载失败: ${res.status}`);
+
+                        // 8.2 下载
+                        if (!imageBlob) {
+                            const res = await fetch(imageUrl);
+                            if (res.ok) {
+                                const originalBlob = await res.blob();
+                                imageBlob = new Blob([originalBlob], { type: 'image/png' });
+                                if (window.imageDB) {
+                                    await window.imageDB.set('RemoteCache', imageUrl, imageBlob);
+                                }
+                            }
+                        }
                     }
                 }
-            } else {
-                console.log(`[Nova][CG-LOG] 远程映射表中无此Key: ${imageNameStr}`);
+
+                // 9. 图片处理 (去白边/像素化) 并存入内存缓存
+                if (imageBlob) {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(imageBlob);
+                    reader.onloadend = async () => {
+                        // 检查请求是否已过期 (用户可能点得很快，已经切到下一句了)
+                        if (this.activeCG.name !== currentRequest.name || this.activeCG.imgId !== currentRequest.imgId) {
+                            return;
+                        }
+
+                        const stableImageUrl = reader.result;
+                        try {
+                            const targetH = window.innerHeight * 0.85;
+                            // 调用去白边/像素化处理
+                            const finalUrl = window.createPixelatedCharaImage
+                                ? await window.createPixelatedCharaImage(stableImageUrl, targetH, 1, false)
+                                : stableImageUrl;
+
+                            // 【关键】处理完成后，存入内存缓存
+                            if (imageNameStr) {
+                                this.processedImageCache[imageNameStr] = finalUrl;
+                            }
+
+                            cgImg.src = finalUrl;
+                            cgImg.onload = () => {
+                                cgImg.style.opacity = '1';
+                            };
+                        } catch (pixelError) {
+                            console.error(`[Nova][CG-LOG] 图片处理失败:`, pixelError);
+                            cgImg.src = stableImageUrl;
+                            cgImg.style.opacity = '1';
+                        }
+                    };
+                } else {
+                    // 没找到图片，保持隐藏
+                }
+
+            } catch (error) {
+                console.error(`[Nova][CG-LOG] 加载立绘异常:`, error);
             }
         }
-
-        // 7. 图片处理与显示
-        if (imageBlob) {
-            const reader = new FileReader();
-            reader.readAsDataURL(imageBlob);
-            reader.onloadend = async () => {
-                if (this.activeCG.name !== currentRequest.name || this.activeCG.imgId !== currentRequest.imgId) {
-                    console.log(`[Nova][CG-LOG] 渲染被中断：已有新的立绘请求。`);
-                    return;
-                }
-
-                const stableImageUrl = reader.result;
-                try {
-                    const targetH = window.innerHeight * 0.85;
-                    const finalUrl = window.createPixelatedCharaImage
-                        ? await window.createPixelatedCharaImage(stableImageUrl, targetH, 1, false)
-                        : stableImageUrl;
-
-                    cgImg.src = finalUrl;
-                    cgImg.onload = () => {
-                        cgImg.style.opacity = '1';
-                        console.log(`[Nova][CG-LOG] ✅ 立绘渲染成功: ${displayName}`);
-                    };
-                } catch (pixelError) {
-                    console.error(`[Nova][CG-LOG] 图片处理失败:`, pixelError);
-                    cgImg.src = stableImageUrl;
-                    cgImg.style.opacity = '1';
-                }
-            };
-        } else {
-            console.error(`[Nova][CG-LOG] 流程结束，未能获取到 '${displayName}' 的任何图片数据。`);
-        }
-
-    } catch (error) {
-        console.error(`[Nova][CG-LOG] 加载立绘时发生未捕获异常:`, error);
-    }
-}   
  
         // --- 选项渲染 (移植逻辑) ---
         renderOptions(options) {
