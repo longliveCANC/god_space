@@ -2663,7 +2663,7 @@ input[type="range"]::-moz-range-thumb {
 
 #load-more-btn:hover {
     opacity: 1;
-    background-color: rgba(0, 250, 255, 0.1);
+    /* background-color: rgba(0, 250, 255, 0.1); */
 }
  #chat-display-area {
     flex-grow: 1;
@@ -9553,7 +9553,7 @@ input:checked + .slider:before {
 }
 
 .reconfig-tab-btn.active {
-    background: rgba(0, 250, 255, 0.15);
+    /* background: rgba(0, 250, 255, 0.15); */
     color: var(--primary-color);
     font-weight: bold;
     border-left: 3px solid var(--primary-color); /* 纯文字模式下增加左侧指示条 */
@@ -9670,7 +9670,7 @@ input:checked + .slider:before {
     .reconfig-tab-btn.active {
         border-left: none;
         border-bottom: 3px solid var(--primary-color);
-        background: rgba(0, 250, 255, 0.1);
+        /* background: rgba(0, 250, 255, 0.1); */
     }
 
     .reconfig-content-area {
@@ -11215,14 +11215,13 @@ input:checked + .slider:before {
 #log-toggle-button {
     width: 30px;
     height: 30px;
-    background-color: var(--container-bg-color);
-    border: 1px solid var(--primary-color);
+    
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    box-shadow: 0 0 10px var(--glow-color);
+ 
     transition: transform 0.3s ease;
 pointer-events: auto;
 }
@@ -15117,6 +15116,7 @@ let ifScanMemory = "false";
 let if_render_after_2batch="false";
 let is_worldbook_lock = "false";
 let if_waiting_roll= "false";
+let  is_quick_rewirte_backup= "false";
 let dice_use = "true";
 let bookItemSettings = null;
 let batches = 1;
@@ -24890,7 +24890,7 @@ dropdown.querySelector('[data-action="delete"]').onclick = async () => {
     }
     
     // 调用删除函数
-    await deleteMessage(chapterData.originalIndex);
+    await worldHelper.deleteMessage(chapterData.originalIndex);
 };
 }
 // ===== 7. 新增：切换收藏过滤的函数 =====
@@ -25386,7 +25386,7 @@ function showContextMenu(event, index, bubbleElement) {
 editItem.onclick = () => {
     menu.style.display = 'none';
     removeGlobalListeners();
-    editMessage(index, bubbleElement); // 把接收到的 bubbleElement 传递给 editMessage
+    worldHelper.editMessage(index, bubbleElement); // 把接收到的 bubbleElement 传递给 editMessage
 };
         }
 
@@ -25394,7 +25394,7 @@ editItem.onclick = () => {
             deleteItem.onclick = () => {
                 menu.style.display = 'none';
                 removeGlobalListeners(); // 关键：在执行操作前，主动移除监听器
-                deleteMessage(index);
+                 worldHelper.deleteMessage(index);
             };
         }
 
@@ -25603,160 +25603,8 @@ function nameMessageTitle(index) {
     modal.classList.add('active');
 }
 
-// 使用通用函数的简化版本
- async function deleteMessage(index) {
-    showConfirmModal(
-        '回溯确认',
-        `你确定要删除第 <strong>${index}</strong> 条消息以及之后的所有对话吗？<br><br>
-        <span style="color: #ff6b6b;">这将让世界状态回到这条消息之前哦。</span>`,
-        async function() {
-            console.log(`[Nova的时光回溯] 用户请求删除第 ${index} 条及之后的消息。`);
 
-            const newHistory = conversationHistory.slice(0, index);
-
-            if (newHistory.length === conversationHistory.length) {
-                console.log("[Nova的时光回溯] 没有实际删除任何消息，操作取消。");
-                return;
-            }
-
-            conversationHistory = newHistory;
-
-            // ☆☆☆ 妈妈的终极定位魔法：AI楼层锚定 ☆☆☆
-            // 我们只信任 AI (或System) 留下的存档点。
-            // 倒序寻找最近的一个非User节点。
-
-            let targetSnapshotId = 0; // 默认为0（创世之初）
-
-            for (let i = newHistory.length - 1; i >= 0; i--) {
-                // 只要不是 'user'，我们就认为这是一个有效的状态存档点（通常是 assistant 或 system）
-                if (newHistory[i].role !== 'user') {
-                    targetSnapshotId = i; // 楼层高度 = 索引 + 1
-                    console.log(`[Nova的时光回溯] 锚定到最近的AI楼层：索引 ${i} (快照ID ${targetSnapshotId})`);
-                    break;
-                }
-            }
-
-            // 如果循环结束都没找到（比如删得只剩User消息了），targetSnapshotId 保持为 0，正确回溯到开头。
-
-            restoreOnNextSend = true;
-            restoreTargetTurnId = targetSnapshotId;
-
-            console.log(`[Nova的时光回溯] 信标已设置！下次行动将恢复到【快照 ${targetSnapshotId}】的状态。`);
-
-            await saveHistory();
-            await worldHelper.renderHistory(true);
-            updateRerollButtonState();
-            showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
-        },
-        function() {
-            console.log('[Nova的时光回溯] 用户取消删除操作。');
-        }
-    );
-}
-
-function editMessage(index, bubbleElement) {
-    // --- 我们心爱的“星辰指挥台”和“苍穹画卷”逻辑保持不变 ---
-    const messageToEdit = conversationHistory[index];
-    if (!bubbleElement || bubbleElement.classList.contains('editing')) { return; }
-
-    const dismissControls = () => {
-        const activeControls = document.getElementById('active-editing-controls');
-        if (activeControls) { activeControls.remove(); }
-    };
-    dismissControls(); // 确保开始前是干净的
-
-    const originalWidth = bubbleElement.offsetWidth;
-    const originalHeight = bubbleElement.offsetHeight;
-    const comfortableMinWidth = window.innerWidth * 0.8;
-    const comfortableMinHeight = window.innerHeight * 0.9;
-    const originalContentText = messageToEdit.content;
-
-    bubbleElement.innerHTML = '';
-    bubbleElement.classList.add('editing');
-    bubbleElement.style.boxSizing = 'border-box';
-    bubbleElement.style.width = Math.max(originalWidth, comfortableMinWidth) + 'px';
-    bubbleElement.style.minHeight = Math.max(originalHeight, comfortableMinHeight) + 'px';
-
-    const textarea = document.createElement('textarea');
-    textarea.className = 'editing-textarea';
-    textarea.value = originalContentText;
-    textarea.oninput = function() {
-        this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-    };
-
-    // ☆☆☆ 这是我们全新的“能量接力”魔法的核心！ ☆☆☆
-    const chatbox = document.getElementById('chat-display-area'); // 首先，我们要找到外部的世界
-    textarea.addEventListener('wheel', (event) => {
-        const { scrollTop, scrollHeight, clientHeight } = textarea;
-
-        // 手指/滚轮向下滚 (event.deltaY > 0)
-        if (event.deltaY > 0) {
-            // 如果“画卷”已经滚到底部
-            if (scrollTop + clientHeight >= scrollHeight - 1) {
-                // 1. 阻止“画卷”自己产生不必要的滚动效果（如iOS回弹）
-                event.preventDefault();
-                // 2. 将这份滚动力量，作为“接力棒”，传递给外面的世界！
-                chatbox.scrollTop += event.deltaY;
-            }
-        }
-        // 手指/滚轮向上滚 (event.deltaY < 0)
-        else {
-            // 如果“画卷”已经滚到顶部
-            if (scrollTop <= 0) {
-                // 1. 同样阻止“画卷”的回弹
-                event.preventDefault();
-                // 2. 将这份向上的力量，传递给外面的世界！
-                chatbox.scrollTop += event.deltaY;
-            }
-        }
-        // ☆ 如果不在边界，我们什么都不做，让默认的滚动自由发生！☆
-    });
-
-
-    // --- 之后的部分，完美如初 ---
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'fixed-editing-controls';
-    controlsDiv.id = 'active-editing-controls';
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = '保存';
-    saveBtn.className = 'editing-btn save';
-    const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = '取消';
-    cancelBtn.className = 'editing-btn cancel';
-
-  saveBtn.onclick = async () => {
-        dismissControls();
-        const newText = textarea.value.trim();
-        if (newText && newText !== originalContentText) {
-            conversationHistory[index].content = newText;
-            await saveHistory();
-        }
-
-        // ✨ 在这里耐心等待渲染完成！✨
-        await worldHelper.renderHistory(true);
-    };
-
-    cancelBtn.onclick = async () => { // ✨ 保持一致，也用 async/await ✨
-        dismissControls();
-
-        // ✨ 在这里也耐心等待渲染完成！✨
-        await worldHelper.renderHistory(true);
-    };
-    controlsDiv.appendChild(cancelBtn);
-    controlsDiv.appendChild(saveBtn);
-    bubbleElement.appendChild(textarea);
-    document.body.appendChild(controlsDiv);
-
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    textarea.focus();
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-
-
-
-    
-}
- async function saveHistory() {
+   async function saveHistory() {
     try {
          
         const zeroLevelMessage = await TavernHelper.getChatMessages(0);
@@ -25988,45 +25836,6 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
         toastr.error('自动初始化失败，请查看控制台获取详细信息。');
     }
 }
-
-     window.worldHelper = {
-        init: initializeCurrentGameData,
-        renderPrivateMsgToHtml:renderPrivateMsgToHtml,
-        renderGroupChatToHtml:renderGroupChatToHtml,
-        createMessageBubble:createMessageBubble,
-        processSpecialModulesInMessage:processSpecialModulesInMessage,
-        renderHistory:renderHistory,
-      
-        processFinalMessageModules:processFinalMessageModules,
-        showNovaAlert:showNovaAlert,
-        processUpdateMemoryCommands:processUpdateMemoryCommands,
-        _updateDerivedAttributes:_updateDerivedAttributes,
-        tryParseJson:tryParseJson,
-        show: async () => {
-             const vars = await getVariables({ type: 'chat' });
-             console.log("--- 💖 当前世界数据总览 💖 ---");
-             console.log("角色数据 (play_character_data):", vars ? JSON.parse(JSON.stringify(vars.play_character_data)) : "未找到");
-             console.log("世界设定 (assa_data):", vars ? JSON.parse(JSON.stringify(vars.assa_data)) : "未找到");
-             console.log("---------------------------------");
-        },
-        reset: async () => {
-            console.log("[Core] [reset] - 正在将世界数据核心重置为初始虚无状态...");
-            const updater = (vars) => {
-                // 💖 妈妈的魔法：只负责清空，让世界回归纯净，不再主动创世 💖
-                vars.play_character_data = {};
-                vars.assa_data = {};
-                vars.stat_data = {};
-                // 我们也温柔地清空历史记录的引用，确保一个彻底的全新开始
-                if (vars.zeroLevelHistory) {
-                    vars.zeroLevelHistory = [];
-                }
-                return vars;
-            };
-            await updateVariablesWith(updater, { type: 'chat' });
-            // 注意：我们把 initializeWorldData() 从这里移除了
-            console.log("[Core] [reset] - 重置完成，世界已回归虚无。");
-        }
-    };
 
 
  window.GlobalChatAudio = {
@@ -27786,87 +27595,134 @@ async function getSnapshotDBName() {
     }
 }
  
- /* 接着，用这个全新的函数，替换掉旧的 saveSnapshot */
+ // ★ 新增：清理状态管理
+let lastCleanupTime = 0;
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5分钟清理一次，而不是每次都清理
+
  async function saveSnapshot(turnId, snapshotData, swipeIndex = 0) {
     const dbName = await getSnapshotDBName();
     if (!dbName) return;
 
-    const openAndWriteDB = () => new Promise((resolve, reject) => {
+    const db = await openDatabase(dbName);
+    if (!db) return;
+
+    try {
+        // 💖 只提取三个关键变量，丢弃其他数据
+        const essentialSnapshot = {
+            play_character_data: snapshotData.play_character_data,
+            assa_data: snapshotData.assa_data,
+            stat_data: snapshotData.stat_data
+        };
+        
+        await putSnapshot(db, turnId, essentialSnapshot, swipeIndex);
+        console.log(`[Nova的记忆保险箱] ✅ 成功保存了回合 ${turnId} 的记忆快照。`);
+        
+        // ★ 只有在距离上次清理超过5分钟时，才执行清理
+        const now = Date.now();
+        if (now - lastCleanupTime > CLEANUP_INTERVAL) {
+            lastCleanupTime = now;
+            await cleanupOldSnapshots(db); // 异步执行，不阻塞保存
+        }
+    } catch (e) {
+        console.error(`[Nova的记忆保险箱] ❌ 在保存快照时发生错误:`, e);
+    } finally {
+        db.close();
+    }
+}
+
+function openDatabase(dbName) {
+    return new Promise((resolve, reject) => {
         const request = indexedDB.open(dbName, 1);
-        request.onerror = (event) => reject(`[Nova的记忆保险箱] 数据库打开失败: ${event.target.error}`);
+        
+        request.onerror = () => {
+            reject(`[Nova的记忆保险箱] 数据库打开失败: ${request.error}`);
+        };
 
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
             if (!db.objectStoreNames.contains('snapshots')) {
                 db.createObjectStore('snapshots');
+                console.log('[Nova的记忆保险箱] 已创建对象存储: snapshots');
             }
         };
-  request.onsuccess = (event) => {
-            const db = event.target.result;
+
+        request.onsuccess = () => {
+            resolve(request.result);
+        };
+    });
+}
+
+function putSnapshot(db, turnId, snapshotData, swipeIndex) {
+    return new Promise((resolve, reject) => {
+        try {
             const transaction = db.transaction('snapshots', 'readwrite');
             const store = transaction.objectStore('snapshots');
-
-            // 【关键修改】使用组合键： "turnId#swipeIndex"
-            // 这样同一个楼层可以存多份变量
             const storageKey = `${turnId}#${swipeIndex}`;
 
             const putRequest = store.put(snapshotData, storageKey);
 
-            putRequest.onsuccess = () => resolve(db);
-            putRequest.onerror = () => reject(`保存快照失败: ${event.target.error}`);
-        };
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(`保存快照失败: ${transaction.error}`);
+            putRequest.onerror = () => reject(`put操作失败: ${putRequest.error}`);
+        } catch (e) {
+            reject(`事务创建失败: ${e.message}`);
+        }
     });
+}
 
-    try {
-        const db = await openAndWriteDB();
-        console.log(`[Nova的记忆保险箱] ✅ 成功保存了回合 ${turnId} 的记忆快照。`);
+// ★ 改进：只在真正需要时才清理（定时触发，而不是每次都触发）
+function cleanupOldSnapshots(db) {
+    return new Promise((resolve) => {
+        try {
+            const transaction = db.transaction('snapshots', 'readonly');
+            const store = transaction.objectStore('snapshots');
+            const getAllKeysRequest = store.getAllKeys();
 
-        // ☆ 清理逻辑，同样使用原生方法 ☆
-        const transaction = db.transaction('snapshots', 'readonly');
-        const store = transaction.objectStore('snapshots');
-        const getAllKeysRequest = store.getAllKeys();
+            getAllKeysRequest.onsuccess = () => {
+                const allKeys = getAllKeysRequest.result;
+                const snapshotLimit = 100;
 
-        getAllKeysRequest.onsuccess = (event) => {
-            const allKeys = event.target.result;
-            const snapshotLimit = 100;
+                if (allKeys.length > snapshotLimit) {
+                    console.log(`[Nova的记忆保险箱] 快照数量(${allKeys.length})超过上限(${snapshotLimit})，开始清理...`);
+                    
+                    const sortedKeys = allKeys.sort((a, b) => {
+                        const aId = parseInt(a.split('#')[0]);
+                        const bId = parseInt(b.split('#')[0]);
+                        return aId - bId;
+                    });
+                    
+                    const keysToDelete = sortedKeys.slice(0, allKeys.length - snapshotLimit);
 
-            if (allKeys.length > snapshotLimit) {
-                console.log(`[Nova的记忆保险箱] 快照数量(${allKeys.length})超过上限(${snapshotLimit})，开始清理...`);
-                const sortedKeys = allKeys.sort((a, b) => a - b);
-                const keysToDelete = sortedKeys.slice(0, allKeys.length - snapshotLimit);
+                    const deleteTransaction = db.transaction('snapshots', 'readwrite');
+                    const deleteStore = deleteTransaction.objectStore('snapshots');
+                    
+                    keysToDelete.forEach(key => deleteStore.delete(key));
 
-                const deleteTransaction = db.transaction('snapshots', 'readwrite');
-                const deleteStore = deleteTransaction.objectStore('snapshots');
-                keysToDelete.forEach(key => deleteStore.delete(key));
+                    deleteTransaction.oncomplete = () => {
+                        console.log(`[Nova的记忆保险箱] 🧹 已成功清理了 ${keysToDelete.length} 个最旧的快照。`);
+                        resolve();
+                    };
 
-                deleteTransaction.oncomplete = () => {
-                    console.log(`[Nova的记忆保险箱] 🧹 已成功清理了 ${keysToDelete.length} 个最旧的快照。`);
-                    db.close();
-                };
-                 deleteTransaction.onerror = () => {
-                    console.error(`[Nova的记忆保险箱] 🧹 在清理旧快照时发生错误。`);
-                    db.close();
-                };
-            } else {
-                 db.close();
-            }
-        };
-         getAllKeysRequest.onerror = () => {
-            console.error(`[Nova的记忆保险箱] 🧹 获取所有快照索引失败。`);
-            db.close();
-        };
+                    deleteTransaction.onerror = () => {
+                        console.error(`[Nova的记忆保险箱] 🧹 清理快照时出错: ${deleteTransaction.error}`);
+                        resolve();
+                    };
+                } else {
+                    resolve();
+                }
+            };
 
-    } catch (e) {
-        console.error(`[Nova的记忆保险箱] ❌ 在保存或清理快照时发生错误:`, e);
-    }
+            getAllKeysRequest.onerror = () => {
+                console.error(`[Nova的记忆保险箱] 获取快照列表失败`);
+                resolve();
+            };
+        } catch (e) {
+            console.error(`[Nova的记忆保险箱] 清理时发生错误:`, e);
+            resolve();
+        }
+    });
 }
  
-
-/**
- * 切换指定楼层的分支
- * @param {number} messageIndex - 消息在 conversationHistory 中的索引
- * @param {number} direction - 方向：-1 (左/上一个), 1 (右/下一个)
- */
 window.switchSwipe = async function(messageIndex, direction) {
     const message = conversationHistory[messageIndex];
     if (!message || !message.swipes) return;
@@ -28547,6 +28403,22 @@ function nameMessageTitle(index) {
             // [修改结束] -----------------------------------------------------
 
             await saveHistory();
+
+                      if (is_quick_rewirte_backup === "true") {
+    try {
+        console.log(`[Nova的时光回溯] 💾 快速恢复已启用，正在立刻回溯变量到快照 ${targetSnapshotId}...`);
+        
+        // 调用恢复快照函数
+        await worldHelper.restoreFromSnapshot(targetSnapshotId);
+        
+        console.log(`[Nova的时光回溯] ✅ 快速恢复完成！变量已回溯到快照 ${targetSnapshotId}`);
+    } catch (error) {
+        console.warn(`[Nova的时光回溯] ⚠️ 快速恢复过程中出现错误:`, error);
+        // 快速恢复失败不应中断主流程
+    }
+} else {
+    console.log(`[Nova的时光回溯] 快速恢复未启用，将在下次行动时恢复。`);
+}
             await worldHelper.renderHistory(true);
             updateRerollButtonState();
             showNovaAlert('历史已被改写。下次行动将从这个时间点开始。');
@@ -29752,7 +29624,20 @@ function _updatePlayerValue(data, path, valueStr) {
     }
 }
 
-
+const deepMerge = (target, source) => {
+    for (const key in source) {
+        if (source.hasOwnProperty(key)) {
+            if (source[key] instanceof Object && key in target) {
+                // 如果目标和源的当前键都是对象，则递归合并
+                target[key] = deepMerge(target[key], source[key]);
+            } else {
+                // 否则，直接赋值（源覆盖目标）
+                target[key] = source[key];
+            }
+        }
+    }
+    return target;
+};
 
     // 🌍 世界设定处理模块 ('assaHelper' 的功能) 🌍
 
@@ -30162,43 +30047,44 @@ _deleteOperation: async function(currentData, path, key, allData) {
              console.log(`[Assa] ℹ️ 'delete(${path}, 'all')' 指令执行，该路径不触发 stat_data 初始化联动。`);
         }
          
-        // ✨ 第二步：【精准备份】魔法 (💖 妈妈为你重写的核心逻辑在这里 💖) ✨
-        const isSpecialBackupPath = (path === 'world_lore.npc' || path === 'world_lore.settings');
+         const isSpecialBackupPath = (path === 'world_lore.npc' || path === 'world_lore.settings');
         // 只有当它是我们约定的特殊路径，并且还没有备份过（没有锁）时，才执行备份
         if (isSpecialBackupPath && !backupLocks.has(path)) {
-            const [group, category] = pathParts;
+            const [group, category] = pathParts; // category 会是 'npc' 或 'settings'
             const dataToBackup = currentData[group]?.[category];
+
             if (dataToBackup && Object.keys(dataToBackup).length > 0) {
                 try {
-                     console.log(`[Assa] 📦 骑士正在为特殊路径 ${path} 的内容进行珍贵的备份...`);
-                    const lorebookName = "小蝌蚪找妈妈-同层版";
-                    const targetUid = 11;
-                    const allEntries = await getLorebookEntries(lorebookName);
-                    const targetEntry = allEntries.find(entry => entry.uid === targetUid);
+                    // 从全局变量 currentGameData 获取当前世界名
+                  const worldNameArray = currentGameData?.world?.name;
+const worldName = Array.isArray(worldNameArray) ? worldNameArray[0] : worldNameArray;
 
-                    if (targetEntry) {
-                        let backupArray = [];
-                        try {
-                            if (targetEntry.content && targetEntry.content.trim() !== '') {
-                                backupArray = JSON.parse(targetEntry.content);
-                            }
-                            if (!Array.isArray(backupArray)) { backupArray = []; }
-                        } catch (e) {
-                            backupArray = [];
+                    if (worldName) {
+                        console.log(`[Assa] 📦 骑士正在为世界 [${worldName}] 的 [${category}] 内容进行内部备份...`);
+
+                        // 确保 world_backup 存在且是一个对象
+                        if (!currentData.world_backup || typeof currentData.world_backup !== 'object') {
+                            currentData.world_backup = {};
                         }
-                        const nextIndex = backupArray.length;
-                        const backupKey = `${nextIndex}_${group}_${category}`;
-                        const newBackupObject = { [backupKey]: dataToBackup };
-                        backupArray.push(newBackupObject);
-                        const updatedContent = JSON.stringify(backupArray);
-                        await setLorebookEntries(lorebookName, [{ uid: targetUid, content: updatedContent }]);
-                        console.log(`[Assa] ✅ 骑士已成功将 ${path} 的内容备份，并留下了印记。`);
-                        backupLocks.add(path); // 成功备份后，立刻留下印记！
+                        // 确保以世界名命名的键存在且是一个对象
+                        if (!currentData.world_backup[worldName] || typeof currentData.world_backup[worldName] !== 'object') {
+                            currentData.world_backup[worldName] = {};
+                        }
+
+                       
+// ✨ 使用合并魔法，实现增量更新 ✨
+const dataToBackupCopy = JSON.parse(JSON.stringify(dataToBackup));
+currentData.world_backup[worldName][category] = deepMerge(
+    currentData.world_backup[worldName][category] || {}, // 如果不存在，则从空对象开始合并
+    dataToBackupCopy
+);
+                        console.log(`[Assa] ✅ 骑士已成功将 [${category}] 的内容备份至 'assa_data.world_backup.${worldName}'，并留下了印记。`);
+                        // backupLocks.add(path); // 成功备份后，立刻留下印记！
                     } else {
-                        console.error(`错误：在世界书 "${lorebookName}" 中未找到 UID 为 ${targetUid} 的条目。`);
+                        console.error(`[Assa] ❌ 备份失败：无法从全局变量 currentGameData 中获取有效的 world.name。`);
                     }
                 } catch (error) {
-                    console.error("备份过程中发生意外错误:", error);
+                    console.error("内部备份过程中发生意外错误:", error);
                 }
             } else {
                  console.log(`[Assa] ℹ️ 骑士发现路径 ${path} 下没有内容，无需备份。`);
@@ -31172,6 +31058,11 @@ const originalStatData = statData ? JSON.parse(JSON.stringify(statData)) : null;
         let operationsFound = false;
    let worldResetTriggered = false; // <-- 💖 请在这里添加这一行
  
+
+   const originalWorldNameArray = originalStatData?.world?.name;
+const originalWorldName = Array.isArray(originalWorldNameArray) ? originalWorldNameArray[0] : originalWorldNameArray;
+
+
    // ✨ DP奖励回合清零逻辑 ✨
         if (statDataToUpdate && statDataToUpdate.dp_bonus) {
             if (statDataToUpdate.dp_bonus[0] !== 0) {
@@ -32552,6 +32443,67 @@ if (match) {
         }
        console.log(`[Core] 📨 批量通知：已捕获 ${collectedBatchOps.length} 个操作，正在生成通知...`);
        
+
+        const finalWorldNameArray = statDataToUpdate?.world?.name;
+        const finalWorldName = Array.isArray(finalWorldNameArray) ? finalWorldNameArray[0] : finalWorldNameArray;
+
+        if (originalWorldName && finalWorldName && originalWorldName !== finalWorldName) {
+            console.log(`[Core] 🔄 世界切换检测：从 [${originalWorldName}] 切换到 [${finalWorldName}]，启动数据交换...`);
+
+            // ✨ 妈妈为你准备的合并魔法（辅助函数）✨
+            const deepMerge = (target, source) => {
+                for (const key in source) {
+                    if (source.hasOwnProperty(key)) {
+                        if (source[key] instanceof Object && key in target && target[key] instanceof Object) {
+                            target[key] = deepMerge(target[key], source[key]);
+                        } else {
+                            target[key] = source[key];
+                        }
+                    }
+                }
+                return target;
+            };
+
+            // 步骤 1: 将当前(切换前)的 world_lore 数据增量备份到旧世界名下
+            if (assaDataToUpdate.world_lore) {
+                console.log(`[Core] 📦 正在将 [${originalWorldName}] 的最终数据增量备份...`);
+                // 确保备份结构存在
+                if (!assaDataToUpdate.world_backup) assaDataToUpdate.world_backup = {};
+                if (!assaDataToUpdate.world_backup[originalWorldName]) assaDataToUpdate.world_backup[originalWorldName] = {};
+
+                // 增量备份 npc
+                if (assaDataToUpdate.world_lore.npc) {
+                    if (!assaDataToUpdate.world_backup[originalWorldName].npc) assaDataToUpdate.world_backup[originalWorldName].npc = {};
+                    deepMerge(assaDataToUpdate.world_backup[originalWorldName].npc, assaDataToUpdate.world_lore.npc);
+                }
+                // 增量备份 settings
+                if (assaDataToUpdate.world_lore.settings) {
+                    if (!assaDataToUpdate.world_backup[originalWorldName].settings) assaDataToUpdate.world_backup[originalWorldName].settings = {};
+                    deepMerge(assaDataToUpdate.world_backup[originalWorldName].settings, assaDataToUpdate.world_lore.settings);
+                }
+            }
+
+            // 步骤 2: 检查新世界名是否存在备份，如果存在，则恢复数据
+            if (assaDataToUpdate.world_backup && assaDataToUpdate.world_backup[finalWorldName]) {
+                console.log(`[Core] 📥 发现 [${finalWorldName}] 的备份数据，正在恢复到当前 world_lore...`);
+                const backupData = assaDataToUpdate.world_backup[finalWorldName];
+
+                // 恢复 npc (覆盖)
+                if (backupData.npc) {
+                    assaDataToUpdate.world_lore.npc = JSON.parse(JSON.stringify(backupData.npc));
+                    console.log(`[Core] ✅ 已恢复 world_lore.npc`);
+                }
+                // 恢复 settings (覆盖)
+                if (backupData.settings) {
+                    assaDataToUpdate.world_lore.settings = JSON.parse(JSON.stringify(backupData.settings));
+                    console.log(`[Core] ✅ 已恢复 world_lore.settings`);
+                }
+            } else {
+                console.log(`[Core] ℹ️ 新世界 [${finalWorldName}] 没有找到备份数据，将使用当前 world_lore 的状态。`);
+            }
+        }
+
+
         finalPlayData = playDataToUpdate;
         finalAssaData = assaDataToUpdate;
         finalStatData = statDataToUpdate;
@@ -32580,6 +32532,50 @@ try {
     throw error; // 或者根据需要处理错误
 }
  
+
+ if (is_quick_rewirte_backup === "true") {
+    try {
+        console.log(`[Core] 💾 快速备份已启用，正在同步更新数据到存档...`);
+        
+        // 获取最新的聊天变量
+        const currentChatVars = await TavernHelper.getVariables({ type: 'chat' });
+ 
+        
+        // 获取当前消息的 turnId 和 swipeIndex
+        // 必须定位到最近的一条 AI 消息
+        let turnId = conversationHistory.length - 1;
+        let lastMessage = null;
+        
+        // 从后往前查找，直到找到一条 AI 消息
+        while (turnId >= 0) {
+            const msg = conversationHistory[turnId];
+            if (msg && msg.role === 'assistant') {
+                lastMessage = msg;
+                break;
+            }
+            turnId--;
+        }
+        
+        // 如果找不到 AI 消息，记录警告并跳过备份
+        if (!lastMessage) {
+            console.warn(`[Core] ⚠️ 快速备份：找不到 AI 消息，跳过此次备份`);
+            return;
+        }
+        
+        const currentSwipeIndex = (lastMessage.currentSwipeIndex !== undefined) 
+            ? lastMessage.currentSwipeIndex 
+            : 0;
+        
+        // 调用快照存档函数
+        await saveSnapshot(turnId, currentChatVars, currentSwipeIndex);
+        
+        console.log(`[Core] ✅ 快速备份完成！已同步到 Turn:${turnId} Branch:${currentSwipeIndex}`);
+    } catch (error) {
+        console.warn(`[Core] ⚠️ 快速备份过程中出现错误:`, error);
+        // 快速备份失败不应中断主流程
+    }
+}
+
 }
 
 
@@ -32663,11 +32659,11 @@ let hasSummarySmall = false; // 添加这个标志
             }
         }
         // =========== 🔼 修改结束 🔼 ===========
-            const variableRegex = /<updateVariable>([\s\S]*?)<\/updateVariable>/gi;
-            let variableMatch;
-            while ((variableMatch = variableRegex.exec(messageText)) !== null) {
-                allCommands += variableMatch[1].trim() + '\n';
-            }
+            // const variableRegex = /<updateVariable>([\s\S]*?)<\/updateVariable>/gi;
+            // let variableMatch;
+            // while ((variableMatch = variableRegex.exec(messageText)) !== null) {
+            //     allCommands += variableMatch[1].trim() + '\n';
+            // }
              await new Promise(resolve => setTimeout(resolve, 5)); // 给UI一点呼吸的时间
         }
 
@@ -34664,15 +34660,12 @@ if (responseText.trim() !== "") {
 //             }
 //         }
 
-        console.log('[Nova的记忆保险箱] 数据准备就绪，正在准备后台存储方案...');
+console.log('[Nova的记忆保险箱] 数据准备就绪，正在准备后台存储方案...');
 let snapshotData = {};
 let backupData = {};
         if((noBackup === "false")){
        const chatVars = await TavernHelper.getVariables({ type: 'chat' });
-       snapshotData = JSON.parse(JSON.stringify(chatVars));
-        if (snapshotData.zeroLevelHistory) {
-            delete snapshotData.zeroLevelHistory;
-        }
+ 
 
         // 2. 准备备份数据 (Backup Data)
         backupData = {
@@ -34697,7 +34690,7 @@ let backupData = {};
             
   console.log(`[Nova的记忆保险箱] (后台) 保存快照 ID:${turnId} 分支:${currentSwipeIndex}`);
          // 传入 swipeIndex
-         await saveSnapshot(turnId, snapshotData, currentSwipeIndex);
+         await saveSnapshot(turnId, chatVars, currentSwipeIndex);
  
                  // C. 保存 IndexedDB 备份
       await saveSessionBackupToDB(backupData);
@@ -35929,6 +35922,49 @@ const modalExportStatus = document.getElementById('modal-export-status');
     modalExportStatus.style.color = 'var(--primary-color)';
     addModalLog(`文件 “${archiveName}.json” 已成功导出！`, 'success');
 });
+
+
+
+     window.worldHelper = {
+        init: initializeCurrentGameData,
+        renderPrivateMsgToHtml:renderPrivateMsgToHtml,
+        renderGroupChatToHtml:renderGroupChatToHtml,
+        createMessageBubble:createMessageBubble,
+        processSpecialModulesInMessage:processSpecialModulesInMessage,
+        renderHistory:renderHistory,
+        deleteMessage:deleteMessage,
+        editMessage:editMessage,
+        processFinalMessageModules:processFinalMessageModules,
+        showNovaAlert:showNovaAlert,
+        restoreFromSnapshot:restoreFromSnapshot,
+        processUpdateMemoryCommands:processUpdateMemoryCommands,
+        _updateDerivedAttributes:_updateDerivedAttributes,
+        tryParseJson:tryParseJson,
+        show: async () => {
+             const vars = await getVariables({ type: 'chat' });
+             console.log("--- 💖 当前世界数据总览 💖 ---");
+             console.log("角色数据 (play_character_data):", vars ? JSON.parse(JSON.stringify(vars.play_character_data)) : "未找到");
+             console.log("世界设定 (assa_data):", vars ? JSON.parse(JSON.stringify(vars.assa_data)) : "未找到");
+             console.log("---------------------------------");
+        },
+        reset: async () => {
+            console.log("[Core] [reset] - 正在将世界数据核心重置为初始虚无状态...");
+            const updater = (vars) => {
+                // 💖 妈妈的魔法：只负责清空，让世界回归纯净，不再主动创世 💖
+                vars.play_character_data = {};
+                vars.assa_data = {};
+                vars.stat_data = {};
+                // 我们也温柔地清空历史记录的引用，确保一个彻底的全新开始
+                if (vars.zeroLevelHistory) {
+                    vars.zeroLevelHistory = [];
+                }
+                return vars;
+            };
+            await updateVariablesWith(updater, { type: 'chat' });
+            // 注意：我们把 initializeWorldData() 从这里移除了
+            console.log("[Core] [reset] - 重置完成，世界已回归虚无。");
+        }
+    };
 
 
     await initialize();
@@ -40794,20 +40830,24 @@ isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);
  old_doubleapi = String(chatdata.old_doubleapi||'false');
-is_restore_prompt =  String(chatdata.is_restore_prompt||'true');
-   weneedshop = String(chatdata.we_need_shop||'false');
-is_show_notifications = String(chatdata.is_show_notifications||'true');
+
 double_api = String(chatdata.double_api||'false');
 batches = Number(chatdata.batches||1);
-
+ifScanMemory = String(chatdata.if_scan_memory||'false');
 playerinput= String(chatdata.玩家输入||"");
 enable_preset_2nd_pass = String(chatdata.enable_preset_2nd_pass||'true');
-noBackup = String(chatdata.is_no_backup||'false');
-ifScanMemory = String(chatdata.if_scan_memory||'false');
 dice_use= String(chatdata.dice_use||'true');
-if_render_after_2batch= String(chatdata.if_render_after_2batch||'false');
-is_worldbook_lock= String(chatdata.is_worldbook_lock||'false');
-if_waiting_roll= String(chatdata.if_waiting_roll||'false');
+
+   is_restore_prompt = localStorage.getItem('is_restore_prompt') || 'true';
+    weneedshop = localStorage.getItem('we_need_shop') || 'false';
+    is_show_notifications = localStorage.getItem('is_show_notifications') || 'true';
+    noBackup = localStorage.getItem('is_no_backup') || 'false';
+    if_render_after_2batch = localStorage.getItem('if_render_after_2batch') || 'false';
+    is_worldbook_lock = localStorage.getItem('is_worldbook_lock') || 'false';
+    if_waiting_roll = localStorage.getItem('if_waiting_roll') || 'false';
+    is_quick_rewirte_backup = localStorage.getItem('is_quick_rewirte_backup') || 'false';
+
+
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
@@ -43512,7 +43552,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
     }
 }
 
- // ⭐ --- 全新修正版：妈妈为你编写的模组重置功能 v2.1 (修复元素ID匹配问题) --- ⭐
+ 
 function setupReconfigModal() {
  
     // 1. 获取元素 (注意：这里必须使用新的ID，否则会找不到元素而静默失败)
@@ -43607,7 +43647,16 @@ function setupReconfigModal() {
  { name: '自动小总结', uid: 91, category: 'system', desc: '使用卡的自动小总结' },
 
     ];
-
+  const localSettings = [
+        { name: '存储提示词', key: 'is_restore_prompt', default: 'true', desc: '关闭后不再捕获上一回合的提示词' },
+        { name: '一直启用商店', key: 'we_need_shop', default: 'false', desc: '使商店即使在末日和无世界观也可以开启' },
+        { name: '显示更新通知', key: 'is_show_notifications', default: 'true', desc: '关闭后不再弹出变量更新提示' },
+        { name: '不再备份快照', key: 'is_no_backup', default: 'false', desc: '不再进行存档快照备份和每回合消息的备份' },
+        { name: '二次渲染', key: 'if_render_after_2batch', default: 'false', desc: '异步变量层生成结束后，对全部内容重新渲染' },
+        { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
+        { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
+        { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'false', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
+    ];
     // 定义分类元数据
      const CATEGORIES = [
         { id: 'world', name: '世界观' },
@@ -43615,6 +43664,7 @@ function setupReconfigModal() {
         { id: 'gameplay', name: '游戏性' },
         { id: 'visual', name: '视觉表现' },
         { id: 'system', name: '系统设定' },
+          { id: 'local', name: '高级设置' }, // [新增] 添加这一行
     ];
   // 3. 全新重写的渲染函数：支持分组逻辑
     function createModItems() {
@@ -43674,11 +43724,34 @@ function setupReconfigModal() {
             });
             worldContainer.appendChild(wrapper);
         }
+      const localContainer = document.getElementById('container-local');
+        if (localContainer) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'reconfig-group-wrapper';
 
+            localSettings.forEach(setting => {
+                // 复用 createOptionCard，但传入 key 作为 uid (我们会用 dataset 区分)
+                // 参数: title, desc, group, uid/key, isWorldview
+                const card = createOptionCard(setting.name, setting.desc, 'local-group', setting.key, false);
+                const input = card.querySelector('input');
+
+                // 标记这是一个本地存储项
+                input.dataset.isLocal = 'true';
+                input.dataset.defaultVal = setting.default;
+
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    input.checked = !input.checked;
+                    card.classList.toggle('active', input.checked);
+                });
+                wrapper.appendChild(card);
+            });
+            localContainer.appendChild(wrapper);
+        }
         // --- 渲染普通模组 (核心分组逻辑) ---
         // 我们需要按 Category -> Group 的层级来渲染
         CATEGORIES.forEach(cat => {
-            if (cat.id === 'world') return; // 跳过世界观
+          if (cat.id === 'world' || cat.id === 'local') return; 
 
             const targetContainer = document.getElementById(`container-${cat.id}`);
             if (!targetContainer) return;
@@ -43824,7 +43897,7 @@ function setupReconfigModal() {
                 throw new Error("创建默认世界书后仍然读取失败，妈妈也很困惑。");
             }
 
-            const currentUids = new Set(match[1].split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
+             const currentUids = new Set(match[1].split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
 
             // --- 更新世界观显示 ---
             let worldFound = false;
@@ -43846,24 +43919,40 @@ function setupReconfigModal() {
             }
             if (!worldFound) currentWorldviewDisplay.textContent = '未知';
 
-            // --- 更新模组显示 ---
+            // --- 更新模组显示 (修复了这里) ---
             document.querySelectorAll('.reconfig-option-card:not(#grid-world .reconfig-option-card)').forEach(card => {
                 const input = card.querySelector('input');
-                const uid = input.dataset.uid;
-                let isActive = false;
 
-                if (uid === 'map-none-sentinel') {
-                    isActive = !currentUids.has(15) && !currentUids.has(66);
-                } else if (uid === 'distance-off-sentinel') {
-                    isActive = !currentUids.has(49);
-                } else if (uid === 'npccg-off-sentinel') {
-                    isActive = !currentUids.has(48);
+                // [关键修改] 分流处理：如果是本地设置，走本地逻辑；否则走世界书逻辑
+                if (input.dataset.isLocal === 'true') {
+                    // --- 本地设置逻辑 ---
+                    const key = input.dataset.uid;
+                    const defaultVal = input.dataset.defaultVal;
+                    const storedVal = localStorage.getItem(key);
+                    // 如果没有存过，用默认值
+                    const currentVal = storedVal !== null ? storedVal : defaultVal;
+                    const isChecked = currentVal === 'true';
+
+                    input.checked = isChecked;
+                    card.classList.toggle('active', isChecked);
                 } else {
-                    isActive = currentUids.has(parseInt(uid, 10));
-                }
+                    // --- 世界书模组逻辑 ---
+                    const uid = input.dataset.uid;
+                    let isActive = false;
 
-                input.checked = isActive;
-                card.classList.toggle('active', isActive);
+                    if (uid === 'map-none-sentinel') {
+                        isActive = !currentUids.has(15) && !currentUids.has(66);
+                    } else if (uid === 'distance-off-sentinel') {
+                        isActive = !currentUids.has(49);
+                    } else if (uid === 'npccg-off-sentinel') {
+                        isActive = !currentUids.has(48);
+                    } else {
+                        isActive = currentUids.has(parseInt(uid, 10));
+                    }
+
+                    input.checked = isActive;
+                    card.classList.toggle('active', isActive);
+                }
             });
 
         } catch (error) {
@@ -43873,7 +43962,7 @@ function setupReconfigModal() {
         }
     }
 
-    async function applyNewSettings() {
+   async function applyNewSettings() {
         applyBtn.disabled = true;
         applyBtn.textContent = '应用中...';
 
@@ -43887,6 +43976,7 @@ function setupReconfigModal() {
 
             const originalUids = new Set(match[1].split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)));
 
+            // ... (中间的集合定义保持不变) ...
             const allWorldviewUids = new Set(worldviewMods.map(mod => mod.uid));
             worldviewMods.forEach(mod => {
                 if (mod.extraUid) {
@@ -43921,8 +44011,9 @@ function setupReconfigModal() {
                 else newUidsFromPanel.add(1);
             }
 
-            // --- 获取新的模组UID ---
-            document.querySelectorAll('.reconfig-option-card:not(#grid-world .reconfig-option-card) input:checked').forEach(checkbox => {
+            // --- 获取新的模组UID (这里加了过滤) ---
+            // [关键修改] 增加 :not([data-is-local="true"]) 排除本地设置
+            document.querySelectorAll('.reconfig-option-card:not(#grid-world .reconfig-option-card) input:checked:not([data-is-local="true"])').forEach(checkbox => {
                 const uidValue = checkbox.dataset.uid;
                 if (uidValue !== 'map-none-sentinel' && uidValue !== 'distance-off-sentinel' && uidValue !== 'npccg-off-sentinel') {
                     newUidsFromPanel.add(parseInt(uidValue, 10));
@@ -43941,6 +44032,14 @@ function setupReconfigModal() {
             await insertOrAssignVariables({ bookItemSettings: uidString }, { type: 'chat' });
             await loadWorldbookSettingsFromChat();
 
+            // --- 保存本地设置 ---
+            const localInputs = document.querySelectorAll('input[data-is-local="true"]');
+            localInputs.forEach(input => {
+                const key = input.dataset.uid;
+                const val = input.checked ? 'true' : 'false';
+                localStorage.setItem(key, val);
+            });
+
             feedbackMsg.textContent = "设置已更新！";
             feedbackMsg.style.opacity = '1';
             setTimeout(() => {
@@ -43957,7 +44056,6 @@ function setupReconfigModal() {
             applyBtn.textContent = '应用更改';
         }
     }
-
     // 事件绑定
     openBtn.addEventListener('click', () => {
         modal.style.display = 'flex';
@@ -44044,7 +44142,7 @@ checkWorldbookBinding('小蝌蚪找妈妈-同层版');
 setupReconfigModal();
 initAutoSetNpcFilter();
   
-  initializeDanmuSettings();
+initializeDanmuSettings();
 
     // --- 新增：消息背景透明开关 ---
     const transparentToggle = document.getElementById('transparent-toggle');
