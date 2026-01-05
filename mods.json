@@ -440,5 +440,16 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-简单coc7检定.json",
     "previewImage": ""
+  } ,{
+    "id": "x-mod-情报来源",
+    "name": "情报来源",
+    "author": "欧码-基米曼-波",
+     "authorToken":"8bcfbb40-7210-4d17-bd2a-f98515a79756",
+    "version": "1.0",
+    "tags": ["其他"],
+    "description": "在生成世界设定与全局设定时标注情报来源，加强沉浸感以及避免哈基米胡言乱语",
+    "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-情报来源.json",
+    "previewImage": ""
   } 
 ]
