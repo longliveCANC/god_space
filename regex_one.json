@@ -13,6 +13,9 @@
             --modal-content-bg: none; /* 默认透明 */
             --primary-color: #00faff;
             --secondary-color: #7affff;
+              
+       --base-line-height:1.7;
+       --base-font-size:19px;
    --base-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* 默认字体 */
             --container-bg-color: rgba(10, 25, 47, 0.75);
             --border-color: rgba(0, 250, 255, 0.3);
@@ -5216,7 +5219,7 @@ opacity: 0.6;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     margin-bottom: 20px;
-    box-shadow: 0 0 15px var(--glow-color);
+   
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
@@ -13597,7 +13600,7 @@ pointer-events: auto;
 
     <div id="top-left-orbs">
         <div class="orb top-orb" id="forum-orb-button">坛</div>
-        <div class="orb top-orb" id="task-summary-orb-button">总</div>
+        <div class="orb top-orb" id="task-summary-orb-button" style="display: none;">总</div>
         <div class="orb top-orb" id="read-orb-button">阅</div>
         
         <div class="orb top-orb" id="group-chat-orb-button" style="display: none;">聊</div>
@@ -13647,7 +13650,7 @@ pointer-events: auto;
      <div class="orb" data-modal-id="summary-modal" id="summary-modal-orb">综</div>
     <div class="orb" id="world-book-orb">识</div>
  
-    <div class="orb" data-modal-id="page-task-modal" id="page-task-orb">任</div>
+    <div class="orb" id="page-task-orb">任</div>
 
 </div>
 
@@ -22325,7 +22328,7 @@ async function handleModeSelection() {
             }
 
                           if(taskvalue === 'on'){
-                uidsToEnable.push(7,11);
+                uidsToEnable.push(7,11,94);
             }
                if(doublememoryalue === 'on'){
                 uidsToEnable.push(83);
@@ -22379,7 +22382,7 @@ uidsToEnable.push(91);
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,7,11,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,94,7,11,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -37156,8 +37159,7 @@ function calculateXpCost(currentLevel, type) {
   document.getElementById('world-shard').textContent = SafeGetValue(worldData.name) ||'SYSTEM TERMINAL';
 
  
-    document.getElementById('info-world-desc').textContent = SafeGetValue(worldData.description);
- 
+
 
 // 获取世界能量层级和最大能量值
 var world_level = statData.world?.level[0] || '中';
@@ -37185,6 +37187,8 @@ document.getElementById('header-difficulty').textContent = `${SafeGetValue(statD
 
 
 /* 填充任务详情 */
+//  document.getElementById('info-world-desc').textContent = SafeGetValue(worldData.description);
+ 
     // document.getElementById('task-objective').textContent = SafeGetValue(taskData.objective);
     // document.getElementById('task-status').textContent = SafeGetValue(taskData.status);
     // const progress = SafeGetValue(taskData.progress);
@@ -37556,9 +37560,7 @@ allTitles = assaData?.global_lore?.称号|| {};
             }
         });
     }
- // ==========================================================
-// ========== 完整替换 populateCharacterPage 函数 ==========
-// ==========================================================
+ 
 function populateCharacterPage(playData, statData, assaData) {
        if (!statData || !playData || !assaData) {
         toastr.error("核心角色数据缺失，无法填充页面哦。");
@@ -40866,14 +40868,14 @@ playerinput= String(chatdata.玩家输入||"");
 enable_preset_2nd_pass = String(chatdata.enable_preset_2nd_pass||'true');
 dice_use= String(chatdata.dice_use||'true');
 
-   is_restore_prompt = localStorage.getItem('is_restore_prompt') || 'true';
-    weneedshop = localStorage.getItem('we_need_shop') || 'false';
-    is_show_notifications = localStorage.getItem('is_show_notifications') || 'true';
-    noBackup = localStorage.getItem('is_no_backup') || 'false';
-    if_render_after_2batch = localStorage.getItem('if_render_after_2batch') || 'false';
-    is_worldbook_lock = localStorage.getItem('is_worldbook_lock') || 'false';
-    if_waiting_roll = localStorage.getItem('if_waiting_roll') || 'false';
-    is_quick_rewirte_backup = localStorage.getItem('is_quick_rewirte_backup') || 'false';
+   is_restore_prompt = String(localStorage.getItem('is_restore_prompt')) || 'true';
+    weneedshop = String(localStorage.getItem('we_need_shop')) || 'false';
+    is_show_notifications = String(localStorage.getItem('is_show_notifications')) || 'true';
+    noBackup = String(localStorage.getItem('is_no_backup')) || 'false';
+    if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'false';
+    is_worldbook_lock = String(localStorage.getItem('is_worldbook_lock')) || 'false';
+    if_waiting_roll = String(localStorage.getItem('if_waiting_roll')) || 'false';
+    is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'false';
 
 
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
@@ -41005,6 +41007,7 @@ userName = currentGameData.user.name || '用户';
             
                     if(is_first){
 renderMap(assaSettingsData.map, updateDetails.mapUpdates);
+//todo：换成点击的时候才渲染
         }
                         
         } else {
@@ -43536,7 +43539,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,7,11, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,94,7,11, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -43559,7 +43562,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,7,11,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,94,7,11,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -43846,7 +43849,7 @@ function setupReconfigModal() {
         if (mod.name === '复杂地图') input.dataset.extraUid = '25,26';
         if (mod.name === '分阶段好感') input.dataset.extraUid = '64';
         if (mod.name === '特殊日期') input.dataset.extraUid = '73';
-        if (mod.name === '任务系统') input.dataset.extraUid = '11';
+        if (mod.name === '任务系统') input.dataset.extraUid = '11,94';
         card.addEventListener('click', (e) => {
             e.preventDefault();
             if (mod.group) {
@@ -44026,6 +44029,7 @@ function setupReconfigModal() {
             });
             allManageableUids.add(33); allManageableUids.add(25); allManageableUids.add(26); allManageableUids.add(64); allManageableUids.add(73);
  allManageableUids.add(11); 
+  allManageableUids.add(94); 
             const preservedUids = new Set([...originalUids].filter(uid =>
                 !allManageableUids.has(uid) && !allWorldviewUids.has(uid)
             ));
@@ -55169,14 +55173,7 @@ function buildOpenAIConfig(settings) {
 
     return config;
 }
-
-/**
- * 流式请求函数（可选实现）
- * @param {string|Array} messages - 用户消息
- * @param {Function} onChunk - 每次接收到数据块时的回调
- * @param {Object} options - 可选参数
- * @returns {Promise<Object>}
- */
+ 
 async function sendStreamRequest(messages, onChunk, options = {}) {
     const config = loadApiConfig();
     if (!config) {
@@ -55316,8 +55313,902 @@ async function sendStreamRequest(messages, onChunk, options = {}) {
         }
     }
 }
+
+
+// 监听 DOMContentLoaded 事件
+document.addEventListener('DOMContentLoaded', function() {
+
+  
+(function () {
+    // 1. 注入 CSS 样式
+    const styleId = 'god-space-task-style';
+    if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            /* 引用全局变量，确保主题一致性 */
+            :root {
+                --gs-anim-duration: 0.3s;
+                --gs-corner-clip: polygon(
+                    10px 0, 100% 0,
+                    100% calc(100% - 10px), calc(100% - 10px) 100%,
+                    0 100%, 0 10px
+                );
+            }
+
+            /* 模态框容器 - 全屏，高Z-index */
+            #god-space-task-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: 9999;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity var(--gs-anim-duration) ease;
+                font-family: var(--base-font-family);
+                color: var(--text-color);
+                box-sizing: border-box;
+            }
+
+            #god-space-task-modal.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            /* 背景遮罩 - 磨砂玻璃 */
+            .gs-backdrop {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                z-index: 1;
+            }
+
+            /* 主内容区域 - HUD 风格 */
+            .gs-container {
+                position: relative;
+                z-index: 2;
+                width: 90%;
+                max-width: 1200px;
+                height: 85vh;
+                background: var(--container-bg-color);
+                border: 1px solid var(--border-color);
+               
+                display: flex;
+                flex-direction: row;
+                overflow: hidden;
+                clip-path: var(--gs-corner-clip);
+            }
+
+            /* 关闭按钮 - 悬浮右上角 */
+            .gs-close-btn {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                width: 40px;
+                height: 40px;
+                z-index: 10;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--border-color);
+                background: rgba(0,0,0,0.3);
+                color: var(--primary-color);
+                font-size: 24px;
+                transition: all 0.3s;
+                clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
+            }
+
+            .gs-close-btn:hover {
+                background: var(--primary-color);
+                color: #000;
+               
+            }
+
+            /* 左侧：任务列表导航 */
+ .gs-sidebar {
+    width: 250px;
+    height: 100%; /* 新增：使其高度充满父容器 */
+    background: rgba(0, 0, 0, 0.3);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    overflow-y: auto; /* 确保内容溢出时垂直滚动 */
+    flex-shrink: 0;
+    box-sizing: border-box; /* 新增：确保 padding 不会影响总高度 */
+}
+
+            .gs-sidebar-title {
+                padding: 0 20px 15px;
+                font-size: 1.2em;
+                color: var(--primary-color);
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                border-bottom: 1px solid var(--border-color);
+                margin-bottom: 10px;
+                text-shadow: 0 0 5px var(--glow-color);
+            }
+
+            .gs-task-tab {
+                padding: 15px 20px;
+                cursor: pointer;
+                border-left: 3px solid transparent;
+                transition: all 0.2s;
+                color: var(--text-secondary-color);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .gs-task-tab:hover {
+                 
+                color: var(--text-color);
+            }
+
+            .gs-task-tab.active {
+                background: linear-gradient(90deg, var(--backgrund-color), transparent);
+                border-left: 3px solid var(--primary-color);
+                color: var(--primary-color);
+                font-weight: bold;
+                text-shadow: 0 0 8px var(--glow-color);
+            }
+
+            /* 右侧：任务详情面板 */
+            .gs-content-panel {
+                flex: 1;
+                padding: 30px;
+                overflow-y: auto;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* 任务切换动画 */
+            .gs-task-detail {
+                animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            /* 头部信息：标题与难度 */
+            .gs-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 20px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                padding-bottom: 15px;
+            }
+
+            .gs-title {
+                font-size: 2em;
+                color: var(--primary-color);
+                margin: 0;
+                text-shadow: 0 0 10px var(--glow-color);
+            }
+
+            .gs-difficulty-badge {
+                display: inline-block;
+                padding: 5px 15px;
+                background: rgba(0,0,0,0.5);
+                border: 1px solid var(--danger-color);
+                color: var(--danger-color);
+                font-weight: bold;
+                font-size: 1.2em;
+                clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+               
+            }
+
+            /* 标签组 */
+            .gs-tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .gs-tag {
+                font-size: 0.85em;
+                padding: 4px 12px;
+                
+                border: 1px solid var(--secondary-color);
+                color: var(--secondary-color);
+                transform: skewX(-15deg); /* 倾斜造型 */
+            }
+
+            .gs-tag span {
+                display: block;
+                transform: skewX(15deg); /* 文字回正 */
+            }
+
+            /* 网格布局展示核心信息 */
+            .gs-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin-bottom: 20px;
+            }
+
+            .gs-full-width {
+                grid-column: 1 / -1;
+            }
+
+            /* 信息块设计 */
+            .gs-info-block {
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 15px;
+                position: relative;
+            }
+
+            /* 装饰角标 */
+            .gs-info-block::before {
+                content: '';
+                position: absolute;
+                top: 0; left: 0;
+                width: 10px; height: 10px;
+                border-top: 2px solid var(--primary-color);
+                border-left: 2px solid var(--primary-color);
+            }
+            .gs-info-block::after {
+                content: '';
+                position: absolute;
+                bottom: 0; right: 0;
+                width: 10px; height: 10px;
+                border-bottom: 2px solid var(--primary-color);
+                border-right: 2px solid var(--primary-color);
+            }
+
+            .gs-label {
+                font-size: 0.8em;
+                color: var(--text-secondary-color);
+                text-transform: uppercase;
+                margin-bottom: 8px;
+                display: block;
+                letter-spacing: 1px;
+            }
+
+            .gs-value {
+                font-size: 1em;
+                color: var(--text-color);
+                line-height: 1.6;
+                white-space: pre-wrap; /* 保留换行 */
+            }
+
+            /* 特殊字段样式 */
+            .gs-reward .gs-value { color: var(--success-color); text-shadow: 0 0 5px var(--success-glow-color); }
+            .gs-punish .gs-value { color: var(--danger-color); text-shadow: 0 0 5px var(--danger-glow-color); }
+
+            /* 底部操作栏 */
+            .gs-actions {
+                margin-top: auto;
+                display: flex;
+                gap: 20px;
+                justify-content: flex-end;
+                padding-top: 20px;
+                border-top: 1px solid rgba(255,255,255,0.1);
+            }
+
+            .gs-btn {
+                padding: 10px 30px;
+                background: transparent;
+                border: 1px solid var(--primary-color);
+                color: var(--primary-color);
+                font-family: inherit;
+                font-size: 1em;
+                cursor: pointer;
+                transition: all 0.3s;
+                clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .gs-btn:hover {
+                background: var(--primary-color);
+                color: #000;
+                 
+            }
+
+            .gs-btn.secondary {
+                border-color: var(--text-secondary-color);
+                color: var(--text-secondary-color);
+            }
+            .gs-btn.secondary:hover {
+                background: var(--text-secondary-color);
+                color: #000;
+               
+            }
+
+            /* 移动端适配 */
+              @media (max-width: 768px) {
+                .gs-container {
+                    flex-direction: column;
+                    height: 95vh;
+                    width: 95%;
+                }
+                .gs-sidebar {
+                    width: 100%;
+                    height: auto; /* 修改：高度自适应内容 */
+                    min-height: 80px; /* 新增：给一个最小高度 */
+                    flex-direction: row; /* 横向滚动 */
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    border-right: none;
+                    border-bottom: 1px solid var(--border-color);
+                    padding: 0; /* 修改：移除内边距，让子元素占满 */
+                    align-items: stretch; /* 新增：让子元素高度撑满 */
+                }
+
+                /* --- 新增的核心代码在这里 --- */
+                #gs-task-list {
+                    display: flex; /* 使用 Flex 布局 */
+                    flex-direction: row; /* 明确指定为横向 */
+                    align-items: center; /* 垂直居中对齐标签 */
+                    padding: 0 10px; /* 左右留出一些边距 */
+                }
+                /* --- 新增结束 --- */
+
+                .gs-sidebar-title {
+                    display: none; /* 移动端隐藏标题以节省空间 */
+                }
+                .gs-task-tab {
+                    min-width: 120px;
+                    border-left: none;
+                    border-bottom: 3px solid transparent;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    flex-shrink: 0; /* 新增：防止标签被压缩 */
+                    height: 100%; /* 新增：让标签高度撑满 */
+                }
+                .gs-task-tab.active {
+                    border-left: none;
+                    border-bottom: 3px solid var(--primary-color);
+                    background: linear-gradient(0deg, var(--background-color), transparent);
+                }
+                .gs-grid {
+                    grid-template-columns: 1fr; /* 单列 */
+                }
+                .gs-actions {
+                    flex-direction: column;
+                }
+                .gs-btn {
+                    width: 100%;
+                }
+            }
+
+            /* 滚动条美化 */
+            .gs-sidebar::-webkit-scrollbar, .gs-content-panel::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            .gs-sidebar::-webkit-scrollbar-thumb, .gs-content-panel::-webkit-scrollbar-thumb {
+                background: var(--border-color);
+                border-radius: 3px;
+            }
+            .gs-sidebar::-webkit-scrollbar-track, .gs-content-panel::-webkit-scrollbar-track {
+                background: rgba(0,0,0,0.2);
+            }
+
+             /* 新增：侧边栏头部工具栏 */
+            .gs-sidebar-header {
+                padding: 10px 20px;
+                border-bottom: 1px solid var(--border-color);
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .gs-toggle-group {
+                display: flex;
+                gap: 5px;
+                background: rgba(0,0,0,0.3);
+                padding: 2px;
+                clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+            }
+
+            .gs-toggle-btn {
+                flex: 1;
+                background: transparent;
+                border: none;
+                color: var(--text-secondary-color);
+                padding: 5px;
+                font-size: 0.8em;
+                cursor: pointer;
+                text-align: center;
+                transition: all 0.2s;
+            }
+
+            .gs-toggle-btn.active {
+                background: var(--primary-color);
+                color: #000;
+                font-weight: bold;
+            }
+
+            .gs-checkbox-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.8em;
+                color: var(--text-secondary-color);
+                cursor: pointer;
+            }
+
+            .gs-checkbox {
+                width: 14px;
+                height: 14px;
+                border: 1px solid var(--primary-color);
+                display: inline-block;
+                position: relative;
+            }
+
+            .gs-checkbox.checked::after {
+                content: '';
+                position: absolute;
+                top: 2px; left: 2px;
+                width: 8px; height: 8px;
+                background: var(--primary-color);
+            }
+
+            /* 新增：危险按钮样式 */
+            .gs-btn.danger {
+                border-color: var(--danger-color);
+                color: var(--danger-color);
+            }
+            .gs-btn.danger:hover {
+                background: var(--danger-color);
+                color: #fff;
+                box-shadow: 0 0 15px var(--danger-glow-color);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // 2. 核心逻辑类
+ class GodSpaceTaskSystem {
+        constructor() {
+            this.modalId = 'god-space-task-modal';
+            this.modal = null;
+            this.currentTaskKey = null;
+            //  状态管理
+            this.showArchived = false; // false: 显示活跃任务, true: 显示归档任务
+           this.autoArchive = localStorage.getItem('gs_auto_archive') !== 'false';
+        }
+
+        // 初始化或获取模态框
+        init() {
+            this.modal = document.getElementById(this.modalId);
+            if (!this.modal) {
+                this.createModalStructure();
+            }
+            this.render();
+            this.open();
+        }
+
+        // 创建DOM结构
+        createModalStructure() {
+            const modal = document.createElement('div');
+            modal.id = this.modalId;
+            modal.innerHTML = `
+                <div class="gs-backdrop"></div>
+                <div class="gs-container">
+                    <div class="gs-close-btn">×</div>
+                    <div class="gs-sidebar">
+                        <div class="gs-sidebar-title">任务追踪</div>
+                        <div class="gs-task-list" id="gs-task-list"></div>
+                    </div>
+                    <div class="gs-content-panel" id="gs-task-detail-container">
+                        <!-- 任务详情将渲染在这里 -->
+                        <div style="display:flex;height:100%;align-items:center;justify-content:center;color:var(--text-secondary-color);">
+                            选择一个任务
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            this.modal = modal;
+
+            // 绑定关闭事件
+            modal.querySelector('.gs-close-btn').addEventListener('click', () => this.close());
+            modal.querySelector('.gs-backdrop').addEventListener('click', () => this.close());
+        }
+
+        // 获取数据
+  getData() {
+            try {
+                // 优先使用 GameAPI 获取最新的 assaSettingsData
+                if (window.GameAPI && window.GameAPI.assaData) {
+                    const data = window.GameAPI.assaData;
+                    if (data.global_lore && data.global_lore.task) {
+                        return data.global_lore.task;
+                    }
+                }
+                // 降级兼容直接访问全局变量
+                if (window.assaSettingsData && window.assaSettingsData.global_lore && window.assaSettingsData.global_lore.task) {
+                    return window.assaSettingsData.global_lore.task;
+                }
+            } catch (e) {
+                console.warn("GodSpaceTaskSystem: Data access error", e);
+            }
+            return {};
+        }
  
+        // 渲染主逻辑
+  render() {
+            const tasks = this.getData();
+            const allKeys = Object.keys(tasks);
+            const listContainer = this.modal.querySelector('#gs-task-list');
+
+  
+
+            // 2. 渲染侧边栏头部 (Tab切换和自动归档开关)
+            // 检查是否已经存在头部，不存在则创建
+            let sidebarHeader = this.modal.querySelector('.gs-sidebar-header');
+            if (!sidebarHeader) {
+                sidebarHeader = document.createElement('div');
+                sidebarHeader.className = 'gs-sidebar-header';
+                sidebarHeader.innerHTML = `
+                    <div class="gs-toggle-group">
+                        <button class="gs-toggle-btn ${!this.showArchived ? 'active' : ''}" id="gs-tab-active">进行中</button>
+                        <button class="gs-toggle-btn ${this.showArchived ? 'active' : ''}" id="gs-tab-archived">已归档</button>
+                    </div>
+                    <div class="gs-checkbox-wrapper" id="gs-auto-archive-toggle">
+                        <div class="gs-checkbox ${this.autoArchive ? 'checked' : ''}"></div>
+                        <span>自动归档已完成任务</span>
+                    </div>
+                `;
+                // 插入到 listContainer 之前
+                listContainer.parentNode.insertBefore(sidebarHeader, listContainer);
+
+                // 绑定事件
+                sidebarHeader.querySelector('#gs-tab-active').onclick = () => { this.showArchived = false; this.render(); };
+                sidebarHeader.querySelector('#gs-tab-archived').onclick = () => { this.showArchived = true; this.render(); };
+                sidebarHeader.querySelector('#gs-auto-archive-toggle').onclick = () => {
+                    this.autoArchive = !this.autoArchive;
+                    localStorage.setItem('gs_auto_archive', this.autoArchive);
+                    this.render(); // 重新渲染以触发自动归档检查
+                };
+            } else {
+                // 更新UI状态
+                sidebarHeader.querySelector('#gs-tab-active').className = `gs-toggle-btn ${!this.showArchived ? 'active' : ''}`;
+                sidebarHeader.querySelector('#gs-tab-archived').className = `gs-toggle-btn ${this.showArchived ? 'active' : ''}`;
+                sidebarHeader.querySelector('.gs-checkbox').className = `gs-checkbox ${this.autoArchive ? 'checked' : ''}`;
+            }
+
+            // 3. 筛选任务
+            const filteredKeys = allKeys.filter(key => {
+                const task = tasks[key];
+                const isArchived = String(task['_showInEJS']) === 'false';
+                return this.showArchived ? isArchived : !isArchived;
+            });
+
+            // 4. 渲染列表
+            listContainer.innerHTML = '';
+            if (filteredKeys.length === 0) {
+                listContainer.innerHTML = '<div style="padding:20px;color:var(--text-secondary-color)">无数据</div>';
+                // 如果当前没有选中的任务，清空详情页
+                this.modal.querySelector('#gs-task-detail-container').innerHTML =
+                    '<div style="display:flex;height:100%;align-items:center;justify-content:center;color:var(--text-secondary-color);">无任务选中</div>';
+                return;
+            }
+
+            filteredKeys.forEach((key, index) => {
+                const tab = document.createElement('div');
+                tab.className = 'gs-task-tab';
+                tab.textContent = key;
+                tab.dataset.key = key;
+                if (this.currentTaskKey === key) tab.classList.add('active');
+
+                tab.addEventListener('click', () => {
+                    this.modal.querySelectorAll('.gs-task-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    this.renderTaskDetail(key, tasks[key]);
+                });
+
+                listContainer.appendChild(tab);
+            });
+
+            // 自动选中逻辑：如果当前选中的任务不在列表里（被归档了或切Tab了），选中第一个
+            if (!filteredKeys.includes(this.currentTaskKey)) {
+                if (filteredKeys.length > 0) {
+                    // 模拟点击第一个
+                    this.renderTaskDetail(filteredKeys[0], tasks[filteredKeys[0]]);
+                    // 稍微延迟一下添加active类，因为上面刚刚生成
+                    setTimeout(() => {
+                        const firstTab = listContainer.querySelector('.gs-task-tab');
+                        if(firstTab) firstTab.classList.add('active');
+                    }, 0);
+                }
+            } else {
+                // 刷新当前详情
+                this.renderTaskDetail(this.currentTaskKey, tasks[this.currentTaskKey]);
+            }
+        }
+
+  renderTaskDetail(taskName, taskData) {
+            const container = this.modal.querySelector('#gs-task-detail-container');
+            this.currentTaskKey = taskName;
+
+            if (!taskData) return;
+
+            const safeStr = (val) => {
+                if (val === undefined || val === null) return 'N/A';
+                if (typeof val === 'object') return JSON.stringify(val);
+                return String(val);
+            };
+
+            let tagsHtml = '';
+            if (taskData['标签']) {
+                const tags = safeStr(taskData['标签']).split(/[;；]/);
+                tagsHtml = tags.map(t => `<div class="gs-tag"><span>${t.trim()}</span></div>`).join('');
+            }
+
+            // --- 按钮逻辑分支 (已整合) ---
+            const status = safeStr(taskData['状态']);
+            let buttonsHtml = '';
+
+            if (this.showArchived) {
+                // 当前在“已归档”视图下
+                buttonsHtml = `
+                    <button class="gs-btn" id="gs-btn-unarchive">恢复</button>
+                    <button class="gs-btn danger" id="gs-btn-delete">删除记录</button>
+                `;
+            } else if (status === '已完成') {
+                // 在“进行中”视图下，且任务状态为“已完成”
+                buttonsHtml = `
+                    <button class="gs-btn secondary" id="gs-btn-archive">归档</button>
+                    <button class="gs-btn danger" id="gs-btn-delete">删除记录</button>
+                `;
+            } else if (status === '待接取') {
+                // 任务“待接取”
+                buttonsHtml = `<button class="gs-btn" id="gs-btn-accept">接取任务</button>`;
+            } else {
+                // 其他进行中状态
+                buttonsHtml = `
+                    <button class="gs-btn secondary" id="gs-btn-return">申请回归</button>
+                    <button class="gs-btn" id="gs-btn-submit">申请提交</button>
+                `;
+            }
+
+            const html = `
+                <div class="gs-task-detail">
+                    <div class="gs-header">
+                        <h2 class="gs-title">${taskName}</h2>
+                        <div class="gs-difficulty-badge">${safeStr(taskData['难度'])}</div>
+                    </div>
+                    <div class="gs-tags">${tagsHtml}</div>
+                    <div class="gs-grid">
+                        <div class="gs-info-block gs-full-width">
+                            <span class="gs-label">详细描述</span>
+                            <div class="gs-value">${safeStr(taskData['详细描述'])}</div>
+                        </div>
+                        <div class="gs-info-block gs-full-width">
+                            <span class="gs-label">目标</span>
+                            <div class="gs-value" style="color:var(--primary-color)">${safeStr(taskData['目标'])}</div>
+                        </div>
+                        <div class="gs-info-block gs-reward">
+                            <span class="gs-label">奖励</span>
+                            <div class="gs-value">${safeStr(taskData['奖励'])}</div>
+                        </div>
+                        <div class="gs-info-block gs-punish">
+                            <span class="gs-label">惩罚</span>
+                            <div class="gs-value">${safeStr(taskData['惩罚'])}</div>
+                        </div>
+                        <div class="gs-info-block">
+                            <span class="gs-label">发布人</span>
+                            <div class="gs-value">${safeStr(taskData['发布人'])}</div>
+                        </div>
+                        <div class="gs-info-block">
+                            <span class="gs-label">接取地点</span>
+                            <div class="gs-value">${safeStr(taskData['接取地点'])}</div>
+                        </div>
+                        <div class="gs-info-block">
+                            <span class="gs-label">时限</span>
+                            <div class="gs-value">${taskData['时限'] == -1 ? '∞ (无限)' : safeStr(taskData['时限']) + ' 天'}</div>
+                        </div>
+                        <div class="gs-info-block">
+                            <span class="gs-label">状态</span>
+                            <div class="gs-value">${status}</div>
+                        </div>
+                                  <div class="gs-info-block">
+                            <span class="gs-label">开始时间</span>
+                            <div class="gs-value">${taskData['开始时间'] ? safeStr(taskData['开始时间']) : '--'}</div>
+                        </div>
+                         <div class="gs-info-block">
+                            <span class="gs-label">截止时间</span>
+                            <div class="gs-value">${taskData['截止时间'] ? safeStr(taskData['截止时间']) : '--'}</div>
+                        </div>
+                    </div>
+                    <div class="gs-actions">
+                        ${buttonsHtml}
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // --- 事件绑定 (已整合) ---
+
+            // 1. 归档
+            const archiveBtn = container.querySelector('#gs-btn-archive');
+            if (archiveBtn) {
+                archiveBtn.addEventListener('click', () => {
+                    const cmd = `memory('global_lore.task.${taskName}._showInEJS','false');memory('global_lore.task.${taskName}._filter','true');`;
+                     window.GameAPI.triggerassa(`/setinput <updateMemory>\n${cmd}\n</updateMemory>`);
+                });
+            }
+
+            // 1.1 恢复 (取消归档)
+            const unarchiveBtn = container.querySelector('#gs-btn-unarchive');
+            if (unarchiveBtn) {
+                unarchiveBtn.addEventListener('click', () => {
+                    const cmd = `memory('global_lore.task.${taskName}._showInEJS','true');memory('global_lore.task.${taskName}._filter','false');`;
+                   window.GameAPI.triggerassa(`/setinput <updateMemory>\n${cmd}\n</updateMemory>`);
+                });
+            }
+
+            // 2. 删除
+            const deleteBtn = container.querySelector('#gs-btn-delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    const cmd = `delete('global_lore.task','${taskName}');`;
+                   window.GameAPI.triggerassa(`/setinput <updateMemory>\n${cmd}\n</updateMemory>`);
+                });
+            }
+
+            // 3. 接取
+            const acceptBtn = container.querySelector('#gs-btn-accept');
+            if (acceptBtn) {
+                acceptBtn.addEventListener('click', () => {
+                    window.GameAPI.triggerassa(`/setinput <${window.GameAPI.userName}申请接取任务：${taskName}>`);
+                });
+            }
+
+            // 4. 提交
+            const submitBtn = container.querySelector('#gs-btn-submit');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => {
+                    const submitPrompt = `<request:系统提示，现在玩家想要申请提交任务。你现在有一个额外任务，你需要在生成正文之前，使用<build/>标签包裹思考内容，检索game.memory和game.history，判断玩家是否达成了条件。若达成条件，则设置任务状态为已完成。若没有达成条件，则在正文中生成对应驳回的剧情。>`;
+                    window.GameAPI.triggerassa(`/setinput <${window.GameAPI.userName}申请提交任务：${taskName}>。\n${submitPrompt}\n`);
+                });
+            }
+
+            // 5. 回归
+            const returnBtn = container.querySelector('#gs-btn-return');
+            if (returnBtn) {
+                returnBtn.addEventListener('click', () => {
+                      const returnPrompt = `<request:系统提示，现在玩家想要申请回归。你现在有一个额外任务，你需要在生成正文之前，使用<build/>标签包裹思考内容，检索game.memory，判断该任务是否允许回归，若不允许回归，则在正文直接生成驳回剧情。若允许回归，玩家需要付出什么代价？然后再生成后续剧情。>`;
+                    window.GameAPI.triggerassa(`/setinput <${window.GameAPI.userName}申请回归>\n${returnPrompt}\n`);
+                });
+            }
+        }
+
+ 
+
+        open() {
+            if (this.modal) {
+                this.modal.classList.add('active');
+            }
+        }
+
+        close() {
+            if (this.modal) {
+                this.modal.classList.remove('active');
+            }
+        }
+    }
+
+    // 3. 绑定入口按钮
+    const orbBtn = document.getElementById('page-task-orb');
+    if (orbBtn) {
+        // 移除旧的监听器（如果需要防止重复绑定，可以使用具名函数，这里简单处理）
+        const newBtn = orbBtn.cloneNode(true);
+        orbBtn.parentNode.replaceChild(newBtn, orbBtn);
+
+        newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const taskSystem = new GodSpaceTaskSystem();
+            taskSystem.init();
+        });
+    } else {
+        console.warn("GodSpaceTaskSystem: #page-task-orb not found.");
+    }
+
+})();
+(function() {
+    // 确保 NovaHooks 和 GameAPI 已经加载
+    if (typeof window.NovaHooks === 'undefined') {
+        console.error('[Task System] NovaHooks system not found. Auto-archive will not work.');
+        return;
+    }
+    if (typeof window.GameAPI === 'undefined') {
+        console.error('[Task System] GameAPI not found.');
+        return;
+    }
+
+    /**
+     * 检查并执行任务自动归档
+     */
+    async function checkAndPerformAutoArchive() {
+        // 仅当用户在任务界面开启了自动归档时才执行
+        if (localStorage.getItem('gs_auto_archive') !== 'true') {
+            return;
+        }
+
+        try {
+            const tasks = window.GameAPI.assaData?.global_lore?.task || {};
+            const taskKeys = Object.keys(tasks);
+            const commandsToExecute = [];
+
+            taskKeys.forEach(key => {
+                const task = tasks[key];
+                const status = String(task['状态'] || '');
+                const isArchived = String(task['_showInEJS']) === 'false';
+if (status === '已完成' && !isArchived) {
+    const isSettled = task['已结算'];
+    // 检查已结算字段，兼容字符串和布尔值
+    const settledCheck = isSettled === true || isSettled === 'true';
+    
+    // 只有当已结算为 true 时才归档
+    if (settledCheck) {
+       commandsToExecute.push(`memory('global_lore.task.${key}._showInEJS','false');memory('global_lore.task.${key}._filter','true');`);
+               
+    }
+}
+               
+            });
+
+            // 如果有需要执行的指令
+            if (commandsToExecute.length > 0 && typeof worldHelper !== 'undefined' && worldHelper.processUpdateMemoryCommands) {
+                const fullCommand = commandsToExecute.join('\n');
+                console.log('[Task System] Auto-archiving tasks:', fullCommand);
+                // 一次性执行所有归档指令
+                await worldHelper.processUpdateMemoryCommands(fullCommand, -1);
+            }
+        } catch (e) {
+            console.error('[Task System] Auto-archive failed:', e);
+        }
+    }
+
+    /**
+     * 钩子处理函数: 在渲染前检查自动归档
+     * @param {object} hookData - 从 NovaHooks 传入的数据对象
+     * @returns {object} - 未经修改的数据对象
+     */
+    async function processAutoArchiveBeforeRender(hookData) {
+        // 异步执行，不阻塞渲染流程
+        checkAndPerformAutoArchive();
+        return hookData; // 直接返回原始数据
+    }
+
+    // 注册到 before_message_render 钩子上
+    window.NovaHooks.add('before_message_render', processAutoArchiveBeforeRender);
+
+    console.log('[Task System] Auto-archive hook registered on before_message_render.');
+})();
+});
+
+
 window.GameAPI = {
+
+           get userName() {
+        // GameAPI.assaData 
+        return userName;
+    },
         get npcImageMap() {
         // GameAPI.assaData 
         return npcImageMap;
@@ -55427,6 +56318,8 @@ window.GameAPI = {
     } 
  
 }
+
+
 </script>
 
 </html>
