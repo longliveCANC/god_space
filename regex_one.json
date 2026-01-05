@@ -10053,7 +10053,7 @@ input:checked + .slider:before {
     background-color: var(--container-bg-color);
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    box-shadow: 0 0 20px var(--glow-color);
+    /* box-shadow: 0 0 20px var(--glow-color); */
     display: flex;
     flex-direction: column;
     overflow: hidden;
