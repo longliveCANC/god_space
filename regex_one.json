@@ -29366,24 +29366,35 @@ function getCanonicalCurrencyName(alias) {
     if (derived.防御?.基础防御) {
         derived.防御.基础防御[0] = Math.min(敏捷, 感知);
     }
- if (derived.生命值?.上限) {
-    // 从 GameAPI 获取旧值
-    const oldData = window.GameAPI?.playCharacterData;
-    const oldMaxHP = oldData?.衍生属性?.生命值?.上限?.[0] ?? 0;
-    const oldCurrentHP = oldData?.衍生属性?.生命值?.当前值?.[0] ?? 0;
-    
-    const newMaxHP = oldMaxHP + (耐力 * 20);
-    derived.生命值.上限[0] = newMaxHP;
-    
-    if (derived.生命值.当前值) {
-        // 当前值也增加相同的增量
-        derived.生命值.当前值[0] = oldCurrentHP + (耐力 * 5);
-        // 确保当前值不超过新上限
-        if (derived.生命值.当前值[0] > newMaxHP) {
-            derived.生命值.当前值[0] = newMaxHP;
+  if (derived.生命值?.上限) {
+        // 从 GameAPI 获取旧值
+        const oldData = playCharacterData;
+        // 注意：这里需要确保获取的是上一帧的静态数据，防止死循环
+        const oldMaxHP = oldData?.衍生属性?.生命值?.上限?.[0] ?? derived.生命值.上限[0];
+        const oldCurrentHP = oldData?.衍生属性?.生命值?.当前值?.[0] ?? derived.生命值.当前值?.[0] ?? 0;
+        const oldEndurance = oldData?.基础属性?.生理属性?.耐力?.基础?.[0] ?? 耐力;
+
+        // 逻辑：检测是手动修改了上限，还是因为耐力变化导致上限变化
+        if (derived.生命值.上限[0] !== oldMaxHP) {
+            // 1. 如果当前输入框的值不等于旧值，说明玩家直接手动修改了生命上限
+            // 这种情况下，直接采纳新值，不做额外计算
+            // (代码保持原样，什么都不做，值已经是新的了)
+        } else {
+            // 2. 如果上限没变，检查耐力是否变了
+            const enduranceDelta = (耐力 - oldEndurance) * 20; 
+
+            if (enduranceDelta !== 0) {
+                // 计算新的上限
+                const newMaxHP = oldMaxHP + enduranceDelta;
+                derived.生命值.上限[0] = newMaxHP;
+
+                // 同步更新当前生命值（保持扣血/满血状态）
+                if (derived.生命值.当前值) {
+                    derived.生命值.当前值[0] = oldCurrentHP + enduranceDelta;
+                }
+            }
         }
     }
-}
     
     
     // 意志力计算
@@ -37174,13 +37185,13 @@ document.getElementById('header-difficulty').textContent = `${SafeGetValue(statD
 
 
 /* 填充任务详情 */
-    document.getElementById('task-objective').textContent = SafeGetValue(taskData.objective);
-    document.getElementById('task-status').textContent = SafeGetValue(taskData.status);
-    const progress = SafeGetValue(taskData.progress);
-    document.getElementById('task-progress-bar').style.width = (typeof progress === 'number' ? progress : 0) + '%';
-    document.getElementById('task-rewards').textContent = SafeGetValue(taskData.rewards);
-    document.getElementById('task-penalties').textContent = SafeGetValue(taskData.penalties);
-    document.getElementById('task-time-left').textContent = SafeGetValue(taskData.time_left) + ' 天';
+    // document.getElementById('task-objective').textContent = SafeGetValue(taskData.objective);
+    // document.getElementById('task-status').textContent = SafeGetValue(taskData.status);
+    // const progress = SafeGetValue(taskData.progress);
+    // document.getElementById('task-progress-bar').style.width = (typeof progress === 'number' ? progress : 0) + '%';
+    // document.getElementById('task-rewards').textContent = SafeGetValue(taskData.rewards);
+    // document.getElementById('task-penalties').textContent = SafeGetValue(taskData.penalties);
+    // document.getElementById('task-time-left').textContent = SafeGetValue(taskData.time_left) + ' 天';
 
 
   }catch{
