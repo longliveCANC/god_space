@@ -58,7 +58,7 @@
                 width: 900px; height: 80vh; max-width: 95vw;
                 background: var(--container-bg-color);
                 border: 1px solid var(--border-color);
-                box-shadow: 0 0 30px var(--glow-color);
+                
                 border-radius: 8px;
                 display: flex; flex-direction: column;
                 color: var(--text-color);
