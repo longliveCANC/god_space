@@ -40936,13 +40936,13 @@ if(is_genji !== "true"){
 
 if(is_complex_task !== "true"){
           document.getElementById('task_bookmark').style.display = 'none';
- 
+     document.getElementById('page-task-orb').style.display = 'none';
 }
    if (version === '7') {
  document.getElementById('world_settings_bookmark').style.display = 'none';
        document.getElementById('world_npc_bookmark').style.display = 'none';
         document.getElementById('group_member_bookmark').style.display = 'none';
-           document.getElementById('page-task-orb').style.display = 'none';
+       
             document.getElementById('shop-wrapper-orb').style.display = 'none';
           
     
@@ -40950,7 +40950,7 @@ if(is_complex_task !== "true"){
   document.getElementById('world_settings_bookmark').style.display = 'flex';
     document.getElementById('world_npc_bookmark').style.display = 'flex';
     document.getElementById('group_member_bookmark').style.display = 'flex';
-         document.getElementById('page-task-orb').style.display = 'flex';
+         
     document.getElementById('shop-wrapper-orb').style.display = 'flex';
           
         }
