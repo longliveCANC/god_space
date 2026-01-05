@@ -12678,6 +12678,7 @@ pointer-events: auto;
             <div class="mod-tab" data-for="danmu-on" data-name="danmu-mode" data-off-id="danmu-off" >b站弹幕</div>
            <div class="mod-tab" data-for="bgm-on" data-name="bgm-mode" data-off-id="bgm-off" >bgm</div>
                                <div class="mod-tab" data-for="chuan-on" data-name="chuan-mode" data-off-id="chuan-off" >根基体系</div>
+                                    <div class="mod-tab" data-for="task-on" data-name="task-mode" data-off-id="task-off" >任务系统</div>
                                  <br>
             <div class="mod-tab" data-for="doubleapi-on" data-name="doubleapi-mode" data-off-id="doubleapi-off" >异步更新</div>
             <div class="mod-tab" data-for="doublememory-on" data-name="doublememory-mode" data-off-id="doublememory-off" >补录变量</div>
@@ -12793,6 +12794,9 @@ pointer-events: auto;
 
                    <input type="radio" id="chuan-on" name="chuan-mode" value="on" checked> 
         <input type="radio" id="chuan-off" name="chuan-mode" value="off" >
+                   <input type="radio" id="task-on" name="task-mode" value="on" checked> 
+        <input type="radio" id="task-off" name="task-mode" value="off" >
+        
 
              <input type="radio" id="danmu-on" name="danmu-mode" value="on" checked> 
         <input type="radio" id="danmu-off" name="danmu-mode" value="off" >
@@ -14089,14 +14093,23 @@ pointer-events: auto;
                 <div class="book-bookmarks">
               
                     <div class="bookmark" data-tab="global_npc">全局人物</div>
+                    <div class="bookmark" data-tab="world_npc" id="world_npc_bookmark">世界人物</div>
+                    <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>
+<br>
                     <div class="bookmark" data-tab="global_settings">全局设定</div>
+         <div class="bookmark active" data-tab="world_settings" id="world_settings_bookmark">世界设定</div>
+                    <div class="bookmark" data-tab="global_备忘录" id="things_bookmark">备忘录</div>
+                    <div class="bookmark" data-tab="global_task" id="task_bookmark">你的任务</div>
+<br>
+
                     <div class="bookmark" data-tab="global_背包">你的背包</div>
                     <div class="bookmark" data-tab="global_其他技能">你的技能</div>
                     <div class="bookmark" data-tab="global_根基体系" id="genji_bookmark">根基体系</div>
-                    <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>
-                     <div class="bookmark" data-tab="world_npc" id="world_npc_bookmark">世界人物</div>
-                    <div class="bookmark active" data-tab="world_settings" id="world_settings_bookmark">世界设定</div>
-                    <div class="bookmark" data-tab="global_备忘录" id="things_bookmark">备忘录</div>
+                    
+
+                    <br>
+                     
+           
                      <div class="bookmark" data-tab="the_created" id="the_created_bookmark">$#%</div> 
                    
                 </div>
@@ -22233,6 +22246,7 @@ async function handleModeSelection() {
         const spacialdatevalue = getSafeValue('spacialdate-mode', 'off'); 
 
              const chuandatevalue = getSafeValue('chuan-mode', 'off'); 
+  const taskvalue = getSafeValue('task-mode', 'on'); 
 
         // HTML: value="on" checked -- 注意这个默认是开启的
         const danmuvalue = getSafeValue('danmu-mode', 'on');
@@ -22309,6 +22323,10 @@ async function handleModeSelection() {
               if(chuandatevalue === 'on'){
                 uidsToEnable.push(63);
             }
+
+                          if(taskvalue === 'on'){
+                uidsToEnable.push(7,11);
+            }
                if(doublememoryalue === 'on'){
                 uidsToEnable.push(83);
             }
@@ -22361,7 +22379,7 @@ uidsToEnable.push(91);
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,7,11,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -29348,26 +29366,24 @@ function getCanonicalCurrencyName(alias) {
     if (derived.防御?.基础防御) {
         derived.防御.基础防御[0] = Math.min(敏捷, 感知);
     }
-   if (derived.生命值?.上限) {
-        // 从 GameAPI 获取旧值
-        const oldData = window.GameAPI?.playCharacterData;
-        const oldMaxHP = oldData?.衍生属性?.生命值?.上限?.[0] ?? 0;
-        const oldCurrentHP = oldData?.衍生属性?.生命值?.当前值?.[0] ?? 0;
-        
-        newMaxHP = derived.生命值.上限[0];
+ if (derived.生命值?.上限) {
+    // 从 GameAPI 获取旧值
+    const oldData = window.GameAPI?.playCharacterData;
+    const oldMaxHP = oldData?.衍生属性?.生命值?.上限?.[0] ?? 0;
+    const oldCurrentHP = oldData?.衍生属性?.生命值?.当前值?.[0] ?? 0;
     
-        
-        if (derived.生命值.当前值) {
-            // 如果新上限比旧上限高，当前值增加差值
-            if (newMaxHP > oldMaxHP) {
-                derived.生命值.当前值[0] = oldCurrentHP + (newMaxHP - oldMaxHP);
-            }
-            // 确保当前值不超过新上限
-            if (derived.生命值.当前值[0] > newMaxHP) {
-                derived.生命值.当前值[0] = newMaxHP;
-            }
+    const newMaxHP = oldMaxHP + (耐力 * 20);
+    derived.生命值.上限[0] = newMaxHP;
+    
+    if (derived.生命值.当前值) {
+        // 当前值也增加相同的增量
+        derived.生命值.当前值[0] = oldCurrentHP + (耐力 * 5);
+        // 确保当前值不超过新上限
+        if (derived.生命值.当前值[0] > newMaxHP) {
+            derived.生命值.当前值[0] = newMaxHP;
         }
     }
+}
     
     
     // 意志力计算
@@ -40826,6 +40842,7 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
  const is_genji = String(chatdata.is_genji||'false');
+  const is_complex_task = String(chatdata.is_complex_task||'false');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);
@@ -40901,6 +40918,11 @@ if(isThingsRecord ==="true"){
 
 if(is_genji !== "true"){
           document.getElementById('genji_bookmark').style.display = 'none';
+ 
+}
+
+if(is_complex_task !== "true"){
+          document.getElementById('task_bookmark').style.display = 'none';
  
 }
    if (version === '7') {
@@ -43503,7 +43525,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,7,11, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -43526,7 +43548,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,7,11,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -43617,6 +43639,7 @@ function setupReconfigModal() {
         { name: '简单npc', uid: 72, group: 'npc-info', category: 'gameplay', desc: '标准NPC信息' },
         { name: '复杂npc', uid: 36, group: 'npc-info', category: 'gameplay', desc: '详细NPC信息' },
                { name: '根基体系', uid: 63, category: 'gameplay', desc: '启用血统、改造、功法' },
+                { name: '任务系统', uid: 7, category: 'gameplay', desc: '启用任务记录和追踪'},
                  { name: '真实MOD', uid: 12, category: 'gameplay', desc: '启用真实模式' },
         { name: '困难MOD', uid: 16, category: 'gameplay', desc: '启用困难模式' },
              { name: '求生本能开', uid: 69, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
@@ -43812,7 +43835,7 @@ function setupReconfigModal() {
         if (mod.name === '复杂地图') input.dataset.extraUid = '25,26';
         if (mod.name === '分阶段好感') input.dataset.extraUid = '64';
         if (mod.name === '特殊日期') input.dataset.extraUid = '73';
-
+        if (mod.name === '任务系统') input.dataset.extraUid = '11';
         card.addEventListener('click', (e) => {
             e.preventDefault();
             if (mod.group) {
@@ -43991,7 +44014,7 @@ function setupReconfigModal() {
                 }
             });
             allManageableUids.add(33); allManageableUids.add(25); allManageableUids.add(26); allManageableUids.add(64); allManageableUids.add(73);
-
+ allManageableUids.add(11); 
             const preservedUids = new Set([...originalUids].filter(uid =>
                 !allManageableUids.has(uid) && !allWorldviewUids.has(uid)
             ));
