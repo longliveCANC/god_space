@@ -12649,7 +12649,7 @@ pointer-events: auto;
              文明已死。红月之夜的怪物、核辐射的威胁，还是永冬的严寒——选择你的末日模式，然后...证明人类不会灭绝。
         </div>
         <input type="radio" id="mode-wasteland" name="world-mode" value="54">
-        <div class="bookmark-button" data-tooltip="进入无世界观模式-请跳过第二页，并使用手动发送，然后自己检查并编辑【令】小盒里的内容，填写你的自定义开局/指令"></div>
+        <div class="bookmark-button" title="进入无世界观模式-请跳过第二页，并使用手动发送，然后自己检查并编辑【令】小盒里的内容，填写你的自定义开局/指令" data-tooltip="进入无世界观模式-请跳过第二页，并使用手动发送，然后自己检查并编辑【令】小盒里的内容，填写你的自定义开局/指令"></div>
     </div>
 
 </div>
