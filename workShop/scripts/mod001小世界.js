@@ -6,7 +6,6 @@
     // ====================================================================
     const PREFIX = 'mod001';
 
-    // 数据路径配置
     const PATHS = {
         SHOP: 'global_lore.youxijishangcheng',
         CHAR: 'global_lore.jueseming',
@@ -38,20 +37,17 @@
         BTN_WH_ACTION: `${PREFIX}_wh_action_btn`
     };
 
-    // 状态管理
     let CART_ITEMS = [];
 
-    // 商城分类配置
     const SHOP_CATEGORIES = [
         { key: '付费游戏', title: '付费游戏' },
         { key: '免费游戏', title: '免费游戏' },
-        { key: '商城道具', title: '🔮 商城道具' }, // ✨ 统一了
+        { key: '商城道具', title: '🔮 商城道具' },
         { key: '购物车', title: '🛒 购物车' }
     ];
 
-
     // ====================================================================
-    // ** 1. 工具函数 (Utils) **
+    // ** 1. 工具函数 (Utils - Big Number Added) **
     // ====================================================================
 
     function removeOldDataOrb() {
@@ -74,6 +70,15 @@
             try { result = JSON.parse(result); } catch (e) { console.warn(`[${PREFIX}] JSON解析警告`, e); }
         }
         return result;
+    }
+
+    // [NEW] 大数格式化函数
+    function formatBigNumber(num) {
+        if (isNaN(num)) return num;
+        const n = parseFloat(num);
+        if (n >= 100000000) return (n / 100000000).toFixed(1).replace(/\.0$/, '') + '亿';
+        if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, '') + '万';
+        return n; // 小于1万直接显示
     }
 
     function safeAlert(msg) {
@@ -116,13 +121,7 @@
     };
 
     function hideAllContainers() {
-        [
-            DOM_IDS.CONTAINER_SHOP,
-            DOM_IDS.CONTAINER_CHAR,
-            DOM_IDS.CONTAINER_WORLD,
-            DOM_IDS.CONTAINER_WAREHOUSE,
-            DOM_IDS.MENU_MODAL
-        ].forEach(id => {
+        [DOM_IDS.CONTAINER_SHOP, DOM_IDS.CONTAINER_CHAR, DOM_IDS.CONTAINER_WORLD, DOM_IDS.CONTAINER_WAREHOUSE, DOM_IDS.MENU_MODAL].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
@@ -139,36 +138,18 @@
         }
     }
 
-    // 修改：增加了 target (目标仓库) 参数
     function addToCart(name, type, baseCost, target) {
         let finalCost = parseInt(baseCost);
         let targetName = "";
-
-        // 计算逻辑：如果是道具，根据目标决定倍率
         if (type === '商城道具') {
-            if (target === 'real') {
-                finalCost = finalCost * 2;
-                targetName = " (至现实仓库)";
-            } else {
-                targetName = " (至游戏仓库)";
-            }
+            if (target === 'real') { finalCost = finalCost * 2; targetName = " (至现实仓库)"; }
+            else { targetName = " (至游戏仓库)"; }
         }
-
-        // 构建购物车对象
-        CART_ITEMS.push({
-            name: name,
-            type: type,
-            target: target, // 记录目标：'game', 'real', 或 null (对于游戏本身)
-            cost: finalCost
-        });
-
+        CART_ITEMS.push({ name: name, type: type, target: target, cost: finalCost });
         const cartTab = document.getElementById(`${PREFIX}_tab_btn_购物车`);
-        if (cartTab && cartTab.classList.contains('active')) {
-            renderCartSection();
-        }
+        if (cartTab && cartTab.classList.contains('active')) renderCartSection();
         safeAlert(`已将 《${name}》${targetName} 加入购物车，花费 ${finalCost} 功勋。`);
     }
-
 
     function removeFromCart(index) {
         if (index >= 0 && index < CART_ITEMS.length) {
@@ -179,44 +160,23 @@
     }
 
     function handleCheckout() {
-        if (CART_ITEMS.length === 0) {
-            safeAlert("购物车是空的！");
-            return;
-        }
-
-        // 构建人类可读的清单，包含目标仓库信息
+        if (CART_ITEMS.length === 0) { safeAlert("购物车是空的！"); return; }
         const itemList = CART_ITEMS.map(i => {
-            let targetDesc = "";
-            if (i.target === 'game') targetDesc = "[存入游戏仓库]";
-            if (i.target === 'real') targetDesc = "[存入现实仓库]";
+            let targetDesc = i.target === 'game' ? "[存入游戏仓库]" : (i.target === 'real' ? "[存入现实仓库]" : "");
             return `《${i.name}》${targetDesc}(${i.cost})`;
         }).join('; ');
-
         const totalCost = CART_ITEMS.reduce((sum, i) => sum + i.cost, 0);
-
-        // 指令发送
         if (safeTrigger(`/setinput 李境结算了商城购物车。总计花费 ${totalCost} 功勋。购买详细清单：${itemList}。请根据清单将物品分别写入[游戏仓库]或[现实仓库]，并扣除功勋。`)) {
-            CART_ITEMS = [];
-            renderCartSection();
-            safeAlert(`结算指令已发送！总计消费 ${totalCost} 功勋。`);
+            CART_ITEMS = []; renderCartSection(); safeAlert(`结算指令已发送！总计消费 ${totalCost} 功勋。`);
         }
     }
 
-
     function handleWarehouseAction(name, actionKey, quantity) {
-        if (!quantity || parseInt(quantity) <= 0) {
-            safeAlert("库存不足，无法操作！");
-            return;
-        }
-        let command = "";
-        if (actionKey === 'real') {
-            command = `/setinput 李境在游戏机仓库中选择了【现实物品：${name}】，并点击了“具现”按钮。`;
-        } else if (actionKey === 'game') {
-            command = `/setinput 李境在游戏机仓库中选择了【游戏道具：${name}】，并点击了“携带”按钮，准备将其带入游戏。`;
-        }
-        if (safeTrigger(command)) {
-            safeAlert(`指令已发送: 请求${actionKey === 'real' ? '具现' : '携带'} ${name}`);
-        }
+        if (!quantity || parseInt(quantity) <= 0) { safeAlert("库存不足，无法操作！"); return; }
+        let command = actionKey === 'real'
+            ? `/setinput 李境在游戏机仓库中选择了【现实物品：${name}】，并点击了“具现”按钮。`
+            : `/setinput 李境在游戏机仓库中选择了【游戏道具：${name}】，并点击了“携带”按钮，准备将其带入游戏。`;
+        if (safeTrigger(command)) safeAlert(`指令已发送: 请求${actionKey === 'real' ? '具现' : '携带'} ${name}`);
     }
 
     // ====================================================================
@@ -230,12 +190,24 @@
 
     const htmlProgress = (label, value, colorClass = '') => {
         const safeValue = String(value != null ? value : '0');
-        const pct = safeValue.replace('%', '');
-        const color = colorClass === 'energy' ? '#00bfff' : (colorClass === 'exp' ? '#ffd700' : '#418d2d');
+        const pct = safeValue.match(/\d+(\.\d+)?/) ? parseFloat(safeValue.match(/\d+(\.\d+)?/)[0]) : 0;
+        let color = '#418d2d';
+        if (colorClass === 'energy') color = '#00bfff';
+        else if (colorClass === 'exp') color = '#ffd700';
+        else if (colorClass === 'special') color = '#be2ed6';
+        else if (colorClass === 'war') color = '#ff4500';
+        else if (colorClass === 'science') color = '#00ced1';
+        else if (colorClass === 'danger') color = '#cc3131';
+
+        let width = 0;
+        if (safeValue.includes('%')) width = pct;
+        else if (pct <= 100 && pct > 0) width = pct;
+        else if (pct > 100) width = 100;
+
         return `
             <div class="${PREFIX}_stat_widget">
                 <div class="${PREFIX}_stat_top"><span class="${PREFIX}_stat_label">${label}</span><span class="${PREFIX}_stat_val_text">${safeValue}</span></div>
-                <div class="${PREFIX}_progress_track"><div class="${PREFIX}_progress_fill" style="width: ${pct}%; background-color: ${color}; box-shadow: 0 0 10px ${color}80;"></div></div>
+                <div class="${PREFIX}_progress_track"><div class="${PREFIX}_progress_fill" style="width: ${width}%; background-color: ${color}; box-shadow: 0 0 10px ${color}80;"></div></div>
             </div>`;
     };
 
@@ -243,22 +215,12 @@
         if (!statusMap || Object.keys(statusMap).length === 0) return '';
         const items = Object.entries(statusMap).map(([key, data]) => {
             const name = data.状态名称 || key;
-            const desc = data.状态描述 || '无描述';
-            const effect = data.状态效果 || '无效果';
+            const desc = data.状态描述 || data.影响 || '无描述';
+            const effect = data.状态效果 || data.影响 || '无效果';
             const duration = data.持续时间 || '未知';
             const type = data.状态类型 || '正面';
-
-            let pillClass = 'buff';
-            let icon = '▲';
-
-            if (type === '负面') {
-                pillClass = 'debuff';
-                icon = '▼';
-            } else if (type === '中性') {
-                pillClass = 'neutral';
-                icon = '●';
-            }
-
+            let pillClass = type === '负面' ? 'debuff' : (type === '中性' ? 'neutral' : 'buff');
+            let icon = type === '负面' ? '▼' : (type === '中性' ? '●' : '▲');
             return `
             <div class="${PREFIX}_status_pill ${pillClass}">
                 <span class="status-icon" style="font-size: 1.2em; line-height: 1;">${icon}</span>
@@ -271,9 +233,161 @@
                 </div>
             </div>`;
         }).join('');
-        return `<div class="${PREFIX}_status_container"><div class="${PREFIX}_section_label_sm">当前状态</div><div class="${PREFIX}_status_grid">${items}</div></div>`;
+        return `<div class="${PREFIX}_status_container"><div class="${PREFIX}_section_label_sm">当前状态 / 环境</div><div class="${PREFIX}_status_grid">${items}</div></div>`;
     };
 
+    // === 核心渲染 ===
+    function renderCharacterContent(charDataMap, fullWorldData) {
+        if (!charDataMap || typeof charDataMap !== 'object') return { tabs: '', panels: '<div class="empty-tip">数据无效</div>' };
+        const names = Object.keys(charDataMap);
+        const tabs = names.map((name, i) => `<button class="${CLASSES.BTN_CHAR_TAB} ${i===0?'active':''}" data-target="${name}">${name}</button>`).join('');
+
+        const panels = Object.entries(charDataMap).map(([name, data], i) => {
+            const safe = (obj) => obj || {};
+
+            let isStrategyMode = false;
+            let modeSource = 'Guess';
+            const gameName = safe(data.游戏世界).游戏名称;
+            if (gameName && fullWorldData && fullWorldData[gameName]) {
+                const worldMeta = safe(fullWorldData[gameName].元数据);
+                if (worldMeta.架构类型 === '经营实体') { isStrategyMode = true; modeSource = 'WorldMeta'; }
+                else if (worldMeta.架构类型 === '个体') { isStrategyMode = false; modeSource = 'WorldMeta'; }
+            }
+            if (modeSource === 'Guess') {
+                if (data.核心资源 || data.帝国概况 || data.经营概况 || data.宏观指标) isStrategyMode = true;
+            }
+
+            let panelHTML = '';
+
+            if (isStrategyMode) {
+                let unifiedResources = safe(data.核心资源);
+                let unifiedMetrics = safe(data.宏观指标);
+                let unifiedAssets = safe(data.实体资产);
+                let unifiedTechs = data.已解锁科技 || [];
+
+                if (data.帝国概况) {
+                    unifiedResources = {...unifiedResources, ...safe(data.帝国概况.战略资源)};
+                    unifiedMetrics = {...unifiedMetrics, ...safe(data.帝国概况.国家统计), ...safe(data.帝国概况.综合国力)};
+                }
+                if (data.军事与科技) {
+                    if (data.军事与科技.武装力量) unifiedAssets = {...unifiedAssets, ...data.军事与科技.武装力量};
+                    if (data.军事与科技.关键科技) {
+                        const techs = Array.isArray(data.军事与科技.关键科技) ? data.军事与科技.关键科技 : Object.keys(data.军事与科技.关键科技);
+                        unifiedTechs = [...unifiedTechs, ...techs];
+                    }
+                }
+
+                const subTitle = data.经营等级 || data.游戏等级 || data.类型 || "经营实体";
+
+                const resourcesHtml = Object.entries(unifiedResources).map(([k, v]) => {
+                    let qty = 0; let desc = ''; let unit = '';
+                    if (typeof v === 'object' && v !== null) { qty = v.数量 || v.val || 0; desc = v.简介 || v.desc || ''; unit = v.单位 || ''; } else { qty = v; }
+
+                    // [NEW] 应用大数格式化
+                    const displayQty = formatBigNumber(qty);
+
+                    return `
+                    <div class="${PREFIX}_resource_chip">
+                        <div class="res-icon">💠</div>
+                        <div class="res-main"><div class="res-name">${k}</div><div class="res-val">${displayQty} <span style="font-size:0.8em;opacity:0.7">${unit}</span></div></div>
+                        ${desc ? `<div class="${PREFIX}_status_tooltip"><div class="st-head">${k}</div><div class="st-row">📝 ${desc}</div></div>` : ''}
+                    </div>`;
+                }).join('');
+
+                const metricsHtml = Object.entries(unifiedMetrics).map(([k, v]) => {
+                    const strV = String(v);
+                    if (strV.includes('%') || strV.match(/^\d+(\/\d+)?$/) || (parseInt(strV) > 100 && !k.includes('数量'))) {
+                        return htmlProgress(k, v, k.includes('危') || k.includes('污染') ? 'danger' : 'science');
+                    } else {
+                        return `<div class="${PREFIX}_metric_card"><div class="metric-head">${k}</div><div class="metric-val">${v}</div></div>`;
+                    }
+                }).join('');
+
+                const normalAssetsHtml = [];
+                const specialItemsHtml = [];
+                Object.entries(unifiedAssets).forEach(([k, v]) => {
+                    const type = v.类型 || '单位';
+                    const status = v.状态 || '就绪';
+                    const level = v['规模/等级'] || v.等级 || v.数量 || 1;
+                    const isSpecial = /遗珍|神器|关键|物品|道具|数据|芯片|钥匙/.test(type) || /遗珍|神器|关键|物品|道具|数据|芯片|钥匙/.test(k);
+                    const cardHtml = `<div class="${PREFIX}_asset_card ${isSpecial ? 'special-item' : ''}"><div class="asset-icon">${isSpecial ? '🧩' : '🏭'}</div><div class="asset-info"><div class="asset-name">${k}</div><div class="asset-meta"><span class="asset-tag">${type}</span><span class="asset-tag ${status==='就绪'||status==='运营中'||status==='持有中'?'active':''}">${status}</span></div></div><div class="asset-level">${isSpecial ? '' : 'x'+level}</div></div>`;
+                    if (isSpecial) specialItemsHtml.push(cardHtml); else normalAssetsHtml.push(cardHtml);
+                });
+
+                const techs = unifiedTechs.map(t => `<span class="${PREFIX}_tech_tag">🧬 ${t}</span>`).join('');
+                const policies = (data.当前政策 || []).map(p => `<span class="${PREFIX}_policy_tag">📜 ${p}</span>`).join('');
+
+                panelHTML = `
+                <div class="${PREFIX}_char_dashboard_layout strategy-mode">
+                    <div class="${PREFIX}_char_sidebar_profile">
+                        <div class="${PREFIX}_profile_header"><div class="${PREFIX}_profile_avatar_placeholder empire">${name[0]}</div><h2 class="${PREFIX}_profile_name">${name}</h2><span class="${PREFIX}_profile_lvl">${subTitle}</span></div>
+                        <div class="${PREFIX}_section_divider small"><span>核心资源池</span></div><div class="${PREFIX}_resource_chip_grid">${resourcesHtml || '<div class="empty-tip">暂无资源</div>'}</div>
+                        ${renderStatusBar(safe(data.游戏状态栏))}
+                    </div>
+                    <div class="${PREFIX}_char_main_content">
+                        <div class="${PREFIX}_detail_block full-width"><h4>📊 宏观指标</h4><div class="${PREFIX}_metrics_grid">${metricsHtml || '<div class="empty-tip">暂无指标</div>'}</div></div>
+
+                        <div class="${PREFIX}_content_grid_2col" style="margin-top: 20px;">
+                            <div class="${PREFIX}_detail_block"><h4>🧬 科技</h4><div class="tags-wrapper">${techs || '<span style="color:#666">暂无</span>'}</div></div>
+                            <div class="${PREFIX}_detail_block"><h4>📜 政策</h4><div class="tags-wrapper">${policies || '<span style="color:#666">暂无</span>'}</div></div>
+                        </div>
+
+                        ${specialItemsHtml.length > 0 ? `<div class="${PREFIX}_section_divider"><span>🗝️ 关键物品 / 遗珍</span></div><div class="${PREFIX}_assets_grid">${specialItemsHtml.join('')}</div>` : ''}
+
+                        <div class="${PREFIX}_section_divider"><span>资产 / 军事</span></div><div class="${PREFIX}_assets_grid">${normalAssetsHtml.join('') || '<div class="empty-tip">暂无常规资产</div>'}</div>
+
+                        <div class="${PREFIX}_section_divider"><span>目标</span></div><div class="${PREFIX}_task_panel strategy"><div><strong>👑 目标:</strong> ${safe(data.游戏任务).主线任务 || safe(data.游戏任务).经营目标 || '无'}</div><div><strong>⚡ 支线:</strong> ${safe(data.游戏任务).支线任务 || safe(data.游戏任务).突发事件 || '无'}</div></div>
+                    </div>
+                </div>`;
+            } else {
+                // RPG Mode - 保持不变
+                const subTitle = `RPG 等级: ${data.游戏等级 || '?'}`;
+                const standardKeys = ['游戏生命值', '游戏能量值', '游戏经验值'];
+                const specialKey = Object.keys(data).find(k => k.startsWith('游戏') && k.endsWith('值') && !standardKeys.includes(k));
+                let specialBarHtml = specialKey ? htmlProgress(specialKey.replace(/^游戏|值$/g, '')||"特殊", data[specialKey], 'special') : '';
+                const topStatsHtml = `${htmlProgress('HP', data.游戏生命值)}${htmlProgress('MP', data.游戏能量值, 'energy')}${specialBarHtml}${htmlProgress('EXP', data.游戏经验值, 'exp')}`;
+                const attrs = safe(data.游戏属性);
+                const mainGridHtml = ['生理','心智','互动'].map(k => {
+                    const inner = Object.entries(safe(attrs[`${k}属性`])).map(([p,v]) => `<div class="${PREFIX}_grid_stat_item"><span class="stat_k">${p}</span><span class="stat_v">${v}</span></div>`).join('');
+                    return `<div class="${PREFIX}_detail_block"><h4>${k}</h4><div class="${PREFIX}_grid_stats_container">${inner}</div></div>`;
+                }).join('');
+                const skillsData = safe(data.游戏技能);
+                const skillCards = ['主动','被动'].map(k => Object.entries(safe(skillsData[`${k}技能`])).map(([sn, sv]) => `<div class="${PREFIX}_mini_skill_card"><div class="msk_head"><span>${sn}</span>${htmlStars(sv.星级)}</div><div class="msk_desc">${sv.简介||'无'}</div></div>`).join('')).join('');
+                const vehicleName = data.游戏载具 || '无';
+                const vehicleHtml = (vehicleName && vehicleName !== '无') ? `<div class="${PREFIX}_mini_skill_card vehicle-card" style="border-color:#f2c94c;background:rgba(242,201,76,0.05);"><div class="msk_head"><span style="color:#f2c94c;">🚀 载具</span></div><div class="msk_desc" style="color:#fff;font-weight:bold;">${vehicleName}</div></div>` : '';
+                const skillsSectionHtml = `<div class="${PREFIX}_skill_flex_container">${vehicleHtml}${skillCards}</div>`;
+                const currency = data.游戏内货币 || 0;
+                const tasks = safe(data.游戏任务);
+                const invHtml = Object.entries(safe(data.游戏背包)).map(([n, v]) => `<div class="${PREFIX}_inv_slot"><div class="inv_icon">📦</div><div class="inv_info"><div class="inv_name">${n}</div><div class="inv_qty">x${v.数量||1}</div></div><div class="${PREFIX}_status_tooltip"><div class="st-head">${n}</div><div class="st-row">📝 ${v.简介||'无'}</div></div></div>`).join('');
+                const doneHtml = (tasks.已完成任务||[]).length > 0 ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #3c4450;font-size:0.8em;color:#8a96a3;">✅ 完成: ${(Array.isArray(tasks.已完成任务)?tasks.已完成任务:[tasks.已完成任务]).join(', ')}</div>` : '';
+
+                panelHTML = `
+                <div class="${PREFIX}_char_dashboard_layout">
+                    <div class="${PREFIX}_char_sidebar_profile">
+                        <div class="${PREFIX}_profile_header"><div class="${PREFIX}_profile_avatar_placeholder">${name[0]}</div><h2 class="${PREFIX}_profile_name">${name}</h2><span class="${PREFIX}_profile_lvl">${subTitle}</span></div>
+                        <div class="${PREFIX}_profile_base_stats">${topStatsHtml}</div>
+                        <div class="${PREFIX}_currency_box"><span class="curr_icon">🪙</span><span class="curr_label">资产</span><span class="curr_val">${currency}</span></div>
+                        ${renderStatusBar(safe(data.游戏状态栏))}
+                        <div class="${PREFIX}_profile_tags"><div class="tag-label">性格</div><div class="tags-wrapper">${Object.entries({...safe(data.表性格),...safe(data.里性格)}).map(([k,v])=>`<span class="${PREFIX}_tag_pill" title="${v}">${k}</span>`).join('')}</div></div>
+                    </div>
+                    <div class="${PREFIX}_char_main_content">
+                        <div class="${PREFIX}_content_row">${mainGridHtml}</div>
+                        <div class="${PREFIX}_section_divider"><span>战斗与技能</span></div>
+                        <div class="${PREFIX}_content_row_full">${skillsSectionHtml}</div>
+                        <div class="${PREFIX}_section_divider"><span>物资与任务</span></div>
+                        <div class="${PREFIX}_content_grid_2col">
+                            <div class="${PREFIX}_detail_block"><h4>任务</h4><div class="${PREFIX}_task_panel"><div><strong>主:</strong>${tasks.主线任务||'无'}</div><div><strong>支:</strong>${tasks.支线任务||'无'}</div>${doneHtml}</div></div>
+                            <div class="${PREFIX}_detail_block"><h4>背包</h4><div class="${PREFIX}_inventory_grid">${invHtml}</div></div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            return `<div id="${PREFIX}_panel_${name}" class="${PREFIX}_char_panel_wrapper" style="display:${i===0?'block':'none'}">${panelHTML}</div>`;
+        }).join('');
+        return { tabs, panels };
+    }
+
+    // ... (其他渲染函数: renderWarehouseContent, generateShopSection, renderCartSection, renderWorldContent 保持不变) ...
     function renderWarehouseContent(data) {
         if (!data) return { tabs: '', panels: '<div class="empty-tip">仓库数据为空或解析失败</div>' };
         const categories = [
@@ -308,61 +422,25 @@
     function generateShopSection(data, title) {
         const safeData = data || {};
         if (Object.keys(safeData).length === 0) return `<div class="${PREFIX}_section" id="${PREFIX}_section_${title}"><h3>${title}</h3><p style="text-align:center;padding:20px;">暂无${title}。</p></div>`;
-
         const cards = Object.entries(safeData).map(([name, item]) => {
             if (!item || typeof item !== 'object') return '';
-
-            // 获取基础数据
             const baseCostStr = String(item.所需功勋 || item.基础功勋 || 'N/A');
             const baseCostVal = parseInt(baseCostStr.match(/\d+/)) || 0;
             const desc = item.简介 || item.具体描述 || '暂无简介';
             const starHtml = htmlStars(item.星级);
             const source = item.来源游戏 ? `<div style="font-size:0.85em;color:#418d2d;margin-bottom:4px;">🌍 来源: ${item.来源游戏}</div>` : '';
-
-            // 🎨 区别渲染：根据栏目类型决定按钮样式
             let actionHtml = '';
-
             if (title === '商城道具') {
-                // ✨ 新逻辑：道具显示两个按钮
-                const gameCost = baseCostVal;
-                const realCost = baseCostVal * 2;
-
-                actionHtml = `
-                    <div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;">
-                        <button class="${CLASSES.BTN_ADD_CART}"
-                            style="background-color:#2a475e; border:1px solid #418d2d;"
-                            data-name="${name}" data-type="${title}" data-cost="${gameCost}" data-target="game">
-                            🎒 买入游戏仓库 (${gameCost})
-                        </button>
-                        <button class="${CLASSES.BTN_ADD_CART}"
-                            style="background-color:#2a475e; border:1px solid #d4a017; color:#ffd700;"
-                            data-name="${name}" data-type="${title}" data-cost="${baseCostVal}" data-target="real">
-                            📦 买入现实仓库 (${realCost})
-                        </button>
-                    </div>
-                `;
+                const gameCost = baseCostVal; const realCost = baseCostVal * 2;
+                actionHtml = `<div style="display:flex; flex-direction:column; gap:5px; margin-top:10px;"><button class="${CLASSES.BTN_ADD_CART}" style="background-color:#2a475e; border:1px solid #418d2d;" data-name="${name}" data-type="${title}" data-cost="${gameCost}" data-target="game">🎒 买入游戏仓库 (${gameCost})</button><button class="${CLASSES.BTN_ADD_CART}" style="background-color:#2a475e; border:1px solid #d4a017; color:#ffd700;" data-name="${name}" data-type="${title}" data-cost="${baseCostVal}" data-target="real">📦 买入现实仓库 (${realCost})</button></div>`;
             } else {
-                // 旧逻辑：游戏本身（付费/免费）只有一个按钮
                 const displayCost = title === '免费游戏' ? '免费' : `${baseCostStr} 功勋`;
-                // 这里的 data-target 留空，因为买游戏不需要区分仓库
                 actionHtml = `<div class="${PREFIX}_card_actions"><button class="${CLASSES.BTN_ADD_CART}" data-name="${name}" data-type="${title}" data-cost="${baseCostVal}" data-target="game_media">加入购物车 (${displayCost})</button></div>`;
             }
-
-            return `
-                <div class="${PREFIX}_card">
-                    <div class="${PREFIX}_card_body">
-                        <div class="${PREFIX}_card_title">${name}</div>
-                        <div class="${PREFIX}_card_meta">${starHtml}</div>
-                        ${source}
-                        <p style="font-size:13px; color:#c6d4df; margin-bottom: 10px; line-height:1.4;">${desc}</p>
-                    </div>
-                    ${actionHtml}
-                </div>`;
+            return `<div class="${PREFIX}_card"><div class="${PREFIX}_card_body"><div class="${PREFIX}_card_title">${name}</div><div class="${PREFIX}_card_meta">${starHtml}</div>${source}<p style="font-size:13px; color:#c6d4df; margin-bottom: 10px; line-height:1.4;">${desc}</p></div>${actionHtml}</div>`;
         }).join('');
-
         return `<div class="${PREFIX}_section" id="${PREFIX}_section_${title}"><h3>${title}</h3><div class="${PREFIX}_list">${cards}</div></div>`;
     }
-
 
     function renderCartSection() {
         const container = document.getElementById(`${PREFIX}_section_购物车`);
@@ -370,97 +448,10 @@
         if (CART_ITEMS.length === 0) { container.innerHTML = '<p style="font-size: 16px; color: #7a8b99; text-align: center; padding: 50px;">购物车是空的！快去选购吧。</p>'; return; }
         let total = 0;
         const listHtml = CART_ITEMS.map((item, idx) => {
-            const costVal = parseInt(String(item.cost).match(/\d+/)) || 0;
-            total += costVal;
+            const costVal = parseInt(String(item.cost).match(/\d+/)) || 0; total += costVal;
             return `<div class="${PREFIX}_cart_item"><span>《${item.name}》 (${item.type})</span><span class="${PREFIX}_cart_cost">${item.cost}</span><button class="${CLASSES.BTN_REMOVE_CART}" data-idx="${idx}">移除</button></div>`;
         }).join('');
         container.innerHTML = `<h3>购物车详情 (${CART_ITEMS.length} 件商品)</h3><div class="${PREFIX}_cart_list">${listHtml}</div><div class="${PREFIX}_cart_summary"><span>总计：</span><span class="${PREFIX}_cart_total">${total} 功勋</span></div><div class="${PREFIX}_cart_checkout"><button id="${CLASSES.BTN_CHECKOUT}">🛒 结算全部</button></div>`;
-    }
-
-    function renderCharacterContent(charDataMap) {
-        if (!charDataMap || typeof charDataMap !== 'object') return { tabs: '', panels: '<div class="empty-tip">数据无效</div>' };
-        const names = Object.keys(charDataMap);
-        const tabs = names.map((name, i) => `<button class="${CLASSES.BTN_CHAR_TAB} ${i===0?'active':''}" data-target="${name}">${name}</button>`).join('');
-
-        const panels = Object.entries(charDataMap).map(([name, data], i) => {
-            const safe = (obj) => obj || {};
-            const attrs = safe(data.游戏属性);
-            const skillsData = safe(data.游戏技能);
-            const inventory = safe(data.游戏背包);
-            const status = safe(data.游戏状态栏);
-            const tasks = safe(data.游戏任务);
-            const worldInfo = safe(data.游戏世界);
-
-            // 💰 获取货币
-            const currency = data.游戏内货币 || 0;
-
-            const doneTasksRaw = tasks.已完成任务 || [];
-            const doneTasksList = Array.isArray(doneTasksRaw) ? doneTasksRaw : [doneTasksRaw];
-            const doneTasksHtml = doneTasksList.length > 0 ? `<div class="task-done-section" style="margin-top:8px; padding-top:8px; border-top:1px dashed #3c4450;"><div style="font-size:0.85em; color:#4dff88; margin-bottom:4px;">✅ 已完成:</div>${doneTasksList.map(t => `<div style="font-size:0.8em; color:#8a96a3;">• ${t}</div>`).join('')}</div>` : '';
-
-            const statsHtml = ['生理','心智','互动'].map(k => {
-                const inner = Object.entries(safe(attrs[`${k}属性`])).map(([p,v]) => `<div class="${PREFIX}_grid_stat_item"><span class="stat_k">${p}</span><span class="stat_v">${v}</span></div>`).join('');
-                return `<div class="${PREFIX}_detail_block"><h4>${k}</h4><div class="${PREFIX}_grid_stats_container">${inner}</div></div>`;
-            }).join('');
-
-            const skillsHtml = ['主动','被动'].map(k => Object.entries(safe(skillsData[`${k}技能`])).map(([sn, sv]) => `
-                <div class="${PREFIX}_mini_skill_card"><div class="msk_head"><span>${sn}</span>${htmlStars(sv.星级)}</div><div class="msk_desc">${sv.简介||'无'}</div></div>`).join('')).join('');
-
-            const vehicleName = data.游戏载具 || '无';
-            const vehicleHtml = (vehicleName && vehicleName !== '无') ? `<div class="${PREFIX}_mini_skill_card vehicle-card" style="border-color:#f2c94c;background:rgba(242,201,76,0.05);"><div class="msk_head"><span style="color:#f2c94c;">🚀 载具</span></div><div class="msk_desc" style="color:#fff;font-weight:bold;">${vehicleName}</div></div>` : '';
-
-            const invHtml = Object.entries(inventory).map(([inm, iv]) => {
-                const desc = iv.简介 || '暂无描述';
-                const count = iv.数量 || 1;
-                const star = iv.星级 ? htmlStars(iv.星级) : '';
-                return `
-                <div class="${PREFIX}_inv_slot">
-                    <div class="inv_icon">📦</div>
-                    <div class="inv_info">
-                        <div class="inv_name">${inm}</div>
-                        <div class="inv_qty">x${count}</div>
-                    </div>
-                    <div class="${PREFIX}_status_tooltip">
-                        <div class="st-head">${inm} ${star}</div>
-                        <div class="st-row">📝 ${desc}</div>
-                    </div>
-                </div>`;
-            }).join('');
-
-            const statusBarHtml = renderStatusBar(status);
-            const personality = { ...safe(data.表性格), ...safe(data.里性格) };
-
-            return `
-            <div id="${PREFIX}_panel_${name}" class="${PREFIX}_char_panel_wrapper" style="display:${i===0?'block':'none'}">
-                <div class="${PREFIX}_char_dashboard_layout">
-                    <div class="${PREFIX}_char_sidebar_profile">
-                        <div class="${PREFIX}_profile_header"><div class="${PREFIX}_profile_avatar_placeholder">${name[0]}</div><h2 class="${PREFIX}_profile_name">${name}</h2><span class="${PREFIX}_profile_lvl">Lv.${data.游戏等级||'?'}</span></div>
-                        <div class="${PREFIX}_profile_base_stats">${htmlProgress('HP', data.游戏生命值)}${htmlProgress('MP', data.游戏能量值, 'energy')}${htmlProgress('EXP', data.游戏经验值, 'exp')}</div>
-
-                        <!-- 💰 货币显示区域 -->
-                        <div class="${PREFIX}_currency_box" title="游戏内通用货币/资金">
-                            <span class="curr_icon">🪙</span>
-                            <span class="curr_label">资产总额</span>
-                            <span class="curr_val">${currency}</span>
-                        </div>
-
-                        ${statusBarHtml}
-                        <div class="${PREFIX}_profile_tags"><div class="tag-label">性格</div><div class="tags-wrapper">${Object.entries(personality).map(([k,v])=>`<span class="${PREFIX}_tag_pill" title="${v}">${k}</span>`).join('')}</div></div>
-                    </div>
-                    <div class="${PREFIX}_char_main_content">
-                        <div class="${PREFIX}_content_row">${statsHtml}</div>
-                        <div class="${PREFIX}_section_divider"><span>战斗配置</span></div>
-                        <div class="${PREFIX}_content_row_full"><div class="${PREFIX}_skill_flex_container">${vehicleHtml}${skillsHtml}</div></div>
-                        <div class="${PREFIX}_section_divider"><span>物资与任务</span></div>
-                        <div class="${PREFIX}_content_grid_2col">
-                            <div class="${PREFIX}_detail_block"><h4>当前任务</h4><div class="${PREFIX}_task_panel"><div><strong>主:</strong> ${tasks.主线任务||'无'}</div><div><strong>支:</strong> ${tasks.支线任务||'无'}</div><div class="task-env">📍 ${worldInfo.游戏角色所处地||'未知'}</div>${doneTasksHtml}</div></div>
-                            <div class="${PREFIX}_detail_block"><h4>背包</h4><div class="${PREFIX}_inventory_grid">${invHtml}</div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-        return { tabs, panels };
     }
 
     function renderWorldContent(worldDataMap) {
@@ -471,14 +462,7 @@
             const isDone = data.是否通关 === true;
             let rawClues = data.游戏线索 || [];
             let clueList = [];
-            if (Array.isArray(rawClues)) {
-                clueList = rawClues;
-            } else if (typeof rawClues === 'object') {
-                clueList = Object.values(rawClues);
-            } else {
-                clueList = [String(rawClues)];
-            }
-
+            if (Array.isArray(rawClues)) clueList = rawClues; else if (typeof rawClues === 'object') clueList = Object.values(rawClues); else clueList = [String(rawClues)];
             const clues = clueList.map(c => `<div class="${PREFIX}_clue_item"><span class="clue-icon">🔍</span><span class="clue-text">${c}</span></div>`).join('') || '<div class="empty-tip">无线索</div>';
             const monsters = Object.entries(data.敌怪图鉴||{}).map(([mn, md]) => `<div class="${PREFIX}_monster_card"><div class="m_header"><span class="m_name">${mn}</span><span class="m_weak">弱: ${md.弱点||'未知'}</span></div><div class="m_desc">${md.描述||'无'}</div></div>`).join('') || '<div class="empty-tip">无记录</div>';
             return `
@@ -498,10 +482,6 @@
         return { tabs, panels };
     }
 
-    // ====================================================================
-    // ** 4. 容器创建与事件委托 **
-    // ====================================================================
-
     function getOrCreateContainer(id, flexMode = false) {
         let el = document.getElementById(id);
         if (!el) {
@@ -509,27 +489,17 @@
             el.id = id;
             if (flexMode) el.className = `${PREFIX}_full_screen_container`;
             document.body.appendChild(el);
-
             el.addEventListener('mouseover', (e) => {
-                const target = e.target.closest(`.${PREFIX}_status_pill`) || e.target.closest(`.${PREFIX}_inv_slot`);
+                const target = e.target.closest(`.${PREFIX}_status_pill`) || e.target.closest(`.${PREFIX}_inv_slot`) || e.target.closest(`.${PREFIX}_resource_chip`);
                 if (target) {
                     const tooltip = target.querySelector(`.${PREFIX}_status_tooltip`);
                     if (tooltip) {
                         const rect = target.getBoundingClientRect();
-                        const tooltipWidth = 220;
-                        const screenWidth = window.innerWidth;
-
-                        if (rect.left + tooltipWidth + 20 > screenWidth) {
-                            tooltip.style.left = 'auto';
-                            tooltip.style.right = '0';
-                        } else {
-                            tooltip.style.left = '0';
-                            tooltip.style.right = 'auto';
-                        }
+                        if (rect.left + 220 + 20 > window.innerWidth) { tooltip.style.left = 'auto'; tooltip.style.right = '0'; }
+                        else { tooltip.style.left = '0'; tooltip.style.right = 'auto'; }
                     }
                 }
             });
-
             el.addEventListener('click', (e) => {
                 const target = e.target;
                 if (target.closest(`.${CLASSES.BTN_CLOSE}`)) { hideAllContainers(); return; }
@@ -542,10 +512,7 @@
                     if (sec) sec.style.display = 'block';
                     if (key === '购物车') renderCartSection();
                 }
-
-	if (target.classList.contains(CLASSES.BTN_ADD_CART)) {
-   	 addToCart(target.dataset.name, target.dataset.type, target.dataset.cost, target.dataset.target);
-	}
+                if (target.classList.contains(CLASSES.BTN_ADD_CART)) addToCart(target.dataset.name, target.dataset.type, target.dataset.cost, target.dataset.target);
                 if (target.classList.contains(CLASSES.BTN_REMOVE_CART)) removeFromCart(parseInt(target.dataset.idx));
                 if (target.id === CLASSES.BTN_CHECKOUT) handleCheckout();
                 if (target.id === DOM_IDS.BTN_UPGRADE) handleUpgradeShop();
@@ -567,90 +534,46 @@
     }
 
     function openShop() {
-        // 1. 获取数据
         const data = getNestedData(PATHS.SHOP) || {};
-
-        // 🛠️ Debug工具：如果你想看看到底读到了什么，可以把下面这行注释取消掉，按F12在控制台看
-        // console.log("[Shop Debug] 读取到的原始数据:", data);
-
         const container = getOrCreateContainer(DOM_IDS.CONTAINER_SHOP, false);
         hideAllContainers();
-
-        // 生成标签页
         const tabs = SHOP_CATEGORIES.map(c => `<button id="${PREFIX}_tab_btn_${c.key}" class="${CLASSES.BTN_TAB}" data-tab-key="${c.key}">${c.title}</button>`).join('');
-
         const merit = data.当前功勋 || 0;
-
-        // 2. 生成内容 (这里是修改的重点！✨)
         let content = '';
         content += generateShopSection(data.付费游戏||{}, '付费游戏');
         content += generateShopSection(data.免费游戏||{}, '免费游戏');
-
-        // ❌ 删除旧的这两行：
-        // content += generateShopSection(data.游戏物品||{}, '游戏物品');
-        // content += generateShopSection(data.现实物品||{}, '现实物品');
-
-        // ✅ 新增这一行：读取新的 [商城道具] 字段
-        // 注意：这里的第二个参数 '商城道具' 必须和 SHOP_CATEGORIES 里的 key 完全一致！
         content += generateShopSection(data.商城道具 || {}, '商城道具');
-
         content += `<div class="${PREFIX}_section" id="${PREFIX}_section_购物车"></div>`;
-
-        container.innerHTML = `
-            <div class="${PREFIX}_shop_header">
-                <div>
-                    <h2>${data.商店星级||'1'} 星级游戏商城</h2>
-                    <div style="font-size: 0.9em; color: #ffd700; margin-top: 6px; font-weight: bold; letter-spacing: 1px;">💰 当前功勋: ${merit}</div>
-                </div>
-                <div class="${PREFIX}_header_controls">
-                    <button id="${DOM_IDS.BTN_UPGRADE}" class="${PREFIX}_upgrade_btn">✨ 升级商店</button>
-                    <button class="${CLASSES.BTN_CLOSE}">X</button>
-                </div>
-            </div>
-            <div class="${PREFIX}_tabs_nav">${tabs}</div><div class="${PREFIX}_shop_content">${content}</div>`;
+        container.innerHTML = `<div class="${PREFIX}_shop_header"><div><h2>${data.商店星级||'1'} 星级游戏商城</h2><div style="font-size: 0.9em; color: #ffd700; margin-top: 6px; font-weight: bold; letter-spacing: 1px;">💰 当前功勋: ${merit}</div></div><div class="${PREFIX}_header_controls"><button id="${DOM_IDS.BTN_UPGRADE}" class="${PREFIX}_upgrade_btn">✨ 升级商店</button><button class="${CLASSES.BTN_CLOSE}">X</button></div></div><div class="${PREFIX}_tabs_nav">${tabs}</div><div class="${PREFIX}_shop_content">${content}</div>`;
         container.style.display = 'block';
-        const defaultTab = container.querySelector(`#${PREFIX}_tab_btn_${SHOP_CATEGORIES[0].key}`);
-        if(defaultTab) defaultTab.click();
+        const defaultTab = container.querySelector(`#${PREFIX}_tab_btn_${SHOP_CATEGORIES[0].key}`); if(defaultTab) defaultTab.click();
         EscManager.bind(() => container.style.display = 'none');
     }
 
     function openCharPage() {
         try {
             let data = getNestedData(PATHS.CHAR);
-            if (data && (data['游戏属性'] || data['游戏等级'])) {
-                data = { "当前角色": data };
-            }
-            if (!data || Object.keys(data).length === 0) {
-                const rootData = window.GameAPI ? window.GameAPI.assaData : null;
-                if (rootData && (rootData['游戏属性'] || rootData['游戏等级'])) {
-                    data = { "当前角色": rootData };
-                }
-            }
-            if (!data) return safeAlert(`无法读取角色数据: ${PATHS.CHAR}`);
-
+            const fullWorldData = getNestedData(PATHS.WORLD);
+            if (data && (data['游戏属性'] || data['游戏等级'] || data['经营等级'] || data['类型'] || data['帝国概况'])) { data = { "当前角色": data }; }
+            if (!data || Object.keys(data).length === 0) return safeAlert(`无法读取角色数据`);
             const container = getOrCreateContainer(DOM_IDS.CONTAINER_CHAR, true);
             hideAllContainers();
-            const { tabs, panels } = renderCharacterContent(data);
+            const { tabs, panels } = renderCharacterContent(data, fullWorldData);
             container.innerHTML = `<div class="${PREFIX}_fixed_top_area"><div class="${PREFIX}_shop_header no-margin"><h2>👤 角色档案数据库</h2><div class="${PREFIX}_header_controls"><button class="${CLASSES.BTN_CLOSE}">X</button></div></div><div class="${PREFIX}_browser_tabs_bar">${tabs}</div></div><div class="${PREFIX}_scrollable_content_area">${panels}</div>`;
-            container.style.display = 'flex';
-            EscManager.bind(() => container.style.display = 'none');
+            container.style.display = 'flex'; EscManager.bind(() => container.style.display = 'none');
         } catch (e) { safeAlert("错误: "+e.message); }
     }
 
     function openWorldPage() {
         try {
             let data = getNestedData(PATHS.WORLD);
-            if (data && (data['当前任务目标'] || data['游戏世界观简介'])) {
-                data = { "当前世界": data };
-            }
+            if (data && (data['当前任务目标'] || data['游戏世界观简介'])) { data = { "当前世界": data }; }
             if (!data) return safeAlert(`无法读取世界数据`);
-
             const container = getOrCreateContainer(DOM_IDS.CONTAINER_WORLD, true);
             hideAllContainers();
             const { tabs, panels } = renderWorldContent(data);
             container.innerHTML = `<div class="${PREFIX}_fixed_top_area"><div class="${PREFIX}_shop_header no-margin"><h2>🗺️ 游戏世界数据库</h2><div class="${PREFIX}_header_controls"><button class="${CLASSES.BTN_CLOSE}">X</button></div></div><div class="${PREFIX}_browser_tabs_bar">${tabs}</div></div><div class="${PREFIX}_scrollable_content_area">${panels}</div>`;
-            container.style.display = 'flex';
-            EscManager.bind(() => container.style.display = 'none');
+            container.style.display = 'flex'; EscManager.bind(() => container.style.display = 'none');
         } catch (e) { safeAlert("错误: "+e.message); }
     }
 
@@ -661,8 +584,7 @@
         hideAllContainers();
         const { tabs, panels } = renderWarehouseContent(safeData);
         container.innerHTML = `<div class="${PREFIX}_fixed_top_area"><div class="${PREFIX}_shop_header no-margin"><h2>📦 游戏机次元仓库</h2><div class="${PREFIX}_header_controls"><button class="${CLASSES.BTN_CLOSE}">X</button></div></div><div class="${PREFIX}_browser_tabs_bar">${tabs}</div></div><div class="${PREFIX}_scrollable_content_area">${panels}</div>`;
-        container.style.display = 'flex';
-        EscManager.bind(() => container.style.display = 'none');
+        container.style.display = 'flex'; EscManager.bind(() => container.style.display = 'none');
     }
 
     function openMenuModal() {
@@ -687,11 +609,13 @@
     }
 
     // ====================================================================
-    // ** 5. 初始化 (Init) **
+    // ** 5. 样式注入 (Style Injection) **
     // ====================================================================
 
     function injectCSS() {
-        if (document.getElementById(DOM_IDS.STYLE)) return;
+        const oldStyle = document.getElementById(DOM_IDS.STYLE);
+        if (oldStyle) oldStyle.remove();
+
         const style = document.createElement('style');
         style.id = DOM_IDS.STYLE;
         style.innerHTML = `
@@ -731,6 +655,7 @@
             @media (max-width: 900px) { .${PREFIX}_char_dashboard_layout { grid-template-columns: 1fr; } }
             .${PREFIX}_char_sidebar_profile { background: #101217; border-radius: 6px; padding: 20px; border: 1px solid #2a475e; height: fit-content; }
             .${PREFIX}_profile_avatar_placeholder { width: 80px; height: 80px; background: linear-gradient(135deg, #2a475e, #1b2838); color: white; font-size: 40px; line-height: 80px; border-radius: 50%; margin: 0 auto 15px auto; box-shadow: 0 0 15px rgba(102,192,244,0.3); text-align: center;}
+            .${PREFIX}_profile_avatar_placeholder.empire { background: linear-gradient(135deg, #ff4500, #550000); box-shadow: 0 0 15px rgba(255,69,0,0.3); border: 2px solid #ffcc00; }
             .${PREFIX}_profile_name { margin: 0; color: #fff; font-size: 1.8em; text-align: center; }
             .${PREFIX}_profile_lvl { background: #d4a017; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; display: block; width: fit-content; margin: 5px auto; }
             .${PREFIX}_stat_widget { margin-bottom: 12px; }
@@ -750,6 +675,47 @@
             .${PREFIX}_status_pill:hover .${PREFIX}_status_tooltip { visibility: visible; opacity: 1; }
             .${PREFIX}_status_tooltip .st-head { font-weight: bold; color: #fff; margin-bottom: 6px; border-bottom: 1px dashed #3c4450; padding-bottom: 4px; }
             .${PREFIX}_status_tooltip .st-row { font-size: 0.85em; color: #c6d4df; margin-bottom: 3px; line-height: 1.3; }
+
+            /* === 新增：经营模式样式 (Template B) === */
+            .${PREFIX}_resource_chip_grid { display: flex; flex-direction: column; gap: 8px; }
+            .${PREFIX}_resource_chip { display: flex; align-items: center; background: #1b2838; border: 1px solid #3c4450; padding: 8px; border-radius: 4px; transition: 0.2s; position: relative; }
+            .${PREFIX}_resource_chip:hover { border-color: #ffd700; transform: translateX(3px); z-index: 5; }
+            .${PREFIX}_resource_chip:hover .${PREFIX}_status_tooltip { visibility: visible; opacity: 1; }
+            .res-icon { font-size: 1.4em; margin-right: 12px; opacity: 0.8; }
+            .res-main { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+            .res-name { font-size: 0.9em; color: #a3b2c1; }
+            .res-val { color: #ffd700; font-family: 'Consolas', monospace; font-weight: bold; font-size: 1.1em; }
+
+            .${PREFIX}_metrics_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+            .${PREFIX}_metrics_grid .${PREFIX}_stat_widget { grid-column: 1 / -1; margin-bottom: 5px; } /* 进度条独占一行 */
+            .${PREFIX}_metric_card { background:#1b2838; border:1px solid #3c4450; padding:10px; border-radius:4px; text-align:center; }
+            .metric-head { color:#8a96a3; font-size:0.85em; margin-bottom:4px; text-transform:uppercase; }
+            .metric-val { color:#66c0f4; font-size:1.4em; font-weight:bold; }
+
+            .${PREFIX}_assets_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+            .${PREFIX}_asset_card { display:flex; align-items:center; background:#191d26; border:1px solid #2a475e; border-left:4px solid #66c0f4; padding:12px; border-radius:4px; transition:0.2s; }
+            .${PREFIX}_asset_card:hover { transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.3); border-color:#66c0f4; }
+
+            /* [NEW] 特殊道具样式 */
+            .${PREFIX}_asset_card.special-item { border-left-color: #ffd700; background: linear-gradient(135deg, rgba(255,215,0,0.05), rgba(27,27,27,1)); }
+            .${PREFIX}_asset_card.special-item .asset-icon { filter: drop-shadow(0 0 5px rgba(255,215,0,0.5)); animation: pulse 2s infinite; }
+            .${PREFIX}_asset_card.special-item .asset-name { color: #ffd700; }
+            @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+            .asset-icon { font-size:2em; margin-right:15px; opacity:0.8; }
+            .asset-info { flex:1; }
+            .asset-name { font-weight:bold; color:#fff; font-size:1.1em; margin-bottom:4px; }
+            .asset-meta { display:flex; gap:5px; }
+            .asset-tag { font-size:0.75em; background:#2a303d; color:#8a96a3; padding:2px 6px; border-radius:3px; }
+            .asset-tag.active { color:#4dff88; background:rgba(77,255,136,0.1); }
+            .asset-level { font-size:1.5em; font-weight:bold; color:#3c4450; margin-left:10px; }
+
+            .${PREFIX}_tech_tag, .${PREFIX}_policy_tag { display:inline-block; font-size:0.9em; padding:6px 10px; margin:3px; border-radius:15px; border:1px solid #3c4450; color:#c6d4df; background:#1b2838; }
+            .${PREFIX}_tech_tag { border-color:#00bfff; color:#00bfff; background:rgba(0,191,255,0.05); }
+            .${PREFIX}_policy_tag { border-color:#ffcc00; color:#ffcc00; background:rgba(255,204,0,0.05); }
+
+            /* ========================================= */
+
             .${PREFIX}_wh_rule_box { background: rgba(65, 141, 45, 0.2); border: 1px solid #418d2d; padding: 10px; margin-bottom: 20px; border-radius: 4px; color: #a4d098; font-size: 0.9em; }
             .${PREFIX}_wh_grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
             .${PREFIX}_wh_card { background: #151921; border: 1px solid #2a475e; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s, box-shadow 0.2s; }
@@ -765,11 +731,13 @@
             .${PREFIX}_content_row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
             .${PREFIX}_detail_block { background: rgba(23, 26, 33, 0.6); border: 1px solid #2a475e; border-radius: 4px; padding: 15px; height: fit-content; }
             .full-height { height: 100%; }
+            .full-width { grid-column: 1 / -1; }
             .${PREFIX}_detail_block h4 { color: #66c0f4; margin: 0 0 15px 0; font-size: 1.1em; border-bottom: 1px dotted #2a475e; padding-bottom: 8px; }
             .${PREFIX}_grid_stats_container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
             .${PREFIX}_grid_stat_item { display: flex; justify-content: space-between; border-bottom: 1px solid #3c4450; padding-bottom: 4px; }
             .stat_k { color: #8a96a3; font-size: 0.9em; } .stat_v { color: #fff; font-weight: bold; }
             .${PREFIX}_section_divider { border-bottom: 1px solid #2a475e; margin: 30px 0 20px 0; text-align: center; height: 12px; }
+            .${PREFIX}_section_divider.small { margin: 15px 0 10px 0; height: 8px; } .${PREFIX}_section_divider.small span { font-size: 0.8em; padding: 0 10px; color: #8a96a3; }
             .${PREFIX}_section_divider span { background: #1b2838; padding: 0 15px; color: #66c0f4; font-size: 1.2em; font-weight: bold; }
             .${PREFIX}_skill_flex_container { display: flex; flex-wrap: wrap; gap: 10px; }
             .${PREFIX}_mini_skill_card { background: #232833; border: 1px solid #3c4450; padding: 8px; border-radius: 4px; width: 100%; }
@@ -810,50 +778,12 @@
             .${PREFIX}_menu_btn { background: #2a475e; color: #fff; border: none; padding: 18px; cursor: pointer; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.2em; font-weight: bold; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); text-transform: uppercase; }
             .${PREFIX}_menu_btn:hover { background: #3f607c; transform: scale(1.02); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
             .${PREFIX}_menu_icon { font-size: 1.4em; margin-right: 12px; }
-
-            /* ========================================= */
-            /* 💰 新增：货币显示组件样式 */
-            /* ========================================= */
-            .${PREFIX}_currency_box {
-                background: linear-gradient(90deg, rgba(255, 215, 0, 0.15) 0%, rgba(23, 26, 33, 0) 100%);
-                border-left: 4px solid #ffd700;
-                padding: 8px 12px;
-                margin: 12px 0;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                border-radius: 0 4px 4px 0;
-                transition: all 0.3s ease;
-                cursor: default;
-            }
-            .${PREFIX}_currency_box:hover {
-                background: linear-gradient(90deg, rgba(255, 215, 0, 0.25) 0%, rgba(23, 26, 33, 0.1) 100%);
-                transform: translateX(5px);
-                box-shadow: -2px 0 10px rgba(255, 215, 0, 0.1);
-            }
-            .curr_icon {
-                font-size: 1.4em;
-                filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.6));
-                animation: floatingCoin 3s ease-in-out infinite;
-            }
-            .curr_label {
-                font-size: 0.8em;
-                color: #ccb966;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                margin-right: auto;
-            }
-            .curr_val {
-                font-size: 1.2em;
-                color: #ffd700;
-                font-weight: bold;
-                font-family: 'Consolas', monospace;
-                text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-            }
-            @keyframes floatingCoin {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-3px); }
-            }
+            .${PREFIX}_currency_box { background: linear-gradient(90deg, rgba(255, 215, 0, 0.15) 0%, rgba(23, 26, 33, 0) 100%); border-left: 4px solid #ffd700; padding: 8px 12px; margin: 12px 0; display: flex; align-items: center; gap: 10px; border-radius: 0 4px 4px 0; transition: all 0.3s ease; cursor: default; }
+            .${PREFIX}_currency_box:hover { background: linear-gradient(90deg, rgba(255, 215, 0, 0.25) 0%, rgba(23, 26, 33, 0.1) 100%); transform: translateX(5px); box-shadow: -2px 0 10px rgba(255, 215, 0, 0.1); }
+            .curr_icon { font-size: 1.4em; filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.6)); animation: floatingCoin 3s ease-in-out infinite; }
+            .curr_label { font-size: 0.8em; color: #ccb966; text-transform: uppercase; letter-spacing: 1px; margin-right: auto; }
+            .curr_val { font-size: 1.2em; color: #ffd700; font-weight: bold; font-family: 'Consolas', monospace; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+            @keyframes floatingCoin { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
         `;
         document.head.appendChild(style);
     }
