@@ -28024,12 +28024,12 @@ triggerassa(`/setinput ${messageToSend}`);
 });
 const lookForumButton = document.getElementById('look-forum-button');
    lookForumButton.addEventListener('click', (event) => {
-         const messageToSend = `<${userName}同时要查看论坛>`;
+         const messageToSend = `<${userName}同时要查看论坛，立刻参考forum.output_format规则，按照正确格式>`;
 triggerassa(`/setinput ${messageToSend}`);
 });
  const lookRandomItemsButton = document.getElementById('look-random-items-button');
    lookRandomItemsButton.addEventListener('click', (event) => {
-         const messageToSend = `<${userName}同时要查看商城>`;
+         const messageToSend = `<request:${userName}同时要查看商城，立刻参考shop.output_format规则，按照正确格式生成>`;
 triggerassa(`/setinput ${messageToSend}`);
 });
 // --- 💖 菜单交互逻辑 💖 ---
@@ -34723,7 +34723,7 @@ console.log('[Nova的记忆保险箱] 数据准备就绪，正在准备后台存
 let snapshotData = {};
 let backupData = {};
      
-       const chatVars = await TavernHelper.getVariables({ type: 'chat' });
+  const chatVars = await TavernHelper.getVariables({ type: 'chat' });
  
 
         // 2. 准备备份数据 (Backup Data)
