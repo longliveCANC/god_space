@@ -28024,7 +28024,7 @@ triggerassa(`/setinput ${messageToSend}`);
 });
 const lookForumButton = document.getElementById('look-forum-button');
    lookForumButton.addEventListener('click', (event) => {
-         const messageToSend = `<${userName}同时要查看论坛，立刻参考forum.output_format规则，按照正确格式>`;
+         const messageToSend = `<request:${userName}同时要查看论坛，立刻参考forum.output_format规则，按照正确格式>`;
 triggerassa(`/setinput ${messageToSend}`);
 });
  const lookRandomItemsButton = document.getElementById('look-random-items-button');
