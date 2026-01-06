@@ -43699,7 +43699,7 @@ function setupReconfigModal() {
         { name: 'bgm', uid: 88, category: 'visual', desc: '启用背景音乐' },
 
         // --- 系统设定 (System) ---
-        { name: '异步变量', uid: 35, group: 'api', category: 'system', desc: '额外调用一次api专门更新变量，无破限。自动识别x-mod/x-dlc开头的世界书信息发送' },
+        { name: '异步变量', uid: 35, group: 'api', category: 'system', desc: '额外调用一次api专门更新变量，破限较弱。自动识别x-mod/x-dlc开头的世界书信息发送' },
         { name: '同步变量', uid: 40, group: 'api', category: 'system', desc: '正文和变量在同一个回复中' },
           { name: '老版异步变量', uid: 86, group: 'api', category: 'system', desc: '额外调用一次api专门更新变量，使用原本的api、预设和全部世界书' },
         { name: '强调时间开', uid: 78, group: 'time', category: 'system', desc: '小总结显示时间地点信息，同时给正文自动增加时间戳' },
