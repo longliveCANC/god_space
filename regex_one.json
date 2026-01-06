@@ -34722,7 +34722,7 @@ if (responseText.trim() !== "") {
 console.log('[Nova的记忆保险箱] 数据准备就绪，正在准备后台存储方案...');
 let snapshotData = {};
 let backupData = {};
-        if((noBackup === "false")){
+     
        const chatVars = await TavernHelper.getVariables({ type: 'chat' });
  
 
@@ -34731,7 +34731,7 @@ let backupData = {};
             chat_variables: chatVars,
             timestamp: new Date().toISOString()
         };
-        }
+        
  
 
         const turnId = conversationHistory.length-1;
