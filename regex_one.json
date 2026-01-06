@@ -15133,6 +15133,7 @@ let if_render_after_2batch="false";
 let is_worldbook_lock = "false";
 let if_waiting_roll= "false";
 let  is_quick_rewirte_backup= "false";
+let is_chat_mode= "false";
 let dice_use = "true";
 let bookItemSettings = null;
 let batches = 1;
@@ -34032,40 +34033,68 @@ for (const entry of worldInfoForProcessing) {
    let historyForPrompt = conversationHistory;
  const lastMsgInHistory = conversationHistory[conversationHistory.length - 1];
 
-    // 【关键判断】
-    // 只有当是 Reroll 且 最后一条是 AI 时，我们才需要把它从 Prompt 里“隐藏”掉，
-    // 这样 AI 才会以为自己还没说话，从而生成新的分支。
-    // 如果最后一条是 User，说明 AI 还没说话，直接把 User 发过去就行，不用 slice。
+     
     if (isReroll && lastMsgInHistory && lastMsgInHistory.role === 'assistant') {
         // 排除掉最后一条（即当前的 AI 消息），这样 AI 才会重新生成
         historyForPrompt = conversationHistory.slice(0, -1);
     }
-        if (isContinuationVar) {
-    //           console.log("[Nova's Memory Focus] 正在准备上下文，从小总结中提取最近的记录。");
-    
-    // // 从 assaSettingsData.summary.small 获取数据
-    // const summarySmall = assaSettingsData?.summary?.small || {};
-    
-    // // 获取所有键，直接取最后 hideLatestCount 条
-    // const allKeys = Object.keys(summarySmall);
-    // const recentKeys = allKeys.slice(-hideLatestCount);
-    
-    // // 构建 recentAiMessages 数组
-    // recentAiMessages = recentKeys.map(key => ({
-    //     role: 'assistant',
-    //     content: `[${key}] ${summarySmall[key]}`
-    // }));
-   recentAiMessages = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
-    } else {
-        recentAiMessages = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
+  let recentMessagesForPrompt = [];
+// is_chat_mode 和 userName 需要是可访问的全局变量或从设置中获取
+// const is_chat_mode = localStorage.getItem('chat_mode_enabled') === 'true';
+// const userName = 'user'; // 或者从角色卡等地方获取
+
+if (typeof is_chat_mode !== 'undefined' && is_chat_mode === 'true') {
+    console.log("[Nova's Prompt Builder] 检测到兼容字符串模式，正在将用户消息拼接到AI消息中...");
+
+    // 1. 【优化点】先截取最近的历史片段，缩小处理范围
+    // 我们取 hideLatestCount * 2 是为了确保能覆盖到足够的 user-assistant 对
+    const recentHistorySlice = historyForPrompt.slice(-hideLatestCount * 2);
+
+    // 2. 深度拷贝这个小得多的片段，而不是整个历史记录
+    const historyCopy = JSON.parse(JSON.stringify(recentHistorySlice));
+
+    // 3. 从后向前遍历这个小片段，将用户消息内容合并到紧随其后的AI消息中
+    for (let i = historyCopy.length - 2; i >= 0; i--) {
+        const currentUserMsg = historyCopy[i];
+        const nextAiMsg = historyCopy[i + 1];
+
+        // 检查是否是 "用户 -> AI" 的配对
+        if (currentUserMsg && nextAiMsg && currentUserMsg.role === 'user' && nextAiMsg.role === 'assistant') {
+            // 格式化用户消息
+            const formattedUserMsg = `[${userName}:${currentUserMsg.content}]`;
+
+            // 将格式化后的用户消息拼接到AI消息内容的开头
+            nextAiMsg.content = `${formattedUserMsg}\n${nextAiMsg.content}`;
+
+            // 标记用户消息已被处理（设为null），以便后续过滤
+            historyCopy[i] = null;
         }
+    }
+
+    // 4. 从处理过的小片段中，筛选出所有AI消息
+    const combinedAiMessages = historyCopy.filter(msg => msg && msg.role === 'assistant');
+
+    // 5. 【关键】从合并后的消息中，再次截取，确保最终数量严格等于 hideLatestCount
+    recentMessagesForPrompt = combinedAiMessages.slice(-hideLatestCount);
+
+    console.log(`[Nova's Prompt Builder] 成功拼接并提取了 ${recentMessagesForPrompt.length} 条包含用户输入的AI历史消息。`);
+
+} else {
+    console.log("[Nova's Prompt Builder] 使用标准模式，仅组装AI历史消息...");
+    // 保持原有逻辑：只获取AI的消息
+    if (isContinuationVar) {
+        recentMessagesForPrompt = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
+    } else {
+        recentMessagesForPrompt = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
+    }
+}
             let promptsForAI = [];
              if (lastUserMessage || isContinuation) {
             promptsForAI = [];
             if (groupChatSummariesString) {
                 promptsForAI.push({ role: 'assistant', content: groupChatSummariesString });
             }
-            promptsForAI.push(...recentAiMessages);
+            promptsForAI.push(...recentMessagesForPrompt);
     //          const recentAiAsUser = recentAiMessages.map(msg => ({
     //     ...msg,
     //     role: 'model'
@@ -34085,7 +34114,7 @@ for (const entry of worldInfoForProcessing) {
         );
            
         } else {
-            promptsForAI = recentAiMessages;
+            promptsForAI = recentMessagesForPrompt;
         }
 
           
@@ -40876,6 +40905,7 @@ dice_use= String(chatdata.dice_use||'true');
     is_worldbook_lock = String(localStorage.getItem('is_worldbook_lock')) || 'false';
     if_waiting_roll = String(localStorage.getItem('if_waiting_roll')) || 'false';
     is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'false';
+    is_chat_mode = String(localStorage.getItem('is_chat_mode')) || 'false';
 
 
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
@@ -43693,6 +43723,8 @@ function setupReconfigModal() {
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
         { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'false', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
+       { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
+   
     ];
     // 定义分类元数据
      const CATEGORIES = [
