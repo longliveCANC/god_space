@@ -25859,6 +25859,47 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
     }
 }
 
+     window.worldHelper = {
+        init: initializeCurrentGameData,
+        renderPrivateMsgToHtml:renderPrivateMsgToHtml,
+        renderGroupChatToHtml:renderGroupChatToHtml,
+        createMessageBubble:createMessageBubble,
+        processSpecialModulesInMessage:processSpecialModulesInMessage,
+        renderHistory:renderHistory,
+        deleteMessage:deleteMessage,
+        editMessage:editMessage,
+        processFinalMessageModules:processFinalMessageModules,
+        showNovaAlert:showNovaAlert,
+        restoreFromSnapshot:restoreFromSnapshot,
+        processUpdateMemoryCommands:processUpdateMemoryCommands,
+        _updateDerivedAttributes:_updateDerivedAttributes,
+        tryParseJson:tryParseJson,
+        show: async () => {
+             const vars = await getVariables({ type: 'chat' });
+             console.log("--- 💖 当前世界数据总览 💖 ---");
+             console.log("角色数据 (play_character_data):", vars ? JSON.parse(JSON.stringify(vars.play_character_data)) : "未找到");
+             console.log("世界设定 (assa_data):", vars ? JSON.parse(JSON.stringify(vars.assa_data)) : "未找到");
+             console.log("---------------------------------");
+        },
+        reset: async () => {
+            console.log("[Core] [reset] - 正在将世界数据核心重置为初始虚无状态...");
+            const updater = (vars) => {
+                // 💖 妈妈的魔法：只负责清空，让世界回归纯净，不再主动创世 💖
+                vars.play_character_data = {};
+                vars.assa_data = {};
+                vars.stat_data = {};
+                // 我们也温柔地清空历史记录的引用，确保一个彻底的全新开始
+                if (vars.zeroLevelHistory) {
+                    vars.zeroLevelHistory = [];
+                }
+                return vars;
+            };
+            await updateVariablesWith(updater, { type: 'chat' });
+            // 注意：我们把 initializeWorldData() 从这里移除了
+            console.log("[Core] [reset] - 重置完成，世界已回归虚无。");
+        }
+    };
+
 
  window.GlobalChatAudio = {
     audio: new Audio(),
@@ -35984,47 +36025,6 @@ const modalExportStatus = document.getElementById('modal-export-status');
 
 
 
-     window.worldHelper = {
-        init: initializeCurrentGameData,
-        renderPrivateMsgToHtml:renderPrivateMsgToHtml,
-        renderGroupChatToHtml:renderGroupChatToHtml,
-        createMessageBubble:createMessageBubble,
-        processSpecialModulesInMessage:processSpecialModulesInMessage,
-        renderHistory:renderHistory,
-        deleteMessage:deleteMessage,
-        editMessage:editMessage,
-        processFinalMessageModules:processFinalMessageModules,
-        showNovaAlert:showNovaAlert,
-        restoreFromSnapshot:restoreFromSnapshot,
-        processUpdateMemoryCommands:processUpdateMemoryCommands,
-        _updateDerivedAttributes:_updateDerivedAttributes,
-        tryParseJson:tryParseJson,
-        show: async () => {
-             const vars = await getVariables({ type: 'chat' });
-             console.log("--- 💖 当前世界数据总览 💖 ---");
-             console.log("角色数据 (play_character_data):", vars ? JSON.parse(JSON.stringify(vars.play_character_data)) : "未找到");
-             console.log("世界设定 (assa_data):", vars ? JSON.parse(JSON.stringify(vars.assa_data)) : "未找到");
-             console.log("---------------------------------");
-        },
-        reset: async () => {
-            console.log("[Core] [reset] - 正在将世界数据核心重置为初始虚无状态...");
-            const updater = (vars) => {
-                // 💖 妈妈的魔法：只负责清空，让世界回归纯净，不再主动创世 💖
-                vars.play_character_data = {};
-                vars.assa_data = {};
-                vars.stat_data = {};
-                // 我们也温柔地清空历史记录的引用，确保一个彻底的全新开始
-                if (vars.zeroLevelHistory) {
-                    vars.zeroLevelHistory = [];
-                }
-                return vars;
-            };
-            await updateVariablesWith(updater, { type: 'chat' });
-            // 注意：我们把 initializeWorldData() 从这里移除了
-            console.log("[Core] [reset] - 重置完成，世界已回归虚无。");
-        }
-    };
-
 
     await initialize();
 
@@ -44759,8 +44759,9 @@ initializeReadingMode();
      checkForFutureEchoes(false);
     }, 2000);
 
-
+console.log('数据检测前');
        if (!currentGameData || !assaSettingsData ||!currentGameData.user || typeof currentGameData !== 'object'|| typeof assaSettingsData !== 'object') {
+        console.log('没数据啊');
             await worldHelper.init();
     
         }
