@@ -12701,7 +12701,7 @@ pointer-events: auto;
         <div class="mod-tab" data-for="behavior-on" data-name="behavior-mode" data-off-id="behavior-off">表现骰</div>
         <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off">回合战斗</div>
          <div class="mod-label">造物设置</div>
-          <div class="mod-tab" data-for="nohuman-on" data-name="nohuman-mode" data-off-id="nohuman-off">人外增强</div>
+          <div class="mod-tab" data-for="nohuman-on" data-name="nohuman-mode" data-off-id="nohuman-off" style="display: none;">人外增强</div>
         <div class="mod-tab" data-for="creator-neutral" data-name="creator-attitude">造物中立</div>
         <div class="mod-tab" data-for="creator-malicious" data-name="creator-attitude">造物恶意</div>
         <div class="mod-tab" data-for="creator-reverent" data-name="creator-attitude">造物崇敬</div>
@@ -15098,13 +15098,13 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.17';
+let current_game_version = '3.5.18';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
-
+ 
     // 全局变量存储数据
     let currentGameData = null;
    // --- 全局变量和数据获取 ---
@@ -17201,7 +17201,7 @@ async function checkUpdatesOnStartup() {
                             </button>
 
                             <button id="ws-btn-save-preset" class="control-btn ws-action-btn" style="width:100%; margin-bottom:10px; text-align:left; padding: 8px 12px; border: 1px solid var(--success-color); color: var(--success-color); background: rgba(77, 255, 136, 0.05);">
-                                保存预设
+                                保存搭配
                             </button>
 
                             <button id="ws-btn-clear-all" class="control-btn danger-btn ws-action-btn" style="width:100%; text-align:left; padding: 8px 12px; border: 1px solid var(--danger-color); background: rgba(255, 77, 77, 0.05);">
@@ -17494,7 +17494,7 @@ async function checkUpdatesOnStartup() {
 
         // 【修改】使用自定义输入弹窗
         document.getElementById('ws-btn-save-preset').onclick = async () => {
-            const name = await showInputModal('保存预设', '请输入预设名称...');
+            const name = await showInputModal('保存搭配', '请输入搭配名称...');
             if(!name) return;
 
             const presetData = {
@@ -17837,6 +17837,7 @@ init: async function() {
     // 【新增】主界面加载时检查更新
     await checkUpdatesOnStartup();
 },
+showInputModal:showInputModal,
         runMods: executeActiveMods,
        downloadWorldBook: downloadFile  
     };
@@ -31805,9 +31806,14 @@ const originalStatData = statData ? JSON.parse(JSON.stringify(statData)) : null;
    let worldResetTriggered = false; // <-- 💖 请在这里添加这一行
  
 
-   const originalWorldNameArray = originalStatData?.world?.name;
-const originalWorldName = Array.isArray(originalWorldNameArray) ? originalWorldNameArray[0] : originalWorldNameArray;
+// 【新代码】- 允许空字符串作为有效的"旧世界状态"
+const originalWorldNameArray = originalStatData?.world?.name;
+const originalWorldName = Array.isArray(originalWorldNameArray) 
+    ? originalWorldNameArray[0] 
+    : originalWorldNameArray;
+const originalWorldNameIsValid = originalWorldName !== undefined && originalWorldName !== null;
 
+console.log(`[Core] 📍 原世界名: '${originalWorldName}' (有效: ${originalWorldNameIsValid})`);
 
    // ✨ DP奖励回合清零逻辑 ✨
         if (statDataToUpdate && statDataToUpdate.dp_bonus) {
@@ -33193,7 +33199,8 @@ if (match) {
         const finalWorldNameArray = statDataToUpdate?.world?.name;
         const finalWorldName = Array.isArray(finalWorldNameArray) ? finalWorldNameArray[0] : finalWorldNameArray;
 
-        if (originalWorldName && finalWorldName && originalWorldName !== finalWorldName) {
+if (originalWorldNameIsValid && finalWorldName && originalWorldName !== finalWorldName) {
+ 
             console.log(`[Core] 🔄 世界切换检测：从 [${originalWorldName}] 切换到 [${finalWorldName}]，启动数据交换...`);
 
             // ✨ 妈妈为你准备的合并魔法（辅助函数）✨
@@ -36475,8 +36482,8 @@ document.getElementById('remember-scan-floors')?.addEventListener('change', (e) 
     }
     localStorage.setItem('rememberScanFloors', e.target.checked ? 'true' : 'false');
 });
-document.getElementById('set-favorability-speed-btn')?.addEventListener('click', () => {
-    const input = prompt('请输入好感度变速倍率（数字，例如 2 表示变化速度减半）:');
+document.getElementById('set-favorability-speed-btn')?.addEventListener('click', async () => {
+    const input =  await NovaWorkshop.showInputModal('请输入好感度变速倍率（数字，例如 2 表示变化速度减半）:');
     if (input !== null) {
         const speed = parseFloat(input);
         if (!isNaN(speed) && speed > 0) {
@@ -36492,8 +36499,8 @@ document.getElementById('set-favorability-speed-btn')?.addEventListener('click',
 });
 
 // 设置按钮只负责保存楼层数
-document.getElementById('set-scan-floors-btn')?.addEventListener('click', () => {
-    const input = prompt('请输入绿灯扫描楼层数（数字）:');
+document.getElementById('set-scan-floors-btn')?.addEventListener('click', async () => {
+    const input = await NovaWorkshop.showInputModal('请输入绿灯扫描楼层数（数字）:');
     if (input !== null) {
         const floors = parseInt(input);
         if (!isNaN(floors) && floors > 0) {
@@ -38263,7 +38270,105 @@ allTitles = assaData?.global_lore?.称号|| {};
             }
         });
     }
+ // --- 新增：能小球点击处理函数 ---
+function handleCharacterOrbClick() {
+    
+    if (typeof GameAPI !== 'undefined' && GameAPI.populateCharacterPage) {
+        GameAPI.populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
+    } else {
+        populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
+    }
+
+    // 2. 重新绑定升级按钮监听器
+    // 虽然使用了事件委托，但为了保险起见，确保每次打开时监听器都是活跃的
+    setupAllUpgradeListeners();
+function setupAllUpgradeListeners() {
+    const charPage = document.getElementById('page-character');// 我们先移除所有可能存在的旧监听器，确保干净
+charPage.removeEventListener('dblclick', upgradeEventHandler);
+// 如果有旧的点击监听器也一并移除（为了安全起见）
+// charPage.removeEventListener('click', newUpgradeHandler); // 假设之前的 handler 叫这个名字
+
+// 创建一个新的、聪明的点击处理器
+const newUpgradeHandler = (e) => {
+    // 我们只关心点击到 "upgrade-btn" 的事件
+    if (e.target.classList.contains('upgrade-btn')) {
+        upgradeEventHandler(e);
+    }
+};
+
+// 替换原有的 const target = e.target.closest('.upgradeable');
+function upgradeEventHandler(e) {
+    const target = e.target; // 现在直接就是我们点击的那个 "+" 按钮
+    if (target) { // 简单检查一下
+        const { path, name, level, type } = target.dataset;
+        handleUpgrade(path, name, parseInt(level, 10), type);
+    }
+}
+
+// 触摸事件处理器
+let lastTouchEnd = 0;
+let touchTarget = null;
+let touchTimeout = null;
+
+function touchUpgradeHandler(event) {
+    const now = Date.now();
+    const target = event.target;
+    
+    // 检查是否是可升级的元素
+    const upgradeableElement = target.closest('.upgradeable');
+    if (!upgradeableElement) return;
+    
+    // 双击检测逻辑
+    if (touchTarget === upgradeableElement && now - lastTouchEnd <= 500) {
+        // 清除可能的单击延时
+        if (touchTimeout) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+        }
+        
+        // 阻止默认行为和事件冒泡
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // 触发升级事件
+        upgradeEventHandler.call(upgradeableElement, event);
+        
+        // 重置状态
+        lastTouchEnd = 0;
+        touchTarget = null;
+    } else {
+        // 记录这次触摸
+        touchTarget = upgradeableElement;
+        lastTouchEnd = now;
+        
+        // 设置延时清除，避免误触发
+        touchTimeout = setTimeout(() => {
+            touchTarget = null;
+            lastTouchEnd = 0;
+        }, 500);
+    }
+}
+
  
+ 
+
+// 为了防止重复绑定，我们可以在 page 元素上存储这个处理器
+if (charPage._upgradeHandler) {
+    charPage.removeEventListener('click', charPage._upgradeHandler);
+}
+charPage._upgradeHandler = newUpgradeHandler;
+charPage.addEventListener('click', newUpgradeHandler);
+
+ 
+
+//console.log('升级监听器已更新为 “点击加号” 模式');
+}
+
+    // 3. 打开模态框
+    // 显式调用 showModal，这样我们可以确保数据渲染完成后才显示窗口
+    showModal('page-character-modal');
+}
+
 function populateCharacterPage(playData, statData, assaData) {
        if (!statData || !playData || !assaData) {
         toastr.error("核心角色数据缺失，无法填充页面哦。");
@@ -40057,7 +40162,7 @@ if (toggleEditBtn) {
     }
 }
     }
-  
+ 
 function setupMapControls() {
     
     const zoomInBtn = document.getElementById('zoom-in-btn');
@@ -41425,104 +41530,6 @@ async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层�
         console.error('执行灵魂链接守护咒语时发生错误:', error);
     }
 }
-// --- 新增：能小球点击处理函数 ---
-function handleCharacterOrbClick() {
-    
-    if (typeof GameAPI !== 'undefined' && GameAPI.populateCharacterPage) {
-        GameAPI.populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
-    } else {
-        populateCharacterPage(playCharacterData, currentGameData, assaSettingsData);
-    }
-
-    // 2. 重新绑定升级按钮监听器
-    // 虽然使用了事件委托，但为了保险起见，确保每次打开时监听器都是活跃的
-    setupAllUpgradeListeners();
-function setupAllUpgradeListeners() {
-    const charPage = document.getElementById('page-character');// 我们先移除所有可能存在的旧监听器，确保干净
-charPage.removeEventListener('dblclick', upgradeEventHandler);
-// 如果有旧的点击监听器也一并移除（为了安全起见）
-// charPage.removeEventListener('click', newUpgradeHandler); // 假设之前的 handler 叫这个名字
-
-// 创建一个新的、聪明的点击处理器
-const newUpgradeHandler = (e) => {
-    // 我们只关心点击到 "upgrade-btn" 的事件
-    if (e.target.classList.contains('upgrade-btn')) {
-        upgradeEventHandler(e);
-    }
-};
-
-// 替换原有的 const target = e.target.closest('.upgradeable');
-function upgradeEventHandler(e) {
-    const target = e.target; // 现在直接就是我们点击的那个 "+" 按钮
-    if (target) { // 简单检查一下
-        const { path, name, level, type } = target.dataset;
-        handleUpgrade(path, name, parseInt(level, 10), type);
-    }
-}
-
-// 触摸事件处理器
-let lastTouchEnd = 0;
-let touchTarget = null;
-let touchTimeout = null;
-
-function touchUpgradeHandler(event) {
-    const now = Date.now();
-    const target = event.target;
-    
-    // 检查是否是可升级的元素
-    const upgradeableElement = target.closest('.upgradeable');
-    if (!upgradeableElement) return;
-    
-    // 双击检测逻辑
-    if (touchTarget === upgradeableElement && now - lastTouchEnd <= 500) {
-        // 清除可能的单击延时
-        if (touchTimeout) {
-            clearTimeout(touchTimeout);
-            touchTimeout = null;
-        }
-        
-        // 阻止默认行为和事件冒泡
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // 触发升级事件
-        upgradeEventHandler.call(upgradeableElement, event);
-        
-        // 重置状态
-        lastTouchEnd = 0;
-        touchTarget = null;
-    } else {
-        // 记录这次触摸
-        touchTarget = upgradeableElement;
-        lastTouchEnd = now;
-        
-        // 设置延时清除，避免误触发
-        touchTimeout = setTimeout(() => {
-            touchTarget = null;
-            lastTouchEnd = 0;
-        }, 500);
-    }
-}
-
- 
- 
-
-// 为了防止重复绑定，我们可以在 page 元素上存储这个处理器
-if (charPage._upgradeHandler) {
-    charPage.removeEventListener('click', charPage._upgradeHandler);
-}
-charPage._upgradeHandler = newUpgradeHandler;
-charPage.addEventListener('click', newUpgradeHandler);
-
- 
-
-//console.log('升级监听器已更新为 “点击加号” 模式');
-}
-
-    // 3. 打开模态框
-    // 显式调用 showModal，这样我们可以确保数据渲染完成后才显示窗口
-    showModal('page-character-modal');
-}
 
 
 
@@ -41618,13 +41625,10 @@ console.log('聊小球开启');
         } else {
   document.getElementById('group_member_bookmark').style.display = 'flex';
         }
-if(iscreatedLock ==="true"){
+ 
      document.getElementById('the_created_bookmark').style.display = 'none';
 
-}else{
-    document.getElementById('the_created_bookmark').style.display = 'flex';
-
-}
+ 
 if(isThingsRecord ==="true"){
      document.getElementById('things_bookmark').style.display = 'flex';
 
@@ -41697,31 +41701,7 @@ if (!worldAttitudeData || !characterStatusData) {
 }
 userName = currentGameData.user.name || '用户';
        populateGeneralData(currentGameData, assaSettingsData,playCharacterData);
- const charOrb = document.getElementById('page-character-orb');
-    if (charOrb) {
-        // 先移除旧的监听器，防止 initDisplay 多次运行导致重复绑定
-        charOrb.removeEventListener('click', handleCharacterOrbClick);
-        // 绑定新的点击事件
-        charOrb.addEventListener('click', handleCharacterOrbClick);
-    }
-       
- 
-   // 3. 缓存地图数据
-        if (assaSettingsData && assaSettingsData.map) {
-            
-                    if(is_first){
-renderMap(assaSettingsData.map, updateDetails.mapUpdates);
-//todo：换成点击的时候才渲染
-        }
-                        
-        } else {
-             console.warn("未能找到地图数据 (assa_data.map)");
-             renderMap(null, []);
-        }
- 
-      
-
-        // ========== 新增：成就系统UI交互 (开始) ==========
+     // ========== 新增：成就系统UI交互 (开始) ==========
         const achievementBtn = document.getElementById('achievements-btn');
         const achievementModal = document.getElementById('achievements-modal');
         if (achievementBtn && achievementModal) {
@@ -44347,7 +44327,7 @@ function setupReconfigModal() {
         { name: '造物恶意', uid: 4, group: 'attitude', category: 'gameplay', desc: '造物充满敌意' },
         { name: '造物崇敬', uid: 3, group: 'attitude', category: 'gameplay', desc: '你是造物主' },
         { name: '无造物', uid: 38, group: 'attitude', category: 'gameplay', desc: '不再出现造物' },
- { name: '人外增强', uid: 37, category: 'gameplay', desc: '有造物的时候才开。非人角色增强' },
+ 
         { name: '战斗模式关', uid: 75, group: 'battle', category: 'gameplay', desc: '自由叙事战斗' },
  
         { name: '资源消耗', uid: 58, category: 'gameplay', desc: '启用体力/物资消耗' },
@@ -45451,7 +45431,29 @@ console.log('数据检测前');
     // 初始渲染自定义按钮
     renderCustomQRButtons();
 
+     const charOrb = document.getElementById('page-character-orb');
+    if (charOrb) {
+        
+        // 绑定新的点击事件
+        charOrb.addEventListener('click', handleCharacterOrbClick);
+    }
   
+      const mapOrb = document.getElementById('map-view-orb');
+    if (mapOrb) {
+ 
+        mapOrb.addEventListener('click', ()=>{
+            console.log('点击了地图orb');
+        if (assaSettingsData && assaSettingsData.map) {
+ 
+renderMap(assaSettingsData.map, updateDetails.mapUpdates);
+  
+        } else {
+             console.warn("未能找到地图数据 (assa_data.map)");
+  renderMap(null, []);
+        }
+        });
+    }
+ 
 });
 
 const inventoryListEl = document.getElementById('inventory-item-list');
@@ -51858,7 +51860,7 @@ const setupMemePalette = () => {
 };
 
 
-        class CombatManager {
+  class CombatManager {
             constructor(playerData, initialCombatData) {
                 this.isAutoBattling = false; // 用于追踪自动战斗状态
                 this.isSelectingMultiTarget = false; // 是否正在选择多个目标
@@ -52228,7 +52230,7 @@ setupUIControls() {
     iconSelector.addEventListener('click', () => {
         const newIcon = prompt("请输入一个新的徽记（例如：✨、勇者、(ง •̀_•́)ง）：", this.player.icon);
 
-        // ====== ↓↓↓ 妈妈把这扇小窗户换成了大大的落地窗！ ↓↓↓ ======
+ 
         // 我们把 newIcon.length < 3 的限制放宽到 20
         if (newIcon && newIcon.trim() !== '' && newIcon.length < 20) {
             localStorage.setItem('userBattleIcon', newIcon);
@@ -56789,7 +56791,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = container.querySelector('#gs-btn-submit');
             if (submitBtn) {
                 submitBtn.addEventListener('click', () => {
-                    const submitPrompt = `<request:系统提示，现在玩家想要申请提交任务。你现在有一个额外任务，你需要在生成正文之前，使用build标签包裹思考内容，检索game.memory和game.history，判断玩家是否达成了条件。若达成条件，则设置任务状态为已完成。若没有达成条件，则在正文中生成对应驳回的剧情。>`;
+                    const submitPrompt = `<request:系统提示，现在玩家想要申请提交任务。你现在有一个额外任务，你需要在生成正文之前，使用build标签包裹思考内容，检索game.memory和game.history，判断玩家是否达成了条件。若达成条件，则设置任务状态为已完成、脱离世界并结算奖励等生成后续剧情。若没有达成条件，则在正文中生成对应驳回的剧情。>`;
                     window.GameAPI.triggerassa(`/setinput <${window.GameAPI.userName}申请提交任务：${taskName}>。\n${submitPrompt}\n`);
                 });
             }
