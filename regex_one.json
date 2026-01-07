@@ -17419,7 +17419,7 @@ async function checkUpdatesOnStartup() {
             });
         };
 
-           document.getElementById('ws-btn-apply-changes').onclick = async () => {
+         document.getElementById('ws-btn-apply-changes').onclick = async () => {
             const btn = document.getElementById('ws-btn-apply-changes');
             const originalText = btn.innerText;
 
@@ -17440,23 +17440,26 @@ async function checkUpdatesOnStartup() {
                 }
 
                 // --- 【修改】角色附加绑定逻辑 ---
-                // 1. 检查暂存区是否有任何角色绑定。如果没有，则跳过角色绑定操作。
-                if (stagingStatus.char.size > 0) {
-                    // 2. 计算最终的角色附加世界书列表。
+                // 1. 定义新的跳过条件：
+                //    - 当前角色已绑定的附加世界书数量为 0
+                //    - 并且，用户在面板中为角色勾选的附加世界书数量也为 0
+                const shouldSkipCharRebind = currentRealStatus.char.size === 0 && stagingStatus.char.size === 0;
+
+                // 2. 如果不满足跳过条件，则执行角色绑定操作。
+                if (!shouldSkipCharRebind) {
                     const cleanChar = Array.from(currentRealStatus.char).filter(n => !targetWbs.includes(n));
                     const finalChar = [...new Set([...cleanChar, ...stagingStatus.char])];
 
-                    // 3. 检查接口是否存在，并构造任务。
                     if (typeof rebindCharWorldbooks === 'function') {
                         tasks.push(rebindCharWorldbooks('current', {
-                            // 关键：始终使用当前获取到的主世界书，不去修改它。
-                            // primary: currentRealStatus.charPrimary,
+                            // 始终使用当前获取到的主世界书，不去修改它。
+                            primary: currentRealStatus.charPrimary,
                             // 只更新附加世界书列表。
                             additional: finalChar
                         }));
                     }
                 }
-                // 如果 stagingStatus.char.size 为 0，则不会执行任何角色相关的 rebind 操作。
+                // 如果满足跳过条件，则不会执行任何角色相关的 rebind 操作。
 
                 // 并行执行所有需要执行的绑定任务
                 await Promise.all(tasks);
@@ -17481,7 +17484,7 @@ async function checkUpdatesOnStartup() {
                 btn.style.color = "var(--background-color)";
             }
         };
-          document.getElementById('ws-btn-clear-all').onclick = () => {
+      document.getElementById('ws-btn-clear-all').onclick = () => {
             showCustomConfirm('RESET MATRIX', '确定要在矩阵中取消勾选所有检测到的模组吗？<br>(需点击应用生效)', () => {
                 stagingStatus.global.clear();
                 stagingStatus.char.clear();
