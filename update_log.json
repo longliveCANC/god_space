@@ -214,5 +214,17 @@
 "血量现在同时默认支持耐力x20和手动设置上限"
  
   ]
+  } ,{
+    "version": "3.5.16",
+    "date": "2026-1-7",
+    "changes": [
+  "【警告！！】如果你当前无法成功一键更新，请在设置那里分别点击强制更新！！",
+  "发现一个比较严重的问题，因此推送更新和通告。因为本体世界书的结构变化，因此建议所有玩家都去重新导一下世界书。可以删除原本的世界书然后去创意工坊下载世界书手动导入，也可以直接删卡删世界书重新导入。下面分别是卡面的json和png的链接",
+  "https://github.com/longliveCANC/god_space/releases/download/3.3.10/gameHelper.json",
+    "https://github.com/longliveCANC/god_space/releases/download/3.3.10/gameHelper.png",
+    "二选一就行，下载的文件就是卡",
+    "你也可以强制更新一次正则，然后再强制更新一次世界书，按顺序操作，这样也行"
+ 
+  ]
   } 
 ]
