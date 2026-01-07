@@ -15098,7 +15098,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.16';
+let current_game_version = '3.5.17';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -15908,7 +15908,160 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
             request.onerror = (e) => reject(e);
         });
     }
+    // --- 核心逻辑：预设管理 (LocalStorage) ---
+    const PRESET_KEY = 'nova_workshop_mod_presets';
 
+    const PresetManager = {
+        getAll: function() {
+            try {
+                const data = localStorage.getItem(PRESET_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error('Load presets failed', e);
+                return [];
+            }
+        },
+        save: function(preset) {
+            const list = this.getAll();
+            // 如果ID存在则更新，不存在则追加
+            const idx = list.findIndex(p => p.id === preset.id);
+            if (idx > -1) {
+                list[idx] = preset;
+            } else {
+                list.push(preset);
+            }
+            localStorage.setItem(PRESET_KEY, JSON.stringify(list));
+        },
+        delete: function(id) {
+            const list = this.getAll().filter(p => p.id !== id);
+            localStorage.setItem(PRESET_KEY, JSON.stringify(list));
+        }
+    };
+
+      const WorldbookManager = {
+        // 【修改】扫描规则：只筛选 x-mod, x-dlc, x-xxx
+        scan: function() {
+            if (typeof getWorldbookNames !== 'function') return [];
+
+            const allNames = getWorldbookNames();
+            return allNames.filter(name => {
+                const lower = name.toLowerCase();
+                // 必须包含这些特定关键词
+                return lower.includes('x-mod') || lower.includes('x-dlc') || lower.includes('x-xxx');
+            }).sort();
+        },
+
+        // 【新增】名称清洗工具
+        cleanName: function(rawName) {
+            // 匹配 x-mod-, x-dlc-, x-xxx- 或者不带横杠的 x-mod 等
+            // 例如: x-mod-fishing -> fishing, x-mod -> x-mod (如果后面没东西保留原样，或者也清空看需求，这里逻辑是去除前缀)
+            // 正则逻辑：以 x- 开头，接着是 mod/dlc/xxx，然后可选一个横杠
+            return rawName.replace(/^x-(mod|dlc|xxx)-?/i, '');
+        },
+
+        // 获取当前绑定状态
+        getStatus: function() {
+            // ... (保持原有代码不变)
+            const globalList = typeof getGlobalWorldbookNames === 'function' ? getGlobalWorldbookNames() : [];
+            let charList = [];
+            let charPrimary = null;
+            if (typeof getCharWorldbookNames === 'function') {
+                const charData = getCharWorldbookNames('current');
+                if (charData && typeof charData === 'object') {
+                    charList = charData.additional || [];
+                    charPrimary = charData.primary || null;
+                }
+            }
+            return {
+                global: new Set(globalList),
+                char: new Set(charList),
+                charPrimary: charPrimary
+            };
+        },
+       
+
+        // 切换单个模组状态
+        toggle: async function(wbName, scope, isActive) {
+            const status = this.getStatus();
+
+            if (scope === 'global') {
+                const current = Array.from(status.global);
+                if (isActive) {
+                    if (!current.includes(wbName)) current.push(wbName);
+                } else {
+                    const idx = current.indexOf(wbName);
+                    if (idx > -1) current.splice(idx, 1);
+                }
+                if (typeof rebindGlobalWorldbooks === 'function') {
+                    await rebindGlobalWorldbooks(current);
+                }
+            } else if (scope === 'char') {
+                const current = Array.from(status.char);
+                if (isActive) {
+                    if (!current.includes(wbName)) current.push(wbName);
+                } else {
+                    const idx = current.indexOf(wbName);
+                    if (idx > -1) current.splice(idx, 1);
+                }
+                if (typeof rebindCharWorldbooks === 'function') {
+                    await rebindCharWorldbooks('current', {
+                        primary: status.charPrimary,
+                        additional: current
+                    });
+                }
+            }
+        },
+
+        // 一键清除所有 x- 系列绑定
+        clearAll: async function() {
+            const targetWbs = this.scan(); // 获取所有受管制的模组书
+            const status = this.getStatus();
+
+            // 过滤掉所有受管制的书，保留用户自己绑定的其他书
+            const newGlobal = Array.from(status.global).filter(name => !targetWbs.includes(name));
+
+            if (typeof rebindGlobalWorldbooks === 'function') {
+                await rebindGlobalWorldbooks(newGlobal);
+            }
+
+            const newChar = Array.from(status.char).filter(name => !targetWbs.includes(name));
+            if (typeof rebindCharWorldbooks === 'function') {
+                await rebindCharWorldbooks('current', {
+                    primary: status.charPrimary,
+                    additional: newChar
+                });
+            }
+        },
+
+        // 应用预设
+        applyPreset: async function(presetData) {
+            // presetData: { global: ['x-mod-a'], char: ['x-mod-b'] }
+            const status = this.getStatus();
+            const targetWbs = this.scan();
+
+            // 逻辑：先移除当前所有受管制的模组，再把预设里的加进去
+            // 这样可以保留用户手动绑定的非模组类世界书（比如 lore-xxx）
+
+            // 1. 处理全局
+            const cleanGlobal = Array.from(status.global).filter(n => !targetWbs.includes(n));
+            // 合并并去重
+            const finalGlobal = [...new Set([...cleanGlobal, ...presetData.global])];
+
+            // 2. 处理角色
+            const cleanChar = Array.from(status.char).filter(n => !targetWbs.includes(n));
+            const finalChar = [...new Set([...cleanChar, ...presetData.char])];
+
+            if (typeof rebindGlobalWorldbooks === 'function') {
+                await rebindGlobalWorldbooks(finalGlobal);
+            }
+            if (typeof rebindCharWorldbooks === 'function') {
+                await rebindCharWorldbooks('current', {
+                    primary: status.charPrimary,
+                    additional: finalChar
+                });
+            }
+        }
+    };
     function getLocalScripts() {
         return new Promise(resolve => {
             const tx = db.transaction([STORE_LOCAL_SCRIPTS], 'readonly');
@@ -16518,9 +16671,9 @@ async function checkUpdatesOnStartup() {
                 <div class="modal-title" style="color: var(--primary-color);">🛠️ 开发者中心</div>
 
                 <div class="ws-tab-header">
-                    <button class="ws-tab-btn ${defaultTab === 'local' ? 'active' : ''}" data-tab="local">📝 本地脚本</button>
-                    <button class="ws-tab-btn ${defaultTab === 'upload' ? 'active' : ''}" data-tab="upload">📤 投稿/更新</button>
-                    <button class="ws-tab-btn ${defaultTab === 'works' ? 'active' : ''}" data-tab="works">📂 我的作品</button>
+                    <button class="ws-tab-btn ${defaultTab === 'local' ? 'active' : ''}" data-tab="local">本地脚本</button>
+                    <button class="ws-tab-btn ${defaultTab === 'upload' ? 'active' : ''}" data-tab="upload"> 投稿/更新</button>
+                    <button class="ws-tab-btn ${defaultTab === 'works' ? 'active' : ''}" data-tab="works"> 我的作品</button>
                 </div>
 
 
@@ -16586,12 +16739,12 @@ async function checkUpdatesOnStartup() {
                     </div>
 
                     <div class="ws-form-group" style="border-top: 1px dashed var(--border-color); padding-top:10px;">
-                        <label class="ws-form-label">📂 脚本文件 (.js) - 可选</label>
+                        <label class="ws-form-label">脚本文件 (.js) - 可选</label>
                         <input type="file" id="ws-file-script" class="ws-file-input" accept=".js,.txt">
                     </div>
 
                     <div class="ws-form-group">
-                        <label class="ws-form-label">📘 世界书文件 (.json) - 可选</label>
+                        <label class="ws-form-label">世界书文件 (.json) - 可选</label>
                         <input type="file" id="ws-file-worldbook" class="ws-file-input" accept=".json">
                     </div>
 
@@ -16863,7 +17016,500 @@ async function checkUpdatesOnStartup() {
             `).join('');
         }
     }
-  async function loadDataAndRender() {
+    // --- 内部工具：自定义确认弹窗 ---
+    function showCustomConfirm(title, message, onConfirm) {
+        const modalId = 'ws-confirm-modal';
+        const old = document.getElementById(modalId);
+        if (old) old.remove();
+
+        const html = `
+        <div id="${modalId}" class="modal active" style="z-index: 12000;">
+            <div class="modal-content" style="max-width: 400px; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);">
+                <div style="padding: 15px; border-bottom: 1px solid var(--border-color); color: var(--primary-color); font-weight: bold; letter-spacing: 1px;">
+                    ${title}
+                </div>
+                <div style="padding: 20px; color: var(--text-color); font-size: 14px; line-height: 1.5;">
+                    ${message}
+                </div>
+                <div style="padding: 15px; text-align: right; background: rgba(0,0,0,0.2);">
+                    <button id="ws-confirm-cancel" class="control-btn" style="background: transparent; border: 1px solid var(--text-secondary-color); color: var(--text-secondary-color); margin-right: 10px;">取消</button>
+                    <button id="ws-confirm-ok" class="control-btn" style="background: var(--primary-color); color: var(--background-color); border: 1px solid var(--primary-color); font-weight: bold;">确定</button>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        const modal = document.getElementById(modalId);
+
+        const close = () => { modal.classList.remove('active'); setTimeout(() => modal.remove(), 200); };
+
+        document.getElementById('ws-confirm-cancel').onclick = close;
+        document.getElementById('ws-confirm-ok').onclick = () => {
+            close();
+            onConfirm();
+        };
+    }
+     function showInputModal(title, placeholder = '', defaultValue = '') {
+        return new Promise((resolve) => {
+            const modalId = 'ws-input-modal';
+            const old = document.getElementById(modalId);
+            if (old) old.remove();
+
+            const html = `
+            <div id="${modalId}" class="modal active" style="z-index: 13000;">
+                <div class="modal-content" style="max-width: 400px; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);">
+                    <div style="padding: 15px; border-bottom: 1px solid var(--border-color); color: var(--primary-color); font-weight: bold;">
+                        ${title}
+                    </div>
+                    <div style="padding: 20px;">
+                        <input type="text" id="ws-input-field" class="ws-input" placeholder="${placeholder}" value="${defaultValue}" style="width: 100%;">
+                    </div>
+                    <div style="padding: 15px; text-align: right; background: rgba(0,0,0,0.2);">
+                        <button id="ws-input-cancel" class="control-btn" style="background: transparent; border: 1px solid var(--text-secondary-color); color: var(--text-secondary-color); margin-right: 10px;">取消</button>
+                        <button id="ws-input-ok" class="control-btn" style="background: var(--primary-color); color: var(--background-color); border: 1px solid var(--primary-color); font-weight: bold;">确定</button>
+                    </div>
+                </div>
+            </div>`;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+            const modal = document.getElementById(modalId);
+            const input = document.getElementById('ws-input-field');
+
+            // 自动聚焦
+            setTimeout(() => input.focus(), 100);
+
+            const close = (val) => {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 200);
+                resolve(val);
+            };
+
+            document.getElementById('ws-input-cancel').onclick = () => close(null);
+
+            const handleOk = () => {
+                const val = input.value.trim();
+                if (!val) return; // 禁止空值，或者根据需求允许
+                close(val);
+            };
+
+            document.getElementById('ws-input-ok').onclick = handleOk;
+            input.onkeydown = (e) => { if (e.key === 'Enter') handleOk(); };
+        });
+    } 
+        function openManagementPanel() {
+        const modalId = 'ws-manage-modal';
+        const old = document.getElementById(modalId);
+        if (old) old.remove();
+
+        const initialStatus = WorldbookManager.getStatus();
+
+        // 暂存状态
+        let stagingStatus = {
+            global: new Set(initialStatus.global),
+            char: new Set(initialStatus.char),
+            charPrimary: initialStatus.charPrimary
+        };
+
+        // 【修改】样式定义：增加分组样式、移动端抽屉样式
+        const styleBlock = `
+        <style>
+            #ws-manage-container { display: flex; height: 100%; overflow: hidden; position: relative; }
+
+            /* 左侧面板 (PC端默认显示) */
+            .ws-panel-left {
+                width: 260px; border-right: 1px solid var(--border-color);
+                display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.2);
+                transition: transform 0.3s ease; z-index: 20;
+            }
+
+            .ws-panel-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+            /* 矩阵行样式 */
+            .ws-matrix-row { display: flex; align-items: center; padding: 8px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            .ws-matrix-row:hover { background: rgba(0, 250, 255, 0.05); }
+            .ws-matrix-name { flex: 1; color: var(--text-color); font-family: monospace; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .ws-check-col { width: 70px; display: flex; justify-content: center; }
+
+            /* 分组标题样式 */
+            .ws-group-header {
+                padding: 10px 15px; background: rgba(var(--primary-rgb), 0.15);
+                color: var(--primary-color); font-weight: bold; font-size: 12px;
+                letter-spacing: 1px; border-bottom: 1px solid var(--border-color);
+                border-top: 1px solid var(--border-color); margin-top: -1px;
+            }
+
+            /* 移动端适配：抽屉模式 */
+            @media (max-width: 768px) {
+                .ws-panel-left {
+                    position: absolute; top: 0; bottom: 0; left: 0;
+                    width: 80%; max-width: 300px;
+                    background: var(--background-color);
+                    border-right: 1px solid var(--primary-color);
+                    transform: translateX(-100%); /* 默认隐藏 */
+                    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+                }
+                .ws-panel-left.active { transform: translateX(0); }
+
+                /* 遮罩层 */
+                #ws-drawer-overlay {
+                    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.5); z-index: 15;
+                    display: none; opacity: 0; transition: opacity 0.3s;
+                }
+                #ws-drawer-overlay.active { display: block; opacity: 1; }
+
+                .ws-mobile-toggle { display: block !important; }
+            }
+            .ws-mobile-toggle { display: none; }
+        </style>
+        `;
+
+        const html = `
+        <div id="${modalId}" class="modal active" style="z-index: 11000;">
+            ${styleBlock}
+            <div class="modal-content" style="width: 900px; max-width: 95vw; height: 85vh; display:flex; flex-direction:column; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 30px rgba(0, 250, 255, 0.1);">
+
+                <!-- Header -->
+                <div style="padding: 15px 20px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background: rgba(0, 250, 255, 0.05);">
+                    <div style="display:flex; align-items:center; gap: 10px;">
+                        <!-- 【新增】移动端抽屉开关按钮 -->
+                        <button id="ws-drawer-toggle" class="ws-mobile-toggle control-btn" style="padding: 5px 10px;">☰ 预设</button>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-size: 16px; color: var(--primary-color); letter-spacing: 2px; font-weight: bold; text-transform: uppercase;">额外模组管理</span>
+        
+                        </div>
+                    </div>
+                    <button id="ws-manage-close" style="font-size:24px; color:var(--text-color); background:none; border:none; cursor:pointer; opacity:0.7;">×</button>
+                </div>
+
+                <!-- Body -->
+                <div id="ws-manage-container">
+                    <!-- 移动端遮罩 -->
+                    <div id="ws-drawer-overlay"></div>
+
+                    <!-- Left Panel: Actions & Presets (Drawer on Mobile) -->
+                    <div class="ws-panel-left" id="ws-panel-left">
+                        <div style="padding: 15px; font-weight:bold; color:var(--text-color); border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;">
+                            <span>操作 & 预设</span>
+                            <span id="ws-drawer-close-btn" class="ws-mobile-toggle" style="cursor:pointer;">×</span>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="ws-action-area" style="padding: 20px; border-bottom: 1px solid var(--border-color);">
+                            <button id="ws-btn-apply-changes" class="control-btn ws-action-btn" style="width:100%; margin-bottom:10px; text-align:left; padding: 10px 12px; border: 1px solid var(--primary-color); color: var(--background-color); background: var(--primary-color); font-weight:bold;">
+                                应用更改
+                            </button>
+
+                            <button id="ws-btn-save-preset" class="control-btn ws-action-btn" style="width:100%; margin-bottom:10px; text-align:left; padding: 8px 12px; border: 1px solid var(--success-color); color: var(--success-color); background: rgba(77, 255, 136, 0.05);">
+                                保存预设
+                            </button>
+
+                            <button id="ws-btn-clear-all" class="control-btn danger-btn ws-action-btn" style="width:100%; text-align:left; padding: 8px 12px; border: 1px solid var(--danger-color); background: rgba(255, 77, 77, 0.05);">
+                                重置绑定
+                            </button>
+                        </div>
+
+                        <!-- Preset List -->
+                        <div class="ws-preset-list-container" style="flex:1; overflow-y:auto; padding: 20px;">
+                            <div style="color: var(--text-secondary-color); font-size: 10px; margin-bottom: 10px; letter-spacing:1px;">已保存的配置</div>
+                            <div id="ws-preset-list" style="display:flex; flex-direction:column; gap: 8px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Matrix -->
+                    <div class="ws-panel-right">
+                        <!-- Matrix Header -->
+                        <div style="display:flex; padding: 10px 15px; border-bottom: 1px solid var(--border-color); font-size: 11px; color: var(--text-secondary-color); letter-spacing:1px; background: rgba(0,0,0,0.2);">
+                            <div style="flex:1;">模组名称</div>
+                            <div style="width: 70px; text-align:center;">绑定到全局</div>
+                            <div style="width: 70px; text-align:center;">绑定到角色</div>
+                        </div>
+
+                        <!-- Matrix List -->
+                        <div id="ws-mod-matrix" style="flex:1; overflow-y:auto;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        const modal = document.getElementById(modalId);
+
+        // 抽屉逻辑
+        const drawer = document.getElementById('ws-panel-left');
+        const overlay = document.getElementById('ws-drawer-overlay');
+        const toggleDrawer = (show) => {
+            if (show) {
+                drawer.classList.add('active');
+                overlay.classList.add('active');
+            } else {
+                drawer.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        };
+        document.getElementById('ws-drawer-toggle').onclick = () => toggleDrawer(true);
+        document.getElementById('ws-drawer-close-btn').onclick = () => toggleDrawer(false);
+        overlay.onclick = () => toggleDrawer(false);
+
+        const closeModal = () => { modal.classList.remove('active'); setTimeout(() => modal.remove(), 200); };
+        document.getElementById('ws-manage-close').onclick = closeModal;
+        modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+
+        // 【修改】渲染矩阵：支持分组 (正文/DLC/MOD)
+        const renderMatrix = () => {
+            const container = document.getElementById('ws-mod-matrix');
+            let mods = WorldbookManager.scan();
+
+            container.innerHTML = '';
+
+            if (mods.length === 0) {
+                container.innerHTML = `<div style="padding:50px; text-align:center; color:var(--text-secondary-color);">NO MODULES DETECTED</div>`;
+                return;
+            }
+
+            // 1. 分组逻辑
+            const groups = {
+                '正文': [],
+                'DLC': [],
+                'MOD': []
+            };
+
+            mods.forEach(modName => {
+                const lower = modName.toLowerCase();
+                if (lower.includes('x-xxx')) {
+                    groups['正文'].push(modName);
+                } else if (lower.includes('x-dlc')) {
+                    groups['DLC'].push(modName);
+                } else {
+                    // 默认为 MOD (包含 x-mod)
+                    groups['MOD'].push(modName);
+                }
+            });
+
+            // 2. 遍历分组渲染
+            // 定义渲染顺序
+            const groupOrder = ['正文', 'DLC', 'MOD'];
+
+            groupOrder.forEach(groupName => {
+                const groupItems = groups[groupName];
+                if (groupItems.length === 0) return;
+
+                // 组内排序：启用的在前，然后按名称
+                groupItems.sort((a, b) => {
+                    const aActive = stagingStatus.global.has(a) || stagingStatus.char.has(a);
+                    const bActive = stagingStatus.global.has(b) || stagingStatus.char.has(b);
+                    if (aActive !== bActive) return bActive - aActive;
+                    return a.localeCompare(b);
+                });
+
+                // 渲染分组头
+                const header = document.createElement('div');
+                header.className = 'ws-group-header';
+                header.innerText = ` ${groupName} (${groupItems.length})`;
+                container.appendChild(header);
+
+                // 渲染组内项目
+                groupItems.forEach((modName, index) => {
+                    const isGlobal = stagingStatus.global.has(modName);
+                    const isChar = stagingStatus.char.has(modName);
+                    const displayName = WorldbookManager.cleanName(modName);
+
+                    const row = document.createElement('div');
+                    row.className = 'ws-matrix-row';
+                    // 隔行变色 (可选，这里为了简洁去掉了，依靠hover)
+
+                    const getBox = (active, type) => `
+                        <div class="ws-matrix-box" data-type="${type}" style="
+                            width: 16px; height: 16px;
+                            border: 1px solid ${active ? 'var(--primary-color)' : '#555'};
+                            background: ${active ? 'var(--primary-color)' : 'transparent'};
+                            box-shadow: ${active ? '0 0 8px var(--glow-color)' : 'none'};
+                            cursor: pointer; transition: all 0.2s;
+                        "></div>
+                    `;
+
+                    row.innerHTML = `
+                        <div class="ws-matrix-name" title="${modName}">${displayName}</div>
+                        <div class="ws-check-col">${getBox(isGlobal, 'global')}</div>
+                        <div class="ws-check-col">${getBox(isChar, 'char')}</div>
+                    `;
+
+                    row.querySelectorAll('.ws-matrix-box').forEach(box => {
+                        box.onclick = () => {
+                            const type = box.dataset.type;
+                            if (type === 'global') {
+                                if (stagingStatus.global.has(modName)) {
+                                    stagingStatus.global.delete(modName);
+                                } else {
+                                    stagingStatus.global.add(modName);
+                                    stagingStatus.char.delete(modName);
+                                }
+                            } else {
+                                if (stagingStatus.char.has(modName)) {
+                                    stagingStatus.char.delete(modName);
+                                } else {
+                                    stagingStatus.char.add(modName);
+                                    stagingStatus.global.delete(modName);
+                                }
+                            }
+                            renderMatrix();
+                        };
+                    });
+                    container.appendChild(row);
+                });
+            });
+        };
+
+        const renderPresets = () => {
+            const container = document.getElementById('ws-preset-list');
+            const presets = PresetManager.getAll();
+
+            container.innerHTML = '';
+            if(presets.length === 0) {
+                container.innerHTML = `<div style="font-size:12px; color:#666; font-style:italic; padding:10px;">NO PRESETS</div>`;
+                return;
+            }
+
+            presets.forEach(p => {
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    padding: 10px; border: 1px solid rgba(255,255,255,0.1);
+                    background: rgba(0,0,0,0.2); cursor: pointer; position: relative;
+                    transition: border-color 0.2s; margin-bottom: 5px;
+                `;
+                item.onmouseover = () => item.style.borderColor = 'var(--primary-color)';
+                item.onmouseout = () => item.style.borderColor = 'rgba(255,255,255,0.1)';
+
+                item.innerHTML = `
+                    <div style="color: var(--text-color); font-weight:bold; font-size:12px; margin-bottom:2px;">${p.name}</div>
+                    <div style="font-size: 10px; color: var(--text-secondary-color);">
+                        G: ${p.global.length} | C: ${p.char.length}
+                    </div>
+                    <div class="ws-del-preset" style="
+                        position:absolute; right:0; top:0; bottom:0; width:25px;
+                        display:flex; align-items:center; justify-content:center;
+                        background:rgba(255,0,0,0.1); color:var(--danger-color);
+                        opacity:0; transition:opacity 0.2s; font-weight:bold; font-size:16px;
+                    ">×</div>
+                `;
+
+                item.onmouseenter = () => item.querySelector('.ws-del-preset').style.opacity = '1';
+                item.onmouseleave = () => item.querySelector('.ws-del-preset').style.opacity = '0';
+
+                item.onclick = (e) => {
+                    if(e.target.classList.contains('ws-del-preset')) return;
+                    showCustomConfirm('LOAD PRESET', `加载预设 [ ${p.name} ] ?<br>这将覆盖当前的配置矩阵。`, () => {
+                        stagingStatus.global = new Set(p.global);
+                        stagingStatus.char = new Set(p.char);
+                        renderMatrix();
+                        // 移动端加载后自动关闭抽屉
+                        if(window.innerWidth <= 768) toggleDrawer(false);
+                    });
+                };
+
+                item.querySelector('.ws-del-preset').onclick = (e) => {
+                    e.stopPropagation();
+                    showCustomConfirm('DELETE PRESET', `确定删除预设 [ ${p.name} ] ?`, () => {
+                        PresetManager.delete(p.id);
+                        renderPresets();
+                    });
+                };
+
+                container.appendChild(item);
+            });
+        };
+
+           document.getElementById('ws-btn-apply-changes').onclick = async () => {
+            const btn = document.getElementById('ws-btn-apply-changes');
+            const originalText = btn.innerText;
+
+            btn.innerText = "⏳ 正在应用...";
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            try {
+                const targetWbs = WorldbookManager.scan();
+                const currentRealStatus = WorldbookManager.getStatus();
+                const tasks = [];
+
+                // --- 全局绑定逻辑 (保持不变) ---
+                const cleanGlobal = Array.from(currentRealStatus.global).filter(n => !targetWbs.includes(n));
+                const finalGlobal = [...new Set([...cleanGlobal, ...stagingStatus.global])];
+                if (typeof rebindGlobalWorldbooks === 'function') {
+                    tasks.push(rebindGlobalWorldbooks(finalGlobal));
+                }
+
+                // --- 【修改】角色附加绑定逻辑 ---
+                // 1. 检查暂存区是否有任何角色绑定。如果没有，则跳过角色绑定操作。
+                if (stagingStatus.char.size > 0) {
+                    // 2. 计算最终的角色附加世界书列表。
+                    const cleanChar = Array.from(currentRealStatus.char).filter(n => !targetWbs.includes(n));
+                    const finalChar = [...new Set([...cleanChar, ...stagingStatus.char])];
+
+                    // 3. 检查接口是否存在，并构造任务。
+                    if (typeof rebindCharWorldbooks === 'function') {
+                        tasks.push(rebindCharWorldbooks('current', {
+                            // 关键：始终使用当前获取到的主世界书，不去修改它。
+                            // primary: currentRealStatus.charPrimary,
+                            // 只更新附加世界书列表。
+                            additional: finalChar
+                        }));
+                    }
+                }
+                // 如果 stagingStatus.char.size 为 0，则不会执行任何角色相关的 rebind 操作。
+
+                // 并行执行所有需要执行的绑定任务
+                await Promise.all(tasks);
+
+                // 成功提示
+                btn.innerText = "✅ 应用成功";
+                btn.style.background = "var(--success-color)";
+                btn.style.color = "#000";
+
+                setTimeout(() => {
+                    closeModal();
+                }, 800);
+
+            } catch (e) {
+                console.error(e);
+                alert("应用失败: " + e.message);
+                // 恢复按钮原始状态
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.style.background = "var(--primary-color)";
+                btn.style.color = "var(--background-color)";
+            }
+        };
+          document.getElementById('ws-btn-clear-all').onclick = () => {
+            showCustomConfirm('RESET MATRIX', '确定要在矩阵中取消勾选所有检测到的模组吗？<br>(需点击应用生效)', () => {
+                stagingStatus.global.clear();
+                stagingStatus.char.clear();
+                renderMatrix();
+            });
+        };
+
+        // 【修改】使用自定义输入弹窗
+        document.getElementById('ws-btn-save-preset').onclick = async () => {
+            const name = await showInputModal('保存预设', '请输入预设名称...');
+            if(!name) return;
+
+            const presetData = {
+                id: Date.now().toString(),
+                name: name,
+                global: Array.from(stagingStatus.global),
+                char: Array.from(stagingStatus.char),
+                timestamp: Date.now()
+            };
+
+            PresetManager.save(presetData);
+            renderPresets();
+        };
+
+        renderMatrix();
+        renderPresets();
+    }
+         async function loadDataAndRender() {
     // 1. 获取订阅信息
     await getSubscriptions();
 
@@ -16889,19 +17535,32 @@ async function checkUpdatesOnStartup() {
         renderFiltersUI(); // 使用新的渲染函数
         refreshView(true);
     }
-
-    // 【修改】refreshView 适配筛选模式
+  // 【修改】refreshView 适配筛选模式及排序逻辑
     async function refreshView(needsRefilter = true) {
         const container = document.getElementById('workshop-mod-list');
-        const userSettings = await getUserModSettings(); // 假设此函数存在
+        const userSettings = await getUserModSettings();
         const settingsMap = new Map(userSettings.map(i => [String(i.id), i]));
+
+        // 辅助函数：判断模组是否启用
+        const checkEnabled = (mod) => {
+            if (mod.scriptUrl === 'local') return mod.enabled;
+            const s = settingsMap.get(String(mod.id));
+            return s ? s.enabled : false;
+        };
+
+        // 辅助函数：判断是否订阅
+        const checkSubscribed = (mod) => {
+            // 远程模组检查订阅ID，本地模组视为未订阅（或根据需求调整）
+            if (mod.scriptUrl === 'local') return false;
+            return state.subscriptions.has(`sub_mod_${mod.id}`);
+        };
 
         if(needsRefilter) {
             const term = state.searchTerm.toLowerCase();
             const list = [...allLocalMods, ...allRemoteMods];
 
-            state.filteredList = list.filter(mod => {
-                // 筛选逻辑：标签 或 作者
+            // 1. 筛选
+            let tempFiltered = list.filter(mod => {
                 let matchFilter = true;
                 if (state.currentTag !== 'all') {
                     if (state.filterMode === 'tag') {
@@ -16910,20 +17569,32 @@ async function checkUpdatesOnStartup() {
                         matchFilter = mod.author === state.currentTag;
                     }
                 }
-
                 const matchSearch = mod.name.toLowerCase().includes(term) ||
                                   (mod.description && mod.description.toLowerCase().includes(term)) ||
                                   (mod.author && mod.author.toLowerCase().includes(term));
-
                 return matchFilter && matchSearch;
             });
+
+            // 2. 排序：已订阅 > 已启用 > 默认
+            tempFiltered.sort((a, b) => {
+                const subA = checkSubscribed(a) ? 1 : 0;
+                const subB = checkSubscribed(b) ? 1 : 0;
+                if (subA !== subB) return subB - subA; // 订阅优先
+
+                const enableA = checkEnabled(a) ? 1 : 0;
+                const enableB = checkEnabled(b) ? 1 : 0;
+                if (enableA !== enableB) return enableB - enableA; // 启用次之
+
+                return 0; // 保持原序
+            });
+
+            state.filteredList = tempFiltered;
         }
 
         renderPaginationUI(state.filteredList.length);
         const start = (state.currentPage - 1) * state.itemsPerPage;
         const pageItems = state.filteredList.slice(start, start + state.itemsPerPage);
 
-        // --- 核心修改：使用 DocumentFragment 消除闪烁 ---
         const fragment = document.createDocumentFragment();
 
         if(pageItems.length === 0) {
@@ -16933,14 +17604,12 @@ async function checkUpdatesOnStartup() {
             fragment.appendChild(emptyDiv);
         } else {
             pageItems.forEach(mod => {
-                let isEnabled = false;
-                if(mod.scriptUrl === 'local') {
-                    isEnabled = mod.enabled;
-                } else {
-                    // 取值时也用 String(mod.id)
-                    const s = settingsMap.get(String(mod.id));
-                    isEnabled = s ? s.enabled : false;
-                }
+                const isEnabled = checkEnabled(mod);
+                // ... (后续卡片渲染代码保持不变，直到 fragment.appendChild(card))
+
+                // 为了节省篇幅，这里省略了卡片内部 HTML 构建代码，
+                // 请保留原有的 card.innerHTML 构建逻辑，
+                // 只要确保 isEnabled 是通过上面的 checkEnabled 获取的即可。
 
                 const card = document.createElement('div');
                 card.className = 'mod-card';
@@ -16951,11 +17620,9 @@ async function checkUpdatesOnStartup() {
                 let actionBtnHtml = '';
                 if(hasValidScript(mod)) {
                     const btnText = isEnabled ? '禁用' : '启用';
-                    // 样式微调
                     const style = isEnabled
                         ? `border:1px solid var(--danger-color); color:var(--danger-color);`
                         : `border:1px solid var(--success-color); color:var(--success-color);`;
-
                     actionBtnHtml += `<button class="card-action-btn" style="${style} background:transparent; padding:2px 8px; font-size:12px; cursor:pointer;">${btnText}</button>`;
                 } else {
                     actionBtnHtml += `<span style="font-size:11px; color:#555;">无脚本</span>`;
@@ -16965,9 +17632,15 @@ async function checkUpdatesOnStartup() {
                     actionBtnHtml += `<button class="card-dl-btn" style="border:1px solid var(--primary-color); color:var(--primary-color); background:transparent; padding:2px 8px; font-size:12px; cursor:pointer; margin-left:5px;">⬇ 世界书</button>`;
                 }
 
+                // 增加订阅标识 (可选)
+                let subIndicator = '';
+                if (checkSubscribed(mod)) {
+                    subIndicator = `<span style="color:var(--primary-color); font-size:12px; margin-left:5px;">★</span>`;
+                }
+
                 card.innerHTML = `
                     <div class="mod-header">
-                        <div class="mod-title">${mod.name}</div>
+                        <div class="mod-title">${mod.name}${subIndicator}</div>
                         <div class="mod-tags">${tagsHtml}</div>
                     </div>
                     <div class="mod-desc" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px;  margin:5px 0;">
@@ -16979,12 +17652,12 @@ async function checkUpdatesOnStartup() {
                     </div>
                 `;
 
-            // 【修改】卡片点击：打开详情
+                // ... (原有的 onclick 事件绑定代码保持不变)
                 card.onclick = (e) => {
                     const toggleCallback = async () => {
                         if(mod.scriptUrl === 'local') {
                             await toggleLocalStatus(mod.id, !isEnabled);
-                            mod.enabled = !isEnabled; // <--- 【关键】手动更新内存状态
+                            mod.enabled = !isEnabled;
                         } else {
                             await toggleModStatus(mod.id, !isEnabled, mod);
                         }
@@ -16992,32 +17665,28 @@ async function checkUpdatesOnStartup() {
                     openDetailModal(mod, isEnabled, toggleCallback);
                 };
 
-
-               // 【修改】快捷按钮点击：直接切换
                 const scriptBtn = card.querySelector('.card-action-btn');
                 if(scriptBtn) {
                     scriptBtn.onclick = async (e) => {
                         e.stopPropagation();
                         if(mod.scriptUrl === 'local') {
                             await toggleLocalStatus(mod.id, !isEnabled);
-                            mod.enabled = !isEnabled; // <--- 【关键】手动更新内存状态
+                            mod.enabled = !isEnabled;
                         } else {
                             await toggleModStatus(mod.id, !isEnabled, mod);
                         }
-                        refreshView(false); // 刷新界面
+                        refreshView(false); // 保持当前页刷新
                     };
                 }
 
-                 const dlBtn = card.querySelector('.card-dl-btn');
+                const dlBtn = card.querySelector('.card-dl-btn');
                 if(dlBtn) {
                     dlBtn.onclick = (e) => {
                         e.stopPropagation();
                         if(window.NovaWorkshop.downloadWorldBook) {
-                            // 【修改】同上，字段不存在时自动视为 false
                             const fileName = mod.is_dowload_raw_name
                                 ? mod.worldBookUrl.split('/').pop()
                                 : `${mod.id}.json`;
-
                             window.NovaWorkshop.downloadWorldBook(mod.worldBookUrl, fileName);
                         }
                     };
@@ -17027,11 +17696,10 @@ async function checkUpdatesOnStartup() {
             });
         }
 
-        // 最后一次性更新 DOM，消除闪烁
         container.innerHTML = '';
         container.appendChild(fragment);
     }
-  async function downloadFile(url, filename) {
+     async function downloadFile(url, filename) {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
@@ -17089,8 +17757,11 @@ async function checkUpdatesOnStartup() {
 
         // 3. 管理模组按钮
         const manageBtn = document.getElementById('ws-manage-btn');
-        if(manageBtn) manageBtn.onclick = () => alert("模组管理面板开发中...");
-
+    if(manageBtn) {
+            manageBtn.onclick = () => {
+                openManagementPanel(); // <--- 指向新面板
+            };
+        }
         const searchInput = document.getElementById('workshop-search-input');
         const searchBtn = document.getElementById('workshop-search-btn');
         if(searchBtn) searchBtn.onclick = () => {
@@ -40901,10 +41572,10 @@ dice_use= String(chatdata.dice_use||'true');
     weneedshop = String(localStorage.getItem('we_need_shop')) || 'false';
     is_show_notifications = String(localStorage.getItem('is_show_notifications')) || 'true';
     noBackup = String(localStorage.getItem('is_no_backup')) || 'false';
-    if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'false';
+    if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'true';
     is_worldbook_lock = String(localStorage.getItem('is_worldbook_lock')) || 'false';
     if_waiting_roll = String(localStorage.getItem('if_waiting_roll')) || 'false';
-    is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'false';
+    is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'true';
     is_chat_mode = String(localStorage.getItem('is_chat_mode')) || 'false';
 
 
@@ -43719,10 +44390,10 @@ function setupReconfigModal() {
         { name: '一直启用商店', key: 'we_need_shop', default: 'false', desc: '使商店即使在末日和无世界观也可以开启' },
         { name: '显示更新通知', key: 'is_show_notifications', default: 'true', desc: '关闭后不再弹出变量更新提示' },
         { name: '不再备份快照', key: 'is_no_backup', default: 'false', desc: '不再进行存档快照备份和每回合消息的备份' },
-        { name: '二次渲染', key: 'if_render_after_2batch', default: 'false', desc: '异步变量层生成结束后，对全部内容重新渲染' },
+        { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染' },
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
-        { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'false', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
+        { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'true', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
        { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
    
     ];
