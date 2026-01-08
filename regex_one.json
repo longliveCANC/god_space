@@ -15098,7 +15098,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.18';
+let current_game_version = '3.5.19';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -35044,8 +35044,20 @@ if (isContinuation) {
             lastAiMessage.currentSwipeIndex = 0;
         }
 
+        let hookDataBeforeSave = {
+    response: aiFullResponse || partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+// 使用经过钩子处理后的回复
+const finalAiResponse = hookDataBeforeSave.response;
         // 在末尾追加内容
-        lastAiMessage.content += " " + aiFullResponse;
+        lastAiMessage.content += " " + finalAiResponse;
         // 【关键：同步更新当前分支的内容】
         lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
 
@@ -35278,8 +35290,21 @@ AI回复: ${theAImessage}
             lastAiMessage.currentSwipeIndex = 0;
         }
 
+        let hookDataBeforeSave = {
+    response: aiFullResponse || partialAiResponse, // 原始AI回复文本
+    context: { // 提供一些上下文
+        isContinuation: isContinuation,
+        isReroll: isReroll,
+        history: conversationHistory // 注意：传递的是引用
+    }
+};
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+
+// 使用经过钩子处理后的回复
+const finalAiResponse = hookDataBeforeSave.response;
+
         // 更新内容
-        lastAiMessage.content += " " + aiFullResponse;
+        lastAiMessage.content += " " + finalAiResponse;
         // 【关键：同步更新当前分支的内容】
         lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
 
