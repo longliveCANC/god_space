@@ -404,7 +404,7 @@
     "name": "兼容预设的小总结",
     "author": "assa",
     "version": "1.2",
-    "tags": ["功能脚本"],
+    "tags": ["功能脚本","预设兼容"],
     "description": "[需游戏版本是3.5.6及其以上]如题。开了之后就可以关闭卡的小总结，而使用预设的小总结内容了。原理是将&lt;summary&gt;(现在可以自由配置了，在设置界面的第一页最上面)中的内容解析出来，放到我们的变量系统里面去。因此需要关闭这个卡的原小总结",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod12summary.js",
     "worldBookUrl": "",
