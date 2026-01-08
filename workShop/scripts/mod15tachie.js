@@ -45,16 +45,7 @@
         const isVariation = !!variation; // 是否为差分
         // 命名规则：有差分则 "Name-Var"，无差分则 "Name"
         const saveKey = isVariation ? `${charName}-${variation}` : charName;
-     if (!isVariation) {
-                    const commandString = `/setinput <updateMemory>\nmemory('img_map.${charName}','${charName}')\n</updateMemory>`;
-                    console.log(`[Tachie Plugin] 触发指令: ${commandString}`);
 
-                    if (window.GameAPI && window.GameAPI.triggerassa) {
-                        // -1 通常表示当前上下文或不特定指代
-                        // await window.GameAPI.triggerassa(commandString);
-                      await  window.worldHelper.processUpdateMemoryCommands(commandString,-1);
-                    }
-                }
         console.log(`[Tachie Plugin] 准备生成: ${saveKey}, ID: ${requestId}`);
 
         // 2. 定义响应监听器
@@ -84,7 +75,17 @@
                     console.error('[Tachie Plugin] imageDB 未定义，无法存储图片。');
                 }
 
-            
+                // 4. 触发指令 (仅当不是差分时)
+                if (!isVariation) {
+                    const commandString = `/setinput <updateMemory>\nmemory('img_map.${charName}','${charName}')\n</updateMemory>`;
+                    console.log(`[Tachie Plugin] 触发指令: ${commandString}`);
+
+                    if (window.GameAPI && window.GameAPI.triggerassa) {
+                        // -1 通常表示当前上下文或不特定指代
+                        await window.GameAPI.triggerassa(commandString);
+                      await  window.worldHelper.processUpdateMemoryCommands(commandString,-1);
+                    }
+                }
 
             } catch (e) {
                 console.error(`[Tachie Plugin] 处理响应数据出错:`, e);
