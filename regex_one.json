@@ -20856,7 +20856,7 @@ document.addEventListener('click', (e) => {
 }
 (function restoreRememberCheckbox() {
     try {
-        const rememberChoice = localStorage.getItem('rememberModChoice') === 'true';
+        const rememberChoice = localStorage.getItem('rememberModChoice') !== 'false';
         const rememberCheckbox = document.getElementById('remember-mod-choice');
         if (rememberCheckbox) {
             rememberCheckbox.checked = rememberChoice;
