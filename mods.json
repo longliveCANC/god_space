@@ -401,14 +401,14 @@
   } 
    ,{
     "id": "mod12summary",
-    "name": "兼容&lt;summary&gt;类型的预设小总结",
+    "name": "兼容预设的小总结",
     "author": "assa",
-    "version": "1.1",
+    "version": "1.2",
     "tags": ["功能脚本"],
-    "description": "[需游戏版本是3.5.6及其以上]如题。开了之后就可以关闭卡的小总结，而使用预设的小总结内容了。原理是将&lt;summary&gt;中的内容解析出来，放到我们的变量系统里面去。因此需要关闭原小总结",
+    "description": "[需游戏版本是3.5.6及其以上]如题。开了之后就可以关闭卡的小总结，而使用预设的小总结内容了。原理是将&lt;summary&gt;(现在可以自由配置了，在设置界面的第一页最上面)中的内容解析出来，放到我们的变量系统里面去。因此需要关闭这个卡的原小总结",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod12summary.js",
     "worldBookUrl": "",
-    "previewImage": ""
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 28.png"
   }  ,{
     "id": "mod13getcot",
     "name": "提取cot内容进悬浮球查看并可在正文删除",
