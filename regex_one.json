@@ -33218,7 +33218,7 @@ if (originalWorldNameIsValid && finalWorldName && originalWorldName !== finalWor
             };
 
             // 步骤 1: 将当前(切换前)的 world_lore 数据增量备份到旧世界名下
-            if (assaDataToUpdate.world_lore) {
+       if (assaDataToUpdate.world_lore && typeof originalWorldName === 'string' && originalWorldName.trim() !== '') {
                 console.log(`[Core] 📦 正在将 [${originalWorldName}] 的最终数据增量备份...`);
                 // 确保备份结构存在
                 if (!assaDataToUpdate.world_backup) assaDataToUpdate.world_backup = {};
@@ -33233,6 +33233,11 @@ if (originalWorldNameIsValid && finalWorldName && originalWorldName !== finalWor
                 if (assaDataToUpdate.world_lore.settings) {
                     if (!assaDataToUpdate.world_backup[originalWorldName].settings) assaDataToUpdate.world_backup[originalWorldName].settings = {};
                     deepMerge(assaDataToUpdate.world_backup[originalWorldName].settings, assaDataToUpdate.world_lore.settings);
+                }
+            } else {
+                // ✨ 可选：打印一条日志说明跳过了备份
+                if (assaDataToUpdate.world_lore) {
+                     console.log(`[Core] ℹ️ 旧世界名 [${originalWorldName}] 为空或无效，跳过备份步骤。`);
                 }
             }
 
