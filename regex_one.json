@@ -12105,7 +12105,7 @@ pointer-events: auto;
 
 .group-chat-message-bubble {
     display: flex;
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: 8px;
     max-width: 100%;
     word-wrap: break-word;
