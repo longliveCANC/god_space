@@ -45,7 +45,7 @@
             const summaryTagRegex = new RegExp(pattern, 'g');
 
             const matches = [...hookData.response.matchAll(summaryTagRegex)];
- const timeString = `${SafeGetValue(window.GameAPI.currentGameData?.user?.current_location)}-${SafeGetValue(window.GameAPI.currentGameData?.纪年)}-${SafeGetValue(window.GameAPI.currentGameData?.日期)}-${SafeGetValue(window.GameAPI.currentGameData?.时间)}`;
+ const timeString = `${SafeGetValue(window.GameAPI.statData?.user?.current_location)}-${SafeGetValue(window.GameAPI.statData?.纪年)}-${SafeGetValue(window.GameAPI.statData?.日期)}-${SafeGetValue(window.GameAPI.statData?.时间)}`;
             if (matches.length > 0) {
                 // 获取最后一个匹配
                 const lastMatch = matches[matches.length - 1];
