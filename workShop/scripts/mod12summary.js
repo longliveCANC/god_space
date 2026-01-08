@@ -45,17 +45,17 @@
             const summaryTagRegex = new RegExp(pattern, 'g');
 
             const matches = [...hookData.response.matchAll(summaryTagRegex)];
-
+ const timeString = `${SafeGetValue(window.GameAPI.currentGameData?.user?.current_location)}-${SafeGetValue(window.GameAPI.currentGameData?.纪年)}-${SafeGetValue(window.GameAPI.currentGameData?.日期)}-${SafeGetValue(window.GameAPI.currentGameData?.时间)}`;
             if (matches.length > 0) {
                 // 获取最后一个匹配
                 const lastMatch = matches[matches.length - 1];
                 const summaryContent = lastMatch[1];
 
                 // 去掉换行符
-                const cleanedContent = summaryContent.replace(/\n/g, '').trim();
+                const cleanedContent = summaryContent.replace(/\n/g, '|').trim();
 
                 // 构建命令字符串
-                const commandString = `memory('summary.small.小摘要','${cleanedContent}')`;
+                const commandString = `memory('summary.small.${timeString}','${cleanedContent}')`;
 
                 // 执行命令
                 try {
