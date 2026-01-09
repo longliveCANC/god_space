@@ -15098,7 +15098,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.19';
+let current_game_version = '3.5.20';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -37952,7 +37952,43 @@ document.getElementById('header-difficulty').textContent = `${SafeGetValue(statD
   }
 
 }
+function getOtherSkillBonuses(assaData) {
+    const bonuses = {};
+const otherSkills = {
+  ..._.get(assaData, 'global_lore.其他技能', {})
+};
+    for (const skillName in otherSkills) {
+        if (Object.prototype.hasOwnProperty.call(otherSkills, skillName)) {
+            const skillData = otherSkills[skillName];
+            const effectString = _.get(skillData, 'effect', '');
 
+         if (effectString && typeof effectString === 'string') {
+                let stringsToParse = [];
+                const matches = effectString.match(/【[^】]+】/g);
+
+                if (matches) {
+                    stringsToParse = matches.map(match => match.substring(1, match.length - 1));
+                } else if (effectString.trim()) {
+                    stringsToParse.push(effectString);
+                }
+
+                stringsToParse.forEach(content => {
+                    const attributes = content.split(/;|；/).map(attr => attr.trim()).filter(attr => attr !== "");
+
+                    attributes.forEach(attr => {
+                        const parts = attr.match(/^(.+?)\s*([+-]\d+)$/) || attr.match(/^(.+?)[:|：]\s*([+-]?\d+)$/);
+                        if (parts && parts.length === 3) {
+                            let name = parts[1].trim();
+                            const value = parseInt(parts[2].trim().replace('+', ''), 10);
+                            bonuses[name] = (bonuses[name] || 0) + value;
+                        }
+                    });
+                });
+            }
+        }
+    }
+    return bonuses;
+}
   function getStatusBonuses(statData) {
     const bonuses = {};
     const statusString = _.get(statData, "user.status[0]", "");
@@ -38032,12 +38068,7 @@ attributeCategories['全基础技能'] = allSkills;
     return bonuses;
 }
 
-/**
- * 获取并解析所有已装备物品的属性加成
- * @param {object} statData - 核心数据 currentGameData
- * @param {object} assaData - 设定数据 assaSettingsData
- * @returns {object} 一个以属性名为键，加成数值为值的对象, e.g. { "力量": 5, "敏捷": -2 }
- */
+
 function getEquipmentBonuses(statData, assaData) {
     const bonuses = {};
     // 安全地访问当前装备，如果不存在则使用空对象
@@ -38624,114 +38655,173 @@ function populateCharacterPage(playData, statData, assaData) {
         }
     }
 
-   // --- 右侧面板: 渲染新的整合模块 (核心改动) ---
-const statsContainer = document.getElementById('main-stats-container');
-statsContainer.innerHTML = ''; // 清空容器
-const currentXp = playData.货币.经验值[0];
-const equipmentBonuses = getEquipmentBonuses(statData, assaData);
-const statusBonuses = getStatusBonuses(statData);
+      // --- 右侧面板: 渲染新的整合模块 (核心改动) ---
+    const statsContainer = document.getElementById('main-stats-container');
+    statsContainer.innerHTML = ''; // 清空容器
+    const currentXp = playData.货币.经验值[0];
 
-// 动态渲染属性模块
-const attrCategories = playData.基础属性 || {};
-for (const categoryName in attrCategories) {
-    const moduleDiv = document.createElement('div');
-    moduleDiv.className = 'stat-module';
+    // 1. 获取各类加成数据
+    const equipmentBonuses = getEquipmentBonuses(statData, assaData);
+    const statusBonuses = getStatusBonuses(statData);
+    const otherSkillBonuses = getOtherSkillBonuses(assaData); // 新增：获取其他技能加成
 
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'stat-module-title';
-    titleDiv.textContent = categoryName; // 使用数据中的分类名作为标题
-    titleDiv.onclick = () => moduleDiv.classList.toggle('collapsed');
+    // 辅助函数：构建加成显示字符串 (例如: "(装备:+3, 状态:+2)")
+    const buildBonusHtml = (attrName) => {
+        const parts = [];
+        const equipVal = equipmentBonuses[attrName] || 0;
+        const statusVal = statusBonuses[attrName] || 0;
+        const otherVal = otherSkillBonuses[attrName] || 0;
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'stat-module-content';
+        if (equipVal !== 0) parts.push(`装备:${equipVal > 0 ? '+' : ''}${equipVal}`);
+        if (statusVal !== 0) parts.push(`状态:${statusVal > 0 ? '+' : ''}${statusVal}`);
+        if (otherVal !== 0) parts.push(`被动技:${otherVal > 0 ? '+' : ''}${otherVal}`);
 
-    let attrHtml = '';
-    const attrCategoryData = attrCategories[categoryName];
-    for (const attrName in attrCategoryData) {
-        const attr = attrCategoryData[attrName];
-        // 确保数据结构正确，防止因用户误操作导致页面崩溃
-        if (!attr || !attr.基础 || !Array.isArray(attr.基础)) continue;
+        if (parts.length === 0) return '';
+        // 使用较小的字体和灰色显示详情
+        return ` <span class="bonus-detail" style="font-size: 0.85em; color: #aaa; margin-left: 4px;">(${parts.join(', ')})</span>`;
+    };
 
-        const dataPath = `基础属性.${categoryName}.${attrName}.基础`;
-        const equipBonus = equipmentBonuses[attrName] || 0;
-        const statusBonus = statusBonuses[attrName] || 0;
+    // 计算总值的辅助函数 (用于显示最终值)
+    const getTotalBonus = (attrName) => {
+        return (equipmentBonuses[attrName] || 0) +
+               (statusBonuses[attrName] || 0) +
+               (otherSkillBonuses[attrName] || 0);
+    };
 
-        const equipBonusHtml = equipBonus !== 0 ? ` <span class="equipment-bonus">(${equipBonus > 0 ? '+' : ''}${equipBonus})</span>` : '';
-        const statusBonusHtml = statusBonus !== 0 ? ` <span class="status-modifier">(${statusBonus > 0 ? '+' : ''}${statusBonus})</span>` : '';
+    // --- 新增：单独渲染防御属性 (置顶显示) ---
+    const defenseData = playData.衍生属性?.防御?.基础防御;
+    if (defenseData) {
+        const defModuleDiv = document.createElement('div');
+        defModuleDiv.className = 'stat-module';
 
-        const legendaryValue = attr.传奇?.[0];
-        const legendaryTooltip = attr.传奇?.[1];
-        const legendaryBonusHtml = legendaryValue > 0 ? ` <span class="legendary-value" data-tooltip="${legendaryTooltip}">(+${legendaryValue})</span>` : '';
+        const defTitleDiv = document.createElement('div');
+        defTitleDiv.className = 'stat-module-title';
+        defTitleDiv.textContent = '核心衍生属性';
 
-        const upgradeCost = calculateXpCost(attr.基础[0], 'attribute');
-        const canUpgrade = currentXp >= upgradeCost;
-        const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${attrName}" data-level="${attr.基础[0]}" data-type="attribute">+</span>` : '';
+        const defContentDiv = document.createElement('div');
+        defContentDiv.className = 'stat-module-content';
 
-        attrHtml += `
-        <div class="attr-item" data-tooltip="${attr.基础[1]}">
-            <span class="attr-name">${attrName}${upgradeButtonHtml}</span>
-            <span class="attr-value">${attr.基础[0]}${equipBonusHtml}${statusBonusHtml}${legendaryBonusHtml}</span>
+        const defBase = defenseData[0] || 0;
+        const defDesc = defenseData[1] || '基础防御值';
+        const defTotalBonus = getTotalBonus('防御');
+        const defBonusHtml = buildBonusHtml('防御');
+
+        // 防御通常没有升级按钮，这里只做展示
+        defContentDiv.innerHTML = `
+        <div class="attr-item" data-tooltip="${defDesc}">
+            <span class="attr-name">基础防御</span>
+            <span class="attr-value">${defBase + defTotalBonus}${defBonusHtml}</span>
         </div>`;
+
+        defModuleDiv.appendChild(defTitleDiv);
+        defModuleDiv.appendChild(defContentDiv);
+        statsContainer.appendChild(defModuleDiv);
     }
-    contentDiv.innerHTML = attrHtml;
-    moduleDiv.appendChild(titleDiv);
-    moduleDiv.appendChild(contentDiv);
-    statsContainer.appendChild(moduleDiv);
-}
 
-// 动态渲染技能模块
-const skillCategories = playData.基础技能 || {};
-for (const categoryName in skillCategories) {
-    const moduleDiv = document.createElement('div');
-    moduleDiv.className = 'stat-module';
+    // 2. 动态渲染基础属性模块
+    const attrCategories = playData.基础属性 || {};
+    for (const categoryName in attrCategories) {
+        const moduleDiv = document.createElement('div');
+        moduleDiv.className = 'stat-module';
 
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'stat-module-title';
-    titleDiv.textContent = categoryName; // 使用数据中的分类名作为标题
-    titleDiv.onclick = () => moduleDiv.classList.toggle('collapsed');
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'stat-module-title';
+        titleDiv.textContent = categoryName;
+        titleDiv.onclick = () => moduleDiv.classList.toggle('collapsed');
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'stat-module-content';
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'stat-module-content';
 
-    let skillHtml = '';
-    const skillCategoryData = skillCategories[categoryName];
-    const skillsToShow = Object.keys(skillCategoryData).filter(skillName =>
-        (skillCategoryData[skillName] && skillCategoryData[skillName][0] > 0) || (equipmentBonuses[skillName] && equipmentBonuses[skillName] !== 0)
-    );
+        let attrHtml = '';
+        const attrCategoryData = attrCategories[categoryName];
+        for (const attrName in attrCategoryData) {
+            const attr = attrCategoryData[attrName];
+            if (!attr || !attr.基础 || !Array.isArray(attr.基础)) continue;
 
-    if (skillsToShow.length > 0) {
-        for (const skillName of skillsToShow) {
-            const skill = skillCategoryData[skillName];
-            // 数据校验
-            if (!Array.isArray(skill)) continue;
+            const dataPath = `基础属性.${categoryName}.${attrName}.基础`;
 
-            const dataPath = `基础技能.${categoryName}.${skillName}`;
-            const skillBonus = equipmentBonuses[skillName] || 0;
-            const statusSkillBonus = statusBonuses[skillName] || 0;
+            // 获取加成HTML和总加成值
+            const bonusHtml = buildBonusHtml(attrName);
+            const totalBonus = getTotalBonus(attrName);
 
-            const skillBonusHtml = skillBonus !== 0 ? ` <span class="equipment-bonus">(${skillBonus > 0 ? '+' : ''}${skillBonus})</span>` : '';
-            const statusSkillBonusHtml = statusSkillBonus !== 0 ? ` <span class="status-modifier">(${statusSkillBonus > 0 ? '+' : ''}${statusSkillBonus})</span>` : '';
+            const legendaryValue = attr.传奇?.[0] || 0;
+            const legendaryTooltip = attr.传奇?.[1] || '';
+            const legendaryBonusHtml = legendaryValue > 0 ? ` <span class="legendary-value" data-tooltip="${legendaryTooltip}">(传奇属性:${legendaryValue})</span>` : '';
 
-            const upgradeCost = calculateXpCost(skill[0], 'skill');
+            const upgradeCost = calculateXpCost(attr.基础[0], 'attribute');
             const canUpgrade = currentXp >= upgradeCost;
-            const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${skillName}" data-level="${skill[0]}" data-type="skill">+</span>` : '';
+            const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${attrName}" data-level="${attr.基础[0]}" data-type="attribute">+</span>` : '';
 
-            skillHtml += `
-            <div class="skill-item" data-tooltip="${skill[1]}">
-                <span class="skill-name">${skillName}${upgradeButtonHtml}</span>
-                <span class="skill-value">${skill[0]}${skillBonusHtml}${statusSkillBonusHtml}</span>
+            // 显示逻辑：基础值 + 总加成值 (详情在后面)
+            const finalValue = attr.基础[0] + totalBonus;
+
+            attrHtml += `
+            <div class="attr-item" data-tooltip="${attr.基础[1]}">
+                <span class="attr-name">${attrName}${upgradeButtonHtml}</span>
+                <span class="attr-value">${finalValue}${bonusHtml}${legendaryBonusHtml}</span>
             </div>`;
         }
-    } else {
-        skillHtml += `<div class="info-value" style="font-size:0.9em; color: var(--text-secondary-color);">暂无已掌握的${categoryName}</div>`;
+        contentDiv.innerHTML = attrHtml;
+        moduleDiv.appendChild(titleDiv);
+        moduleDiv.appendChild(contentDiv);
+        statsContainer.appendChild(moduleDiv);
     }
 
-    contentDiv.innerHTML = skillHtml;
-    moduleDiv.appendChild(titleDiv);
-    moduleDiv.appendChild(contentDiv);
-    statsContainer.appendChild(moduleDiv);
-}
+    // 3. 动态渲染技能模块
+    const skillCategories = playData.基础技能 || {};
+    for (const categoryName in skillCategories) {
+        const moduleDiv = document.createElement('div');
+        moduleDiv.className = 'stat-module';
 
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'stat-module-title';
+        titleDiv.textContent = categoryName;
+        titleDiv.onclick = () => moduleDiv.classList.toggle('collapsed');
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'stat-module-content';
+
+        let skillHtml = '';
+        const skillCategoryData = skillCategories[categoryName];
+
+        // 筛选显示的技能：基础值>0 或者 有任何加成
+        const skillsToShow = Object.keys(skillCategoryData).filter(skillName =>
+            (skillCategoryData[skillName] && skillCategoryData[skillName][0] > 0) ||
+            (getTotalBonus(skillName) !== 0)
+        );
+
+        if (skillsToShow.length > 0) {
+            for (const skillName of skillsToShow) {
+                const skill = skillCategoryData[skillName];
+                if (!Array.isArray(skill)) continue;
+
+                const dataPath = `基础技能.${categoryName}.${skillName}`;
+
+                // 获取加成HTML和总加成值
+                const bonusHtml = buildBonusHtml(skillName);
+                const totalBonus = getTotalBonus(skillName);
+
+                const upgradeCost = calculateXpCost(skill[0], 'skill');
+                const canUpgrade = currentXp >= upgradeCost;
+                const upgradeButtonHtml = canUpgrade ? `<span class="upgrade-btn" data-path="${dataPath}" data-name="${skillName}" data-level="${skill[0]}" data-type="skill">+</span>` : '';
+
+                const finalValue = skill[0] + totalBonus;
+
+                skillHtml += `
+                <div class="skill-item" data-tooltip="${skill[1]}">
+                    <span class="skill-name">${skillName}${upgradeButtonHtml}</span>
+                    <span class="skill-value">${finalValue}${bonusHtml}</span>
+                </div>`;
+            }
+        } else {
+            skillHtml += `<div class="info-value" style="font-size:0.9em; color: var(--text-secondary-color);">暂无已掌握的${categoryName}</div>`;
+        }
+
+        contentDiv.innerHTML = skillHtml;
+        moduleDiv.appendChild(titleDiv);
+        moduleDiv.appendChild(contentDiv);
+        statsContainer.appendChild(moduleDiv);
+    }
 
     // --- 最后, 调用新函数填充第二个 Tab ---
     populateInventoryAndSkillsTab(playData, assaData);
