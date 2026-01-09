@@ -40,17 +40,18 @@
 
             if (!sTag || !eTag) return hookData;
 
-            // 构建正则：匹配 startTag 和 endTag 之间的内容
-            const pattern = `${escapeRegExp(sTag)}([\\s\\S]*?)${escapeRegExp(eTag)}`;
-            const summaryTagRegex = new RegExp(pattern, 'g');
+                 // 注意：去掉了 'g' 标志，因为我们只需要最后这一个匹配
+            const pattern = `[\\s\\S]*${escapeRegExp(sTag)}([\\s\\S]*?)${escapeRegExp(eTag)}`;
+            const summaryTagRegex = new RegExp(pattern);
 
-            const matches = [...hookData.response.matchAll(summaryTagRegex)];
- const timeString = `${SafeGetValue(window.GameAPI.statData?.user?.current_location)}-${SafeGetValue(window.GameAPI.statData?.纪年)}-${SafeGetValue(window.GameAPI.statData?.日期)}-${SafeGetValue(window.GameAPI.statData?.时间)}`;
-            if (matches.length > 0) {
-                // 获取最后一个匹配
-                const lastMatch = matches[matches.length - 1];
-                const summaryContent = lastMatch[1];
+            // 使用 match 而不是 matchAll
+            const match = hookData.response.match(summaryTagRegex);
 
+            const timeString = `${SafeGetValue(window.GameAPI.statData?.user?.current_location)}-${SafeGetValue(window.GameAPI.statData?.纪年)}-${SafeGetValue(window.GameAPI.statData?.日期)}-${SafeGetValue(window.GameAPI.statData?.时间)}`;
+
+            if (match) {
+                // match[1] 就是我们要的标签中间的内容
+                const summaryContent = match[1];
                 // 去掉换行符
                 const cleanedContent = summaryContent.replace(/\n/g, '|').trim();
 
