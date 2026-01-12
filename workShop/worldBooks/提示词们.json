@@ -1,0 +1,333 @@
+接口如下：
+window.GameAPI = {
+get collectedBatchOps(){
+
+    return collectedBatchOps;
+},
+           get userName() {
+        
+        return userName;
+    },
+        get npcImageMap() {
+      
+        return npcImageMap;
+    },
+    
+    get assaData() {
+       
+        return assaSettingsData;
+    },
+         getThemeVar: function(varName) {
+ 
+        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    },
+    get statData() {
+ 
+        return currentGameData;
+    },
+    
+      get playCharacterData() {
+ 
+        return playCharacterData;
+    },
+      get checkMemoryData() {
+ 
+        return checkMemoryData;
+    },
+      get worldAttitudeData() {
+ 
+        return worldAttitudeData;
+    },
+    get characterStatusData() {
+ 
+        return characterStatusData;
+    },
+    get conversationHistory() {
+ 
+        return conversationHistory;
+    },
+ 
+
+    performGacha: function(...args) {
+        // 修改：优先查找 window.performGacha
+        if (typeof window.performGacha === 'function') {
+            return window.performGacha(...args);
+        } else if (typeof performGacha === 'function') {
+            return performGacha(...args);
+        } else {
+            console.error("performGacha 函数未定义");
+            return [];
+        }
+    },
+    processGachaRewards: function(...args) {
+        // 修改：优先查找 window.processGachaRewards
+        if (typeof window.processGachaRewards === 'function') {
+            return window.processGachaRewards(...args);
+        } else if (typeof processGachaRewards === 'function') {
+            return processGachaRewards(...args);
+        } else {
+            console.error("processGachaRewards 函数未定义");
+        }
+    },
+        triggerassa: function(...args) {
+        // 修改：优先查找 window.processGachaRewards
+        if (typeof window.triggerassa === 'function') {
+            return window.triggerassa(...args);
+        } else if (typeof triggerassa === 'function') {
+            return triggerassa(...args);
+        } else {
+            console.error("triggerassa 函数未定义");
+        }
+    },
+     
+
+       displayEventTag: function(...args) {
+ 
+        if (typeof displayEventTag === 'function') {
+            return displayEventTag(...args);
+        } else {
+            console.error("displayEventTag 函数未定义");
+        }
+    } ,
+  populateCharacterPage: function(...args) {
+ 
+        if (typeof populateCharacterPage === 'function') {
+            return populateCharacterPage(...args);
+        } else {
+            console.error("populateCharacterPage 函数未定义");
+        }
+    } ,
+  showUpdateNotification: function(...args) {
+ 
+        if (typeof showUpdateNotification === 'function') {
+            return showUpdateNotification(...args);
+        } else {
+            console.error("showUpdateNotification 函数未定义");
+        }
+    } ,
+
+
+ initDisplay: function(...args) {
+ 
+        if (typeof initDisplay === 'function') {
+            return initDisplay(...args);
+        } else {
+            console.error("initDisplay 函数未定义");
+        }
+    } 
+ 
+}
+
+        syncTheme() {
+            if (!window.GameAPI || typeof window.GameAPI.getThemeVar !== 'function') return;
+
+            const currentTheme = {
+                '--primary-color': window.GameAPI.getThemeVar('--primary-color') || '#00faff',
+                '--secondary-color': window.GameAPI.getThemeVar('--secondary-color') || '#7affff',
+                '--text-color': window.GameAPI.getThemeVar('--text-color') || '#e6f1ff',
+                '--text-secondary-color': window.GameAPI.getThemeVar('--text-secondary-color') || '#a8c0e1',
+                '--container-bg-color': window.GameAPI.getThemeVar('--container-bg-color') || 'rgba(10, 25, 47, 0.85)',
+                '--border-color': window.GameAPI.getThemeVar('--border-color') || 'rgba(0, 250, 255, 0.3)',
+                '--glow-color': window.GameAPI.getThemeVar('--glow-color') || 'rgba(0, 250, 255, 0.5)',
+                '--background-color': window.GameAPI.getThemeVar('--background-color') || '#0a192f'
+            };
+
+            const applyTo = (element) => {
+                if (!element) return;
+                Object.entries(currentTheme).forEach(([key, val]) => {
+                    element.style.setProperty(key, val);
+                });
+            };
+
+            applyTo(this.panel);
+            applyTo(this.floater);
+        }
+       :root {
+            --modal-content-bg: none; /* 默认透明 */
+            --primary-color: #00faff;
+            --secondary-color: #7affff;
+              
+       --base-line-height:1.7;
+       --base-font-size:19px;
+   --base-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* 默认字体 */
+            --container-bg-color: rgba(10, 25, 47, 0.75);
+            --border-color: rgba(0, 250, 255, 0.3);
+            --glow-color: rgba(0, 250, 255, 0.5);
+            --text-color: #e6f1ff;
+            --text-secondary-color: #a8c0e1;
+            --background-color: rgba(10, 25, 47);
+            --danger-color: #ff4d4d;
+            --danger-glow-color: rgba(255, 77, 77, 0.5);
+             --success-color: #4dff88;
+            --success-glow-color: rgba(77, 255, 136, 0.5);
+        }
+你需要写一个立刻执行函数。
+首先你需要捕获id是world-book-orb的orb，使其在鼠标悬浮，手机端长按的时候，出现一个只有左半边的转盘，要有进入动画。这个转盘的id你需要在初始化之前检查，如果已经有了就不初始化了，因为我其他立刻执行函数可能还会往里面插入元素。然后我们就在转盘的第一个位置（随便哪里）插入按钮，点击后，进入查看我们的这个字段美化界面。然后我们点进去之后，若发现我们的collectionbatch中有对于新闻的更新，我们就在对应的地方的右上角加一个new!的图案，示意其字段被更新过。
+我们的batch结构是这样的：
+     collectedBatchOps.push({
+                            type: 'set_status',
+                            path: path,
+                            value: newValue
+                        });
+我们只需要关注其path即可。
+
+然后点进去，就要去展示我们的数据了。
+
+数据说明：
+这是我们数据的更新规则：
+game.set('addition task:真实感信息',`
+你还需要为游戏内的世界进行真实感信息的补充。你需要初始化并维护所有的${group}_lore.settings中的"世界事件"条目。该条目下有以下几个子条目：
+- "角色细节":{}。你需要在该条目中，为所有npc的初始化key为npc姓名的条目并维护。并在本次更新中，深挖随机活跃npc**总共3条(随机分配)**不和之前已有信息重复的增加真实感的细节信息，以${递增编号:num}:string的形式存储。若memory中未提到，则自己假定推理，你作为gameHelper拥有直接定义的权限，直接假定信息是真的即可，无需使用可能、推测、大概等字眼。
+- "今日本地新闻":{}，当日的本地新闻。需在日期进入到下一天的时候刷新3个新闻，每条新闻的数据结构是${新闻名称:string}:${30字新闻简述}from${信息来源}，需符合当前世界的世界观。
+- "平行事件":{}，平行事件池。里面必须要有至少3个正在进行中的事件（已结束/未开始的事件不纳入计算）。每轮根据当前的status.日期和status.时间，去和每个事件的"下次更新时间"比对，去维护至少进行中的平行事件，若还没有抵达更新时间则直接忽略，无需更新。初始化时，可以是人物事件/地点事件/活动事件(如地域活动或组织决策)。每个平行事件的数据结构是${平行事件名称:string}:${"简介":"string","进展":{"${日期_时间}":"string//简述本轮该平行事件在如何发展。时间线不宜拖的太长，应结束时便应该干脆利落的结束"},"状态":"[未开始/进行中/已结束]","下次更新时间":"string//距离上次最近一次进展，下一次需要更新进展是在什么时间？需要以${相对时间}(${绝对时间})的格式记录。如6个小时后(3月12日_12:00)"}。
+
+新闻和平行事件可以完全不和正文有交集，也可以和主线自然交汇，但时间线和流速必须和正文一致，禁止时间跳跃。当某平行事件汇入主线，开始在正文讲述后，则需**立刻**使用delete指令删除该平行事件，以防止平行事件重复更新游戏出错
+
+你需要在进行以上任务之前，在loreanalyze内部进行简单的自由分析和思考：你要如何去做这项任务，并保证不违背认知屏障规则和时间线一致规则。且在进行更新之前，需要检测是否有冗余条目/过时条目需要删除。若有，则需要先删除再更新。
+`)
+ 这是我们的一个示例数据：
+
+{
+  "角色细节": {
+    "不死川实弥": {
+      "1": "他其实很喜欢小动物，下班路上遇到流浪猫会偷偷买猫粮去喂，但从不让同事知道。",
+      "2": "虽然外表看起来很凶，但他非常尊敬长辈和上司，是个在警队里很可靠的后辈。",
+      "3": "他的摩托车是自己一点点改装的，对每一个零件都了如指掌，视若珍宝。",
+      "4": "他其实方向感很差，是个路痴，但自尊心极强，从不肯承认，每次都会提前很久用手机地图规划好路线并反复记忆。"
+    }
+  },
+  "今日本地新闻": {
+    "涩谷区再开发计划公布": "东京都政府今日公布了涩谷站周边的大规模再开发计划，预计将持续十年，旨在打造新的国际商业中心。from NHK新闻",
+    "上野公园熊猫宝宝命名征集结束": "上野动物园宣布，新生大熊猫宝宝的命名征集活动已于昨日结束，共收到超过三十万份投稿，最终名称将于下周公布。from 每日新闻",
+    "连续暴雨预警": "气象厅发布预警，受强对流天气影响，东京及周边地区预计从明晚开始将有持续性暴雨，提醒市民注意防范。from 气象厅官网"
+  },
+  "平行事件": {
+    "警视厅连环抢劫案调查": {
+      "简介": "东京多个区域近期发生针对珠宝店的连环抢劫案，作案手法专业，警方正在全力追查中。",
+      "进展": {
+        "10月26日_14:00": "专案组正在对最新的案发现场进行勘查，试图从监控录像中找到更多线索。"
+      },
+      "状态": "进行中",
+      "下次更新时间": "8个小时后(10月26日_22:00)"
+    },
+    "秋季大学文化祭筹备": {
+      "简介": "东京各大学陆续进入一年一度的文化祭筹备阶段，学生们正在为各种活动和摊位做准备。",
+      "进展": {
+        "10月26日_14:00": "阿萨所在的大学，文化祭执行委员会正在为场地分配问题争论不休。"
+      },
+      "状态": "进行中",
+      "下次更新时间": "1天后(10月27日_14:00)"
+    },
+    "独立乐队'深海'巡演": {
+      "简介": "一支名为'深海'的后摇独立乐队正在进行他们的首次全国小型巡演，以其空灵忧郁的曲风在小众音乐圈内获得关注。",
+      "进展": {
+        "10月26日_14:00": "乐队刚刚结束了在大阪的演出，正在乘坐新干线前往下一站——名古屋。"
+      },
+      "状态": "进行中",
+      "下次更新时间": "2天后(10月28日_19:00)"
+    }
+  }
+}
+但是要时刻注意数据鲁棒性，不要在缺失某字段的时候就报错；若发现预期的格式错误，如预期是object但是string，则直接跳过，反之亦然。
+
+功能需求：
+1、虽然是分为三个界面，但是角色细节很可能是没有这个字段的，这种时候就直接跳过该美化即可。同理，缺乏单独某个字段也不能崩溃。路径是assadata中的global_lore.世界背景。还有可能在world_lore里有类似内容，我们的lore有这两个分类。你需要在assadata里找一下
+2、新闻需要去尝试去切割其值的from，将后面的信息来源作为一种标签去美化。且用户可以点击某一个新闻，尝试去查看具体内容。要显示做一个按钮提示用户是可以点击的，点击后触发triggerassa('/setinput <userName尝试查看新闻「xxx」>')，使用      if(window.worldHelper) window.worldHelper.showNovaAlert(`xxx}`);作为alert提醒。
+3、平行事件可能不止3个；不同的状态需要使用不同的美化标签（其他枚举值同理）
+4、禁用辉光，也就是boxshadow。点击模态框的外部也要能关闭。英文只做少许点缀的美化作用，主体文本必须为简体中文，原本是英文的标签也必须变为中文。
+5、需要注意，文本可能过长，比如进度:{}里面可能会有几十条。你需要考虑到收纳。无论是翻页、滑动还是订标签美化，你都要将其美观展示。
+
+
+美化需求：
+0、，其主要色调必须采取游戏主色调，方便游戏主体切换。绝对不能使用固有颜色(例如背景颜色使用rgba(0, 250, 255, 0.1)是不允许的，因为其颜色是淡蓝色，不符合跟随主题原则)，因为我们有很多套游戏主题。里面的css必须以mod16开头。
+1、使用别出心裁的美化，而不是千篇一律的横着展示竖着展示等。不要只是干巴的展示数据（如时间），可以做成时间戳的形式。
+2、要让用户眼前一亮，但不能过度堆砌。需要有现代设计感！
+3、关于转盘，你需要找到该orb的位置，并在其左边的20px的位置以轮次进入的方式去展示轮盘。轮盘本身的背景可以是透明的。你可以参考此标签。它就是刚好的orb的坐标，不过它是标签不是轮盘。
+        .mod04-trigger-btn {
+            position: fixed;
+            padding: 8px 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--mod04-primary);
+            border-right: 4px solid var(--mod04-primary);
+            color: var(--mod04-primary);
+            font-family: var(--mod04-font);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            z-index: 9;
+            opacity: 0;
+            transform: translateX(20px); /* 从右往左 */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%);
+            box-shadow: var(--mod04-glow);
+            white-space: nowrap;
+        }
+       .mod04-trigger-btn.visible {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+        .mod04-trigger-btn:hover {
+            background: var(--mod04-primary);
+            color: #000;
+            padding-right: 30px;
+            text-shadow: none;
+        }
+        setupTrigger() {
+            const orbId = 'page-character-orb';
+            const triggerBtn = this.els.trigger;
+            let timer = null;
+
+            // 核心逻辑：定位按钮
+            const updatePosition = () => {
+                const orb = document.getElementById(orbId);
+                if (!orb) return;
+                const rect = orb.getBoundingClientRect();
+                // 按钮在球体左侧，垂直居中
+                triggerBtn.style.top = (rect.top + rect.height/2 - 20) + 'px';
+                triggerBtn.style.left = (rect.left - 120) + 'px'; // 假设按钮宽约100px
+            };
+
+            // PC端 Hover
+            document.addEventListener('mousemove', (e) => {
+                const orb = document.getElementById(orbId);
+                if (!orb) return;
+
+                const rect = orb.getBoundingClientRect();
+                // 扩大一点判定范围
+                const isHover = (
+                    e.clientX >= rect.left - 50 &&
+                    e.clientX <= rect.right + 50 &&
+                    e.clientY >= rect.top - 50 &&
+                    e.clientY <= rect.bottom + 50
+                );
+
+                if (isHover) {
+                    updatePosition();
+                    triggerBtn.classList.add('visible');
+                } else if (!triggerBtn.matches(':hover')) {
+                    triggerBtn.classList.remove('visible');
+                }
+            });
+
+            // 移动端长按
+            document.addEventListener('touchstart', (e) => {
+                const orb = document.getElementById(orbId);
+                if (e.target === orb || orb.contains(e.target)) {
+                    timer = setTimeout(() => {
+                        updatePosition();
+                        triggerBtn.classList.add('visible');
+                    }, 600); // 600ms 长按
+                }
+            }, {passive: true});
+
+            document.addEventListener('touchend', () => {
+                clearTimeout(timer);
+            });
+
+            // 按钮点击
+            triggerBtn.addEventListener('click', () => this.open());
+        }
+现在给出代码。

@@ -797,6 +797,80 @@
             .mod01-habit-text { font-size: 13px; color: var(--text-secondary-color); line-height: 1.4; }
 
 
+            /* --- 新增：关注按钮 --- */
+.mod01-follow-btn {
+    margin-left: auto; /* 推到最右边 */
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-secondary-color);
+    transition: all 0.2s;
+    font-size: 14px;
+    opacity: 0.6;
+}
+.mod01-follow-btn:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+.mod01-follow-btn.active {
+    color: #ffd700; /* 金色星星 */
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}
+
+/* --- 新增：离线事件链式节点美化 --- */
+.mod01-timeline-box {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+/* 装饰性背景线 */
+.mod01-timeline-box::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 24px;
+    width: 2px; background: linear-gradient(to bottom, transparent, var(--primary-color), transparent);
+    opacity: 0.3; z-index: 0;
+}
+.mod01-timeline-node {
+    position: relative; z-index: 1;
+    display: flex; margin-bottom: 15px;
+}
+.mod01-timeline-node:last-child { margin-bottom: 0; }
+
+.mod01-node-marker {
+    width: 10px; height: 10px;
+    background: var(--container-bg-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    margin-right: 15px; margin-top: 5px;
+    flex-shrink: 0;
+    box-shadow: 0 0 5px var(--glow-color);
+    margin-left: 15px; /* 对齐背景线 */
+}
+.mod01-node-content {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px; padding: 8px 12px;
+    border-left: 2px solid var(--secondary-color);
+}
+.mod01-node-time {
+    font-size: 11px; color: var(--primary-color);
+    font-family: monospace; margin-bottom: 4px;
+    opacity: 0.9;
+}
+.mod01-node-text {
+    font-size: 13px; color: var(--text-color); line-height: 1.4;
+}
+.mod01-offline-meta {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--text-secondary-color);
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 8px; margin-bottom: 12px;
+}
+
+
         `;
         document.head.appendChild(style);
     }
@@ -1414,30 +1488,83 @@ this.floater.addEventListener('touchstart', (e) => {
             const listRoot = document.getElementById('mod01-list-root');
             listRoot.innerHTML = '';
 
-            this.allItems.forEach((item, index) => {
-                const el = document.createElement('div');
-                el.className = 'mod01-item';
+     
+this.allItems.forEach((item, index) => {
+    const el = document.createElement('div');
+    el.className = 'mod01-item';
 
-                // 设置 Tag 样式类
-                let tagClass = 'mod01-tag-badge';
-                if(item.tag === '全局') tagClass += ' mod01-tag-global';
-                else if(item.tag === '小队') tagClass += ' mod01-tag-team';
-                else tagClass += ' mod01-tag-world';
+    // 设置 Tag 样式类 (保持原样)
+    let tagClass = 'mod01-tag-badge';
+    if(item.tag === '全局') tagClass += ' mod01-tag-global';
+    else if(item.tag === '小队') tagClass += ' mod01-tag-team';
+    else tagClass += ' mod01-tag-world';
 
-                el.innerHTML = `
-                    <div class="mod01-item-top">
-                        <span class="${tagClass}">${item.tag}</span>
-                        <span class="mod01-item-name">${item.name}</span>
-                    </div>
-                `;
-                el.onclick = () => {
-                    const allHelper = document.querySelectorAll('.mod01-item');
-                    allHelper.forEach(d => d.classList.remove('active'));
-                    el.classList.add('active');
-                    this.renderCard(item);
-                };
-                listRoot.appendChild(el);
-            });
+    // --- 修改开始：判断关注状态 ---
+    // 兼容 boolean true 和 string "true"
+    const isFollow = item.data._follow === true || String(item.data._follow).toLowerCase() === 'true';
+    const starClass = isFollow ? 'mod01-follow-btn active' : 'mod01-follow-btn';
+    const starIcon = isFollow ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>';
+
+    el.innerHTML = `
+        <div class="mod01-item-top">
+            <span class="${tagClass}">${item.tag}</span>
+            <span class="mod01-item-name">${item.name}</span>
+            <div class="${starClass}" title="关注/取消关注">${starIcon}</div>
+        </div>
+    `;
+
+    // 绑定点击卡片事件 (查看详情)
+    el.onclick = (e) => {
+        const allHelper = document.querySelectorAll('.mod01-item');
+        allHelper.forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
+        this.renderCard(item);
+    };
+
+    // --- 新增：绑定关注按钮点击事件 ---
+    const btn = el.querySelector('.mod01-follow-btn');
+    btn.onclick = async (e) => {
+        e.stopPropagation(); // 防止触发卡片查看
+
+        // 1. 计算新状态
+        const newStatus = !isFollow;
+
+        // 2. 乐观更新 UI (立刻变色，不等回调)
+        if (newStatus) {
+            btn.classList.add('active');
+            btn.innerHTML = '<i class="fas fa-star"></i>';
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="far fa-star"></i>';
+        }
+        // 更新本地缓存数据，防止点击详情后再切回来状态重置
+        item.data._follow = newStatus;
+
+        // 3. 构建路径
+        // 根据 item.tag 还原路径 (参考 refreshData 中的逻辑)
+        let pathPrefix = '';
+        if (item.tag === '全局') pathPrefix = `global_lore.npc.${item.name}`;
+        else if (item.tag === '小队') pathPrefix = `global_lore.小队信息.${item.name}`;
+        else pathPrefix = `world_lore.npc.${item.name}`;
+
+        const finalPath = `${pathPrefix}._follow`;
+
+        // 4. 发送指令
+        const commandString = `/setinput <updateMemory>\nmemory('${finalPath}','${newStatus}')\n</updateMemory>`;
+        console.log(`[Nova] 切换关注状态: ${item.name} -> ${newStatus}`);
+
+        if (window.GameAPI && window.GameAPI.triggerassa) {
+            await window.GameAPI.triggerassa(commandString);
+            if(window.worldHelper && window.worldHelper.processUpdateMemoryCommands) {
+                await window.worldHelper.processUpdateMemoryCommands(commandString, -1);
+            }
+        }
+    };
+    // --- 修改结束 ---
+
+    listRoot.appendChild(el);
+});
+
         }
 
   
@@ -1725,6 +1852,12 @@ this.floater.addEventListener('touchstart', (e) => {
                 this.renderEvents(root, data.事件);
                 ignoreKeys.push('事件');
             }
+
+            if(data.离线事件 && typeof data.离线事件 === 'object') {
+    this.renderOfflineEvents(root, data.离线事件);
+    ignoreKeys.push('离线事件');
+}
+
             // --- 新增美化 3：小习惯 (Habits) ---
             // 放在“事件”或“身份”之前，作为人物细节补充
             if (data.小习惯) {
@@ -1845,6 +1978,66 @@ this.floater.addEventListener('touchstart', (e) => {
                 ignoreKeys.push('game批注');
             }
         }
+renderOfflineEvents(container, offlineData) {
+    const box = document.createElement('div');
+    box.className = 'mod01-timeline-box mod01-section';
+
+    // 1. 顶部元数据 (状态、简介、下次更新)
+    const status = offlineData.状态 || '未知';
+    const nextUpdate = offlineData.下次更新时间 || '未定';
+    const intro = offlineData.简介 || '';
+
+    let metaHtml = `
+        <div class="mod01-offline-meta">
+            <span><i class="fas fa-satellite-dish"></i> 离线进程</span>
+            <span style="color:var(--primary-color)">[${status}]</span>
+        </div>
+    `;
+
+    if(intro) {
+        metaHtml += `<div style="font-style:italic; opacity:0.8; margin-bottom:15px; font-size:12px;">“${intro}”</div>`;
+    }
+
+    // 2. 进展链条渲染
+    let nodesHtml = '';
+    if (offlineData.进展 && typeof offlineData.进展 === 'object') {
+        // 获取所有进展条目
+        const entries = Object.entries(offlineData.进展);
+        // 尝试按时间排序 (如果Key是日期格式)
+        // 这里简单倒序排列，让最新的在最上面？或者正序？通常日志是新的在下。
+        // 假设 entries 是 [time, content]
+
+        entries.forEach(([time, content]) => {
+            // 处理内容中的 -> 符号，将其高亮
+            const formattedContent = String(content).replace(/->/g, ' <span style="color:var(--primary-color); font-weight:bold;">→</span> ');
+
+            nodesHtml += `
+                <div class="mod01-timeline-node">
+                    <div class="mod01-node-marker"></div>
+                    <div class="mod01-node-content">
+                        <div class="mod01-node-time">${time}</div>
+                        <div class="mod01-node-text">${formattedContent}</div>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        nodesHtml = '<div style="opacity:0.5; font-size:12px; padding-left:20px;">暂无进展记录</div>';
+    }
+
+    // 3. 底部：下次更新预告
+    let footerHtml = '';
+    if(nextUpdate) {
+        footerHtml = `
+            <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--border-color); font-size:11px; text-align:right; opacity:0.7;">
+                <i class="far fa-clock"></i> 下次更新: ${nextUpdate}
+            </div>
+        `;
+    }
+
+    box.innerHTML = metaHtml + nodesHtml + footerHtml;
+    container.appendChild(box);
+}
 
         // --- 新增：沉浸式事件渲染 ---
         renderEvents(container, evtData) {

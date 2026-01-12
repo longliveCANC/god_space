@@ -461,6 +461,17 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod15tachie.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-生成立绘.json",
     "previewImage": ""
+  } ,{
+    "id": "mod1601",
+      "is_dowload_raw_name":true,
+    "name": "世界事件",
+    "author": "assa",
+    "version": ".1",
+    "tags": ["功能脚本"],
+    "description": "[测试推送]",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod16parallels01.js",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-世界事件.json",
+    "previewImage": ""
   } 
   
 ]
