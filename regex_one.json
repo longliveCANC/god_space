@@ -12104,7 +12104,7 @@ pointer-events: auto;
 }
 
 .group-chat-message-bubble {
-    display: flex;
+    /* display: flex; */
     /* flex-direction: column; */
     gap: 8px;
     max-width: 100%;
@@ -28184,8 +28184,9 @@ function manageBattleLifecycle(initialCombatDataFromPrompt) {
 }
 
 
-async function renderHistory(is_entry = false) {
-    console.log("我将全部重新渲染。is_entry:",is_entry);
+ async function renderHistory(is_entry = false, maintainScroll = false) {
+    console.log("我将全部重新渲染。is_entry:", is_entry, "maintainScroll:", maintainScroll);
+    // console.log("我将全部重新渲染。is_entry:",is_entry);
          cleanupGlobalUIState();
     const oldControls = document.getElementById('active-editing-controls');
     if (oldControls) oldControls.remove();
@@ -28225,6 +28226,11 @@ if (typeof window.initializationDone === 'undefined') {
     }
 
     const chatDisplayArea = document.getElementById('chat-display-area');
+        let previousScrollTop = 0;
+    if (maintainScroll && chatDisplayArea) {
+        previousScrollTop = chatDisplayArea.scrollTop;
+    }
+
     chatDisplayArea.innerHTML = ''; // 清空画卷
 
  
@@ -28264,6 +28270,8 @@ if (typeof window.initializationDone === 'undefined') {
    chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
         
                   
+                }     else if (maintainScroll) {
+                    chatDisplayArea.scrollTop = previousScrollTop;
                 }
              await   processFinalMessageModules();
 
@@ -35726,8 +35734,11 @@ let backupData = {};
 if(double_api ==="false" || (double_api === "true" && batches === 2) ){
 console.log("当前批次：",batches);
      if(is_show_notifications === 'true'){
+        if(if_render_after_2batch=== 'false'){
+             await  handleNotificationsFromBatch();
+        }
         // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
-          await  handleNotificationsFromBatch();
+         
         }
 
 
@@ -35746,7 +35757,8 @@ if((double_api === "true" && batches === 2) ){
          if (typeof if_render_after_2batch !== 'undefined' && if_render_after_2batch === 'true') {
                     setTimeout(async () => {
                         console.log("[Nova] 响应配置：双重API/生成结束后刷新历史界面...");
-                        await worldHelper.renderHistory();
+                           await worldHelper.renderHistory(false, true);
+       
                     }, 100);
                 }
 }
@@ -38042,7 +38054,7 @@ attributeCategories['全基础技能'] = allSkills;
     }
 
     stringsToParse.forEach(content => {
-        const attributes = content.split(/;|；/).map(attr => attr.trim()).filter(attr => attr !== "");
+        const attributes = content.split(/;|；|，|,/).map(attr => attr.trim()).filter(attr => attr !== "");
 
         attributes.forEach(attr => {
             // 正则匹配 "名称+/-数值" (暂不支持百分比)
