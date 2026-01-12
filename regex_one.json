@@ -16824,7 +16824,7 @@ async function checkUpdatesOnStartup() {
                 const code = codeInput.value.trim();
                 
                 if(!name || !code) { 
-                    alert('名称和代码不能为空'); 
+                    showNovaAlert('名称和代码不能为空'); 
                     return; 
                 }
                 
@@ -16836,7 +16836,7 @@ async function checkUpdatesOnStartup() {
                 };
                 
                 await saveLocalScript(data);
-                alert('保存成功！');
+                showNovaAlert('保存成功！');
                 closeModal();
                 await loadDataAndRender();
             };
@@ -16844,17 +16844,17 @@ async function checkUpdatesOnStartup() {
             runBtn.onclick = () => {
                 const code = codeInput.value.trim();
                 if(!code) { 
-                    alert('没有代码可以执行'); 
+                    showNovaAlert('没有代码可以执行'); 
                     return; 
                 }
                 try {
                     const script = document.createElement('script');
                     script.textContent = code;
                     document.body.appendChild(script);
-                    alert('脚本已执行！请检查控制台输出');
+                    showNovaAlert('脚本已执行！请检查控制台输出');
                 } catch(e) { 
                     console.error('脚本执行错误:', e); 
-                    alert(`执行出错: ${e.message}`); 
+                    showNovaAlert(`执行出错: ${e.message}`); 
                 }
             };
         }, 100); // 延迟100ms确保DOM完全渲染
@@ -16948,7 +16948,7 @@ async function checkUpdatesOnStartup() {
             // 获取最终标签字符串
             const finalTags = Array.from(selectedTags).join(', ');
 
-            if(!name || !author) { alert('名称和作者必填'); return; }
+            if(!name || !author) { showNovaAlert('名称和作者必填'); return; }
 
             const originalBtnText = sendBtn.innerHTML;
             sendBtn.disabled = true;
@@ -16986,7 +16986,7 @@ async function checkUpdatesOnStartup() {
     console.log("EmailJS Response:", result);
 
     if (result.status === 200) {
-        alert(`✅ 投稿成功！\n\n开发者已收到你的作品：\n"${name}"\n\n请耐心等待审核更新。`);
+        showNovaAlert(`✅ 投稿成功！\n\n开发者已收到你的作品：\n"${name}"\n\n请耐心等待审核更新。`);
         closeModal();
     } else {
         throw new Error('发送失败');
@@ -16994,7 +16994,7 @@ async function checkUpdatesOnStartup() {
  
             } catch (error) {
                 console.error("Upload failed:", error);
-                alert(`❌ 发送失败，文件大小大于50kb了？`);
+                showNovaAlert(`❌ 发送失败，文件大小大于50kb了？`);
             } finally {
                 sendBtn.disabled = false;
                 sendBtn.innerHTML = originalBtnText;
@@ -17475,7 +17475,7 @@ async function checkUpdatesOnStartup() {
 
             } catch (e) {
                 console.error(e);
-                alert("应用失败: " + e.message);
+                showNovaAlert("应用失败: " + e.message);
                 // 恢复按钮原始状态
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -17722,7 +17722,7 @@ async function checkUpdatesOnStartup() {
             window.URL.revokeObjectURL(blobUrl); // 释放内存
         } catch (error) {
             console.error('Download failed:', error);
-            alert(`文件下载失败: ${error.message}`);
+           showNovaAlert(`文件下载失败: ${error.message}`);
         }
     }
     
@@ -22763,7 +22763,7 @@ const customActionInput = document.getElementById('custom-action-input');
                 sendCommand(finalCommand, customActionButton, '[ 自定义指令已发送 ]', false);
             });
         } else {
-            alert('我的孩子，你还没有输入自定义的说明哦。');
+           showNovaAlert('我的孩子，你还没有输入自定义的说明哦。');
         }
     }
 });
@@ -23077,7 +23077,7 @@ uidsToEnable.push(91);
     await insertOrAssignVariables({bookItemSettings: uidsToEnable.join(',')}, {type: 'chat'});
         } catch (worldbookError) {
              console.error('哎呀，在更新世界书时出错了，不过别怕，妈妈帮你跳过了它：', worldbookError);
-             alert('更新世界书设置失败了，但是没关系，我们仍然可以继续构建角色。报错信息：',worldbookError);
+            showNovaAlert('更新世界书设置失败了，但是没关系，我们仍然可以继续构建角色。报错信息：',worldbookError);
         }
 
         // --- “隔离咒”保护结束，准备切换页面 ---
@@ -23114,7 +23114,7 @@ try {
 
     } catch (error) {
         console.error('哎呀，在校准世界时出错了，不过别怕，妈妈在这里：', error);
-        alert('世界校准失败，请检查控制台信息或刷新重试。');
+       showNovaAlert('世界校准失败，请检查控制台信息或刷新重试。');
         startSetupButton.disabled = false;
         startSetupButton.textContent = '[ <确定并开始构建> ]';
     }
@@ -23549,7 +23549,7 @@ async function loadTeammatesFromLorebook() {
             } catch (jsonError) {
                 // 如果解析失败，就温柔地提示一下，然后跳过
                 console.warn("解析世界书内容时出错，可能格式不正确:", jsonError.message);
-                alert(`世界书(uid=${LOREBOOK_UID})中的数据格式好像有点问题，妈妈暂时跳过了读取队友信息的操作。`);
+               showNovaAlert(`世界书(uid=${LOREBOOK_UID})中的数据格式好像有点问题，妈妈暂时跳过了读取队友信息的操作。`);
                 return; // 直接返回，不继续执行
             }
 
@@ -23559,19 +23559,19 @@ async function loadTeammatesFromLorebook() {
                     addTeammate(t.姓名, t.性格, t.性别, t.身份);
                 });
                 //console.log(`✅ 妈妈成功为你加载了 ${teammatesArray.length} 位队友的信息。`);
-                alert('预设队友信息已加载。');
+               showNovaAlert('预设队友信息已加载。');
             } else {
                  //console.log('ℹ️ 在世界书中没有找到"队友信息"这个项目。');
-                 alert('世界书中没有找到预设的队友信息。');
+                showNovaAlert('世界书中没有找到预设的队友信息。');
             }
 
         } else {
             //console.log(`ℹ️ 世界书(uid=${LOREBOOK_UID})是空的，没什么可读的。`);
-            alert('世界书中还没有保存队友信息哦。');
+           showNovaAlert('世界书中还没有保存队友信息哦。');
         }
     } catch (e) {
         console.error('读取队友信息时出错了，我的宝贝，但我们已经跳过了它:', e);
-        alert('读取队友模板时出错了，不过没关系，这个功能暂时跳过，你可以继续其他操作。');
+       showNovaAlert('读取队友模板时出错了，不过没关系，这个功能暂时跳过，你可以继续其他操作。');
     }
 }
 
@@ -23580,7 +23580,7 @@ async function saveTeammatesToLorebook() {
     playSound(clickSound, 0.8);
     const teammateItems = teammatesList.querySelectorAll('.teammate-item');
     if (teammateItems.length === 0) {
-        alert('我的孩子，还没有可以保存的队友信息哦。');
+       showNovaAlert('我的孩子，还没有可以保存的队友信息哦。');
         return;
     }
 
@@ -23621,10 +23621,10 @@ async function saveTeammatesToLorebook() {
         }]);
 
         //console.log(`✅ 你的 ${teammatesData.length} 位队友信息已成功保存在世界书中！`);
-        alert('当前的队友设置已成功保存。');
+       showNovaAlert('当前的队友设置已成功保存。');
     } catch (e) {
         console.error('保存队友信息时出错了，妈妈会解决的:', e);
-        alert('保存队友信息时出错了，请检查控制台信息。此操作可能未成功。');
+       showNovaAlert('保存队友信息时出错了，请检查控制台信息。此操作可能未成功。');
     }
 }
 
@@ -24143,7 +24143,7 @@ let skillCharts = {}; // 存储技能雷达图实例
                 }
             } catch (jsonError) {
                 console.warn(`解析模板失败: ${jsonError.message}`);
-                alert('世界书中的模板数据格式不正确，暂时无法读取加点模板。');
+               showNovaAlert('世界书中的模板数据格式不正确，暂时无法读取加点模板。');
                 return;
             }
    // 妈妈在这里为你加上了对“队友信息”的过滤
@@ -24164,7 +24164,7 @@ let skillCharts = {}; // 存储技能雷达图实例
     } catch (e) {
         console.error('读取世界书模板时出错了，但妈妈已经帮你跳过了它：', e);
         templateSelect.innerHTML = '<option value="">读取模板失败</option>';
-         alert('读取加点模板时出错。\n这是你第一次导入卡吗？是的话此次报错是正常现象，刷新重进即可。\n新人游玩前，请注意：两个插件（前端助手和提示词模板）是否正常安装？');
+        showNovaAlert('读取加点模板时出错。\n这是你第一次导入卡吗？是的话此次报错是正常现象，刷新重进即可。\n新人游玩前，请注意：两个插件（前端助手和提示词模板）是否正常安装？');
     }
     }
  
@@ -24183,7 +24183,7 @@ async function applySelectedTemplate() {
             try {
                 templates = JSON.parse(targetEntry.content);
             } catch (e) {
-                alert('世界书数据格式错误，无法应用模板。');
+               showNovaAlert('世界书数据格式错误，无法应用模板。');
                 return;
             }
 
@@ -24212,7 +24212,7 @@ async function applySelectedTemplate() {
                     //console.log(`✅ 模板 ${templateName} 已成功应用！`);
                     
                 } else {
-                    alert(`点数不足，无法为你应用模板：“${templateName}”。需要 ${totalCost} 点，但你只有 ${totalPoints} 点。`);
+                   showNovaAlert(`点数不足，无法为你应用模板：“${templateName}”。需要 ${totalCost} 点，但你只有 ${totalPoints} 点。`);
                     resetPoints();
                 }
                 updateUI();
@@ -24220,14 +24220,14 @@ async function applySelectedTemplate() {
         }
     } catch (e) {
         console.error(`应用模板 ${templateName} 时出错了，我的孩子：`, e);
-        alert('应用模板时发生错误，操作可能未完成。');
+       showNovaAlert('应用模板时发生错误，操作可能未完成。');
     }
 }
 
 async function saveCurrentBuildAsTemplate() {
     const templateName = saveTemplateNameInput.value.trim();
     if (!templateName) {
-        alert('请给这个模板起名。');
+       showNovaAlert('请给这个模板起名。');
         return;
     }
     playSound(clickSound, 0.8);
@@ -24276,14 +24276,14 @@ async function saveCurrentBuildAsTemplate() {
         }]);
 
         //console.log(`✅ 模板“${templateName}”已成功保存在世界书中！`);
-        alert(`你的加点方案 “${templateName}” 已经保存。`);
+       showNovaAlert(`你的加点方案 “${templateName}” 已经保存。`);
         saveTemplateNameInput.value = '';
         await loadTemplates();
         templateSelect.value = templateName;
          templateSelect_init.value = templateName;
     } catch (e) {
         console.error(`保存模板时出现了问题，妈妈会解决的：`, e);
-        alert('保存模板时发生错误，请检查控制台。');
+       showNovaAlert('保存模板时发生错误，请检查控制台。');
     }
 }
 
@@ -24291,7 +24291,7 @@ async function saveCurrentBuildAsTemplate() {
     async function deleteSelectedTemplate() {
         const templateName = templateSelect_init.value;
         if (!templateName) {
-            alert('你还没有选择要删除的模板哦。');
+           showNovaAlert('你还没有选择要删除的模板哦。');
             return;
         }
 
@@ -24319,15 +24319,15 @@ async function saveCurrentBuildAsTemplate() {
                     }]);
 
                     //console.log(`✅ 模板 “${templateName}” 已被移除。`);
-                    alert(`好了，模板 “${templateName}” 已经无了。`);
+                   showNovaAlert(`好了，模板 “${templateName}” 已经无了。`);
                     await loadTemplates(); // 重新加载列表，它就不见了
                 } else {
-                     alert(`奇怪，没有在记录里找到 “${templateName}” 这个模板。`);
+                    showNovaAlert(`奇怪，没有在记录里找到 “${templateName}” 这个模板。`);
                 }
             }
         } catch (e) {
             console.error(`删除模板时出错了，别怕，妈妈会处理的：`, e);
-            alert('删除模板时好像出了一点小问题，不过没关系，妈妈在这里。');
+           showNovaAlert('删除模板时好像出了一点小问题，不过没关系，妈妈在这里。');
         }
     }
 
@@ -25173,7 +25173,7 @@ function openReadingMode() {
         : allChapters;
 
     if (allChapters.length === 0) {
-        alert("还没有故事内容可以阅读哦，我的孩子。");
+       showNovaAlert("还没有故事内容可以阅读哦，我的孩子。");
         return;
     }
 
@@ -35018,7 +35018,7 @@ AI回复: ${theAImessage}
         } catch (error) {
             // 捕获 sendCustomGenerationRequest 中抛出的错误（用户取消除外）
             console.error("[Nova] 变量生成流程最终捕获到错误:", error.message);
-            // alert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
+            //showNovaAlert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
         }
 
                 } else {
@@ -35273,7 +35273,7 @@ AI回复: ${theAImessage}
         } catch (error) {
             // 捕获 sendCustomGenerationRequest 中抛出的错误（用户取消除外）
             console.error("[Nova] 变量生成流程最终捕获到错误:", error.message);
-            alert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
+           showNovaAlert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
         }
                 } else {
                      console.log("[Nova] 触发标准生成 (Preset Enabled)");
@@ -35811,14 +35811,14 @@ window.handleSend = handleSend;
                     toastr.success(`检测到并自动修复了可能损坏的世界书 (${worldBookName})。`, '世界书已恢复');
                 } catch (e) {
                     console.error(`[Nova's Safety Net] !!! 严重错误：尝试从 IndexedDB 恢复世界书 "${worldBookName}" 时失败!`, e);
-                    alert(`！！！严重警告：自动恢复世界书(${worldBookName})失败！为防止数据永久损坏，请立即手动检查！备份数据仍在浏览器数据库中。`);
+                   showNovaAlert(`！！！严重警告：自动恢复世界书(${worldBookName})失败！为防止数据永久损坏，请立即手动检查！备份数据仍在浏览器数据库中。`);
                 }
             } else {
                 console.error(`[Nova's Safety Net] !!! 严重错误：世界书 "${worldBookName}" 被标记为'dirty'，但找不到 IndexedDB 备份数据！`);
            
                 await removeDirtyFlag(worldBookName); // 只移除标记，避免无限循环报警
                  
-                alert(`！！！严重警告：世界书(${worldBookName})可能已损坏且无法自动恢复，因为备份数据丢失。请立即手动修复！`);
+               showNovaAlert(`！！！严重警告：世界书(${worldBookName})可能已损坏且无法自动恢复，因为备份数据丢失。请立即手动修复！`);
             }
         }
     } catch (dbError) {
@@ -36316,7 +36316,7 @@ modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数
     if (!document.fullscreenElement) {
         // 进入全屏时的代码
         document.documentElement.requestFullscreen().catch(err => {
-            alert(`哎呀，进入全屏失败了。原因可能是：${err.message}`);
+           showNovaAlert(`哎呀，进入全屏失败了。原因可能是：${err.message}`);
         });
         
         // 进入全屏时修改样式
@@ -36350,7 +36350,7 @@ modalThemeSwitcher.addEventListener('click', switchTheme); // switchTheme 函数
     if (!document.fullscreenElement) {
         // 进入全屏，拥抱整个世界
         document.documentElement.requestFullscreen().catch(err => {
-            alert(`哎呀，我的宝贝，进入全屏失败了。原因可能是：${err.message}`);
+           showNovaAlert(`哎呀，我的宝贝，进入全屏失败了。原因可能是：${err.message}`);
         });
 
         mainWrapper.style.minHeight = '100vh';
@@ -36535,7 +36535,7 @@ document.getElementById('set-favorability-speed-btn')?.addEventListener('click',
             updateFavorabilitySpeedDisplay();
  
         } else {
-            alert('请输入有效的正数');
+           showNovaAlert('请输入有效的正数');
         }
     }
 });
@@ -36551,9 +36551,9 @@ document.getElementById('set-scan-floors-btn')?.addEventListener('click', async 
             // 更新显示
             updateScanFloorsDisplay();
             
-            alert(`已保存：扫描楼层数设置为 ${floors}`);
+           showNovaAlert(`已保存：扫描楼层数设置为 ${floors}`);
         } else {
-            alert('请输入有效的正整数');
+           showNovaAlert('请输入有效的正整数');
         }
     }
 });
@@ -36842,7 +36842,7 @@ async function updateSaveId() {
     const newSaveId = saveIdInput.value.trim();
     
     if (!newSaveId) {
-        alert('存档ID不能为空');
+       showNovaAlert('存档ID不能为空');
         return;
     }
     
@@ -36856,10 +36856,10 @@ async function updateSaveId() {
         // 刷新显示
         await displayCurrentSaveId();
         
-        alert(`存档ID已更新为: ${newSaveId}`);
+       showNovaAlert(`存档ID已更新为: ${newSaveId}`);
     } catch (error) {
         console.error('更新存档ID失败:', error);
-        alert('更新存档ID失败，请查看控制台');
+       showNovaAlert('更新存档ID失败，请查看控制台');
     }
 }
 // 辅助函数：将字节转换为更易读的格式
@@ -37122,7 +37122,7 @@ function setupCustomAssetManager() {
         const file = fileInput.files[0];
 
         if (!key || !file) {
-            alert('请填写映射名并选择文件！');
+           showNovaAlert('请填写映射名并选择文件！');
             return;
         }
 
@@ -37136,7 +37136,7 @@ function setupCustomAssetManager() {
             fileInput.parentElement.querySelector('.file-name-display').textContent = '未选择文件';
             await renderAssetList(storeName, listElement); // 刷新列表
         } catch (error) {
-            alert('上传失败，可能是命名冲突或数据库错误。');
+           showNovaAlert('上传失败，可能是命名冲突或数据库错误。');
             console.error('上传失败:', error);
         } finally {
             submitBtn.disabled = false;
@@ -37185,7 +37185,7 @@ function setupCustomAssetManager() {
 
         // 4. 完成后刷新列表并提示
         await renderAssetList(storeName, listElement);
-        alert(`批量导入完成！\n成功: ${successCount} 张\n失败/跳过: ${failCount} 张`);
+       showNovaAlert(`批量导入完成！\n成功: ${successCount} 张\n失败/跳过: ${failCount} 张`);
 
         // 清空 input 允许重复上传同一文件夹
         event.target.value = '';
@@ -37203,7 +37203,7 @@ function setupCustomAssetManager() {
                 await imageDB.delete(storeName, key);
                 itemEl.remove(); // 立即从界面移除
             } catch (error) {
-                alert('删除失败!');
+               showNovaAlert('删除失败!');
                 console.error('删除失败:', error);
             }
  
@@ -37675,7 +37675,7 @@ if (fontSizeSlider) {
             }
         } else {
             // 如果没有保存的自定义主题，可以给个提示
-            alert('请先编辑并保存一个自定义主题。');
+           showNovaAlert('请先编辑并保存一个自定义主题。');
         }
     });
 
@@ -41862,7 +41862,7 @@ if (debugClearBtn) {
     debugClearBtn.addEventListener('click', () => {
         if (confirm('确定要清除所有成就数据吗？这将重置所有解锁状态。')) {
             localStorage.removeItem('achievements_data');
-            alert('成就数据已清除！刷新页面或重新打开成就面板查看效果。');
+           showNovaAlert('成就数据已清除！刷新页面或重新打开成就面板查看效果。');
             // 如果当前成就面板是打开的，重新渲染
             const modal = document.getElementById('achievements-modal');
             if (modal && modal.style.display !== 'none') {
@@ -42233,12 +42233,12 @@ overlay.style.zIndex = '999999'; // 使用超高层级
         const content = document.getElementById('qr-content-input').value.trim();
         
         if (!title) {
-            alert('请输入按钮标题');
+            showNovaAlert('请输入按钮标题');
             return;
         }
         
         if (!content) {
-            alert('请输入发送内容');
+            showNovaAlert('请输入发送内容');
             return;
         }
         
@@ -43188,12 +43188,12 @@ const randomShopDB = {
                 try {
                     // 调用数据库的清空方法
                     await randomShopDB.clearAllItems();
-                    alert('所有商品已成功清空！');
+                    showNovaAlert('所有商品已成功清空！');
                     // 可选：清空后刷新页面或更新UI
                     // location.reload();
                 } catch (error) {
                     console.error('Failed to clear items:', error);
-                    alert('清空商品时发生错误，请查看控制台。');
+                    showNovaAlert('清空商品时发生错误，请查看控制台。');
                 }
             }
         });
@@ -47910,7 +47910,7 @@ function showMoveModal(key, currentPath) {
             generateAndSendCommand(command);
             overlay.remove();
         } else {
-            alert('你还没有选择新的家哦。');
+            showNovaAlert('你还没有选择新的家哦。');
         }
     };
 
@@ -48900,7 +48900,7 @@ const executeGeneration = async (keywords = "") => {
         // 如果是用户取消，不抛出错误到控制台，或者可以做特殊处理
         if (error.message !== '用户取消生成') {
              // 这里可以加个 alert 或者 toast 提示错误
-             // alert(error.message);
+             //showNovaAlert(error.message);
         }
         throw error;
     } finally {
@@ -49875,7 +49875,7 @@ function sendForumAction(action) {
 
     //console.log("即将发送指令:", command); // 妈妈帮你加上了日志，方便调试
     triggerassa(`/setinput ${command}`); // 请确保 triggerassa 函数在外部环境中可用
-    // alert('指令已生成，请在控制台查看：\n' + command); // 这是一个临时的替代方案，方便你看到结果
+    //showNovaAlert('指令已生成，请在控制台查看：\n' + command); // 这是一个临时的替代方案，方便你看到结果
 }
 async function initializeForum(rawJsonData) {
     // 1. 清理HTML实体编码
@@ -50240,12 +50240,12 @@ function handlePostSubmit(e) {
     const content = document.getElementById('post-content-input').value.trim();
 
     if (!title || !content || !section) {
-        alert("请填写所有必填项。");
+        showNovaAlert("请填写所有必填项。");
         return;
     }
 
     if (forumData[title]) {
-        alert("错误：已存在相同标题的帖子。");
+        showNovaAlert("错误：已存在相同标题的帖子。");
         return;
     }
 
@@ -50259,7 +50259,7 @@ function handlePostSubmit(e) {
 
     closePostModal();
     // 提示用户操作已发送，等待后台处理
-    // alert("发帖请求已发送，请稍候...（本地模拟将不会立即刷新）");
+    //showNovaAlert("发帖请求已发送，请稍候...（本地模拟将不会立即刷新）");
 }
 // ========== 4. 模拟数据和事件监听 ==========
 
@@ -50310,7 +50310,7 @@ function handleReplySubmit(event) {
     const content = replyInput.value.trim();
 
     if (!content) {
-        alert("回复内容不能为空。");
+        showNovaAlert("回复内容不能为空。");
         return;
     }
 
@@ -50328,7 +50328,7 @@ function handleReplySubmit(event) {
     replyInput.placeholder = '回复...';
     state.replyingTo = null; // 重置回复目标
 
-    // alert("回复请求已发送！（本地模拟不会立即刷新）");
+    //showNovaAlert("回复请求已发送！（本地模拟不会立即刷新）");
 }
 
  
@@ -55621,7 +55621,7 @@ async function testConnection() {
     const source = els.sourceSelect.value;
 
     if (!url || !key || !model) {
-        alert("请确保地址、密钥和模型名称都已填写。");
+       showNovaAlert("请确保地址、密钥和模型名称都已填写。");
         return;
     }
 
@@ -57123,18 +57123,21 @@ if (status === '已完成' && !isArchived) {
 
 
 window.GameAPI = {
+get collectedBatchOps(){
 
+    return collectedBatchOps;
+},
            get userName() {
-        // GameAPI.assaData 
+        
         return userName;
     },
         get npcImageMap() {
-        // GameAPI.assaData 
+      
         return npcImageMap;
     },
-    // 定义一个属性 'settings'
+    
     get assaData() {
-        // GameAPI.assaData 
+       
         return assaSettingsData;
     },
          getThemeVar: function(varName) {
