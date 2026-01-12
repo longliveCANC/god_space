@@ -5,7 +5,7 @@
         "authorToken":"0354437c-3984-4fb6-872c-bc1a299ddfa3",
     "author": "assa",
     "version": "1.7",
-    "tags": ["公告"],
+    "tags": ["⭐公告"],
     "description": "第一次启用脚本后，需要点击重载刷新界面。\ndlc需要开启无世界观。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
@@ -17,7 +17,7 @@
      "authorToken":"0354437c-3984-4fb6-872c-bc1a299ddfa3",
     "author": "assa",
     "version": "1.0",
-    "tags": ["公告"],
+    "tags": ["⭐公告"],
     "description": "永远最新的本体世界书链接，如果在线更新有什么问题，可以在这里手动下载。",
    "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/book.json",
@@ -57,7 +57,7 @@
     "name": "自定义词条世界书",
     "author": "assa",
     "version": "1.0",
-    "tags": ["公告"],
+    "tags": ["⭐公告"],
     "description": "[自定义词条世界书]下载的快捷链接。将其挂载到全局后，对你想要自定义的条目进行编辑。不需要关闭原条目",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/自定义词条世界书.json",
@@ -72,6 +72,18 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-合理性审查之骰.json",
     "previewImage": ""
+  } ,{
+    "id": "x-mod-小世界",
+    "name": "小世界其乐无穷",
+       "authorToken":"a8933b36-717a-4ba7-b979-626d85b62b92",
+    
+    "author": "仿生人",
+    "version": "1.4",
+    "tags": ["豪华dlc"],
+    "description": "[0112游戏机运行框架差不多了，后面还有现实灵气复苏方面的剧情指导再慢慢加上去了]\n[0106兼容了模拟经营、战略类游戏，脚本也有改动适配不同类型的游戏]\n[1230完善了一波,前端脚本也改了]\n<h3>以一个游戏机为主题，在游玩过程中，不断通关游戏提升现实中灵气复苏程度的世界。</h3>\n[需开启自定义属性，同时开启本dlc的脚本。需开启无世界观，外挂本世界书后并选择手动发送。\n如何应用自定义属性：将世界书挂载后，重新加载，去自定义属性那里就能看到本dlc的专属自定义属性模板，然后点击应用即可]",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod001小世界.js",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-小世界.json",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 23.png"
   } , {
     "id": "x-dlc-领养小孩",
     "name": "领养小孩",
@@ -376,18 +388,6 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod10.js",
     "worldBookUrl": "",
     "previewImage": ""
-  } ,{
-    "id": "x-mod-小世界",
-    "name": "小世界其乐无穷",
-       "authorToken":"a8933b36-717a-4ba7-b979-626d85b62b92",
-    
-    "author": "仿生人",
-    "version": "1.4",
-    "tags": ["豪华dlc"],
-    "description": "[0112游戏机运行框架差不多了，后面还有现实灵气复苏方面的剧情指导再慢慢加上去了]\n[0106兼容了模拟经营、战略类游戏，脚本也有改动适配不同类型的游戏]\n[1230完善了一波,前端脚本也改了]\n<h3>以一个游戏机为主题，在游玩过程中，不断通关游戏提升现实中灵气复苏程度的世界。</h3>\n[需开启自定义属性，同时开启本dlc的脚本。需开启无世界观，外挂本世界书后并选择手动发送。\n如何应用自定义属性：将世界书挂载后，重新加载，去自定义属性那里就能看到本dlc的专属自定义属性模板，然后点击应用即可]",
-    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod001小世界.js",
-    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-小世界.json",
-    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 23.png"
   } ,{
     "id": "mod002回顶",
     "name": "消息楼层快捷滚动",
