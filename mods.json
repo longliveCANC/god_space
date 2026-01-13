@@ -36,9 +36,9 @@
     "id": "小蝌蚪找妈妈-mod-超复杂npc",
     "name": "npc美化01",
     "author": "assa",
-    "version": "3.0",
+    "version": "4.0",
     "tags": ["美化脚本"],
-    "description": "[1218现在支持加载立绘了，需要游戏版本3.4.15及其以上][跟随主题]开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。",
+    "description": "[0113要使用新功能的话建议开异步，不然哈基米脑子不够用了。更新了离线事件（关注了npc才行）、角色关系表、以及关键记忆自动浓缩，更新的东西你都是可以关的。然后丰富了一下外貌字段，事件增加了当前位置字段。]\n[1218现在支持加载立绘了，需要游戏版本3.4.15及其以上][跟随主题]开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/npccard01.js",
     "worldBookUrl": "",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 20.png"
@@ -466,12 +466,12 @@
       "is_dowload_raw_name":true,
     "name": "世界事件",
     "author": "assa",
-    "version": ".1",
-    "tags": ["功能脚本"],
-    "description": "[测试推送]",
+    "version": "1.0",
+    "tags": ["美化脚本","其他"],
+    "description": "给世界增加了点平行事件，建议开异步了，不然哈基米现在脑力会不够的。可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod16parallels01.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-世界事件.json",
-    "previewImage": ""
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 29.png"
   } 
   
 ]
