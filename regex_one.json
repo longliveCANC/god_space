@@ -22978,10 +22978,10 @@ async function handleModeSelection() {
             if(parseInt(diceLevel) != 89 ){
  uidsToEnable.push(21);
             }
-            if (parseInt(selectedWorldModeValue) == 34) {
+            // if (parseInt(selectedWorldModeValue) == 34) {
                
-                uidsToEnable.push(65,64);
-            }
+            //     uidsToEnable.push(65,64);
+            // }
              
             if (parseInt(selectedWorldModeValue) != 54) {
                 uidsToEnable.push(6);
@@ -23025,7 +23025,7 @@ async function handleModeSelection() {
   if (npcLOVEmode === 'on') {
                 uidsToEnable.push(65,64);
             }
-            npcLOVEmode
+          
             if (selectedHardMode === 'on') {
                 uidsToEnable.push(16);
             }
