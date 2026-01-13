@@ -954,6 +954,49 @@
     box-shadow: 0 0 15px var(--glow-color);
 }
 
+/* --- 新增：关键记忆删除按钮样式 --- */
+.mod01-mem-delete {
+    margin-left: 8px;
+    cursor: pointer;
+    color: var(--text-secondary-color);
+    font-weight: bold;
+    font-size: 12px;
+    opacity: 0; /* 默认隐藏 */
+    transition: all 0.2s;
+    padding: 0 4px;
+}
+.mod01-mem-delete:hover {
+    color: #ff4d6d; /* 悬浮变红 */
+    transform: scale(1.2);
+}
+/* 只有当鼠标悬浮在记忆条目上时，才显示删除按钮 */
+.mod01-mem-chip:hover .mod01-mem-delete {
+    opacity: 1;
+}
+
+/* --- 新增：离线进程折叠样式 --- */
+.mod01-timeline-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+.mod01-timeline-arrow {
+    transition: transform 0.3s ease;
+    color: var(--primary-color);
+    font-size: 14px;
+    margin-left: 10px;
+}
+/* 折叠状态下的箭头旋转 */
+.mod01-timeline-box.collapsed .mod01-timeline-arrow {
+    transform: rotate(-90deg);
+}
+/* 折叠状态下隐藏主体内容 */
+.mod01-timeline-box.collapsed .mod01-timeline-body {
+    display: none;
+}
+
         `;
         document.head.appendChild(style);
     }
@@ -2612,7 +2655,7 @@ this.allItems.forEach((item, index) => {
 
             // --- 关键记忆 (分页) (这部分逻辑不变) ---
             if(data.关键记忆) {
-                this.renderMemoriesPaged(root, data.关键记忆);
+               this.renderMemoriesPaged(root, data.关键记忆, npc.name, npc.tag);
                 ignoreKeys.push('关键记忆');
             }
 
@@ -2651,66 +2694,80 @@ this.allItems.forEach((item, index) => {
                 ignoreKeys.push('game批注');
             }
         }
-renderOfflineEvents(container, offlineData) {
-    const box = document.createElement('div');
-    box.className = 'mod01-timeline-box mod01-section';
+        renderOfflineEvents(container, offlineData) {
+            const box = document.createElement('div');
+            box.className = 'mod01-timeline-box mod01-section';
 
-    // 1. 顶部元数据 (状态、简介、下次更新)
-    const status = offlineData.状态 || '未知';
-    const nextUpdate = offlineData.下次更新时间 || '未定';
-    const intro = offlineData.简介 || '';
+            // 1. 顶部元数据 (作为 Header，点击可折叠)
+            const status = offlineData.状态 || '未知';
+            const nextUpdate = offlineData.下次更新时间 || '未定';
+            const intro = offlineData.简介 || '';
 
-    let metaHtml = `
-        <div class="mod01-offline-meta">
-            <span><i class="fas fa-satellite-dish"></i> 离线进程</span>
-            <span style="color:var(--primary-color)">[${status}]</span>
-        </div>
-    `;
-
-    if(intro) {
-        metaHtml += `<div style="font-style:italic; opacity:0.8; margin-bottom:15px; font-size:12px;">“${intro}”</div>`;
-    }
-
-    // 2. 进展链条渲染
-    let nodesHtml = '';
-    if (offlineData.进展 && typeof offlineData.进展 === 'object') {
-        // 获取所有进展条目
-        const entries = Object.entries(offlineData.进展);
-        // 尝试按时间排序 (如果Key是日期格式)
-        // 这里简单倒序排列，让最新的在最上面？或者正序？通常日志是新的在下。
-        // 假设 entries 是 [time, content]
-
-        entries.forEach(([time, content]) => {
-            // 处理内容中的 -> 符号，将其高亮
-            const formattedContent = String(content).replace(/->/g, ' <span style="color:var(--primary-color); font-weight:bold;">→</span> ');
-
-            nodesHtml += `
-                <div class="mod01-timeline-node">
-                    <div class="mod01-node-marker"></div>
-                    <div class="mod01-node-content">
-                        <div class="mod01-node-time">${time}</div>
-                        <div class="mod01-node-text">${formattedContent}</div>
+            // Header HTML
+            const headerHtml = `
+                <div class="mod01-timeline-header">
+                    <div class="mod01-offline-meta" style="border-bottom:none; margin-bottom:0; padding-bottom:0; flex:1;">
+                        <span><i class="fas fa-satellite-dish"></i> 离线进程</span>
+                        <span style="color:var(--primary-color); margin-left:10px;">[${status}]</span>
                     </div>
+                    <i class="fas fa-chevron-down mod01-timeline-arrow"></i>
                 </div>
             `;
-        });
-    } else {
-        nodesHtml = '<div style="opacity:0.5; font-size:12px; padding-left:20px;">暂无进展记录</div>';
-    }
 
-    // 3. 底部：下次更新预告
-    let footerHtml = '';
-    if(nextUpdate) {
-        footerHtml = `
-            <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--border-color); font-size:11px; text-align:right; opacity:0.7;">
-                <i class="far fa-clock"></i> 下次更新: ${nextUpdate}
-            </div>
-        `;
-    }
+            // Body HTML (包含简介、进展、底部)
+            let bodyContentHtml = '';
 
-    box.innerHTML = metaHtml + nodesHtml + footerHtml;
-    container.appendChild(box);
-}
+            if(intro) {
+                bodyContentHtml += `<div style="font-style:italic; opacity:0.8; margin:10px 0 15px 0; font-size:12px;">“${intro}”</div>`;
+            }
+
+            // 进展链条渲染
+            let nodesHtml = '';
+            if (offlineData.进展 && typeof offlineData.进展 === 'object') {
+                const entries = Object.entries(offlineData.进展);
+                entries.forEach(([time, content]) => {
+                    const formattedContent = String(content).replace(/->/g, ' <span style="color:var(--primary-color); font-weight:bold;">→</span> ');
+                    nodesHtml += `
+                        <div class="mod01-timeline-node">
+                            <div class="mod01-node-marker"></div>
+                            <div class="mod01-node-content">
+                                <div class="mod01-node-time">${time}</div>
+                                <div class="mod01-node-text">${formattedContent}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                nodesHtml = '<div style="opacity:0.5; font-size:12px; padding-left:20px; margin-top:10px;">暂无进展记录</div>';
+            }
+            bodyContentHtml += nodesHtml;
+
+            // 底部：下次更新预告
+            if(nextUpdate) {
+                bodyContentHtml += `
+                    <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--border-color); font-size:11px; text-align:right; opacity:0.7;">
+                        <i class="far fa-clock"></i> 下次更新: ${nextUpdate}
+                    </div>
+                `;
+            }
+
+            // 组装 HTML
+            box.innerHTML = `
+                ${headerHtml}
+                <div class="mod01-timeline-body">
+                    ${bodyContentHtml}
+                </div>
+            `;
+
+            // 绑定点击事件实现折叠
+            const headerEl = box.querySelector('.mod01-timeline-header');
+            headerEl.onclick = () => {
+                box.classList.toggle('collapsed');
+            };
+
+            container.appendChild(box);
+        }
+
 
         // --- 新增：沉浸式事件渲染 ---
         renderEvents(container, evtData) {
@@ -2863,8 +2920,8 @@ renderOfflineEvents(container, offlineData) {
             renderPage();
         }
  
-         // --- 修改 3：记忆分页 (顶部 + 极速跳转) ---
-        renderMemoriesPaged(container, memObj) {
+       // --- 修改：接收 npcName 和 npcTag 参数 ---
+        renderMemoriesPaged(container, memObj, npcName, npcTag) {
             const sec = document.createElement('div');
             sec.className = 'mod01-section';
             sec.innerHTML = `<div class="mod01-sec-title">MEMORY LOGS</div>`;
@@ -2883,12 +2940,12 @@ renderOfflineEvents(container, offlineData) {
             let currentPage = 1;
             const totalPages = Math.ceil(memArray.length / pageSize);
 
-            // 容器 (Memory Items)
+            // 容器
             const cloud = document.createElement('div');
             cloud.className = 'mod01-mem-cloud';
             cloud.style.minHeight = "120px";
 
-            // 控制器容器 (放在上面！)
+            // 控制器容器
             const controlBar = document.createElement('div');
             controlBar.className = 'mod01-pagination';
 
@@ -2932,7 +2989,7 @@ renderOfflineEvents(container, offlineData) {
                 updateControls();
             };
 
-            // 渲染列表 Action
+            // --- 重点修改：renderPage 内部 ---
             const renderPage = () => {
                 cloud.innerHTML = '';
                 if (memArray.length === 0) {
@@ -2958,7 +3015,47 @@ renderOfflineEvents(container, offlineData) {
                             if(t.trim()) tagsHtml += `<span class="mod01-emote-tag">${t.trim()}</span>`;
                         });
                     }
+
+                    // 1. 构建基础内容
                     chip.innerHTML = `<span style="opacity:0.5;font-size:10px;margin-right:4px;">#${item.id}</span> ${content} ${tagsHtml}`;
+
+                    // 2. 创建删除按钮 (X)
+                    const delBtn = document.createElement('span');
+                    delBtn.className = 'mod01-mem-delete';
+                    delBtn.innerText = '✕'; // 或者用 fontawesome: <i class="fas fa-times"></i>
+                    delBtn.title = "删除此记忆";
+
+                    // 3. 删除逻辑
+                    delBtn.onclick = async (e) => {
+                        e.stopPropagation(); // 防止触发其他点击事件
+
+                        // UI 上立刻移除
+                        chip.style.opacity = '0';
+                        setTimeout(() => chip.remove(), 200);
+
+                        // 构建路径
+                        let pathPrefix = '';
+                        if (npcTag === '全局') pathPrefix = `global_lore.npc.${npcName}`;
+                        else if (npcTag === '小队') pathPrefix = `global_lore.小队信息.${npcName}`;
+                        else pathPrefix = `world_lore.npc.${npcName}`;
+
+                        const fullPath = `${pathPrefix}.关键记忆`;
+
+                        // 构建指令
+                        const commandString = `/setinput <updateMemory>\ndelete('${fullPath}','${item.id}')\n</updateMemory>`;
+
+                        console.log(`[Nova] 删除记忆: ${fullPath}`);
+
+                        // 执行指令
+                        if (window.GameAPI && window.GameAPI.triggerassa) {
+                            await window.GameAPI.triggerassa(commandString);
+                            if(window.worldHelper && window.worldHelper.processUpdateMemoryCommands) {
+                                await window.worldHelper.processUpdateMemoryCommands(commandString, -1);
+                            }
+                        }
+                    };
+
+                    chip.appendChild(delBtn);
 
                     // 动画
                     chip.animate([{opacity:0, paddingLeft:'10px'}, {opacity:1, paddingLeft:'12px'}], {duration: 250});
@@ -2966,7 +3063,7 @@ renderOfflineEvents(container, offlineData) {
                 });
             };
 
-            // 组装顺序：先放控制器(如果有多页)，再放内容容器
+            // ... (后续组装代码保持不变) ...
             if (totalPages > 1) {
                 controlBar.appendChild(btnFirst);
                 controlBar.appendChild(btnPrev);
@@ -2978,7 +3075,6 @@ renderOfflineEvents(container, offlineData) {
             sec.appendChild(cloud);
             container.appendChild(sec);
 
-            // Init
             if(memArray.length > 0) {
                 renderPage();
                 updateControls();

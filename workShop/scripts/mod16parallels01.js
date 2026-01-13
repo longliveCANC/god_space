@@ -584,6 +584,8 @@
             margin-top: 5px;
             border: 1px dashed rgba(255, 255, 255, 0.1);
         }
+
+        
     `;
     document.head.appendChild(style);
 
