@@ -602,7 +602,7 @@
             if (!data) {
                 body.innerHTML = `<div style="padding:20px; color:var(--mod16-text-dim)">暂无世界情报数据...</div>`;
             } else {
-                this.renderNews(body, data['今日本地新闻']);
+                this.renderNews(body, data['今日新闻']);
                 this.renderEvents(body, data['平行事件']);
                 this.renderDetails(body, data['角色细节']);
             }
@@ -622,7 +622,7 @@
             const section = document.createElement('div');
             section.className = 'mod16-section';
 
-            const hasUpdate = this.checkUpdate('今日本地新闻');
+            const hasUpdate = this.checkUpdate('今日新闻');
             const badgeHtml = hasUpdate ? `<span class="mod16-new-badge">NEW!</span>` : '';
 
             let html = `
