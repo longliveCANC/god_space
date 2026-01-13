@@ -3048,7 +3048,7 @@ this.allItems.forEach((item, index) => {
 
                         // 执行指令
                         if (window.GameAPI && window.GameAPI.triggerassa) {
-                            await window.GameAPI.triggerassa(commandString);
+                            await triggerassa(commandString);
                             if(window.worldHelper && window.worldHelper.processUpdateMemoryCommands) {
                                 await window.worldHelper.processUpdateMemoryCommands(commandString, -1);
                             }

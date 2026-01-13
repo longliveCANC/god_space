@@ -11,7 +11,18 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
 
   "previewImage": ""
-  }, {
+  },   {
+    "id": "mod00",
+    "name": "【更多的教程】",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["⭐公告"],
+    "description": "哈哈，其他界面的教程我还没有写（）若有需要，你可以先订阅此mod。",
+    "scriptUrl": "",
+    "worldBookUrl": "",
+
+  "previewImage": ""
+  },{
     "id": "小蝌蚪找妈妈-同层版",
     "name": "本体世界书快捷链接",
      "authorToken":"0354437c-3984-4fb6-872c-bc1a299ddfa3",
@@ -468,7 +479,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["美化脚本","其他"],
-    "description": "给世界增加了点平行事件，建议开异步了，不然哈基米现在脑力会不够的。可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
+    "description": "给世界增加了点平行事件，建议开异步，不然哈基米现在脑力会不够的。平行事件不是每轮对话都更新， 有时间间隔。通过代码比对的时间并对AI进行通知，更新频率有点慢的感人，有需要的可以去自定义。\n以及也可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod16parallels01.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-世界事件.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 29.png"
