@@ -870,6 +870,89 @@
     padding-bottom: 8px; margin-bottom: 12px;
 }
 
+/* --- 新增：关系图谱样式 --- */
+.mod01-relation-toggle {
+    cursor: pointer; opacity: 0.7; font-size: 12px; margin-right: 15px;
+    display: none; /* 默认隐藏，有数据才显示 */
+}
+.mod01-relation-toggle:hover { opacity: 1; color: var(--primary-color); }
+
+.mod01-relation-panel {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #0a0a0a; z-index: 20000;
+    display: none; opacity: 0; transition: opacity 0.3s;
+}
+.mod01-relation-panel.active { display: block; opacity: 1; }
+
+.mod01-relation-ui {
+    position: absolute; top: 20px; right: 30px; z-index: 20010;
+    display: flex; gap: 20px; align-items: center;
+}
+.mod01-relation-close {
+    font-size: 24px; color: var(--text-secondary-color); cursor: pointer;
+}
+.mod01-relation-close:hover { color: var(--primary-color); }
+
+.mod01-relation-canvas {
+    display: block; width: 100%; height: 100%;
+    cursor: grab;
+}
+.mod01-relation-canvas:active { cursor: grabbing; }
+
+/* 节点提示框 */
+.mod01-node-tooltip {
+    position: absolute; pointer-events: none;
+    background: rgba(0, 0, 0, 0.8); border: 1px solid var(--primary-color);
+    padding: 5px 10px; border-radius: 4px; font-size: 12px; color: #fff;
+    z-index: 20020; display: none; white-space: nowrap;
+}
+/* --- 新增：关系图谱UI开关 --- */
+.mod01-relation-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    pointer-events: auto; /* 确保可以点击 */
+}
+.mod01-relation-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+}
+.mod01-relation-switch input {
+    cursor: pointer;
+}
+.mod01-relation-switch label {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.mod01-relation-switch input:checked + label {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* --- 新增：连线提示框 --- */
+.mod01-link-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid var(--primary-color);
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 16px;
+    color: #fff;
+    z-index: 20030; /* 比节点提示框更高 */
+    display: none;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 0 15px var(--glow-color);
+}
 
         `;
         document.head.appendChild(style);
@@ -1210,6 +1293,580 @@
             this.isVisible = false;
         }
     }
+    // --- 2.6 关系图谱管理器 (新增) ---
+    class NovaRelationGraph {
+        constructor(system) {
+            this.system = system;
+            this.panel = null;
+            this.canvas = null;
+            this.ctx = null;
+            this.nodes = [];
+            this.links = [];
+            this.animationId = null;
+            this.isDragging = false;
+            this.dragNode = null;
+            this.hoverNode = null;
+            this.tooltip = null;
+// ... this.tooltip = null;
+this.linkTooltip = null; // 新增：连线提示框
+this.hoverLink = null;   // 新增：悬浮的连线
+
+// --- 新增：UI开关状态 ---
+this.showGlobal = true;
+this.showWorld = true;
+this.showUser = false;
+
+// --- 新增：颜色配置 ---
+this.colors = {
+    globalLink: 'rgba(41, 121, 255, 0.5)', // 世界-蓝
+    worldLink: 'rgba(0, 230, 118, 0.5)',  // 小队-绿
+    userLink: 'rgba(255, 215, 0, 0.7)',   // 用户-金
+    nodeStroke: '#005f66',
+    nodeHoverStroke: '#00faff',
+    nodeFollowStroke: '#ffd700', // 关注-金
+    nodeUserFill: '#000'
+};
+
+            // 配置参数
+            this.config = {
+                repulsion: 800,   // 斥力
+                springLength: 200, // 连线长度
+                springK: 0.05,    // 弹力系数
+                friction: 0.90,   // 摩擦力
+                nodeRadius: 35    // 节点半径
+            };
+
+            this.initUI();
+        }
+
+        initUI() {
+            this.panel = document.createElement('div');
+            this.panel.className = 'mod01-relation-panel';
+ this.panel.innerHTML = `
+    <div class="mod01-relation-ui">
+
+        <div class="mod01-relation-controls">
+            <div class="mod01-relation-switch">
+                <input type="checkbox" id="nova-rel-global" checked>
+                <label for="nova-rel-global">全局关系</label>
+            </div>
+            <div class="mod01-relation-switch">
+                <input type="checkbox" id="nova-rel-world" checked>
+                <label for="nova-rel-world">世界关系</label>
+            </div>
+            <div class="mod01-relation-switch">
+                <input type="checkbox" id="nova-rel-user">
+                <label for="nova-rel-user">显示"你"</label>
+            </div>
+        </div>
+        <div class="mod01-relation-close"><i class="fas fa-times"></i></div>
+    </div>
+    <canvas class="mod01-relation-canvas"></canvas>
+    <div class="mod01-node-tooltip"></div>
+    <div class="mod01-link-tooltip"></div>
+`;
+            document.body.appendChild(this.panel);
+
+            this.canvas = this.panel.querySelector('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.tooltip = this.panel.querySelector('.mod01-node-tooltip');
+this.linkTooltip = this.panel.querySelector('.mod01-link-tooltip');
+
+            // 关闭按钮
+            this.panel.querySelector('.mod01-relation-close').onclick = () => this.hide();
+// --- 新增：绑定开关事件 ---
+this.panel.querySelector('#nova-rel-global').onchange = (e) => {
+    this.showGlobal = e.target.checked;
+    this.reloadDataAndRestart();
+};
+this.panel.querySelector('#nova-rel-world').onchange = (e) => {
+    this.showWorld = e.target.checked;
+    this.reloadDataAndRestart();
+};
+this.panel.querySelector('#nova-rel-user').onchange = (e) => {
+    this.showUser = e.target.checked;
+    this.reloadDataAndRestart();
+};
+            // 窗口大小调整
+            window.addEventListener('resize', () => this.resize());
+
+            // 交互事件
+            this.bindEvents();
+        }
+
+        bindEvents() {
+            const getPos = (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                return {x, y};
+            };
+
+            const onDown = (e) => {
+                const {x, y} = getPos(e);
+                // 查找点击的节点
+                this.dragNode = this.nodes.find(n => {
+                    const dx = x - n.x;
+                    const dy = y - n.y;
+                    return dx*dx + dy*dy < this.config.nodeRadius * this.config.nodeRadius;
+                });
+                if(this.dragNode) {
+                    this.isDragging = true;
+                    this.dragNode.isFixed = true; // 拖拽时固定
+                }
+            };
+
+       const onMove = (e) => {
+    const {x, y} = getPos(e);
+
+    if(this.isDragging && this.dragNode) {
+        this.dragNode.x = x;
+        this.dragNode.y = y;
+        this.hideTooltips(); // 拖拽时隐藏所有提示
+    } else {
+        // --- 节点悬浮检测 ---
+        const prevHoverNode = this.hoverNode;
+        this.hoverNode = this.nodes.find(n => {
+            const dx = x - n.x;
+            const dy = y - n.y;
+            return dx*dx + dy*dy < this.config.nodeRadius * this.config.nodeRadius;
+        });
+
+        // --- 连线悬浮检测 (仅当未悬浮于节点时) ---
+        const prevHoverLink = this.hoverLink;
+        if (!this.hoverNode) {
+            this.hoverLink = this.links.find(l => {
+                if (!l.tooltip) return false;
+                const { source: s, target: t } = l;
+                const dx = t.x - s.x;
+                const dy = t.y - s.y;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                // 计算点到线段的距离
+                const dist = Math.abs((t.y - s.y) * x - (t.x - s.x) * y + t.x * s.y - t.y * s.x) / len;
+                return dist < 5; // 5px 的触发范围
+            });
+        } else {
+            this.hoverLink = null; // 在节点上时，取消连线悬浮
+        }
+
+        // 更新光标和提示
+        if(this.hoverNode !== prevHoverNode || this.hoverLink !== prevHoverLink) {
+            this.canvas.style.cursor = (this.hoverNode || this.hoverLink) ? 'pointer' : 'grab';
+            this.updateTooltips(x, y);
+        }
+    }
+
+      this.updateTooltips = (x, y) => {
+        // 节点提示
+        if (this.hoverNode) {
+            this.tooltip.style.display = 'block';
+            this.tooltip.textContent = this.hoverNode.id;
+            this.tooltip.style.left = `${x + 15}px`;
+            this.tooltip.style.top = `${y + 15}px`;
+        } else {
+            this.tooltip.style.display = 'none';
+        }
+        // 连线提示
+        if (this.hoverLink && this.hoverLink.tooltip) {
+            this.linkTooltip.style.display = 'block';
+            this.linkTooltip.textContent = this.hoverLink.tooltip;
+            this.linkTooltip.style.left = `${x}px`;
+            this.linkTooltip.style.top = `${y - 40}px`; // 向上偏移
+            this.linkTooltip.style.transform = 'translateX(-50%)';
+        } else {
+            this.linkTooltip.style.display = 'none';
+        }
+    };
+
+    this.hideTooltips = () => {
+        this.tooltip.style.display = 'none';
+        this.linkTooltip.style.display = 'none';
+    };
+};
+
+
+            const onUp = () => {
+                if(this.dragNode) {
+                    this.dragNode.isFixed = false;
+                    this.dragNode = null;
+                }
+                this.isDragging = false;
+            };
+
+            this.canvas.addEventListener('mousedown', onDown);
+            this.canvas.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+
+            this.canvas.addEventListener('touchstart', onDown);
+            this.canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onMove(e); });
+            window.addEventListener('touchend', onUp);
+        }
+
+        resize() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        }
+
+ // 核心：解析数据 (V2.0)
+loadData() {
+    this.nodes = [];
+    this.links = [];
+    const nodeMap = new Map();
+
+    // --- 辅助函数：添加节点 ---
+    const getOrAddNode = (name, extraData = {}) => {
+        if (!nodeMap.has(name)) {
+            const isFollowed = this.system.allItems.find(item => item.name === name)?.data?._follow;
+            nodeMap.set(name, {
+                id: name,
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                vx: 0, vy: 0,
+                img: null,
+                loaded: false,
+                isFollowed: isFollowed === true || String(isFollowed).toLowerCase() === 'true',
+                ...extraData
+            });
+            // 异步加载图片 (非用户节点)
+            if (!extraData.isUser) {
+                this.loadNodeImage(name).then(img => {
+                    const n = nodeMap.get(name);
+                    if (n && img) { n.img = img; n.loaded = true; }
+                });
+            }
+        }
+        return nodeMap.get(name);
+    };
+
+    // --- 辅助函数：处理关系数据源 ---
+   const processSource = (sourceData, sourceType) => {
+    if (!sourceData || typeof sourceData !== 'object') return;
+    Object.values(sourceData).forEach(item => {
+        if (!item.from || !item.to) return;
+
+        // 解析关系文本和括号内提示
+        let typeText = item.type || '';
+        let tooltipText = '';
+        const match = typeText.match(/[（(](.*)[)）]/); // 匹配括号内容
+        if (match && match[1]) { // 确保匹配到了括号和括号里的内容
+            tooltipText = match[1]; // ★ 修正：只取括号内的文本 (match[1])
+            typeText = typeText.replace(match[0], '').trim(); // 从原文本中移除整个括号部分 (match[0])
+        }
+
+   
+            const sourceNode = getOrAddNode(item.from);
+            const targetNode = getOrAddNode(item.to);
+            this.links.push({
+                source: sourceNode,
+                target: targetNode,
+                type: typeText,
+                tooltip: tooltipText,
+                sourceType: sourceType // 'global' or 'world'
+            });
+        });
+    };
+
+    // 1. 获取数据
+    const assa = window.GameAPI?.assaData || {};
+    if (this.showGlobal) {
+        processSource(assa?.global_lore?.settings?.角色关系, 'global');
+    }
+    if (this.showWorld) {
+        processSource(assa?.world_lore?.settings?.角色关系, 'world');
+    }
+
+    // 2. (可选) 添加用户节点
+    if (this.showUser) {
+        const userName = window.GameAPI?.userName || '你';
+        const userNode = getOrAddNode(userName, { isUser: true, isFixed: true }); // 用户节点默认固定
+
+        this.system.allItems.forEach(npc => {
+            const relationToUser = npc.data[`和${userName}关系`];
+            if (relationToUser) {
+                const npcNode = getOrAddNode(npc.name);
+                this.links.push({
+                    source: npcNode,
+                    target: userNode,
+                    type: relationToUser,
+                    tooltip: '',
+                    sourceType: 'user'
+                });
+            }
+        });
+    }
+
+    this.nodes = Array.from(nodeMap.values());
+    if (this.nodes.length === 0) return false;
+
+    // 初始布局优化
+    const cx = this.canvas.width / 2;
+    const cy = this.canvas.height / 2;
+    this.nodes.forEach((n, i) => {
+        if (n.isUser) { // 用户节点居中
+            n.x = cx;
+            n.y = cy;
+        } else {
+            const angle = (i / this.nodes.length) * Math.PI * 2;
+            n.x = cx + Math.cos(angle) * 300;
+            n.y = cy + Math.sin(angle) * 300;
+        }
+    });
+
+    return true;
+}
+
+
+        // 异步加载头像 (复用原有的图片查找逻辑)
+        async loadNodeImage(name) {
+            try {
+                const assaData = (window.GameAPI && window.GameAPI.assaData) || window.assaSettingsData;
+                if (!assaData || !assaData.img_map) return null;
+
+                const imageName = assaData.img_map[name];
+                if (!imageName) return null;
+
+                let blob = null;
+                // 1. 查本地库
+                if (window.imageDB) {
+                    blob = await window.imageDB.get('CustomNpcs', String(imageName));
+                }
+                // 2. 查远程
+                if (!blob && window.GameAPI.npcImageMap) {
+                    const url = window.GameAPI.npcImageMap[String(imageName)];
+                    if(url) {
+                        // 简单 fetch，不走复杂缓存逻辑了，为了速度
+                        const res = await fetch(url);
+                        blob = await res.blob();
+                    }
+                }
+
+                if (blob) {
+                    return new Promise(resolve => {
+                        const img = new Image();
+                        img.src = URL.createObjectURL(blob);
+                        img.onload = () => resolve(img);
+                        img.onerror = () => resolve(null);
+                    });
+                }
+            } catch(e) { console.warn('Graph img load fail', e); }
+            return null;
+        }
+
+        // 物理模拟步进
+        step() {
+            const { repulsion, springLength, springK, friction } = this.config;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+
+            // 1. 斥力 (所有节点之间)
+            for(let i=0; i<this.nodes.length; i++) {
+                for(let j=i+1; j<this.nodes.length; j++) {
+                    const a = this.nodes[i];
+                    const b = this.nodes[j];
+                    const dx = a.x - b.x;
+                    const dy = a.y - b.y;
+                    let distSq = dx*dx + dy*dy;
+                    if(distSq < 0.1) distSq = 0.1;
+                    const dist = Math.sqrt(distSq);
+
+                    const force = repulsion / distSq;
+                    const fx = (dx / dist) * force;
+                    const fy = (dy / dist) * force;
+
+                    if(!a.isFixed) { a.vx += fx; a.vy += fy; }
+                    if(!b.isFixed) { b.vx -= fx; b.vy -= fy; }
+                }
+            }
+
+            // 2. 引力 (连线之间)
+            this.links.forEach(link => {
+                const s = link.source;
+                const t = link.target;
+                const dx = t.x - s.x;
+                const dy = t.y - s.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                const force = (dist - springLength) * springK;
+                const fx = (dx / dist) * force;
+ 
+                const fy = (dy / dist) * force;
+
+                if(!s.isFixed) { s.vx += fx; s.vy += fy; }
+                if(!t.isFixed) { t.vx -= fx; t.vy -= fy; }
+            });
+
+            // 3. 居中引力 (防止飞出屏幕)
+            const cx = width / 2;
+            const cy = height / 2;
+            this.nodes.forEach(n => {
+                const dx = cx - n.x;
+                const dy = cy - n.y;
+                if(!n.isFixed) {
+                    n.vx += dx * 0.0005;
+                    n.vy += dy * 0.0005;
+                }
+            });
+
+            // 4. 更新位置 & 摩擦力
+            this.nodes.forEach(n => {
+                if(!n.isFixed) {
+                    n.vx *= friction;
+                    n.vy *= friction;
+                    n.x += n.vx;
+                    n.y += n.vy;
+                }
+
+                // 边界限制
+                const r = this.config.nodeRadius;
+                if(n.x < r) n.x = r;
+                if(n.x > width - r) n.x = width - r;
+                if(n.y < r) n.y = r;
+                if(n.y > height - r) n.y = height - r;
+            });
+        }
+
+ draw() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // 1. 绘制连线
+    ctx.lineWidth = 1.5;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '11px sans-serif';
+
+    this.links.forEach(link => {
+        const s = link.source;
+        const t = link.target;
+        const isHover = link === this.hoverLink;
+
+        // 根据来源设置颜色
+        if (link.sourceType === 'global') ctx.strokeStyle = this.colors.globalLink;
+        else if (link.sourceType === 'world') ctx.strokeStyle = this.colors.worldLink;
+        else if (link.sourceType === 'user') ctx.strokeStyle = this.colors.userLink;
+        else ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+
+        if (isHover) {
+            ctx.lineWidth = 3;
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.shadowBlur = 10;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(t.x, t.y);
+        ctx.stroke();
+
+        ctx.lineWidth = 1.5; // 重置
+        ctx.shadowBlur = 0;
+
+        // 绘制关系文字
+        if(link.type) {
+            const mx = (s.x + t.x) / 2;
+            const my = (s.y + t.y) / 2;
+            const text = link.type;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            const metrics = ctx.measureText(text);
+            ctx.fillRect(mx - metrics.width/2 - 3, my - 8, metrics.width + 6, 16);
+
+            ctx.fillStyle = isHover ? '#fff' : '#ccc';
+            ctx.fillText(text, mx, my);
+        }
+    });
+
+    // 2. 绘制节点
+    this.nodes.forEach(n => {
+        const r = this.config.nodeRadius;
+        const isHover = n === this.hoverNode || n === this.dragNode;
+
+        ctx.save();
+        ctx.translate(n.x, n.y);
+
+        // 阴影
+        ctx.shadowColor = isHover ? this.colors.nodeHoverStroke : (n.isFollowed ? this.colors.nodeFollowStroke : this.colors.nodeStroke);
+        ctx.shadowBlur = isHover ? 15 : 10;
+
+        // 绘制圆形底座
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = n.isUser ? this.colors.nodeUserFill : '#111';
+        ctx.fill();
+        ctx.lineWidth = n.isFollowed ? 4 : 2; // 关注的节点边框更粗
+        ctx.strokeStyle = isHover ? this.colors.nodeHoverStroke : (n.isFollowed ? this.colors.nodeFollowStroke : this.colors.nodeStroke);
+        ctx.stroke();
+
+        // 绘制内容
+        ctx.shadowBlur = 0;
+        if (n.isUser) {
+            ctx.fillStyle = this.colors.nodeFollowStroke; // 用户节点用金色
+            ctx.font = 'bold 36px sans-serif';
+            ctx.fillText('你', 0, 2); // 微调Y轴使"你"字居中
+        } else if (n.loaded && n.img) {
+            ctx.beginPath();
+            ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(n.img, -r, -r, r * 2, r * 2);
+        } else {
+            ctx.fillStyle = this.colors.nodeHoverStroke;
+            ctx.font = 'bold 24px sans-serif';
+            ctx.fillText(n.id.charAt(0), 0, 0);
+        }
+
+        ctx.restore();
+
+        // 绘制名字标签
+        // ctx.fillStyle = isHover ? '#fff' : '#ddd';
+        // ctx.font = '13px sans-serif';
+        // ctx.textAlign = 'center';
+        // ctx.fillText(n.id, n.x, n.y + r + 15);
+    });
+}
+
+
+        loop() {
+            if(!this.isActive) return;
+            this.step();
+            this.draw();
+            this.animationId = requestAnimationFrame(() => this.loop());
+        }
+
+  show() {
+    // --- 新增：同步主题颜色 ---
+    if (window.GameAPI && window.GameAPI.getThemeVar) {
+        this.colors.nodeStroke = window.GameAPI.getThemeVar('--primary-color') || '#005f66';
+        this.colors.nodeHoverStroke = window.GameAPI.getThemeVar('--secondary-color') || '#00faff';
+        this.colors.globalLink = `${window.GameAPI.getThemeVar('--secondary-color') || '#2979FF'}80`; // 加透明度
+        this.colors.worldLink = `${window.GameAPI.getThemeVar('--primary-color') || '#00E676'}80`;
+    }
+
+    this.resize();
+    const hasData = this.loadData();
+    if (!hasData) {
+        // 可以加一个友好的提示
+        return;
+    }
+    this.panel.classList.add('active');
+    this.isActive = true;
+    this.loop();
+}
+reloadDataAndRestart() {
+    cancelAnimationFrame(this.animationId);
+    const hasData = this.loadData();
+    if (hasData) {
+        this.loop();
+    } else {
+        // 如果没有数据了，清空画布
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+        hide() {
+            this.panel.classList.remove('active');
+            this.isActive = false;
+            cancelAnimationFrame(this.animationId);
+        }
+    }
 
     // --- 3. 核心逻辑类 ---
     class NovaNPCSystemV2 {
@@ -1411,11 +2068,12 @@ this.floater.addEventListener('touchstart', (e) => {
             this.container.innerHTML = `
                 <div class="mod01-window">
                     <div class="mod01-header">
-                        <div class="mod01-title">CHARACTER ARCHIVES</div>
+                        <div class="mod01-title">角色档案</div>
 
                         <div style="display:flex; gap:15px;">
-                             <div class="mod01-mem-toggle" style="cursor:pointer; opacity:0.7; font-size:12px;">[ENTER GALLERY]</div>
-                             <div class="mod01-close">[CLOSE]</div>
+                        <div class="mod01-relation-toggle">[关系图谱]</div>
+                             <div class="mod01-mem-toggle" style="cursor:pointer; opacity:0.7; font-size:12px;">[记忆回廊]</div>
+                             <div class="mod01-close">[X]</div>
                         </div>
                     </div>
                     <div class="mod01-body">
@@ -1425,6 +2083,11 @@ this.floater.addEventListener('touchstart', (e) => {
                 </div>
             `;
             document.body.appendChild(this.container);
+ this.container.querySelector('.mod01-relation-toggle').onclick = () => {
+    this.refreshData(); // ★ 新增：在打开图谱前刷新一次数据
+    this.toggle(); // 关闭主窗口
+    if(this.relationGraph) this.relationGraph.show(); // 打开图谱
+};
 
             this.container.querySelector('.mod01-close').onclick = () => this.toggle();
             this.container.querySelector('.mod01-mem-toggle').onclick = () => {
@@ -1437,6 +2100,7 @@ this.floater.addEventListener('touchstart', (e) => {
 
             // 5. 初始化记忆回廊
             this.memoryGallery = new NovaMemoryGallery(this);
+             this.relationGraph = new NovaRelationGraph(this);
         }
 
         toggle() {
@@ -1456,6 +2120,15 @@ this.floater.addEventListener('touchstart', (e) => {
             let assaData = {};
             if (window.GameAPI && window.GameAPI.assaData) {
                 assaData = window.GameAPI.assaData;
+            }
+               const relationBtn = this.container.querySelector('.mod01-relation-toggle');
+            const relationData = assaData?.global_lore?.settings?.角色关系 || assaData?.world_lore?.settings?.角色关系;
+
+            // 只有当数据存在且不为空对象时显示
+            if (relationData && Object.keys(relationData).length > 0) {
+                relationBtn.style.display = 'block';
+            } else {
+                relationBtn.style.display = 'none';
             }
 
             const safeGet = (path) => path.split('.').reduce((acc, k) => acc && acc[k], assaData) || {};
