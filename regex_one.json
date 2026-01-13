@@ -12810,8 +12810,8 @@ pointer-events: auto;
              <input type="radio" id="doubleapi-on" name="doubleapi-mode" value="on" > 
         <input type="radio" id="doubleapi-off" name="doubleapi-mode" value="off" checked>
 
-      <input type="radio" id="doublememory-on" name="doublememory-mode" value="on" checked> 
-        <input type="radio" id="doublememory-off" name="doublememory-mode" value="off" >
+      <input type="radio" id="doublememory-on" name="doublememory-mode" value="on" > 
+        <input type="radio" id="doublememory-off" name="doublememory-mode" value="off" checked>
 
 
                 <input type="radio" id="behavior-on" name="behavior-mode" value="52" checked>
@@ -22933,7 +22933,7 @@ async function handleModeSelection() {
         const bgmvalue = getSafeValue('bgm-mode', 'on');
            const apivalue = getSafeValue('doubleapi-mode', 'off');
 
-                 const doublememoryalue = getSafeValue('doublememory-mode', 'off');
+                 const doublememoryalue = getSafeValue('doublememory-mode', 'on');
 
         // HTML: value="52" checked (对应 id="behavior-on")
         const behaviorValue = getSafeValue('behavior-mode', '52');

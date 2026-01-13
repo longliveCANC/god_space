@@ -725,7 +725,7 @@
                             ${timelineHtml || '<div style="color:gray; font-size:12px;">暂无进展记录</div>'}
                         </div>
                         <div class="mod16-next-update">
-                            NEXT UPDATE: ${data['下次更新时间'] || '待定'}
+                            下次更新: ${data['下次更新时间'] || '待定'}
                         </div>
                     </div>
                 `;
