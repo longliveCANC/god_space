@@ -57857,6 +57857,14 @@ text:'这里的存档命名这是方便你分辨不同存档的，没有其他�
     if (btn) {
             btn.click();
     }
+            const targetElement = document.querySelector('#archive-name-input');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    
      }
         },
       {
