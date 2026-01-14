@@ -387,7 +387,7 @@
         
 /* --- 新增：轮盘按钮的弧形布局 --- */
 .mod16-wheel-btn {
-    background: rgba(10, 25, 47, 0.9);
+    background: var( --container-bg-color);
     border: 1px solid var(--mod16-primary);
     color: var(--mod16-primary);
     font-family: var(--mod16-font);
