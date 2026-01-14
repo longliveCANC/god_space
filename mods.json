@@ -57,9 +57,9 @@
     "id": "x-mod-超复杂npc",
     "name": "超复杂npc档案",
     "author": "assa",
-    "version": "3.0",
+    "version": "3.1",
     "tags": ["npc档案","nsfw"],
-    "description": "[0113要使用新功能的话建议开异步，不然哈基米脑子不够用了。更新了离线事件（关注了npc才行）、角色关系表、以及关键记忆自动浓缩，更新的东西你都是可以关的。然后丰富了一下外貌字段，事件增加了当前位置字段。]\n[1219拆分初始化规则和更新规则，减少了d0的token；增加了承诺，且会在d0再强调一次承诺内容]\n[1213世界书更新意象/声线/小习惯/批注，选开.美化已对应更新。可能会塑造人物更稳定，大概。去掉了恩怨和承诺]\n世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
+    "description": "[小修了一下提示词，启用了已汇入状态，新增了已中断状态]\n[0113要使用新功能的话建议开异步，不然哈基米脑子不够用了。更新了离线事件（关注了npc才行）、角色关系表、以及关键记忆自动浓缩，更新的东西你都是可以关的。然后丰富了一下外貌字段，事件增加了当前位置字段。]\n[1219拆分初始化规则和更新规则，减少了d0的token；增加了承诺，且会在d0再强调一次承诺内容]\n[1213世界书更新意象/声线/小习惯/批注，选开.美化已对应更新。可能会塑造人物更稳定，大概。去掉了恩怨和承诺]\n世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-超复杂npc.json",
     "previewImage": ""
@@ -477,9 +477,9 @@
       "is_dowload_raw_name":true,
     "name": "世界事件",
     "author": "assa",
-    "version": "1.0",
+    "version": "1.1",
     "tags": ["美化脚本","其他"],
-    "description": "给世界增加了点平行事件，建议开异步，不然哈基米现在脑力会不够的。平行事件不是每轮对话都更新， 有时间间隔。通过代码比对的时间并对AI进行通知，更新频率有点慢的感人，有需要的可以去自定义。\n以及也可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
+    "description": "[小修了一下提示词，启用了已汇入状态，新增了已中断状态]给世界增加了点平行事件，建议开异步，不然哈基米现在脑力会不够的。平行事件不是每轮对话都更新， 有时间间隔。通过代码比对的时间并对AI进行通知，更新频率有点慢的感人，有需要的可以去自定义。\n以及也可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod16parallels01.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-世界事件.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 29.png"
