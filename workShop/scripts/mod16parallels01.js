@@ -833,6 +833,7 @@
 
 
         // 渲染新闻
+         // 渲染新闻
         renderNews(container, newsData) {
             if (!newsData || typeof newsData !== 'object') return;
 
@@ -849,18 +850,36 @@
                 </div>
             `;
 
-            Object.entries(newsData).forEach(([title, contentStr]) => {
-                if (typeof contentStr !== 'string') return;
+            // 遍历新闻数据
+            Object.entries(newsData).forEach(([key, value]) => {
+                let title, content, source;
 
-                // 切割 from
-                let content = contentStr;
-                let source = '未知来源';
-                if (contentStr.includes('from')) {
-                    const parts = contentStr.split('from');
-                    content = parts[0].trim();
-                    source = parts[1].trim();
+                // --- 新增逻辑：判断数据格式 ---
+                // 格式1: 新格式，值为对象 {title, content, source}
+                if (typeof value === 'object' && value !== null && value.title && value.content) {
+                    title = value.title;
+                    content = value.content;
+                    source = value.source || '未知来源';
                 }
+                // 格式2: 旧格式，值为字符串 "内容 from 来源"
+                else if (typeof value === 'string') {
+                    title = key; // 旧格式下，键就是标题
+                    if (value.includes('from')) {
+                        const parts = value.split('from');
+                        content = parts[0].trim();
+                        source = parts[1].trim();
+                    } else {
+                        content = value;
+                        source = '未知来源';
+                    }
+                }
+                // 如果格式不匹配，则跳过此条目
+                else {
+                    return;
+                }
+                // --- 格式判断结束 ---
 
+                // 使用解析出的变量构建HTML (这部分保持不变)
                 html += `
                     <div class="mod16-news-item" data-title="${title}">
                         ${hasUpdate ? '<div class="mod16-new-badge" style="right:5px; top:5px; position:absolute; transform:scale(0.8)">UPD</div>' : ''}
@@ -877,18 +896,16 @@
             section.innerHTML = html;
             container.appendChild(section);
 
-            // 绑定新闻点击事件
+            // 绑定新闻点击事件 (这部分保持不变)
             section.querySelectorAll('.mod16-news-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const title = item.getAttribute('data-title');
                     const userName = window.GameAPI.userName || '玩家';
 
-                    // 触发游戏内逻辑
                     if (window.GameAPI && typeof window.GameAPI.triggerassa === 'function') {
                         window.GameAPI.triggerassa(`/setinput <${userName}尝试查看新闻「${title}」>`);
                     }
 
-                    // 弹窗提示
                     if (window.worldHelper && typeof window.worldHelper.showNovaAlert === 'function') {
                         window.worldHelper.showNovaAlert(`正在检索新闻档案: ${title}...`);
                     } else {
@@ -897,6 +914,7 @@
                 });
             });
         }
+
 
         // 渲染平行事件
         renderEvents(container, eventsData) {
@@ -908,7 +926,7 @@
 
             Object.entries(eventsData).forEach(([eventName, data]) => {
                 if (typeof data !== 'object') return;
-
+   eventName = data.name || eventName;
                 const status = data['状态'] || '未知';
                 let statusClass = 'mod16-status-pending';
                 if (status === '进行中') statusClass = 'mod16-status-active';
