@@ -833,7 +833,7 @@
 
 
         // 渲染新闻
-         // 渲染新闻
+        // 渲染新闻
         renderNews(container, newsData) {
             if (!newsData || typeof newsData !== 'object') return;
 
@@ -853,31 +853,49 @@
             // 遍历新闻数据
             Object.entries(newsData).forEach(([key, value]) => {
                 let title, content, source;
+                let contentStr = ''; // 用于统一处理 "from"
 
-                // --- 新增逻辑：判断数据格式 ---
-                // 格式1: 新格式，值为对象 {title, content, source}
-                if (typeof value === 'object' && value !== null && value.title && value.content) {
-                    title = value.title;
-                    content = value.content;
-                    source = value.source || '未知来源';
+                // --- 新增/修改逻辑：判断数据格式 ---
+                if (typeof value === 'object' && value !== null) {
+                    // 格式1: 新格式，值为对象 {title, content, source}
+                    if (value.title && value.content) {
+                        title = value.title;
+                        content = value.content;
+                        source = value.source || '未知来源';
+                    }
+                    // 格式3: 最新的格式，值为只有一个键值对的对象 { "标题": "内容 from 来源" }
+                    else if (Object.keys(value).length === 1) {
+                        title = Object.keys(value)[0];
+                        contentStr = value[title];
+                    }
+                    // 如果对象格式不匹配，则跳过
+                    else {
+                        return;
+                    }
                 }
                 // 格式2: 旧格式，值为字符串 "内容 from 来源"
                 else if (typeof value === 'string') {
                     title = key; // 旧格式下，键就是标题
-                    if (value.includes('from')) {
-                        const parts = value.split('from');
-                        content = parts[0].trim();
-                        source = parts[1].trim();
-                    } else {
-                        content = value;
-                        source = '未知来源';
-                    }
+                    contentStr = value;
                 }
-                // 如果格式不匹配，则跳过此条目
+                // 如果所有格式都不匹配，则跳过此条目
                 else {
                     return;
                 }
-                // --- 格式判断结束 ---
+
+                // --- 统一处理 contentStr ---
+                if (contentStr) {
+                    if (contentStr.includes('from')) {
+                        const parts = contentStr.split('from');
+                        content = parts[0].trim();
+                        source = parts[1].trim();
+                    } else {
+                        content = contentStr;
+                        source = '未知来源';
+                    }
+                }
+                // --- 处理结束 ---
+
 
                 // 使用解析出的变量构建HTML (这部分保持不变)
                 html += `
@@ -914,6 +932,7 @@
                 });
             });
         }
+
 
 
         // 渲染平行事件
