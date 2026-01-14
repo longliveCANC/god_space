@@ -57567,7 +57567,24 @@ let  TUTORIAL_MODULES = {
         }, {
             selector: '.bookmark-button',
             title: '无世界观',
-            text: '点击这里，可以开启无世界观模式。我们想玩自定义世界的时候再来研究吧。'
+              delay: 900,
+            text: '点击这里，可以开启无世界观模式。我们想玩自定义世界的时候再来研究吧。',
+                        onStart: () => {
+     const btn = document.querySelector('.bookmark-button');
+    if (btn) {
+       
+            btn.click();
+      
+    }
+     },
+                 onEnd: () => {
+     const btn = document.querySelector('#next-btn');
+    if (btn) {
+       
+            btn.click();
+      
+    }
+     }
           
         },
         {
