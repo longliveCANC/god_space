@@ -35826,9 +35826,14 @@ let backupData = {};
 if(double_api ==="false" || (double_api === "true" && batches === 2) ){
 console.log("当前批次：",batches);
      if(is_show_notifications === 'true'){
-        if(if_render_after_2batch=== 'false'){
+        if((double_api === "true" && batches === 2)){
+   if(if_render_after_2batch=== 'false'){
              await  handleNotificationsFromBatch();
         }
+        }else{
+              await  handleNotificationsFromBatch();
+        }
+     
         // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
          
         }
