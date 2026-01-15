@@ -23104,6 +23104,8 @@ async function handleModeSelection() {
 
                           if(taskvalue === 'on'){
                 uidsToEnable.push(7,11,94);
+            }else{
+                 uidsToEnable.push(95);
             }
                if(doublememoryalue === 'on'){
                 uidsToEnable.push(83);
@@ -23157,7 +23159,7 @@ uidsToEnable.push(91);
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,30,94,7,11,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,95,30,94,7,11,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -28132,12 +28134,23 @@ const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S
             if (!shopData.startsWith('[')) {
                 shopData = `[${shopData}]`;
             }
-            const parsedData = tryParseJson(shopData);
-            const itemsAsArrays = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+            let parsedData = tryParseJson(shopData);
+            let itemsAsArrays = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
 
-            if (!Array.isArray(itemsAsArrays) || itemsAsArrays.length === 0) {
-                showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
-                return;
+            if (!Array.isArray(itemsAsArrays) || itemsAsArrays.length <= 1) {
+ console.warn('解析商品失败了一次，我们继续尝试。');
+                //我们继续尝试。
+        let cleanedText = extractJsonFromResponse(shopData);
+        if (!cleanedText) {
+       showModal('shop-modal', '解析失败', 'AI返回了空内容或无效格式。');
+                
+            // throw new Error('无法从响应中提取有效的 JSON 数据');
+             return;
+        }
+        
+        console.log("清理后的JSON:", cleanedText.substring(0, 500)); // 调试用
+       parsedData = JSON.parse(cleanedText);
+           itemsAsArrays = Array.isArray(parsedData[0]) ? parsedData : [parsedData];     
             }
 
             // --- 核心修改：将数组转换为对象 ---
@@ -41819,6 +41832,9 @@ const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
  const is_genji = String(chatdata.is_genji||'false');
   const is_complex_task = String(chatdata.is_complex_task||'true');
+    const map_rule = String(chatdata.map_rule||'');
+
+
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);
@@ -41918,6 +41934,14 @@ if(isThingsRecord ==="true"){
 
 if(is_genji !== "true"){
           document.getElementById('genji_bookmark').style.display = 'none';
+ 
+}
+if(dice_use ==="false"){
+      document.getElementById('roll-result-orb').style.display = 'none';
+ 
+}
+if(map_rule ==="false"){
+document.getElementById('map-view-orb').style.display = 'none';
  
 }
 
@@ -44502,7 +44526,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,30,94,7,11, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,95,30,94,7,11, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -44525,7 +44549,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,30,94,7,11,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,95,30,94,7,11,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -44616,7 +44640,8 @@ function setupReconfigModal() {
         { name: '简单npc', uid: 72, group: 'npc-info', category: 'gameplay', desc: '标准NPC信息' },
         { name: '复杂npc', uid: 36, group: 'npc-info', category: 'gameplay', desc: '详细NPC信息' },
                { name: '根基体系', uid: 63, category: 'gameplay', desc: '启用血统、改造、功法' },
-                { name: '任务系统', uid: 7, category: 'gameplay', desc: '启用任务记录和追踪'},
+                { name: '任务系统开', uid: 7, group: 'mission',category: 'gameplay', desc: '启用任务记录和追踪'},
+                 { name: '任务系统关', uid: 95, group: 'mission',category: 'gameplay', desc: '关闭任务系统'},
                  { name: '真实MOD', uid: 12, category: 'gameplay', desc: '启用真实模式' },
         { name: '困难MOD', uid: 16, category: 'gameplay', desc: '启用困难模式' },
              { name: '求生本能开', uid: 69, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
@@ -44814,7 +44839,7 @@ function setupReconfigModal() {
         if (mod.name === '复杂地图') input.dataset.extraUid = '25,26';
         if (mod.name === '分阶段好感') input.dataset.extraUid = '64';
         if (mod.name === '特殊日期') input.dataset.extraUid = '73';
-        if (mod.name === '任务系统') input.dataset.extraUid = '11,94';
+        if (mod.name === '任务系统开') input.dataset.extraUid = '11,94';
         card.addEventListener('click', (e) => {
             e.preventDefault();
             if (mod.group) {
@@ -48464,7 +48489,178 @@ setupWorldBookEventListeners();
 setupSkillChoicePanel();
 
 
- 
+  function extractJsonFromResponse(responseText) {
+    /**
+     * 内部帮助函数：使用堆栈计数法寻找匹配的闭合括号位置
+     * 能够忽略字符串内部的括号，精准定位 JSON 结束位置
+     */
+    function findBalancedClosing(text, startIndex) {
+        let depth = 0;
+        let inString = false;
+        let escape = false;
+
+        for (let i = startIndex; i < text.length; i++) {
+            const char = text[i];
+
+            // 处理转义字符 (如 \")
+            if (escape) {
+                escape = false;
+                continue;
+            }
+            if (char === '\\') {
+                escape = true;
+                continue;
+            }
+
+            // 处理字符串状态 (忽略字符串内的 [])
+            if (char === '"') {
+                inString = !inString;
+                continue;
+            }
+
+            // 如果不在字符串内，处理层级
+            if (!inString) {
+                if (char === '[') {
+                    depth++;
+                } else if (char === ']') {
+                    depth--;
+                    // 当层级归零时，找到了匹配的结束括号
+                    if (depth === 0) {
+                        return i;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    // ================= 提取逻辑开始 =================
+
+    let extractedContent = null;
+
+    // 1. 优先尝试 Markdown JSON 代码块 (最准确)
+    const jsonBlockMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (jsonBlockMatch) {
+        extractedContent = jsonBlockMatch[1].trim();
+    }
+
+    // 2. 如果没有代码块，使用智能扫描 + 堆栈计数
+    if (!extractedContent) {
+        // 查找可能的 JSON 数组开头
+        // 优先查找 [[ 或 [{ 这种嵌套结构（特征更明显，不易误判）
+        // 其次查找 [" (普通字符串数组)
+        let startMatch = responseText.match(/\[\s*(?:\[|\{)/);
+
+        // 如果没找到嵌套结构，再尝试找普通数组，但要小心
+        if (!startMatch) {
+            startMatch = responseText.match(/\[\s*"/);
+        }
+
+        if (startMatch) {
+            const startIndex = startMatch.index;
+            const endIndex = findBalancedClosing(responseText, startIndex);
+
+            if (endIndex !== -1) {
+                extractedContent = responseText.substring(startIndex, endIndex + 1);
+            }
+        }
+    }
+
+    // 3. 如果还是没找到，尝试最后的保底（整个文本找首尾）
+    if (!extractedContent) {
+        const firstOpen = responseText.indexOf('[');
+        const lastClose = responseText.lastIndexOf(']');
+        if (firstOpen !== -1 && lastClose > firstOpen) {
+            extractedContent = responseText.substring(firstOpen, lastClose + 1);
+        }
+    }
+
+    // ================= 验证与修复逻辑 =================
+
+    if (extractedContent) {
+        try {
+            // 尝试直接解析，验证是否有效
+            JSON.parse(extractedContent);
+            return extractedContent;
+        } catch (e) {
+            console.warn('JSON 解析失败，尝试自动修复常见错误...', e);
+
+            // 修复 1: 去除末尾多余的逗号 (AI 常见错误: [1, 2,])
+            // 匹配：逗号 + 任意空白 + 结束括号/花括号
+            let fixedContent = extractedContent.replace(/,\s*([\]}])/g, '$1');
+
+            // 修复 2: 尝试将单引号替换为双引号 (如果 AI 用了 JS 格式而非 JSON)
+            // 注意：这只是简单替换，复杂的字符串内含单引号可能会出错，但作为保底值得一试
+            if (!fixedContent.includes('"') && fixedContent.includes("'")) {
+                 fixedContent = fixedContent.replace(/'/g, '"');
+            }
+
+            try {
+                JSON.parse(fixedContent);
+                return fixedContent; // 修复成功
+            } catch (e2) {
+                console.error('JSON 自动修复失败', e2);
+                // 即使修复失败，也返回提取到的原始内容，交给后续流程处理（可能会有更高级的解析器）
+                     console.warn('尝试降级方案：逐行扫描提取有效的 JSON 数组...');
+                const lineScannedResult = extractJsonByLineScanning(responseText);
+                if (lineScannedResult) {
+                    console.log('逐行扫描成功！');
+                    return lineScannedResult;
+                }
+                return extractedContent;
+            }
+        }
+    }
+
+    return null;
+}
+
+function extractJsonByLineScanning(responseText) {
+    const lines = responseText.split('\n');
+    const validJsonItems = [];
+
+    for (let line of lines) {
+        // 去掉行首尾空白
+        line = line.trim();
+        
+        // 跳过空行和注释
+        if (!line || line.startsWith('//')) {
+            continue;
+        }
+
+        // 去掉末尾可能的逗号
+        if (line.endsWith(',')) {
+            line = line.slice(0, -1).trim();
+        }
+
+        // 检查是否看起来像 JSON 数组 (以 [ 开头，] 结尾)
+        if (!line.startsWith('[') || !line.endsWith(']')) {
+            continue;
+        }
+
+        // 尝试解析这一行
+        try {
+            const parsedItem = JSON.parse(line);
+            // 验证是否是数组格式
+            if (Array.isArray(parsedItem)) {
+                validJsonItems.push(parsedItem);
+            }
+        } catch (e) {
+            // 这一行格式不标准，跳过
+            console.warn('跳过格式不标准的行:', line.substring(0, 50));
+            continue;
+        }
+    }
+
+    // 如果成功提取到有效项，组装成 JSON 数组字符串返回
+    if (validJsonItems.length > 0) {
+        return JSON.stringify(validJsonItems);
+    }
+
+    return null;
+}
+
+
  /**
  * 新增：设置AI生成商品按钮的功能 (V5 - 持久化与关键词版)
  */
@@ -48753,125 +48949,8 @@ const processApiResponse = async (responseText) => {
     }
 };
 
- function extractJsonFromResponse(responseText) {
-    /**
-     * 内部帮助函数：使用堆栈计数法寻找匹配的闭合括号位置
-     * 能够忽略字符串内部的括号，精准定位 JSON 结束位置
-     */
-    function findBalancedClosing(text, startIndex) {
-        let depth = 0;
-        let inString = false;
-        let escape = false;
 
-        for (let i = startIndex; i < text.length; i++) {
-            const char = text[i];
 
-            // 处理转义字符 (如 \")
-            if (escape) {
-                escape = false;
-                continue;
-            }
-            if (char === '\\') {
-                escape = true;
-                continue;
-            }
-
-            // 处理字符串状态 (忽略字符串内的 [])
-            if (char === '"') {
-                inString = !inString;
-                continue;
-            }
-
-            // 如果不在字符串内，处理层级
-            if (!inString) {
-                if (char === '[') {
-                    depth++;
-                } else if (char === ']') {
-                    depth--;
-                    // 当层级归零时，找到了匹配的结束括号
-                    if (depth === 0) {
-                        return i;
-                    }
-                }
-            }
-        }
-        return -1;
-    }
-
-    // ================= 提取逻辑开始 =================
-
-    let extractedContent = null;
-
-    // 1. 优先尝试 Markdown JSON 代码块 (最准确)
-    const jsonBlockMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-    if (jsonBlockMatch) {
-        extractedContent = jsonBlockMatch[1].trim();
-    }
-
-    // 2. 如果没有代码块，使用智能扫描 + 堆栈计数
-    if (!extractedContent) {
-        // 查找可能的 JSON 数组开头
-        // 优先查找 [[ 或 [{ 这种嵌套结构（特征更明显，不易误判）
-        // 其次查找 [" (普通字符串数组)
-        let startMatch = responseText.match(/\[\s*(?:\[|\{)/);
-
-        // 如果没找到嵌套结构，再尝试找普通数组，但要小心
-        if (!startMatch) {
-            startMatch = responseText.match(/\[\s*"/);
-        }
-
-        if (startMatch) {
-            const startIndex = startMatch.index;
-            const endIndex = findBalancedClosing(responseText, startIndex);
-
-            if (endIndex !== -1) {
-                extractedContent = responseText.substring(startIndex, endIndex + 1);
-            }
-        }
-    }
-
-    // 3. 如果还是没找到，尝试最后的保底（整个文本找首尾）
-    if (!extractedContent) {
-        const firstOpen = responseText.indexOf('[');
-        const lastClose = responseText.lastIndexOf(']');
-        if (firstOpen !== -1 && lastClose > firstOpen) {
-            extractedContent = responseText.substring(firstOpen, lastClose + 1);
-        }
-    }
-
-    // ================= 验证与修复逻辑 =================
-
-    if (extractedContent) {
-        try {
-            // 尝试直接解析，验证是否有效
-            JSON.parse(extractedContent);
-            return extractedContent;
-        } catch (e) {
-            console.warn('JSON 解析失败，尝试自动修复常见错误...', e);
-
-            // 修复 1: 去除末尾多余的逗号 (AI 常见错误: [1, 2,])
-            // 匹配：逗号 + 任意空白 + 结束括号/花括号
-            let fixedContent = extractedContent.replace(/,\s*([\]}])/g, '$1');
-
-            // 修复 2: 尝试将单引号替换为双引号 (如果 AI 用了 JS 格式而非 JSON)
-            // 注意：这只是简单替换，复杂的字符串内含单引号可能会出错，但作为保底值得一试
-            if (!fixedContent.includes('"') && fixedContent.includes("'")) {
-                 fixedContent = fixedContent.replace(/'/g, '"');
-            }
-
-            try {
-                JSON.parse(fixedContent);
-                return fixedContent; // 修复成功
-            } catch (e2) {
-                console.error('JSON 自动修复失败', e2);
-                // 即使修复失败，也返回提取到的原始内容，交给后续流程处理（可能会有更高级的解析器）
-                return extractedContent;
-            }
-        }
-    }
-
-    return null;
-}
 const executeGeneration = async (keywords = "") => {
     hideModal("keyword-modal");
 
