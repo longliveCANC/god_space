@@ -118,6 +118,35 @@
     // ================= 钩子函数：解析文本 =================
 
     async function processTachieTags(hookData) {
+                      try {
+            // 确保环境中有必要的辅助函数
+            if (window.TavernHelper && window.setChatMessages) {
+                // 1. 获取第一条消息 (Message ID 0)
+                const [firstMessage] = await window.TavernHelper.getChatMessages(0, { include_swipes: false });
+
+                if (firstMessage && firstMessage.message) {
+                    let baseMessage = firstMessage.message;
+
+                    // 2. 移除旧的 <game>...</game> 标签及其内容
+                    // 使用 [\s\S]*? 匹配跨行内容，g 标志确保全部移除
+                    baseMessage = baseMessage.replace(/<game_outside>[\s\S]*?<\/game_outside>/g, '').trim();
+
+                    // 3. 将本次回复包裹在 <game> 标签中
+                    const newGameContent = `<game_outside>${hookData.response}</game_outside>`;
+
+                    // 4. 拼接新消息
+                    const finalMessage = baseMessage + '\n' + newGameContent;
+
+                    // 5. 保存回 Message 0
+                    await window.setChatMessages([{ message_id: 0, message: finalMessage }], { refresh: 'none' });
+                    console.log('[Tachie Plugin] 已更新 Message 0 <game> 内容。');
+                } else {
+                    console.log("[Tachie Plugin] 未找到 Message 0，跳过更新 <game>。");
+                }
+            }
+        } catch (err) {
+            console.error('[Tachie Plugin] 更新 Message 0 <game> 失败:', err);
+        }
         if (!hookData || !hookData.response) return hookData;
 
         // 正则说明：
@@ -151,6 +180,7 @@
             // 【可选】从回复中移除标签，避免在聊天界面显示 XML 代码
             // 如果你想保留标签，请注释掉下面这行
             hookData.response = hookData.response.replace(regex, '');
+
         }
 
         return hookData;
