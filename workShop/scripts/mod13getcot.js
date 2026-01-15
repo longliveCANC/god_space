@@ -68,12 +68,7 @@
             this.createFloater();
             this.createPanel();
             this.initDraggable();
-            this.syncTheme();
-
-            // 定期同步主题（防止游戏切换主题后颜色没变）
-            setInterval(() => this.syncTheme(), 2000);
-
-            // 在 setInterval(() => this.syncTheme(), 2000); 之后添加：
+  
 document.addEventListener('mousedown', (e) => {
     if (this.panel.style.display === 'flex' &&
         !this.panel.contains(e.target) &&
@@ -336,30 +331,7 @@ document.addEventListener('touchstart', (e) => {
     this.floater.addEventListener('touchstart', onStart, { passive: false });
 }
 
-        syncTheme() {
-            if (!window.GameAPI || typeof window.GameAPI.getThemeVar !== 'function') return;
-
-            const currentTheme = {
-                '--primary-color': window.GameAPI.getThemeVar('--primary-color') || '#00faff',
-                '--secondary-color': window.GameAPI.getThemeVar('--secondary-color') || '#7affff',
-                '--text-color': window.GameAPI.getThemeVar('--text-color') || '#e6f1ff',
-                '--text-secondary-color': window.GameAPI.getThemeVar('--text-secondary-color') || '#a8c0e1',
-                '--container-bg-color': window.GameAPI.getThemeVar('--container-bg-color') || 'rgba(10, 25, 47, 0.85)',
-                '--border-color': window.GameAPI.getThemeVar('--border-color') || 'rgba(0, 250, 255, 0.3)',
-                '--glow-color': window.GameAPI.getThemeVar('--glow-color') || 'rgba(0, 250, 255, 0.5)',
-                '--background-color': window.GameAPI.getThemeVar('--background-color') || '#0a192f'
-            };
-
-            const applyTo = (element) => {
-                if (!element) return;
-                Object.entries(currentTheme).forEach(([key, val]) => {
-                    element.style.setProperty(key, val);
-                });
-            };
-
-            applyTo(this.panel);
-            applyTo(this.floater);
-        }
+ 
     }
 
     // 5. 实例化 UI
