@@ -1,4 +1,221 @@
 (function() {
+
+    // --- Mod16 轮盘通用管理器 (复制到所有需要使用轮盘的脚本中) ---
+window.Mod16WheelManager = window.Mod16WheelManager || (function() {
+    const CONTAINER_ID = 'mod16-wheel-container';
+    const ORB_ID = 'world-book-orb'; // 你的悬浮球ID
+
+    // 1. 确保 CSS 存在 (只注入一次)
+    function ensureStyle() {
+        if (document.getElementById('mod16-wheel-style')) return;
+        const style = document.createElement('style');
+        style.id = 'mod16-wheel-style';
+        style.textContent = `
+ 
+            :root {
+                --mod16-primary: var(--primary-color, #00faff);
+                --mod16-bg: var(--container-bg-color, rgba(10, 25, 47, 0.95));
+                --mod16-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
+
+            #mod16-wheel-container {
+                position: fixed;
+                width: 150px; height: 150px;
+                z-index: 999; pointer-events: none;
+                opacity: 0; transition: opacity 0.3s, transform 0.3s;
+                transform: translateX(30px);
+            }
+            #mod16-wheel-container.visible {
+                opacity: 1; transform: translateX(0); pointer-events: auto;
+            }
+            .mod16-wheel-body {
+                width: 100%; height: 100%; position: relative;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .mod16-wheel-btn {
+                background: var(--mod16-bg);
+                border: 1px solid var(--mod16-primary);
+                color: var(--mod16-primary);
+                font-family: var(--mod16-font);
+                font-size: 12px; font-weight: bold;
+                cursor: pointer;
+                position: absolute;
+                width: 70px; height: 70px; /* 稍微调小一点以容纳更多 */
+                border-radius: 50%;
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+                transition: all 0.2s;
+                /* 关键：旋转中心点 */
+                transform-origin: 110px 50%;
+                left: -35px; /* 修正定位 */
+            }
+            .mod16-wheel-btn:hover {
+                color: #fff; background: var(--mod16-primary);
+                box-shadow: 0 0 15px var(--mod16-primary);
+                z-index: 10;
+            }
+            .mod16-wheel-icon { font-size: 20px; margin-bottom: 2px; display:block; }
+            .mod16-btn-content { pointer-events: none; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // 2. 重新计算布局 (核心算法)
+    function updateLayout() {
+        const container = document.getElementById(CONTAINER_ID);
+        if (!container) return;
+
+        const btns = container.querySelectorAll('.mod16-wheel-btn');
+        const count = btns.length;
+        if (count === 0) return;
+
+        // 设定扇形总角度，例如 100度
+        const totalArc = 100;
+        // 起始角度 (垂直居中)
+        const startAngle = -totalArc / 2;
+
+        // 计算每个按钮的间隔
+        const step = count > 1 ? totalArc / (count - 1) : 0;
+
+        btns.forEach((btn, index) => {
+            // 如果只有一个按钮，居中(0度)；否则按步长分布
+            const angle = count === 1 ? 0 : startAngle + (step * index);
+
+            // 应用旋转
+            // scale(1) 是为了防止覆盖 hover 效果，实际 hover 会由 CSS 处理
+            btn.style.transform = `rotate(${angle}deg)`;
+
+            // 反向旋转文字，保持文字水平
+            const content = btn.querySelector('.mod16-btn-content');
+            if (content) {
+                content.style.transform = `rotate(${-angle}deg)`;
+            }
+        });
+    }
+
+    // 3. 确保容器存在
+    function ensureContainer() {
+        ensureStyle();
+        let container = document.getElementById(CONTAINER_ID);
+
+        if (!container) {
+            container = document.createElement('div');
+            container.id = CONTAINER_ID;
+            container.innerHTML = `<div class="mod16-wheel-body"></div>`;
+            document.body.appendChild(container);
+
+            // 初始化触发逻辑 (Hover/Touch) - 只绑定一次
+            setupTriggers(container);
+        }
+        return container;
+    }
+
+    // 4. 触发逻辑 (复用你原来的逻辑)
+    function setupTriggers(wheel) {
+        let timer = null;
+        let isHoveringOrb = false;
+        let isHoveringWheel = false;
+
+ const updatePosition = () => {
+    const orb = document.getElementById(ORB_ID);
+    if (!orb) return;
+    const rect = orb.getBoundingClientRect();
+    const wheelContainer = document.getElementById(CONTAINER_ID);
+    const containerWidth = wheelContainer.offsetWidth; // 获取容器实际宽度，例如 150px
+    const containerHeight = wheelContainer.offsetHeight; // 获取容器实际高度，例如 150px
+
+    // --- 核心逻辑变更 ---
+    // 目标：将轮盘容器的 "旋转中心点" (transform-origin的参考点)
+    //      移动到悬浮球的中心点附近。
+
+    // 1. 获取按钮的旋转半径 (即 CSS 中的 transform-origin 的 x 值)
+    //    这里我们直接使用 CSS 中设定的值 80px。
+    const rotationRadius = 80;
+
+    // 2. 计算 left 值
+    //    新的 left = orb的左边缘 - 旋转半径 - (orb宽度 / 2)
+    //    这会把旋转中心点放在 orb 的左侧，距离为 (orb宽度/2)
+    const orbWidth = rect.width; // orb 宽度，你说的是 20px
+    wheel.style.left = (rect.left - rotationRadius - (orbWidth / 2)) + 'px';
+
+    // 3. 计算 top 值 (保持垂直居中)
+    wheel.style.top = (rect.top + (rect.height / 2) - (containerHeight / 2)) + 'px';
+};
+
+        const showWheel = () => {
+            updatePosition();
+            wheel.classList.add('visible');
+        };
+
+        const hideWheel = () => {
+            setTimeout(() => {
+                if (!isHoveringOrb && !isHoveringWheel) wheel.classList.remove('visible');
+            }, 100);
+        };
+
+        // 绑定 Orb 事件 (假设 Orb 已经存在，或者使用 MutationObserver 监听 Orb 出现)
+        // 这里简化处理，直接绑 document
+        document.addEventListener('mousemove', (e) => {
+            const orb = document.getElementById(ORB_ID);
+            if (!orb) return;
+            const orbRect = orb.getBoundingClientRect();
+            const wheelRect = wheel.getBoundingClientRect();
+            const buffer = 20;
+
+            const inOrb = (e.clientX >= orbRect.left - buffer && e.clientX <= orbRect.right + buffer &&
+                           e.clientY >= orbRect.top - buffer && e.clientY <= orbRect.bottom + buffer);
+            const inWheel = (e.clientX >= wheelRect.left && e.clientX <= wheelRect.right &&
+                             e.clientY >= wheelRect.top && e.clientY <= wheelRect.bottom);
+
+            if (inOrb) { isHoveringOrb = true; showWheel(); } else { isHoveringOrb = false; }
+            if (inWheel) { isHoveringWheel = true; } else { isHoveringWheel = false; }
+            if (!isHoveringOrb && !isHoveringWheel) hideWheel();
+        });
+
+        window.addEventListener('resize', () => {
+            if(wheel.classList.contains('visible')) updatePosition();
+        });
+    }
+
+    // --- 公开接口 ---
+    return {
+        /**
+         * 添加一个按钮到轮盘
+         * @param {string} id 按钮唯一ID
+         * @param {string} icon 图标字符
+         * @param {string} text 按钮文字
+         * @param {Function} onClick 点击回调
+         */
+        addButton: function(id, icon, text, onClick) {
+            const container = ensureContainer();
+            const body = container.querySelector('.mod16-wheel-body');
+
+            // 防止重复添加同名按钮
+            if (document.getElementById(id)) return;
+
+            const btn = document.createElement('button');
+            btn.className = 'mod16-wheel-btn';
+            btn.id = id;
+            btn.innerHTML = `
+                <div class="mod16-btn-content">
+                    <span class="mod16-wheel-icon">${icon}</span>
+                    <span>${text}</span>
+                </div>
+            `;
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                onClick(e);
+            });
+
+            body.appendChild(btn);
+
+            // 每次添加后，重新计算布局
+            updateLayout();
+        }
+    };
+})();
+
     // 1. 防止重复初始化
     if (document.getElementById('mod16-wheel-container')) {
         console.log('Mod16 World Info already initialized.');
@@ -597,147 +814,32 @@
             this.init();
         }
 
-        init() {
-            this.createWheel();
-            this.setupTrigger();
-        }
+  init() {
+            // 使用管理器添加三个基础按钮
+            // 注意：这里不再需要 createWheel() 的复杂 DOM 操作
 
-           // (原 createWheel 方法)
-        createWheel() {
-            const container = document.createElement('div');
-            container.id = this.wheelId;
-            // 新的HTML结构，包含三个按钮
-            container.innerHTML = `
-                <div class="mod16-wheel-body">
-                    <button class="mod16-wheel-btn" id="mod16-open-btn">
-                        <div class="mod16-btn-content">
-                            <span class="mod16-wheel-icon">◈</span>
-                            <span>世界事件</span>
-                        </div>
-                    </button>
-                    <button class="mod16-wheel-btn" id="mod16-intel-btn">
-                        <div class="mod16-btn-content">
-                            <span class="mod16-wheel-icon">⌬</span>
-                            <span>情报</span>
-                        </div>
-                    </button>
-                    <button class="mod16-wheel-btn" id="mod16-memo-btn">
-                        <div class="mod16-btn-content">
-                            <span class="mod16-wheel-icon">✎</span>
-                            <span>备忘录</span>
-                        </div>
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(container);
-
-            // 绑定点击事件
-            document.getElementById('mod16-open-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.openModal('world-events'); // 传入类型
-            });
-            document.getElementById('mod16-intel-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.openModal('intelligence'); // 传入类型
-            });
-            document.getElementById('mod16-memo-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.openModal('memo'); // 传入类型
-            });
-        }
-
-
-        // 设置触发逻辑 (Hover & Long Press)
-        setupTrigger() {
-            const wheel = document.getElementById(this.wheelId);
-            let timer = null;
-            let isHoveringOrb = false;
-            let isHoveringWheel = false;
-
-                 const updatePosition = () => {
-                const orb = document.getElementById(this.orbId);
-                if (!orb) return;
-                const rect = orb.getBoundingClientRect();
-                // wheel width/height is 150px.
-                wheel.style.top = (rect.top + rect.height / 2 - 75) + 'px'; // 75 is half of wheel height
-                wheel.style.left = (rect.left - 150 - 10) + 'px'; // 10px gap
-            };
-
-            const showWheel = () => {
-                updatePosition();
-                wheel.classList.add('visible');
-            };
-
-            const hideWheel = () => {
-                // 只有当既不在Orb上也不在Wheel上时才隐藏
-                setTimeout(() => {
-                    if (!isHoveringOrb && !isHoveringWheel) {
-                        wheel.classList.remove('visible');
-                    }
-                }, 100);
-            };
-
-            // PC端 Hover 逻辑
-            document.addEventListener('mousemove', (e) => {
-                const orb = document.getElementById(this.orbId);
-                if (!orb) return;
-
-                const orbRect = orb.getBoundingClientRect();
-                const wheelRect = wheel.getBoundingClientRect();
-                const buffer = 20; // 容错区域
-
-                // 检查是否在 Orb 区域
-                const inOrb = (
-                    e.clientX >= orbRect.left - buffer &&
-                    e.clientX <= orbRect.right + buffer &&
-                    e.clientY >= orbRect.top - buffer &&
-                    e.clientY <= orbRect.bottom + buffer
+            if (window.Mod16WheelManager) {
+                window.Mod16WheelManager.addButton(
+                    'mod16-open-btn',
+                    '◈',
+                    '世界事件',
+                    () => this.openModal('world-events')
                 );
 
-                // 检查是否在 Wheel 区域
-                const inWheel = (
-                    e.clientX >= wheelRect.left &&
-                    e.clientX <= wheelRect.right &&
-                    e.clientY >= wheelRect.top &&
-                    e.clientY <= wheelRect.bottom
+                window.Mod16WheelManager.addButton(
+                    'mod16-intel-btn',
+                    '⌬',
+                    '情报',
+                    () => this.openModal('intelligence')
                 );
 
-                if (inOrb) {
-                    isHoveringOrb = true;
-                    showWheel();
-                } else {
-                    isHoveringOrb = false;
-                }
-
-                if (inWheel) {
-                    isHoveringWheel = true;
-                } else {
-                    isHoveringWheel = false;
-                }
-
-                if (!isHoveringOrb && !isHoveringWheel) {
-                    hideWheel();
-                }
-            });
-
-            // 移动端长按逻辑
-            document.addEventListener('touchstart', (e) => {
-                const orb = document.getElementById(this.orbId);
-                if (e.target === orb || orb.contains(e.target)) {
-                    timer = setTimeout(() => {
-                        showWheel();
-                    }, 600); // 600ms 长按
-                }
-            }, { passive: true });
-
-            document.addEventListener('touchend', () => {
-                clearTimeout(timer);
-            });
-
-            // 窗口大小改变时更新位置
-            window.addEventListener('resize', () => {
-                if(wheel.classList.contains('visible')) updatePosition();
-            });
+                window.Mod16WheelManager.addButton(
+                    'mod16-memo-btn',
+                    '✎',
+                    '备忘录',
+                    () => this.openModal('memo')
+                );
+            }
         }
 
         // 获取数据 (Robustness)
@@ -1207,5 +1309,5 @@
     } else {
         new Mod16WorldInfo();
     }
-
+ 
 })();

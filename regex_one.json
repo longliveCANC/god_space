@@ -15197,6 +15197,13 @@ let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
  
+
+let currencyAliases = {
+    "积分": ["乐园币", "主神点", "源点","游戏币","货币","奖励点数"],
+    "支线剧情": ["灵魂结晶", "因果点","攻略点","时空碎片","能量结晶","灵魂碎片"],
+    "经验值": ["属性点", "历练点"]
+};
+
     // 全局变量存储数据
     let currentGameData = null;
    // --- 全局变量和数据获取 ---
@@ -20137,7 +20144,7 @@ function handleUpdateNotifications(aiContent) {
 
 
 
-const themeConfig = {
+let themeConfig = {
     // 默认词语
     default: {
         mainSystem: '主神空间',
@@ -30131,12 +30138,7 @@ function findAllFilterPaths(obj, currentPath = '') {
 // ——————————————————————————————————数据统一.js开始
 
  // --- 妈妈为你准备的货币“白名单” ---
-const currencyAliases = {
-    "积分": ["乐园币", "主神点", "源点","游戏币","货币","奖励点数"],
-    "支线剧情": ["灵魂结晶", "因果点","攻略点","时空碎片","能量结晶","灵魂碎片"],
-    "经验值": ["属性点", "历练点"]
- 
-};
+
 
 // 这是一个辅助函数，它会告诉我们一个别名真正对应的是哪个标准货币名称
 function getCanonicalCurrencyName(alias) {
@@ -41789,7 +41791,20 @@ const globaldata = await TavernHelper.getVariables({ type: 'global' });
         playCharacterData = chatdata.play_character_data; // 新增：缓存角色模板数据
         bookItemSettings = chatdata.bookItemSettings;
          checkMemoryData = chatdata.检定记忆;
-        
+
+
+ function addAlias(category, alias) {
+    if (alias && !currencyAliases[category].includes(alias)) {
+        currencyAliases[category].push(alias);
+    }
+}
+
+addAlias("积分", String(chatdata.point_role || ''));
+addAlias("支线剧情", String(chatdata.zhixian_role || ''));
+addAlias("经验值", String(chatdata.xp_role || ''));
+
+
+
          checkMemoryOk = String(chatdata.checklock||'true');
          worldAttitudeData = chatdata.跨世界声望说明;
         characterStatusData = chatdata.当前人物状态;
@@ -41839,8 +41854,34 @@ dice_use= String(chatdata.dice_use||'true');
         }
  
 console.log("isPrivateChat "+isPrivateChat);
-console.log("version "+version);
+ console.log("version "+version);
+
  
+// 获取自定义值
+let world_role = String(chatdata.world_role || '');
+let player_role = String(chatdata.player_role || '轮回者');
+let point_role = String(chatdata.point_role || '');
+let zhixian_role = String(chatdata.zhixian_role || '');
+let xp_role = String(chatdata.xp_role || '');
+ // 更新或新增 themeConfig
+if (world_role || player_role || point_role || zhixian_role || xp_role) {
+    if (themeConfig[version]) {
+        // 版本存在，更新对应的值
+        if (world_role) themeConfig[version].mainSystem = world_role;
+        if (player_role) themeConfig[version].player = player_role;
+        if (point_role) themeConfig[version].currency = point_role;
+        if (zhixian_role) themeConfig[version].plot = zhixian_role;
+        if (xp_role) themeConfig[version].exp = xp_role;
+    } else {
+        // 版本不存在，基于 default 创建新版本
+        themeConfig[version] = JSON.parse(JSON.stringify(themeConfig.default));
+        if (world_role) themeConfig[version].mainSystem = world_role;
+        if (player_role) themeConfig[version].player = player_role;
+        if (point_role) themeConfig[version].currency = point_role;
+        if (zhixian_role) themeConfig[version].plot = zhixian_role;
+        if (xp_role) themeConfig[version].exp = xp_role;
+    }
+}
  //ui消失管理
  
    if (version === '6' || isPrivateChat === 'true') {
