@@ -326,6 +326,7 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
             display: flex;
             flex-direction: column;
             gap: 20px;
+             min-width: 0; /* <--- 【新增】关键：防止 Grid 布局被内部的长 Tab 撑开 */
         }
 
         /* 通用卡片 */
@@ -576,6 +577,8 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
             border-bottom: 1px solid rgba(255,255,255,0.1);
             margin-bottom: 20px;
             padding-bottom: 0;
+             max-width: 100%;     /* <--- 【新增】确保不超过父容器宽度 */
+            touch-action: pan-x; /* <--- 【新增】告诉浏览器这里只处理横向滑动，不触发页面级滑动 */
         }
 
         .mod003-game-tabs::-webkit-scrollbar { height: 4px; }
@@ -590,6 +593,7 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
             white-space: nowrap;
             font-weight: bold;
             opacity: 0.6;
+            flex-shrink: 0; /* <--- 【新增】禁止标签被压缩，确保触发横向滚动条 */
         }
 
         .mod003-game-tab:hover {

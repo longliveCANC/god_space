@@ -1,5 +1,5 @@
 (function() {
-     TUTORIAL_MODULES = {
+ TUTORIAL_MODULES = {
     'intro': {
         name: '开局：世界构建',
         steps: [
@@ -11,7 +11,27 @@
             {
                 selector: '#page-0',
                 title: '选择世界',
-                text: '点击左右箭头或卡片本身来切换你想体验的世界背景。'
+                text: '点击左右箭头或卡片本身来切换你想体验的世界背景。',
+           onStart: (context) => { // 接收包含 config 的上下文对象
+            // 动态插入更新提示步骤
+            const updateBtn = document.querySelector('#cancel-update-btn');
+            // 增加一个判断，防止重复插入
+            const alreadyExists = context.config.some(step => step.title === '更新提示');
+
+            if (updateBtn && !alreadyExists) {
+                const newStep = {
+                    selector: '#cancel-update-btn',
+                    title: '更新提示', // 给一个唯一的标题用于检测
+                    text: '这里有一个更新框？我们先不管它，之后可以随时在设置-检查更新中查看。',
+                    onEnd: () => {
+                        if (updateBtn) updateBtn.click();
+                    }
+                };
+                // 在当前步骤 (索引为1) 之后插入新步骤
+                // 使用传递进来的 context.config，而不是非法的 _currentConfig
+                context.config.splice(2, 0, newStep);
+            }
+        }
             },
             {
                 selector: '.creator-attitude-group',
@@ -39,7 +59,24 @@
             selector: '.mod-sidebar.right',
             title: '右侧设置',
             text: '右侧同样隐藏着其他设置，基本都是必须项。',
-            onStart: () => {
+            onStart: (context) => {
+    const updateBtn = document.querySelector('#cancel-update-btn');
+            // 增加一个判断，防止重复插入
+            const alreadyExists = context.config.some(step => step.title === '更新提示');
+
+            if (updateBtn && !alreadyExists) {
+                const newStep = {
+                    selector: '#cancel-update-btn',
+                    title: '更新提示', // 给一个唯一的标题用于检测
+                    text: '这里有一个更新框？我们先不管它，之后可以随时在设置-检查更新中查看。',
+                    onEnd: () => {
+                        if (updateBtn) updateBtn.click();
+                    }
+                };
+                // 在当前步骤 (索引为1) 之后插入新步骤
+                // 使用传递进来的 context.config，而不是非法的 _currentConfig
+                context.config.splice(5, 0, newStep);
+            }
                 // 收起左边，展开右边
                 document.querySelector('.creator-attitude-group').classList.remove('is-visible');
                 document.querySelector('.mod-sidebar.right').classList.add('is-visible');
@@ -50,7 +87,45 @@
         }, {
             selector: '.bookmark-button',
             title: '无世界观',
-            text: '点击这里，可以开启无世界观模式。我们想玩自定义世界的时候再来研究吧。'
+              delay: 900,
+            text: '点击这里，可以开启无世界观模式。我们想玩自定义世界的时候再来研究吧。',
+                        onStart: (context) => {
+     const btn = document.querySelector('.bookmark-button');
+    //  const btn2 = document.querySelector('#update-modal');
+     
+    if (btn) {
+       
+            btn.click();
+      
+    }
+  
+           const updateBtn = document.querySelector('#cancel-update-btn');
+            // 增加一个判断，防止重复插入
+            const alreadyExists = context.config.some(step => step.title === '更新提示');
+
+            if (updateBtn && !alreadyExists) {
+                const newStep = {
+                    selector: '#cancel-update-btn',
+                    title: '更新提示', // 给一个唯一的标题用于检测
+                    text: '这里有一个更新框？我们先不管它，之后可以随时在设置-检查更新中查看。',
+                    onEnd: () => {
+                        if (updateBtn) updateBtn.click();
+                    }
+                };
+                // 在当前步骤 (索引为1) 之后插入新步骤
+                // 使用传递进来的 context.config，而不是非法的 _currentConfig
+                context.config.splice(6, 0, newStep);
+            }
+  
+     },
+                 onEnd: () => {
+     const btn = document.querySelector('#next-btn');
+    if (btn) {
+       
+            btn.click();
+      
+    }
+     }
           
         },
         {
@@ -292,6 +367,18 @@ text:'<br>我们有专门的世界书管理界面，这个只是为了在世界�
 
 title: '查看详情',
 text:'点进去可以查看详情页，有图片显示，也可以在里面订阅作品和作者哦！<br>订阅作品的话，你会收到作品更新的推送。订阅作者的话，你会收到作者新作品的推送。',
+         },{
+          
+
+title: '推荐的创意工坊模组',
+text:'如果你想有更鲜活的Npc：【Npc档案-超复杂npc档案】需配合【美化脚本-npc美化01】使用。优点：npc信息丰富，有离线事件、关键记忆自动浓缩等，同时也能方便的自定义。缺点：npc多了token会爆炸，因此建议配合使用设置界面-游戏设置的自动npc绿灯使用。', 
+ 
+        },{
+          
+
+title: '推荐的创意工坊模组',
+text:'如果你是无限恐怖爱好者：【无限恐怖-无限恐怖世界观优化】。优点：设定贴合原著。缺点：token有1w。<br><br>如果你是手机端：【美化脚本-隐藏侧边栏和顶部小球】。可以腾出更多的空间。<br><br>如果你希望有更动态鲜活的世界：【其他-世界事件】。优点：世界不再是围着玩家一个人转了。缺点：几乎必须开启异步，不然哈基米脑子不够用。', 
+ 
         },{
           
 
@@ -322,18 +409,26 @@ text:'这一页的其他设置都能顾名思义，但是这一行格外重要�
   selector: '#settings-page-data',
 title: '其他的基础功能-存档设置',
   delay: 500,
-text:'这里的存档命名这是方便你分辨不同存档的，没有其他功能。<br>我们这个游戏的主体存档是和酒馆聊天文件变量绑定的，纯文字卡怎么新开档，这张卡就怎么新开档。导入导出存档的本质是修改酒馆聊天文件的变量。', 
+text:'这里的存档命名只是方便你分辨不同存档的，没有其他功能。<br>我们这个游戏的主体存档是和酒馆聊天文件变量绑定的，纯文字卡怎么新开档，这张卡就怎么新开档。导入导出存档的本质是修改酒馆聊天文件的变量。', 
     onStart: () => {
      const btn = document.querySelector('.settings-tab[data-page="data"]');
     if (btn) {
             btn.click();
     }
+            const targetElement = document.querySelector('#archive-name-input');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    
      }
         },
       {
             selector: '#snapshot-management-container',
 title: '其他的基础功能-摘要设置',
-
+delay: 500,
 text:'这里的摘要配置的4个参数是啥意思呢？',
 onStart: () => {
         const targetElement = document.querySelector('#snapshot-management-container');
@@ -381,6 +476,7 @@ text:'我说完了。你可以继续游戏啦。<br>游玩愉快。',
     }
     // 你可以在这里继续添加 'workshop', 'data' 等模块
 };
+
  
 
 })();
