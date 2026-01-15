@@ -31866,6 +31866,7 @@ function handleNotificationsFromBatch(operations) {
  
 
 async function processUpdateMemoryCommands(commandText, message_id) {
+    message_id = -1;
        updateDetails = {
         variable: false,
         memories: [],
