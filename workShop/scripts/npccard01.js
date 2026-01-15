@@ -2111,7 +2111,7 @@ this.floater.addEventListener('touchstart', (e) => {
         toggle() {
             this.isOpen = !this.isOpen;
             if (this.isOpen) {
-                this.syncTheme(); // 打开时立刻刷新主题
+      
                 this.refreshData(); // 获取最新数据
                 document.querySelector('.mod01-overlay').classList.add('active');
             } else {
