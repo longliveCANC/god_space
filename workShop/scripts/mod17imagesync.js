@@ -2,6 +2,81 @@
     // 0. 脚本启动立即日志
     console.log('%c[ImageSync DEBUG] 脚本已注入，等待 NovaHooks...', 'background: #222; color: #bada55; font-size: 12px;');
 
+
+    function injectCustomCss(cssContent, styleId) {
+    // 检查是否已经注入过，防止重复
+    if (document.getElementById(styleId)) {
+        console.log(`[CSS Injector] Style with ID "${styleId}" already exists.`);
+        return;
+    }
+
+    // 创建 <style> 元素
+    const styleElement = document.createElement('style');
+    styleElement.id = styleId;
+
+    // 将 CSS 内容添加到 <style> 元素中
+    // 使用 textContent 是推荐的做法
+    styleElement.textContent = cssContent;
+
+    // 将 <style> 元素附加到文档的 <head> 中
+    document.head.appendChild(styleElement);
+
+    console.log(`[CSS Injector] Successfully injected styles with ID "${styleId}".`);
+}
+
+// --- 定义你的 CSS 规则 ---
+// 使用模板字符串 (反引号 ``) 可以方便地写多行 CSS
+const buttonCss = `
+    .image-tag-button.st-chatu8-image-button {
+        background-color: var(--container-bg-color, rgba(10, 25, 47, 0.75));
+        color: var(--primary-color, #00faff);
+        border: 1px solid var(--border-color, rgba(0, 250, 255, 0.3));
+        padding: 6px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: var(--base-font-family, sans-serif);
+        font-size: 14px;
+        margin: 5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 5px var(--glow-color, rgba(0, 250, 255, 0.5));
+    }
+
+    .image-tag-button.st-chatu8-image-button:hover {
+        background-color: var(--background-color, rgba(10, 25, 47));
+        color: var(--secondary-color, #7affff);
+        box-shadow: 0 0 15px var(--glow-color, rgba(0, 250, 255, 0.5));
+        transform: translateY(-1px);
+    }
+`;
+
+// --- 执行注入 ---
+// 等待 DOM 加载完成后执行，确保 <head> 存在
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        injectCustomCss(buttonCss, 'st-chatu8-image-button-styles');
+    });
+} else {
+    injectCustomCss(buttonCss, 'st-chatu8-image-button-styles');
+}
+
+      const STORAGE_KEY = 'nova_imagesync_plugin_settings';
+    let settings = {
+        forceLastImageToEnd: false // 默认为 false，开启后强制最后一张图置底
+    };
+
+    const savedSettings = localStorage.getItem(STORAGE_KEY);
+    if (savedSettings) {
+        try {
+            settings = { ...settings, ...JSON.parse(savedSettings) };
+        } catch (e) {
+            console.error('[ImageSync DEBUG] 加载设置失败', e);
+        }
+    }
+
+    const saveSettings = () => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        console.log('[ImageSync DEBUG] ⚙️ 设置已保存:', settings);
+    };
     // --- 全局变量 ---
     let currentObserver = null;       // 当前的监控器实例
     let currentTargetNode = null;     // 当前监控的 DOM 节点
@@ -31,6 +106,42 @@
         console.error('[ImageSync DEBUG] ❌ 钩子注册失败:', e);
     }
 
+      function injectSettingsUI() {
+        const targetContainer = document.querySelector('#settings-page-game .settings-container');
+        if (!targetContainer) {
+            setTimeout(injectSettingsUI, 1000);
+            return;
+        }
+        if (document.getElementById('imagesync-settings-ui')) return;
+
+        const settingDiv = document.createElement('div');
+        settingDiv.id = 'imagesync-settings-ui';
+        settingDiv.className = 'setting-item'; // 使用游戏原生样式类
+
+        settingDiv.innerHTML = `
+            <label>强制最后一张图片置底 (ImageSync)</label>
+            <input type="checkbox" id="force-last-image-end">
+        `;
+
+        // 插入到容器最前面
+        targetContainer.insertBefore(settingDiv, targetContainer.firstChild);
+
+        // 绑定事件
+        const toggle = settingDiv.querySelector('#force-last-image-end');
+        toggle.checked = settings.forceLastImageToEnd;
+        toggle.addEventListener('change', () => {
+            settings.forceLastImageToEnd = toggle.checked;
+            saveSettings();
+        });
+        console.log('[ImageSync DEBUG] ✅ 设置 UI 已注入。');
+    }
+
+    // 启动注入
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectSettingsUI);
+    } else {
+        injectSettingsUI();
+    }
     // 3. 监控管理器：负责绑定和解绑
     function monitorLastMessage() {
         console.log('[ImageSync DEBUG] 🔍 开始寻找最后一条 AI 消息气泡...');
@@ -150,53 +261,64 @@
         let rawContent = latestHistoryEntry.content || "";
         let hasChanges = false;
 
-        // 遍历匹配项
-        for (const match of matches) {
+ matches.forEach((match, index) => {
             const imgTag = match[0];
             const matchIndex = match.index;
-            console.log(`[ImageSync DEBUG] ---> 处理标签: ${imgTag.substring(0, 30)}...`);
+            const isLastImage = index === matches.length - 1; // 判断是否为最后一张
+
+            console.log(`[ImageSync DEBUG] ---> 处理标签 (${index + 1}/${matches.length}): ${imgTag.substring(0, 20)}...`);
 
             if (rawContent.includes(imgTag)) {
                 console.log('[ImageSync DEBUG] -----> 历史记录中已存在该标签，跳过。');
-                continue;
+                return; // 相当于 continue
             }
 
-            // 定位逻辑
+            // --- 定位逻辑 ---
             const prevContext = domText.substring(Math.max(0, matchIndex - 10), matchIndex).trim();
             const nextContext = domText.substring(matchIndex + imgTag.length, Math.min(domText.length, matchIndex + imgTag.length + 10)).trim();
 
-            console.log(`[ImageSync DEBUG] -----> 定位锚点: 前="${prevContext}", 后="${nextContext}"`);
-
             let inserted = false;
 
-            // 策略 A
-            if (prevContext.length > 2 && rawContent.includes(prevContext)) {
-                const escaped = prevContext.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                if (!rawContent.includes(prevContext + imgTag)) {
-                    rawContent = rawContent.replace(new RegExp(escaped), prevContext + imgTag);
-                    inserted = true;
-                    console.log('[ImageSync DEBUG] -----> ✅ 成功: 前置定位插入');
+            // [关键修改] 检查是否需要强制置底
+            // 如果开关开启(true) 且 是最后一张图片(true)，则跳过定位逻辑，直接进入下面的追加逻辑
+            const shouldForceToEnd = settings.forceLastImageToEnd && isLastImage;
+
+            if (shouldForceToEnd) {
+                console.log('[ImageSync DEBUG] -----> ⚡ 触发强制置底模式，跳过上下文定位。');
+            } else {
+                // 只有不强制置底时，才尝试定位
+
+                // 策略 A: 前置定位
+                if (prevContext.length > 2 && rawContent.includes(prevContext)) {
+                    const escaped = prevContext.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    if (!rawContent.includes(prevContext + imgTag)) {
+                        rawContent = rawContent.replace(new RegExp(escaped), prevContext + imgTag);
+                        inserted = true;
+                        console.log('[ImageSync DEBUG] -----> ✅ 成功: 前置定位插入');
+                    }
+                }
+
+                // 策略 B: 后置定位
+                if (!inserted && nextContext.length > 2 && rawContent.includes(nextContext)) {
+                    const escaped = nextContext.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    if (!rawContent.includes(imgTag + nextContext)) {
+                        rawContent = rawContent.replace(new RegExp(escaped), imgTag + nextContext);
+                        inserted = true;
+                        console.log('[ImageSync DEBUG] -----> ✅ 成功: 后置定位插入');
+                    }
                 }
             }
 
-            // 策略 B
-            if (!inserted && nextContext.length > 2 && rawContent.includes(nextContext)) {
-                const escaped = nextContext.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                if (!rawContent.includes(imgTag + nextContext)) {
-                    rawContent = rawContent.replace(new RegExp(escaped), imgTag + nextContext);
-                    inserted = true;
-                    console.log('[ImageSync DEBUG] -----> ✅ 成功: 后置定位插入');
-                }
-            }
-
-            // 策略 C
+            // 策略 C: 追加 (如果没定位插入，或者被强制跳过了定位，就执行这里)
             if (!inserted) {
                 rawContent += '\n' + imgTag;
-                console.log('[ImageSync DEBUG] -----> ⚠️ 警告: 定位失败，追加到末尾');
+                console.log(shouldForceToEnd
+                    ? '[ImageSync DEBUG] -----> ⬇️ 已强制追加到末尾'
+                    : '[ImageSync DEBUG] -----> ⚠️ 警告: 定位失败，追加到末尾');
             }
 
             hasChanges = true;
-        }
+        });
 
         // 保存逻辑
         if (hasChanges) {
