@@ -1940,48 +1940,10 @@ reloadDataAndRestart() {
             this.isOpen = false;
 
             this.init();
-            // 启动时应用一次主题
-            this.syncTheme();
-            // 监听窗口点击，如果用户在设置页改了主题并保存到localStorage，我们需要感知（由于同域下storage事件不触发当前tab，我们用setInterval轮询更稳）
-            setInterval(() => this.syncTheme(), 1500);
+  
         }
 
-        // ============ 主题引擎 ============
-        syncTheme() {
-            // 确保 GameAPI 可用
-            if (!window.GameAPI || typeof window.GameAPI.getThemeVar !== 'function') return;
-
-            // 获取动态颜色，如果获取失败则使用默认兜底色
-            const currentTheme = {
-                '--primary-color': window.GameAPI.getThemeVar('--primary-color') || '#00faff',
-                '--secondary-color': window.GameAPI.getThemeVar('--secondary-color') || '#7affff',
-                '--text-color': window.GameAPI.getThemeVar('--text-color') || '#e6f1ff',
-                '--text-secondary-color': window.GameAPI.getThemeVar('--text-secondary-color') || '#a8c0e1',
-                '--container-bg-color': window.GameAPI.getThemeVar('--container-bg-color') || 'rgba(10, 25, 47, 0.85)',
-                '--border-color': window.GameAPI.getThemeVar('--border-color') || 'rgba(0, 250, 255, 0.3)',
-                '--glow-color': window.GameAPI.getThemeVar('--glow-color') || 'rgba(0, 250, 255, 0.5)',
-                '--background-color': window.GameAPI.getThemeVar('--background-color') || '#0a192f'
-            };
-
-            // 应用样式到各个独立容器
-            const applyTo = (element) => {
-                if (!element) return;
-                Object.entries(currentTheme).forEach(([key, val]) => {
-                    element.style.setProperty(key, val);
-                });
-            };
-
-            // 1. 应用到主窗口
-            applyTo(this.container);
-
-            // 2. 应用到悬浮球
-            applyTo(this.floater);
-
-            // 3. 应用到记忆回廊 (因为它是独立的 DOM 节点)
-            if (this.memoryGallery && this.memoryGallery.panel) {
-                applyTo(this.memoryGallery.panel);
-            }
-        }
+ 
 
         // ============ 构建 UI ============
    init() {
