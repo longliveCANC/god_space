@@ -489,7 +489,7 @@
     "name": "游戏制作人之他们只玩过传奇？！",
     "author": "Sayuki07",
     "version": "1.0",
-    "tags": ["dlc"],
+    "tags": ["豪华dlc"],
     "description": "感谢Sayuki07开放二创授权！\n二改:assa\n<h3>这是一个发生在2035年的平行世界。\n在这里，名为“创世纪”的开发工具可以快速做出一款游戏。\n但受到全人类范围内的“思想钢印”影响，无论是开发者还是玩家，都无法构想出数值PK以外的游戏模式。\n整个游戏市场被换皮的传奇类游戏垄断：自动寻路、站桩输出、比拼战力数值是唯一的玩法。\n在这个技术极度发达但游戏理念极度贫瘠的世界里，你可以利用地球的游戏设计理念，开发出前所未有的作品，打破思想钢印的束缚。</h3>\n原链接:<a href=\"https://discord.com/channels/1134557553011998840/1458097154488008846\" target=\"_blank\">→Discord频道←</a>\n[含有自定义属性，需要的话，可以开启功能脚本的自定义属性脚本，去应用一下这个世界观的自定义属性。该dlc关闭了数值约束和基础属性和技能的分阶段]",
       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod003game.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-游戏制作人之他们只玩过传奇？！.json",
