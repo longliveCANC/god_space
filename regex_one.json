@@ -14186,7 +14186,7 @@ pointer-events: auto;
             <button class="book-close-btn"> </button>
             <div class="book-left-page">
                 <div class="book-bookmarks">
-              
+              <br>
                     <div class="bookmark" data-tab="global_npc">全局人物</div>
                     <div class="bookmark" data-tab="world_npc" id="world_npc_bookmark">世界人物</div>
                     <div class="bookmark" data-tab="group_member" id="group_member_bookmark">小队信息</div>

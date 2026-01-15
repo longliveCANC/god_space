@@ -1,25 +1,23 @@
 (function() {
 
-    // --- Mod16 轮盘通用管理器 (复制到所有需要使用轮盘的脚本中) ---
 window.Mod16WheelManager = window.Mod16WheelManager || (function() {
     const CONTAINER_ID = 'mod16-wheel-container';
-    const ORB_ID = 'world-book-orb'; // 你的悬浮球ID
+    const ORB_ID = 'world-book-orb';
 
-    // 1. 确保 CSS 存在 (只注入一次)
+    // 1. 注入增强版 CSS
     function ensureStyle() {
         if (document.getElementById('mod16-wheel-style')) return;
         const style = document.createElement('style');
         style.id = 'mod16-wheel-style';
         style.textContent = `
- 
             :root {
                 --mod16-primary: var(--primary-color, #00faff);
                 --mod16-bg: var(--container-bg-color, rgba(10, 25, 47, 0.95));
                 --mod16-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
-
             #mod16-wheel-container {
                 position: fixed;
+                /* 保持容器尺寸，但逻辑判定范围会比这个大 */
                 width: 150px; height: 150px;
                 z-index: 999; pointer-events: none;
                 opacity: 0; transition: opacity 0.3s, transform 0.3s;
@@ -32,6 +30,14 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
                 width: 100%; height: 100%; position: relative;
                 display: flex; align-items: center; justify-content: center;
             }
+            /* 增加一个隐形的背景圆，填补按钮之间的空隙，防止鼠标在缝隙中时轮盘消失 */
+            .mod16-wheel-body::before {
+                content: ''; position: absolute;
+                width: 260px; height: 260px; /* 比按钮展开范围稍大 */
+                border-radius: 50%;
+                background: transparent;
+                z-index: -1;
+            }
             .mod16-wheel-btn {
                 background: var(--mod16-bg);
                 border: 1px solid var(--mod16-primary);
@@ -40,27 +46,28 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
                 font-size: 12px; font-weight: bold;
                 cursor: pointer;
                 position: absolute;
-                width: 70px; height: 70px; /* 稍微调小一点以容纳更多 */
+                width: 70px; height: 70px;
                 border-radius: 50%;
                 display: flex; flex-direction: column;
                 align-items: center; justify-content: center;
                 transition: all 0.2s;
-                /* 关键：旋转中心点 */
                 transform-origin: 110px 50%;
-                left: -35px; /* 修正定位 */
+                left: -35px;
+                transform: rotate(var(--mod16-angle, 0deg)) scale(1);
             }
             .mod16-wheel-btn:hover {
                 color: #fff; background: var(--mod16-primary);
                 box-shadow: 0 0 15px var(--mod16-primary);
                 z-index: 10;
+                transform: rotate(var(--mod16-angle, 0deg)) scale(1.15);
             }
             .mod16-wheel-icon { font-size: 20px; margin-bottom: 2px; display:block; }
-            .mod16-btn-content { pointer-events: none; }
+            .mod16-btn-content { pointer-events: none; transition: transform 0.2s; }
         `;
         document.head.appendChild(style);
     }
 
-    // 2. 重新计算布局 (核心算法)
+    // 2. 重新计算布局
     function updateLayout() {
         const container = document.getElementById(CONTAINER_ID);
         if (!container) return;
@@ -69,23 +76,13 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
         const count = btns.length;
         if (count === 0) return;
 
-        // 设定扇形总角度，例如 100度
-        const totalArc = 100;
-        // 起始角度 (垂直居中)
+        const totalArc = count > 3 ? 120 : 100;
         const startAngle = -totalArc / 2;
-
-        // 计算每个按钮的间隔
         const step = count > 1 ? totalArc / (count - 1) : 0;
 
         btns.forEach((btn, index) => {
-            // 如果只有一个按钮，居中(0度)；否则按步长分布
             const angle = count === 1 ? 0 : startAngle + (step * index);
-
-            // 应用旋转
-            // scale(1) 是为了防止覆盖 hover 效果，实际 hover 会由 CSS 处理
-            btn.style.transform = `rotate(${angle}deg)`;
-
-            // 反向旋转文字，保持文字水平
+            btn.style.setProperty('--mod16-angle', `${angle}deg`);
             const content = btn.querySelector('.mod16-btn-content');
             if (content) {
                 content.style.transform = `rotate(${-angle}deg)`;
@@ -97,50 +94,34 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
     function ensureContainer() {
         ensureStyle();
         let container = document.getElementById(CONTAINER_ID);
-
         if (!container) {
             container = document.createElement('div');
             container.id = CONTAINER_ID;
             container.innerHTML = `<div class="mod16-wheel-body"></div>`;
             document.body.appendChild(container);
-
-            // 初始化触发逻辑 (Hover/Touch) - 只绑定一次
             setupTriggers(container);
         }
         return container;
     }
 
-    // 4. 触发逻辑 (复用你原来的逻辑)
+    // 4. 触发逻辑 (核心修改部分)
     function setupTriggers(wheel) {
-        let timer = null;
         let isHoveringOrb = false;
         let isHoveringWheel = false;
 
- const updatePosition = () => {
-    const orb = document.getElementById(ORB_ID);
-    if (!orb) return;
-    const rect = orb.getBoundingClientRect();
-    const wheelContainer = document.getElementById(CONTAINER_ID);
-    const containerWidth = wheelContainer.offsetWidth; // 获取容器实际宽度，例如 150px
-    const containerHeight = wheelContainer.offsetHeight; // 获取容器实际高度，例如 150px
+        const updatePosition = () => {
+            const orb = document.getElementById(ORB_ID);
+            if (!orb) return;
+            const rect = orb.getBoundingClientRect();
+            const wheelContainer = document.getElementById(CONTAINER_ID);
 
-    // --- 核心逻辑变更 ---
-    // 目标：将轮盘容器的 "旋转中心点" (transform-origin的参考点)
-    //      移动到悬浮球的中心点附近。
+            // 调整位置，确保轮盘中心与 Orb 距离适中
+            const rotationRadius = 80;
+            const orbWidth = rect.width;
 
-    // 1. 获取按钮的旋转半径 (即 CSS 中的 transform-origin 的 x 值)
-    //    这里我们直接使用 CSS 中设定的值 80px。
-    const rotationRadius = 80;
-
-    // 2. 计算 left 值
-    //    新的 left = orb的左边缘 - 旋转半径 - (orb宽度 / 2)
-    //    这会把旋转中心点放在 orb 的左侧，距离为 (orb宽度/2)
-    const orbWidth = rect.width; // orb 宽度，你说的是 20px
-    wheel.style.left = (rect.left - rotationRadius - (orbWidth / 2)) + 'px';
-
-    // 3. 计算 top 值 (保持垂直居中)
-    wheel.style.top = (rect.top + (rect.height / 2) - (containerHeight / 2)) + 'px';
-};
+            wheel.style.left = (rect.left - rotationRadius - (orbWidth / 2)) + 'px';
+            wheel.style.top = (rect.top + (rect.height / 2) - (wheelContainer.offsetHeight / 2)) + 'px';
+        };
 
         const showWheel = () => {
             updatePosition();
@@ -150,25 +131,36 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
         const hideWheel = () => {
             setTimeout(() => {
                 if (!isHoveringOrb && !isHoveringWheel) wheel.classList.remove('visible');
-            }, 100);
+            }, 150); // 稍微增加一点消失延迟，容错率更高
         };
 
-        // 绑定 Orb 事件 (假设 Orb 已经存在，或者使用 MutationObserver 监听 Orb 出现)
-        // 这里简化处理，直接绑 document
         document.addEventListener('mousemove', (e) => {
             const orb = document.getElementById(ORB_ID);
             if (!orb) return;
+
             const orbRect = orb.getBoundingClientRect();
             const wheelRect = wheel.getBoundingClientRect();
-            const buffer = 20;
 
-            const inOrb = (e.clientX >= orbRect.left - buffer && e.clientX <= orbRect.right + buffer &&
-                           e.clientY >= orbRect.top - buffer && e.clientY <= orbRect.bottom + buffer);
-            const inWheel = (e.clientX >= wheelRect.left && e.clientX <= wheelRect.right &&
-                             e.clientY >= wheelRect.top && e.clientY <= wheelRect.bottom);
+            // Orb 的缓冲范围
+            const orbBuffer = 20;
+
+            // 【核心修改】：大幅增加轮盘的判定范围 (Buffer)
+            // 之前是 0，现在设为 80px，这意味着鼠标只要在轮盘容器外 80px 以内，都不会消失
+            // 这能覆盖按钮伸出去的部分以及按钮圆心外侧
+            const wheelBuffer = 80;
+
+            const inOrb = (e.clientX >= orbRect.left - orbBuffer && e.clientX <= orbRect.right + orbBuffer &&
+                           e.clientY >= orbRect.top - orbBuffer && e.clientY <= orbRect.bottom + orbBuffer);
+
+            // 使用 wheelBuffer 扩大判定矩形
+            const inWheel = (e.clientX >= wheelRect.left - wheelBuffer &&
+                             e.clientX <= wheelRect.right + wheelBuffer &&
+                             e.clientY >= wheelRect.top - wheelBuffer &&
+                             e.clientY <= wheelRect.bottom + wheelBuffer);
 
             if (inOrb) { isHoveringOrb = true; showWheel(); } else { isHoveringOrb = false; }
             if (inWheel) { isHoveringWheel = true; } else { isHoveringWheel = false; }
+
             if (!isHoveringOrb && !isHoveringWheel) hideWheel();
         });
 
@@ -177,50 +169,30 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
         });
     }
 
-    // --- 公开接口 ---
     return {
-        /**
-         * 添加一个按钮到轮盘
-         * @param {string} id 按钮唯一ID
-         * @param {string} icon 图标字符
-         * @param {string} text 按钮文字
-         * @param {Function} onClick 点击回调
-         */
         addButton: function(id, icon, text, onClick) {
             const container = ensureContainer();
             const body = container.querySelector('.mod16-wheel-body');
-
-            // 防止重复添加同名按钮
             if (document.getElementById(id)) return;
 
             const btn = document.createElement('button');
             btn.className = 'mod16-wheel-btn';
             btn.id = id;
-            btn.innerHTML = `
-                <div class="mod16-btn-content">
-                    <span class="mod16-wheel-icon">${icon}</span>
-                    <span>${text}</span>
-                </div>
-            `;
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                onClick(e);
-            });
+            btn.innerHTML = `<div class="mod16-btn-content"><span class="mod16-wheel-icon">${icon}</span><span>${text}</span></div>`;
+            btn.addEventListener('click', (e) => { e.stopPropagation(); onClick(e); });
 
             body.appendChild(btn);
-
-            // 每次添加后，重新计算布局
             updateLayout();
         }
     };
 })();
 
+
     // 1. 防止重复初始化
-    if (document.getElementById('mod16-wheel-container')) {
-        console.log('Mod16 World Info already initialized.');
-        return;
-    }
+    // 1. 防止重复初始化 (修正版)
+    // 不要检查 container 是否存在，因为其他脚本可能已经创建了它
+    if (window.Mod16WorldInfoLoaded) return;
+    window.Mod16WorldInfoLoaded = true;
 
     // 2. 样式定义 (CSS)
     const style = document.createElement('style');
@@ -285,28 +257,7 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
 }
    
 
-        .mod16-wheel-btn {
-            background: transparent;
-            border: none;
-            color: var(--mod16-primary);
-            font-family: var(--mod16-font);
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 10px;
-            text-align: center;
-            transition: all 0.2s;
-            text-shadow: 0 0 5px var(--mod16-primary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .mod16-wheel-btn:hover {
-            color: #fff;
-            transform: scale(1.1);
-        }
+  
 
         .mod16-wheel-icon {
             font-size: 24px;
@@ -601,65 +552,9 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
             border-radius: 3px;
         }
 
-        
-/* --- 新增：轮盘按钮的弧形布局 --- */
-.mod16-wheel-btn {
-    background: var( --container-bg-color);
-    border: 1px solid var(--mod16-primary);
-    color: var(--mod16-primary);
-    font-family: var(--mod16-font);
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-    text-shadow: 0 0 5px var(--mod16-primary);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center; /* 垂直居中 */
-    gap: 4px;
-    position: absolute; /* 使用绝对定位 */
-    width: 80px; /* 统一按钮大小 */
-    height: 80px;
-    border-radius: 50%; /* 圆形按钮 */
-    transform-origin: 120px 50%; /* 设置旋转中心点 (重要!) */
-}
+ 
 
-.mod16-wheel-btn:hover {
-    color: #fff;
-    background: var(--mod16-primary);
-    transform: scale(1.1); /* 悬浮时放大，并保持旋转角度 */
-}
-
-/* 为每个按钮设置旋转角度 */
-#mod16-open-btn { transform: rotate(-40deg); }
-#mod16-open-btn:hover { transform: rotate(-40deg) scale(1.1); }
-
-#mod16-intel-btn { transform: rotate(0deg); }
-#mod16-intel-btn:hover { transform: rotate(0deg) scale(1.1); }
-
-#mod16-memo-btn { transform: rotate(40deg); }
-#mod16-memo-btn:hover { transform: rotate(40deg) scale(1.1); }
-
-
-/* 按钮内的文字需要反向旋转回来 */
-.mod16-btn-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-#mod16-open-btn .mod16-btn-content { transform: rotate(40deg); }
-#mod16-intel-btn .mod16-btn-content { transform: rotate(0deg); }
-#mod16-memo-btn .mod16-btn-content { transform: rotate(-40deg); }
-
-
-.mod16-wheel-icon {
-    font-size: 20px; /* 调整图标大小 */
-    display: block;
-    line-height: 1;
-}
+ 
 
 /* --- 新增：书签化渲染样式 --- */
      .mod16-bookmark-section {

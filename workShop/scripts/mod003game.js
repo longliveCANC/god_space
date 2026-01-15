@@ -1,23 +1,23 @@
 (function () {
-    window.Mod16WheelManager = window.Mod16WheelManager || (function() {
+ // --- Mod16 轮盘通用管理器 (增强版 - 请复制到所有脚本头部) ---
+window.Mod16WheelManager = window.Mod16WheelManager || (function() {
     const CONTAINER_ID = 'mod16-wheel-container';
-    const ORB_ID = 'world-book-orb'; // 你的悬浮球ID
+    const ORB_ID = 'world-book-orb';
 
-    // 1. 确保 CSS 存在 (只注入一次)
+    // 1. 注入增强版 CSS
     function ensureStyle() {
         if (document.getElementById('mod16-wheel-style')) return;
         const style = document.createElement('style');
         style.id = 'mod16-wheel-style';
         style.textContent = `
- 
             :root {
                 --mod16-primary: var(--primary-color, #00faff);
                 --mod16-bg: var(--container-bg-color, rgba(10, 25, 47, 0.95));
                 --mod16-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
-
             #mod16-wheel-container {
                 position: fixed;
+                /* 保持容器尺寸，但逻辑判定范围会比这个大 */
                 width: 150px; height: 150px;
                 z-index: 999; pointer-events: none;
                 opacity: 0; transition: opacity 0.3s, transform 0.3s;
@@ -30,6 +30,14 @@
                 width: 100%; height: 100%; position: relative;
                 display: flex; align-items: center; justify-content: center;
             }
+            /* 增加一个隐形的背景圆，填补按钮之间的空隙，防止鼠标在缝隙中时轮盘消失 */
+            .mod16-wheel-body::before {
+                content: ''; position: absolute;
+                width: 260px; height: 260px; /* 比按钮展开范围稍大 */
+                border-radius: 50%;
+                background: transparent;
+                z-index: -1;
+            }
             .mod16-wheel-btn {
                 background: var(--mod16-bg);
                 border: 1px solid var(--mod16-primary);
@@ -38,27 +46,28 @@
                 font-size: 12px; font-weight: bold;
                 cursor: pointer;
                 position: absolute;
-                width: 70px; height: 70px; /* 稍微调小一点以容纳更多 */
+                width: 70px; height: 70px;
                 border-radius: 50%;
                 display: flex; flex-direction: column;
                 align-items: center; justify-content: center;
                 transition: all 0.2s;
-                /* 关键：旋转中心点 */
                 transform-origin: 110px 50%;
-                left: -35px; /* 修正定位 */
+                left: -35px;
+                transform: rotate(var(--mod16-angle, 0deg)) scale(1);
             }
             .mod16-wheel-btn:hover {
                 color: #fff; background: var(--mod16-primary);
                 box-shadow: 0 0 15px var(--mod16-primary);
                 z-index: 10;
+                transform: rotate(var(--mod16-angle, 0deg)) scale(1.15);
             }
             .mod16-wheel-icon { font-size: 20px; margin-bottom: 2px; display:block; }
-            .mod16-btn-content { pointer-events: none; }
+            .mod16-btn-content { pointer-events: none; transition: transform 0.2s; }
         `;
         document.head.appendChild(style);
     }
 
-    // 2. 重新计算布局 (核心算法)
+    // 2. 重新计算布局
     function updateLayout() {
         const container = document.getElementById(CONTAINER_ID);
         if (!container) return;
@@ -67,23 +76,13 @@
         const count = btns.length;
         if (count === 0) return;
 
-        // 设定扇形总角度，例如 100度
-        const totalArc = 100;
-        // 起始角度 (垂直居中)
+        const totalArc = count > 3 ? 120 : 100;
         const startAngle = -totalArc / 2;
-
-        // 计算每个按钮的间隔
         const step = count > 1 ? totalArc / (count - 1) : 0;
 
         btns.forEach((btn, index) => {
-            // 如果只有一个按钮，居中(0度)；否则按步长分布
             const angle = count === 1 ? 0 : startAngle + (step * index);
-
-            // 应用旋转
-            // scale(1) 是为了防止覆盖 hover 效果，实际 hover 会由 CSS 处理
-            btn.style.transform = `rotate(${angle}deg)`;
-
-            // 反向旋转文字，保持文字水平
+            btn.style.setProperty('--mod16-angle', `${angle}deg`);
             const content = btn.querySelector('.mod16-btn-content');
             if (content) {
                 content.style.transform = `rotate(${-angle}deg)`;
@@ -95,50 +94,34 @@
     function ensureContainer() {
         ensureStyle();
         let container = document.getElementById(CONTAINER_ID);
-
         if (!container) {
             container = document.createElement('div');
             container.id = CONTAINER_ID;
             container.innerHTML = `<div class="mod16-wheel-body"></div>`;
             document.body.appendChild(container);
-
-            // 初始化触发逻辑 (Hover/Touch) - 只绑定一次
             setupTriggers(container);
         }
         return container;
     }
 
-    // 4. 触发逻辑 (复用你原来的逻辑)
+    // 4. 触发逻辑 (核心修改部分)
     function setupTriggers(wheel) {
-        let timer = null;
         let isHoveringOrb = false;
         let isHoveringWheel = false;
 
- const updatePosition = () => {
-    const orb = document.getElementById(ORB_ID);
-    if (!orb) return;
-    const rect = orb.getBoundingClientRect();
-    const wheelContainer = document.getElementById(CONTAINER_ID);
-    const containerWidth = wheelContainer.offsetWidth; // 获取容器实际宽度，例如 150px
-    const containerHeight = wheelContainer.offsetHeight; // 获取容器实际高度，例如 150px
+        const updatePosition = () => {
+            const orb = document.getElementById(ORB_ID);
+            if (!orb) return;
+            const rect = orb.getBoundingClientRect();
+            const wheelContainer = document.getElementById(CONTAINER_ID);
 
-    // --- 核心逻辑变更 ---
-    // 目标：将轮盘容器的 "旋转中心点" (transform-origin的参考点)
-    //      移动到悬浮球的中心点附近。
+            // 调整位置，确保轮盘中心与 Orb 距离适中
+            const rotationRadius = 80;
+            const orbWidth = rect.width;
 
-    // 1. 获取按钮的旋转半径 (即 CSS 中的 transform-origin 的 x 值)
-    //    这里我们直接使用 CSS 中设定的值 80px。
-    const rotationRadius = 80;
-
-    // 2. 计算 left 值
-    //    新的 left = orb的左边缘 - 旋转半径 - (orb宽度 / 2)
-    //    这会把旋转中心点放在 orb 的左侧，距离为 (orb宽度/2)
-    const orbWidth = rect.width; // orb 宽度，你说的是 20px
-    wheel.style.left = (rect.left - rotationRadius - (orbWidth / 2)) + 'px';
-
-    // 3. 计算 top 值 (保持垂直居中)
-    wheel.style.top = (rect.top + (rect.height / 2) - (containerHeight / 2)) + 'px';
-};
+            wheel.style.left = (rect.left - rotationRadius - (orbWidth / 2)) + 'px';
+            wheel.style.top = (rect.top + (rect.height / 2) - (wheelContainer.offsetHeight / 2)) + 'px';
+        };
 
         const showWheel = () => {
             updatePosition();
@@ -148,25 +131,36 @@
         const hideWheel = () => {
             setTimeout(() => {
                 if (!isHoveringOrb && !isHoveringWheel) wheel.classList.remove('visible');
-            }, 100);
+            }, 150); // 稍微增加一点消失延迟，容错率更高
         };
 
-        // 绑定 Orb 事件 (假设 Orb 已经存在，或者使用 MutationObserver 监听 Orb 出现)
-        // 这里简化处理，直接绑 document
         document.addEventListener('mousemove', (e) => {
             const orb = document.getElementById(ORB_ID);
             if (!orb) return;
+
             const orbRect = orb.getBoundingClientRect();
             const wheelRect = wheel.getBoundingClientRect();
-            const buffer = 20;
 
-            const inOrb = (e.clientX >= orbRect.left - buffer && e.clientX <= orbRect.right + buffer &&
-                           e.clientY >= orbRect.top - buffer && e.clientY <= orbRect.bottom + buffer);
-            const inWheel = (e.clientX >= wheelRect.left && e.clientX <= wheelRect.right &&
-                             e.clientY >= wheelRect.top && e.clientY <= wheelRect.bottom);
+            // Orb 的缓冲范围
+            const orbBuffer = 20;
+
+            // 【核心修改】：大幅增加轮盘的判定范围 (Buffer)
+            // 之前是 0，现在设为 80px，这意味着鼠标只要在轮盘容器外 80px 以内，都不会消失
+            // 这能覆盖按钮伸出去的部分以及按钮圆心外侧
+            const wheelBuffer = 80;
+
+            const inOrb = (e.clientX >= orbRect.left - orbBuffer && e.clientX <= orbRect.right + orbBuffer &&
+                           e.clientY >= orbRect.top - orbBuffer && e.clientY <= orbRect.bottom + orbBuffer);
+
+            // 使用 wheelBuffer 扩大判定矩形
+            const inWheel = (e.clientX >= wheelRect.left - wheelBuffer &&
+                             e.clientX <= wheelRect.right + wheelBuffer &&
+                             e.clientY >= wheelRect.top - wheelBuffer &&
+                             e.clientY <= wheelRect.bottom + wheelBuffer);
 
             if (inOrb) { isHoveringOrb = true; showWheel(); } else { isHoveringOrb = false; }
             if (inWheel) { isHoveringWheel = true; } else { isHoveringWheel = false; }
+
             if (!isHoveringOrb && !isHoveringWheel) hideWheel();
         });
 
@@ -175,44 +169,25 @@
         });
     }
 
-    // --- 公开接口 ---
     return {
-        /**
-         * 添加一个按钮到轮盘
-         * @param {string} id 按钮唯一ID
-         * @param {string} icon 图标字符
-         * @param {string} text 按钮文字
-         * @param {Function} onClick 点击回调
-         */
         addButton: function(id, icon, text, onClick) {
             const container = ensureContainer();
             const body = container.querySelector('.mod16-wheel-body');
-
-            // 防止重复添加同名按钮
             if (document.getElementById(id)) return;
 
             const btn = document.createElement('button');
             btn.className = 'mod16-wheel-btn';
             btn.id = id;
-            btn.innerHTML = `
-                <div class="mod16-btn-content">
-                    <span class="mod16-wheel-icon">${icon}</span>
-                    <span>${text}</span>
-                </div>
-            `;
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                onClick(e);
-            });
+            btn.innerHTML = `<div class="mod16-btn-content"><span class="mod16-wheel-icon">${icon}</span><span>${text}</span></div>`;
+            btn.addEventListener('click', (e) => { e.stopPropagation(); onClick(e); });
 
             body.appendChild(btn);
-
-            // 每次添加后，重新计算布局
             updateLayout();
         }
     };
 })();
+
+
     // ==========================================================================
     // 1. CSS 样式注入 (使用 mod003 前缀)
     // ==========================================================================
@@ -540,6 +515,264 @@
             padding: 20px;
             font-style: italic;
         }
+
+        
+        /* 允许卡片高度根据内容自动撑开，但限制最大高度以免撑破布局 */
+        .mod003-game-card {
+            border: 1px solid var(--border-color);
+            background: rgba(0, 250, 255, 0.02);
+            padding: 15px;
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 500px; /* 限制卡片最大高度 */
+            overflow: hidden;  /* 内部滚动 */
+        }
+
+        /* 通用滚动文本框 */
+        .mod003-scroll-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-secondary-color);
+
+            /* 关键：处理换行符和自动换行 */
+            white-space: pre-wrap;
+            word-break: break-all;
+
+            /* 关键：启用垂直滚动 */
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        /* 针对滚动框的滚动条美化 */
+        .mod003-scroll-box::-webkit-scrollbar {
+            width: 4px;
+        }
+        .mod003-scroll-box::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        .mod003-scroll-box::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 2px;
+        }
+
+        .mod003-field-title {
+            font-size: 11px;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+            opacity: 0.8;
+            font-weight: bold;
+        }
+                    /* --- 新增：游戏详情页专用样式 --- */
+
+        /* 顶部选项卡容器 */
+        .mod003-game-tabs {
+            display: flex;
+            overflow-x: auto;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+            padding-bottom: 0;
+        }
+
+        .mod003-game-tabs::-webkit-scrollbar { height: 4px; }
+
+        /* 单个选项卡 */
+        .mod003-game-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-secondary-color);
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-weight: bold;
+            opacity: 0.6;
+        }
+
+        .mod003-game-tab:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-color);
+            opacity: 1;
+        }
+
+        .mod003-game-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            background: linear-gradient(to top, rgba(0, 250, 255, 0.1), transparent);
+            opacity: 1;
+        }
+
+        /* 游戏详情容器（默认隐藏，激活显示） */
+        .mod003-game-detail-panel {
+            display: none;
+            animation: mod003-fade-in 0.3s ease;
+        }
+        .mod003-game-detail-panel.active {
+            display: block;
+        }
+
+        @keyframes mod003-fade-in {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 游戏类型标签 */
+        .mod003-game-tags {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .mod003-game-tag {
+            font-size: 12px;
+            padding: 2px 8px;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+            border-radius: 2px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        /* 市场数据网格 */
+        .mod003-kv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 20px;
+        }
+        .mod003-kv-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 5px;
+        }
+
+        /* 社区热议样式 */
+        .mod003-chat-group {
+            margin-bottom: 15px;
+            border-left: 2px solid var(--secondary-color);
+            padding-left: 15px;
+            background: linear-gradient(to right, rgba(255,255,255,0.02), transparent);
+        }
+        .mod003-chat-title {
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .mod003-chat-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .mod003-chat-item {
+            font-size: 12px;
+            color: var(--text-secondary-color);
+            background: rgba(0,0,0,0.3);
+            padding: 5px 8px;
+            border-radius: 4px;
+        }
+        .mod003-chat-id {
+            color: var(--primary-color);
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        /* --- 新增：折叠面板样式 --- */
+        .mod003-collapse-header {
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+            padding-right: 30px; /* 给箭头留位置 */
+            user-select: none;   /* 防止双击选中文字 */
+        }
+
+        .mod003-collapse-header:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        /* 折叠状态的箭头 (默认向右 ▶) */
+        .mod003-collapse-header::after {
+            content: '▶';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: var(--secondary-color);
+            transition: transform 0.3s ease;
+        }
+
+        /* 展开状态的箭头 (向下 ▼) */
+        .mod003-collapse-header.active::after {
+            transform: translateY(-50%) rotate(90deg);
+        }
+
+        /* 内容区域 (默认隐藏) */
+        .mod003-collapse-content {
+            display: none;
+            overflow: hidden;
+        }
+
+        /* 内容区域激活状态 */
+        .mod003-collapse-content.active {
+            display: block;
+            animation: mod003-slide-down 0.3s ease;
+        }
+
+        @keyframes mod003-slide-down {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* --- 新增：嵌套对象与置顶信息样式 --- */
+
+        /* 置顶核心数据栏 */
+        .mod003-top-info {
+            background: rgba(0, 250, 255, 0.05);
+            border: 1px solid rgba(0, 250, 255, 0.2);
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .mod003-summary-text {
+            font-size: 13px;
+            color: var(--text-color);
+            line-height: 1.5;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .mod003-quick-stats {
+            display: flex;
+            gap: 20px;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            padding-top: 8px;
+        }
+
+        /* 嵌套对象容器 */
+        .mod003-nested-group {
+            margin-left: 12px;
+            padding-left: 12px;
+            border-left: 2px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            margin-top: 5px;
+        }
+
+        .mod003-nested-title {
+            font-size: 12px;
+            color: var(--secondary-color);
+            font-weight: bold;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+
     `;
     document.head.appendChild(style);
 
@@ -726,37 +959,197 @@
             mainHtml += `</div></div>`;
         }
 
-        // 5. 游戏作品库
+   // 5. 游戏作品库
+         // 5. 游戏作品库 (Tab 切换版)
         if (data['游戏作品']) {
-            mainHtml += `<div class="mod003-card" style="margin-top: 20px;"><div class="mod003-section-title">产品数据库</div><div class="mod003-game-grid">`;
+            mainHtml += `<div class="mod003-card" style="margin-top: 20px; min-height: 500px;">
+                <div class="mod003-section-title">产品数据库</div>`;
 
-            for (let gameName in data['游戏作品']) {
-                const game = data['游戏作品'][gameName];
-                const market = game['市场数据'] || {};
-                const design = game['设计文档'] || {};
+            const gameNames = Object.keys(data['游戏作品']);
 
-                mainHtml += `
-                    <div class="mod003-game-card">
-                        <div class="mod003-game-header">
-                            <span class="mod003-game-title">${gameName}</span>
-                            <span class="mod003-game-status" style="color: ${game['状态'] === '已发布' ? 'var(--success-color)' : 'var(--text-secondary-color)'}">${game['状态']}</span>
+            if (gameNames.length === 0) {
+                mainHtml += `<div class="mod003-empty-msg">暂无游戏数据</div></div>`;
+            } else {
+                // 1. 生成顶部 Tabs
+                mainHtml += `<div class="mod003-game-tabs">`;
+                gameNames.forEach((name, index) => {
+                     if (name.startsWith('_')) return;
+                    const activeClass = index === 0 ? 'active' : '';
+                    // 添加 data-target 属性用于 JS 切换
+                    mainHtml += `<div class="mod003-game-tab ${activeClass}" data-target="game-panel-${index}">${name}</div>`;
+                });
+                mainHtml += `</div>`;
+
+                // 2. 生成内容面板
+                         gameNames.forEach((name, index) => {
+                    const game = data['游戏作品'][name];
+                    const activeClass = index === 0 ? 'active' : '';
+                    const design = game['设计文档'] || {};
+                    const market = game['市场数据'] || {};
+
+                    // 1. 提取置顶数据 (摘要、玩家数、在线数)
+                    const coreSummary = design['核心设定摘要'] || '暂无核心设定摘要';
+                    const totalPlayers = market['玩家数量'] || 0;
+                    const onlinePlayers = market['实时在线人数'] || 0;
+
+                    // 2. 处理类型标签
+                    let tagsHtml = '';
+                    if (game['类型']) {
+                        tagsHtml = `<div class="mod003-game-tags">` +
+                            game['类型'].split(/;|；/).map(t => t.trim()).filter(t=>t).map(t => `<span class="mod003-game-tag">${t}</span>`).join('') +
+                            `</div>`;
+                    }
+
+                    // 3. 递归处理设计文档 (支持嵌套对象，并跳过已置顶的摘要)
+              function renderDesignRecursive(obj) {
+                        let html = '';
+                        for (let key in obj) {
+                            if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+
+                            // --- 新增：过滤掉以 _ 开头的字段 ---
+                            if (key.startsWith('_')) continue;
+                            // --------------------------------
+
+                            if (key === '核心设定摘要') continue; // 跳过已置顶的字段
+
+                            const val = obj[key];
+
+                            if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+                                // 如果是嵌套对象，递归渲染
+                                html += `
+                                    <div class="mod003-nested-group">
+                                        <div class="mod003-nested-title">:: ${key}</div>
+                                        ${renderDesignRecursive(val)}
+                                    </div>
+                                `;
+                            } else {
+                                // 如果是普通值 (字符串/数字等)
+                                let content = String(val).replace(/\\n/g, '\n');
+                                if (content.trim() !== "") {
+                                    html += `
+                                        <div style="margin-bottom: 8px;">
+                                            <div class="mod003-field-title">:: ${key}</div>
+                                            <div class="mod003-scroll-box">${content}</div>
+                                        </div>`;
+                                }
+                            }
+                        }
+                        return html;
+                    }
+
+                    const designContentHtml = renderDesignRecursive(design);
+
+                    // 构建设计文档折叠面板
+                    const designSectionHtml = `
+                        <div style="margin-top:15px;">
+                            <div class="mod003-section-title mod003-collapse-header">
+                                设计文档详情
+                                <span style="font-size:12px; font-weight:normal; opacity:0.5; margin-left:10px;">(点击展开)</span>
+                            </div>
+                            <div class="mod003-collapse-content">
+                                <div style="padding-top:10px;">${designContentHtml || '<div class="mod003-empty-msg" style="padding:10px;">无额外详细文档</div>'}</div>
+                            </div>
                         </div>
+                    `;
 
-                        <div style="font-size: 12px; color: var(--text-secondary-color); margin-bottom: 10px; height: 40px; overflow: hidden; text-overflow: ellipsis;">
-                            ${design['核心设定摘要'] || '暂无核心设定摘要'}
-                        </div>
+                    // 4. 处理市场数据 (全量展示)
+                    let marketHtml = `<div class="mod003-kv-grid">`;
+                    const marketFields = [
+                        {k: '商业模式', l: '商业模式'},
+                        {k: '定价', l: '定价', pre: '$'},
+                        {k: '平台抽成', l: '平台抽成', suf: '%'},
+                        {k: '已发布海外版', l: '海外版', fmt: v => v ? 'YES' : 'NO'},
+                        {k: '销量', l: '销量'},
+                        {k: '总收入', l: '总收入', pre: '$', color: 'var(--primary-color)'},
+                        // 注意：玩家数量和在线人数已置顶，但这里保留一份作为详细数据也无妨，或者你可以注释掉
+                        {k: '内购收入', l: '内购收入', pre: '$'},
+                        {k: 'ARPU', l: 'ARPU', pre: '$'},
+                        {k: '其他收入', l: '其他收入', pre: '$'}
+                    ];
 
-                        <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;">
-                            <div class="mod003-data-row"><span class="mod003-label">商业模式</span> <span>${market['商业模式'] || '-'}</span></div>
-                            <div class="mod003-data-row"><span class="mod003-label">总收入</span> <span style="color:var(--primary-color)">$${market['总收入'] || 0}</span></div>
-                            <div class="mod003-data-row"><span class="mod003-label">销量/玩家</span> <span>${market['销量'] || market['玩家数量'] || 0}</span></div>
-                            <div class="mod003-data-row"><span class="mod003-label">在线</span> <span style="color:var(--success-color)">${market['实时在线人数'] || 0}</span></div>
+                    marketFields.forEach(field => {
+                        let val = market[field.k];
+                        if (val !== undefined && val !== null) {
+                            if (field.fmt) val = field.fmt(val);
+                            else val = (field.pre || '') + val + (field.suf || '');
+                            const colorStyle = field.color ? `style="color:${field.color}"` : '';
+                            marketHtml += `
+                                <div class="mod003-kv-item">
+                                    <span class="mod003-label">${field.l}</span>
+                                    <span class="mod003-value" ${colorStyle}>${val}</span>
+                                </div>`;
+                        }
+                    });
+                    marketHtml += `</div>`;
+
+                    // 构建市场数据折叠面板 (默认折叠)
+                    const marketSectionHtml = `
+                        <div style="margin-top:10px;">
+                            <div class="mod003-section-title mod003-collapse-header">
+                                市场表现数据
+                                <span style="font-size:12px; font-weight:normal; opacity:0.5; margin-left:10px;">(点击展开)</span>
+                            </div>
+                            <div class="mod003-collapse-content">
+                                ${marketHtml}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+
+                    // 5. 处理社区热议
+                    let communityHtml = '';
+                    const topics = market['社区热议'] || {};
+                    if (Object.keys(topics).length > 0) {
+                        communityHtml += `<div style="margin-top:15px;"><div class="mod003-field-title">:: 社区舆情监控</div>`;
+                        for (let topicTitle in topics) {
+                               if (topicTitle.startsWith('_')) continue;
+                            const comments = topics[topicTitle] || [];
+                            const commentsList = Array.isArray(comments) ? comments.map(c => {
+                                const splitIdx = c.indexOf(':');
+                                let uId = 'User'; let uMsg = c;
+                                if(splitIdx > -1) { uId = c.substring(0, splitIdx); uMsg = c.substring(splitIdx + 1); }
+                                return `<div class="mod003-chat-item"><span class="mod003-chat-id">[${uId}]</span>${uMsg}</div>`;
+                            }).join('') : '';
+                            communityHtml += `<div class="mod003-chat-group"><div class="mod003-chat-title"># ${topicTitle}</div><div class="mod003-chat-list">${commentsList}</div></div>`;
+                        }
+                        communityHtml += `</div>`;
+                    }
+
+                    // 6. 组装最终面板
+                    mainHtml += `
+                        <div id="game-panel-${index}" class="mod003-game-detail-panel ${activeClass}">
+                            <div class="mod003-game-header" style="border:none; margin-bottom:5px;">
+                                <span class="mod003-game-title" style="font-size:22px;">${name}</span>
+                                <span class="mod003-game-status">${game['状态']}</span>
+                            </div>
+                            ${tagsHtml}
+
+
+                            <div class="mod003-top-info">
+                                <div class="mod003-summary-text">“${coreSummary}”</div>
+                                <div class="mod003-quick-stats">
+                                    <div class="mod003-data-row" style="gap:10px; margin:0;">
+                                        <span class="mod003-label">玩家总数</span>
+                                        <span class="mod003-value">${totalPlayers}</span>
+                                    </div>
+                                    <div class="mod003-data-row" style="gap:10px; margin:0;">
+                                        <span class="mod003-label">实时在线</span>
+                                        <span class="mod003-value" style="color:var(--success-color)">● ${onlinePlayers}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${designSectionHtml}
+                            ${marketSectionHtml}
+                            ${communityHtml}
+                        </div>
+                    `;
+                });
+
+
+                mainHtml += `</div>`; // Close card
             }
-            mainHtml += `</div></div>`;
         }
+
 
         // 组装
         html = `
@@ -798,7 +1191,42 @@
         // 刷新数据
         const contentArea = document.getElementById('mod003-content-area');
         contentArea.innerHTML = buildDashboardContent();
+  const tabs = contentArea.querySelectorAll('.mod003-game-tab');
+        const panels = contentArea.querySelectorAll('.mod003-game-detail-panel');
 
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 1. 移除所有激活状态
+                tabs.forEach(t => t.classList.remove('active'));
+                panels.forEach(p => p.classList.remove('active'));
+
+                // 2. 激活当前点击的 Tab
+                tab.classList.add('active');
+
+                // 3. 显示对应的面板
+                const targetId = tab.getAttribute('data-target');
+                const targetPanel = document.getElementById(targetId);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
+            });
+        });
+
+               const collapseHeaders = contentArea.querySelectorAll('.mod003-collapse-header');
+
+        collapseHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                // 1. 切换标题的激活状态 (旋转箭头)
+                header.classList.toggle('active');
+
+                // 2. 找到紧跟在标题后的内容容器
+                const content = header.nextElementSibling;
+                if (content && content.classList.contains('mod003-collapse-content')) {
+                    // 3. 切换内容的显示/隐藏
+                    content.classList.toggle('active');
+                }
+            });
+        });
         // 激活显示
         // 强制重绘以触发 transition
         modal.style.display = 'flex';
@@ -825,7 +1253,7 @@
         if (window.Mod16WheelManager) {
             window.Mod16WheelManager.addButton(
                 'mod003-data-btn',  // 唯一 ID
-                '📊',               // 图标 (这里用通用图表符，内部UI不使用emoji)
+                '₩',               // 图标 (这里用通用图表符，内部UI不使用emoji)
                 '核心数据',          // 按钮文字
                 () => {
                     showModal();
