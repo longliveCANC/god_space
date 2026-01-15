@@ -12256,7 +12256,7 @@ pointer-events: auto;
     padding: 20px;
     border-radius: 10px;
     overflow-y: auto;
-    box-shadow: 0 0 20px var(--glow-color);
+   
     position: relative;
 }
 .ws-modal-close {
@@ -41818,7 +41818,7 @@ addAlias("经验值", String(chatdata.xp_role || ''));
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
  const is_genji = String(chatdata.is_genji||'false');
-  const is_complex_task = String(chatdata.is_complex_task||'false');
+  const is_complex_task = String(chatdata.is_complex_task||'true');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);

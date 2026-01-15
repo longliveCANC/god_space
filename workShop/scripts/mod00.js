@@ -341,33 +341,75 @@ text:'这个卡最重要的就是创意工坊，创意工坊内的内容大体�
      }
         },{
             selector: '#workshop-mod-list',
-
+  delay: 500,
 title: '如何开启一个脚本',
 text:'1、选择你心仪的脚本，点击脚本右下角的启用。', 
+    onStart: () => {
+        const targetElement = document.querySelector('#workshop-mod-list');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '#workshop-reload-runtime-btn',
-
+  delay: 500,
 title: '如何开启一个脚本',
 text:'2、点击右上角的重载。当然你先别点重载，点了引导程序就看不着了。', 
-
+    onStart: () => {
+        const targetElement = document.querySelector('#workshop-reload-runtime-btn');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '#workshop-mod-list',
-
+  delay: 500,
 title: '如何挂载一个世界书',
 text:'那么如何挂载世界书呢？就是直接点击下载世界书，导入酒馆，然后外挂在全局或者角色都生效了。', 
-
+    onStart: () => {
+        const targetElement = document.querySelector('#workshop-mod-list');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '#ws-manage-btn',
-
+  delay: 500,
 title: '世界书管理',
 text:'<br>我们有专门的世界书管理界面，这个只是为了在世界书挂的太多的情况下方便的切换组合的，没有别的用途。<br>就是我指的这个按钮。<br>就先不打开了，属于进阶教程，后续再更。', 
-
+    onStart: () => {
+        const targetElement = document.querySelector('#ws-manage-btn');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '.mod-card',
-
+  delay: 500,
 title: '查看详情',
 text:'点进去可以查看详情页，有图片显示，也可以在里面订阅作品和作者哦！<br>订阅作品的话，你会收到作品更新的推送。订阅作者的话，你会收到作者新作品的推送。',
-         },{
+    onStart: () => {
+        const targetElement = document.querySelector('.mod-card');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }  
+},{
           
 
 title: '推荐的创意工坊模组',
