@@ -38,10 +38,11 @@
             -webkit-backdrop-filter: blur(5px);
             backdrop-filter: blur(5px);
         }
-        .online-updater-modal-content {
+     .online-updater-modal-content {
             background-color: #1a1a1a;
             color: #e0e0e0;
-            margin: 10% auto;
+            /* 修改这里 */
+            margin: 5% auto;
             padding: 25px 30px;
             border: 1px solid #c0a060; /* 金色边框 */
             border-radius: 8px;
@@ -49,6 +50,8 @@
             max-width: 600px;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
             position: relative;
+            /* 添加这个 */
+            box-sizing: border-box;
         }
         .online-updater-modal-close {
             color: #aaa;
@@ -136,6 +139,36 @@
         }
         .update-log-entry li {
             margin-bottom: 5px;
+        }
+
+          @media (max-width: 768px) {
+            .online-updater-modal-content {
+                /* 在手机上，让模态框更贴近顶部，宽度更宽 */
+                margin: 20px auto;
+                width: 95%;
+                padding: 20px 15px; /* 减小内边距 */
+            }
+
+            .online-updater-modal-title {
+                font-size: 1.3em; /* 适当减小标题字号 */
+            }
+
+            .online-updater-modal-description {
+                max-height: 60vh; /* 使用视口高度，防止内容过长 */
+            }
+
+            .online-updater-modal-actions {
+                /* 让按钮堆叠显示，更易于点击 */
+                display: flex;
+                flex-direction: column;
+                gap: 10px; /* 按钮之间的间距 */
+                text-align: center; /* 居中按钮 */
+            }
+
+            .online-updater-control-btn {
+                width: 100%; /* 让按钮宽度占满容器 */
+                margin: 0; /* 清除可能存在的边距 */
+            }
         }
     `;
     const styleSheet = document.createElement("style");
