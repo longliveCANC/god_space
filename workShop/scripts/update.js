@@ -362,9 +362,9 @@
            } catch (error) {
         // ✨ 重点修改这里
         console.error('----------- 检查更新时发生严重错误 -----------');
-        console.error('错误名称:', error.name);
-        console.error('错误信息:', error.message);
-        console.error('错误堆栈:', error.stack);
+        toastr.error('错误名称:', error.name);
+        toastr.error('错误信息:', error.message);
+        toastr.error('错误堆栈:', error.stack);
         console.error('-------------------------------------------');
 
         if (isManualTrigger) {
