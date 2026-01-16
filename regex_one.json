@@ -15190,7 +15190,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.24';
+let current_game_version = '3.5.25';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
