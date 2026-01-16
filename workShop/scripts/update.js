@@ -308,8 +308,17 @@
 
             const latestVersionInfo = updateLogs[updateLogs.length - 1];
             const latestVersion = latestVersionInfo.version;
-            const current_game_version = window.current_game_version; // 从window获取
+              const current_game_version = window.top.current_game_version;
+        // --- ✨ 修改结束 ---
 
+        // 添加一个保护，防止任何一个版本号为空
+        if (!latestVersion || !current_game_version) {
+            console.error(`版本号缺失，无法比较。最新版本: ${latestVersion}, 当前版本: ${current_game_version}`);
+            if (isManualTrigger) {
+                toastr.error('获取版本号失败，无法进行比较。');
+            }
+            return;
+        }
             if (compareVersions(latestVersion, current_game_version) > 0) {
                 const relevantLogs = updateLogs.filter(log => compareVersions(log.version, current_game_version) > 0);
 
