@@ -15,10 +15,10 @@
     "id": "mod00",
     "name": "【更多的教程】",
     "author": "assa",
-    "version": "1.0",
+    "version": "1.1",
     "tags": ["⭐公告"],
-    "description": "哈哈，其他界面的教程我还没有写（）若有需要，你可以先订阅此mod。",
-    "scriptUrl": "",
+    "description": "目前教程列表：[开局:世界构建,基础：主体界面]。\n还在施工中。若有需要，你可以先订阅此mod。",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod00.js",
     "worldBookUrl": "",
 
   "previewImage": ""
