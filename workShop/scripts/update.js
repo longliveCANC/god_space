@@ -428,7 +428,8 @@
     // ✅ 改为这样：
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = modalHTML;
-    const modalElement = tempDiv.firstChild;
+        const modalElement = tempDiv.firstElementChild;  // 使用 firstElementChild 而不是 firstChild
+    
     
     if (modalElement) {
         document.body.appendChild(modalElement);
@@ -564,8 +565,7 @@
             </div>`;
           const tempDiv = document.createElement('div');
 tempDiv.innerHTML = confirmationModalHTML;
-const confirmModal = tempDiv.firstChild;
-
+ const confirmModal = tempDiv.firstElementChild;  // ✅ 改这里
 if (confirmModal) {
     document.body.appendChild(confirmModal);
             const modal = document.getElementById('backup-confirmation-modal');
