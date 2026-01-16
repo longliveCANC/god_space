@@ -17,6 +17,10 @@
     // 1. 注入CSS样式 (黑金主题)
     // =========================================================================
     const styles = `
+        body {
+            transform: none !important;
+            filter: none !important;
+        }
         /* 模态框基础样式 */
         .online-updater-modal {
            display: none !important; /* 默认隐藏，但用 important 提升优先级 */
@@ -420,8 +424,11 @@
                             </div>
                         </div>
                     </div>`;
-                    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
+                    // document.body.insertAdjacentHTML('beforeend', modalHTML);
+const tempDiv = document.createElement('div');
+tempDiv.innerHTML = modalHTML;
+// 将模态框元素本身附加到body的末尾
+document.body.appendChild(tempDiv.firstChild);
                     const updateModalElement = document.getElementById('update-modal');
                     updateModalElement.addEventListener('click', (event) => {
                         if (event.target === updateModalElement) hideModal('update-modal');

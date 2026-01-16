@@ -14421,8 +14421,9 @@ pointer-events: auto;
                 <div class="setting-item">
                     <label>系统更新检查</label>
                     <button id="check-for-updates-btn" class="control-btn-special">检查更新</button>
-                    <button id="force-update-worldbook-btn" class="control-btn-special" style="margin-left: 10px;">强制更新世界书</button>
+                    
                     <button id="force-update-regex-btn" class="control-btn-special" style="margin-left: 10px;">强制更新正则</button>
+                    <button id="force-update-worldbook-btn" class="control-btn-special" style="margin-left: 10px;">强制更新世界书</button>
                 </div>
                 
 
@@ -15190,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.5.25';
+window.current_game_version = '3.5.26';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -26084,24 +26085,9 @@ if (forceUpdateRegexButton) {
         });
 
         document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
-            hideModal('backup-confirmation-modal');
+         
+            showNovaAlert.info('统一更新已失效，请分别强制更新吧！先强制更新正则，然后再强制更新世界书。');
             
-            // 🔑 设置更新流程标记
-            localStorage.setItem('pendingDualUpdate', 'step1_worldbook');
-            
-            toastr.info('启动第一阶段：世界书重塑中...');
-            await performWorldbookUpdate();
-        
-            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待页面稳定
-    
-            // 词条恢复完成，进入下一阶段
-            localStorage.setItem('pendingDualUpdate', 'step2_regex');
-            toastr.info('世界书完全重塑完成！启动正则更新...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await performRegexUpdate();
-  
-            localStorage.removeItem('worldbookBackup');
-            localStorage.removeItem('pendingDualUpdate');
      
         });
     }
@@ -45156,7 +45142,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 🔑 如果有备份数据，说明导入世界书后刷新了，需要恢复词条
     if (pendingUpdate) {
-  toastr.info('[进入界面中断]我们还在更新，先不打扰了');
+  toastr.info('还在更新呢，暂停进入界面');
+ 
    return;
     }else{
 
