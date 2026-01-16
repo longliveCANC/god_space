@@ -402,11 +402,11 @@
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 22.png"
   } ,{
     "id": "mod10",
-    "name": "astro润色功能兼容",
+    "name": "refine润色功能兼容",
     "author": "assa",
     "version": "1.1",
     "tags": ["功能脚本","预设兼容"],
-    "description": "[需版本是3.5.4及其以上][润色内容会弹窗显示]astro最新版的润色需要关闭原生的润色2正则，然后开启这个脚本，来实现在同层中也能使用润色功能。开启该脚本后就不用管了。",
+    "description": "[需版本是3.5.4及其以上][润色内容会弹窗显示]astro最新版的润色(以及kemini也有的润色功能，反正就是预设的diff_refine润色功能都可以开这个)需要关闭原生的润色2正则，然后开启这个脚本，来实现在同层中也能使用润色功能。开启该脚本后就不用管了。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod10.js",
     "worldBookUrl": "",
     "previewImage": ""
