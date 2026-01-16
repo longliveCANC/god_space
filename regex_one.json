@@ -15190,8 +15190,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.26';
-window.current_game_version = current_game_version;
+window.current_game_version = '3.5.25';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -45157,44 +45156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 🔑 如果有备份数据，说明导入世界书后刷新了，需要恢复词条
     if (pendingUpdate) {
-        const worldbookName = '小蝌蚪找妈妈-同层版';
-        const uidsToBackup = [30,32 ];
-        
-        toastr.info('检测到页面刷新，继续恢复词条...');
- 
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000)); // 等待页面稳定
-            
-            const backedUpEntries = JSON.parse(savedBackup);
-            await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
-                const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
-                return [...cleanedNewWorldbook, ...backedUpEntries];
-            });
-            
-            await new Promise(resolve => setTimeout(resolve, 800));
-            localStorage.removeItem('worldbookBackup');
-            toastr.success(`已成功恢复 ${backedUpEntries.length} 个词条!`);
-            
-            // 绑定世界书
-            const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
-            currentBindings.primary = worldbookName;
-            await TavernHelper.rebindCharWorldbooks('current', currentBindings);
-            
-            // 词条恢复完成，进入下一阶段
-            localStorage.setItem('pendingDualUpdate', 'step2_regex');
-            toastr.info('世界书完全重塑完成！启动正则更新...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await performRegexUpdate();
-            
-        } catch (error) {
-            console.error('恢复词条时出错:', error);
-            toastr.error('词条恢复失败，请使用强制更新按钮。');
-            localStorage.removeItem('worldbookBackup');
-            localStorage.removeItem('pendingDualUpdate');
-        }
-        
-    } else if (pendingUpdate === 'step2_regex') {
-   toastr.info('我们还在更新，先不打扰了');
+  toastr.info('[进入界面中断]我们还在更新，先不打扰了');
    return;
     }else{
 
