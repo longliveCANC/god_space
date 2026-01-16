@@ -514,7 +514,7 @@ async function checkForFutureEchoes(isManualTrigger = false) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 localStorage.setItem('pendingDualUpdate', 'step2_regex');
-                toastr.info('启动第二截断，世界书更新中...');
+                toastr.info('启动第二阶段，世界书更新中...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
              await performWorldbookUpdate();    
 
