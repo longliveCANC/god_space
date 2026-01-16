@@ -68,9 +68,9 @@
       "is_dowload_raw_name":true,
     "name": "世界事件",
     "author": "assa",
-    "version": "1.2",
+    "version": "1.3",
     "tags": ["美化脚本","其他"],
-    "description": "[小修了一下提示词，结构更加稳定]\n给世界增加了点平行事件，建议开异步，不然哈基米现在脑力会不够的。平行事件不是每轮对话都更新， 有时间间隔。通过代码比对的时间并对AI进行通知，更新频率有点慢的感人，有需要的可以去自定义。\n以及也可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
+    "description": "[将默认间隔时间从6小时调整到了3小时。可以自己改。其实生成平行事件和新闻的数量也可以自己调，在那个条目的前几行]\n给世界增加了点平行事件，建议开异步，不然哈基米现在脑力会不够的。平行事件不是每轮对话都更新， 有时间间隔。通过代码比对的时间并对AI进行通知，更新频率有点慢的感人，有需要的可以去自定义。\n以及也可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod16parallels01.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-世界事件.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 29.png"
