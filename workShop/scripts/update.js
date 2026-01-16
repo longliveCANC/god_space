@@ -359,45 +359,45 @@
     }
 
     async function checkForFutureEchoes(isManualTrigger = false) {
-        debugToast('函数开始执行', 1);
+        // debugToast('函数开始执行', 1);
 
         if (isManualTrigger) {
             toastr.info('正在向github发出问询，请稍候...');
         }
 
         try {
-            debugToast('进入 try 块', 2);
-            debugToast('准备调用 loadRemoteJson', 3);
+            // debugToast('进入 try 块', 2);
+            // debugToast('准备调用 loadRemoteJson', 3);
             const updateLogs = await loadRemoteJson(
                 'https://longlivecanc.github.io/god_space/update_log.json',
                 []
             );
-            debugToast('loadRemoteJson 执行完毕', 4, 'success');
+            // debugToast('loadRemoteJson 执行完毕', 4, 'success');
 
             if (!Array.isArray(updateLogs) || updateLogs.length === 0) {
-                debugToast('日志为空，准备退出', 5);
+                // debugToast('日志为空，准备退出', 5);
                 if (isManualTrigger) toastr.warning('未找到有效的更新日志。');
                 return;
             }
-            debugToast('日志不为空，继续执行', 6);
+            // debugToast('日志不为空，继续执行', 6);
 
             const latestVersionInfo = updateLogs[updateLogs.length - 1];
             const latestVersion = latestVersionInfo.version;
-            debugToast(`获取到最新版本号: ${latestVersion}`, 7);
+            // debugToast(`获取到最新版本号: ${latestVersion}`, 7);
 
             const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
             const current_game_version = window.top[STABLE_VERSION_VAR];
-            debugToast(`获取到当前版本号: ${current_game_version}`, 8);
+            // debugToast(`获取到当前版本号: ${current_game_version}`, 8);
 
             if (!latestVersion || !current_game_version) {
                 debugToast('版本号缺失，无法比较', 9, 'error');
                 toastr.error(`版本号缺失，无法比较。最新: ${latestVersion}, 当前: ${current_game_version}`);
                 return;
             }
-            debugToast('版本号齐全，准备比较', 10);
+            // debugToast('版本号齐全，准备比较', 10);
 
             if (compareVersions(latestVersion, current_game_version) > 0) {
-                debugToast('发现新版本！准备构建UI', 11, 'success');
+                // debugToast('发现新版本！准备构建UI', 11, 'success');
 
                 const relevantLogs = updateLogs.filter(log => compareVersions(log.version, current_game_version) > 0);
 
@@ -411,7 +411,7 @@
                 `).join('');
 
     if (!document.getElementById('update-modal')) {
-    debugToast('未找到模态框DOM，正在创建...', 11.1);
+    // debugToast('未找到模态框DOM，正在创建...', 11.1);
     const modalHTML = `
     <div id="update-modal" class="online-updater-modal">
         <div class="online-updater-modal-content">
@@ -457,9 +457,9 @@
             });
         }
         
-        debugToast('模态框DOM创建并绑定事件成功', 11.2, 'success');
+        // debugToast('模态框DOM创建并绑定事件成功', 11.2, 'success');
     } else {
-        debugToast('模态框创建失败：firstChild 为 null', 11.1, 'error');
+        // debugToast('模态框创建失败：firstChild 为 null', 11.1, 'error');
         toastr.error('无法创建更新对话框');
         return;
     }
@@ -468,16 +468,16 @@
                 const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
                 document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
 
-                debugToast('准备显示模态框', 11.3);
+                // debugToast('准备显示模态框', 11.3);
                 showModal('update-modal', modalTitle, changelogHTML);
 
             } else {
-                debugToast('当前已是最新版本', 12);
+                // debugToast('当前已是最新版本', 12);
                 if (isManualTrigger) {
                     toastr.success(`太棒了！你的世界已是最新版本(${current_game_version})，无需更新。`);
                 }
             }
-            debugToast('函数正常执行完毕', 13, 'success');
+            // debugToast('函数正常执行完毕', 13, 'success');
 
         } catch (error) {
             debugToast('进入了 catch 块！', 99, 'error');
