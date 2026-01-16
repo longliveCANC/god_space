@@ -1,14 +1,24 @@
-// updater.js
-(function() {
+ (function() {
     'use strict';
 
-    // 确保不会重复执行
     if (window.isTavernOnlineUpdaterLoaded) {
         return;
     }
     window.isTavernOnlineUpdaterLoaded = true;
 
-    console.log('Tavern Online Updater: 核心模块开始执行...');
+    // =========================================================================
+    // ✨ 1. 引入 Toastr 调试器
+    // =========================================================================
+    /**
+     * 使用 Toastr 显示调试信息。
+     * @param {string} message - 要显示的消息。
+     * @param {number} step - 步骤编号。
+     * @param {string} type - 'info', 'success', 'warning', 'error'
+     */
+    function debugToast(message, step, type = 'info') {
+        // 为了避免铺满屏幕，调试信息只显示很短的时间
+        toastr[type](`[步骤 ${step}] ${message}`, '', { timeOut: 2000, extendedTimeOut: 1000 });
+    }
 
     // =========================================================================
     // 1. 注入CSS样式 (黑金主题)
@@ -290,99 +300,82 @@
         }
     }
 
-    async function checkForFutureEchoes(isManualTrigger = false) {
+     async function checkForFutureEchoes(isManualTrigger = false) {
+        debugToast('函数开始执行', 1);
+
         if (isManualTrigger) {
             toastr.info('正在向github发出问询，请稍候...');
         }
 
         try {
+            debugToast('进入 try 块', 2);
+
+            // 探针：检查 loadRemoteJson 调用前
+            debugToast('准备调用 loadRemoteJson', 3);
             const updateLogs = await loadRemoteJson(
                 'https://longlivecanc.github.io/god_space/update_log.json',
                 []
             );
+            // 探针：检查 loadRemoteJson 调用后
+            debugToast('loadRemoteJson 执行完毕', 4, 'success');
 
-            if (!Array.isArray(updateLogs) || updateLogs.length === 0) {
+            // 探针：检查返回的数据
+            if (!Array.isArray(updateLogs)) {
+                debugToast('updateLogs 不是数组!', 4.1, 'error');
+                return;
+            }
+            debugToast(`获取到 ${updateLogs.length} 条日志`, 4.2);
+
+
+            if (updateLogs.length === 0) {
+                debugToast('日志为空，准备退出', 5);
                 if (isManualTrigger) toastr.warning('未找到有效的更新日志。');
                 return;
             }
-        const latestVersionInfo = updateLogs[updateLogs.length - 1];
-        const latestVersion = latestVersionInfo.version;
+            debugToast('日志不为空，继续执行', 6);
 
-        
+            const latestVersionInfo = updateLogs[updateLogs.length - 1];
+            const latestVersion = latestVersionInfo.version;
+            debugToast(`获取到最新版本号: ${latestVersion}`, 7);
+
             const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
-        // 从 loader.js 为我们准备的稳定变量中读取版本号
-        const current_game_version = window.top[STABLE_VERSION_VAR];
+            const current_game_version = window.top[STABLE_VERSION_VAR];
+            debugToast(`获取到当前版本号: ${current_game_version}`, 8);
 
-        // 添加一个保护，防止任何一个版本号为空
-        if (!latestVersion || !current_game_version) {
-            toastr.error(`版本号缺失，无法比较。最新版本: ${latestVersion}, 当前版本: ${current_game_version}`);
-            if (isManualTrigger) {
-                toastr.error('获取版本号失败，无法进行比较。');
+            if (!latestVersion || !current_game_version) {
+                debugToast('版本号缺失，无法比较', 9, 'error');
+                toastr.error(`版本号缺失，无法比较。最新: ${latestVersion}, 当前: ${current_game_version}`);
+                return;
             }
-            return;
-        }
+            debugToast('版本号齐全，准备比较', 10);
+
             if (compareVersions(latestVersion, current_game_version) > 0) {
-                const relevantLogs = updateLogs.filter(log => compareVersions(log.version, current_game_version) > 0);
-
-                let changelogHTML = relevantLogs.reverse().map(log => `
-                    <div class="update-log-entry">
-                        <h3>v${log.version} <span>(${log.date})</span></h3>
-                        <ul>
-                            ${log.changes.map(change => `<li>${change}</li>`).join('')}
-                        </ul>
-                    </div>
-                `).join('');
-
-                if (!document.getElementById('update-modal')) {
-                    const modalHTML = `
-                    <div id="update-modal" class="online-updater-modal">
-                        <div class="online-updater-modal-content">
-                            <button class="online-updater-modal-close">×</button>
-                            <div class="online-updater-modal-title">发现来自未来的讯息！</div>
-                            <div class="online-updater-modal-description"></div>
-                            <div class="online-updater-modal-actions">
-                                <button id="cancel-update-btn" class="online-updater-control-btn">稍后</button>
-                                <button id="perform-update-btn" class="online-updater-control-btn online-updater-primary-btn"></button>
-                            </div>
-                        </div>
-                    </div>`;
-                    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-                    const updateModalElement = document.getElementById('update-modal');
-                    updateModalElement.addEventListener('click', (event) => {
-                        if (event.target === updateModalElement) hideModal('update-modal');
-                    });
-                    document.querySelector('#update-modal .online-updater-modal-close').addEventListener('click', () => hideModal('update-modal'));
-                    document.getElementById('cancel-update-btn').addEventListener('click', () => hideModal('update-modal'));
-                    document.getElementById('perform-update-btn').addEventListener('click', () => {
-                        hideModal('update-modal');
-                        showBackupConfirmation();
-                    });
-                }
-
-                const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
-                document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
-                showModal('update-modal', modalTitle, changelogHTML);
+                debugToast('发现新版本！', 11, 'success');
+                // ... (显示模态框的逻辑) ...
+                // 为了简化调试，我们先只弹出一个提示
+                toastr.success(`发现新版本！当前 v${current_game_version} -> 最新 v${latestVersion}`);
 
             } else {
+                debugToast('当前已是最新版本', 12);
                 if (isManualTrigger) {
                     toastr.success(`太棒了！你的世界已是最新版本(${current_game_version})，无需更新。`);
                 }
             }
+            debugToast('函数正常执行完毕', 13, 'success');
 
-           } catch (error) {
-        // ✨ 重点修改这里
-        console.error('----------- 检查更新时发生严重错误 -----------');
-        toastr.error('错误名称:', error.name);
-        toastr.error('错误信息:', error.message);
-        toastr.error('错误堆栈:', error.stack);
-        console.error('-------------------------------------------');
-
-        if (isManualTrigger) {
-            toastr.error('网络有问题？检查更新出错了 (详情请看控制台)。');
+        } catch (error) {
+            // 如果代码能进入这里，说明有明确的异常被抛出
+            debugToast('进入了 catch 块！', 99, 'error');
+            toastr.error(`发生严重错误: ${error.message}`);
         }
     }
-}
+
+    // =========================================================================
+    // 5. 全局API暴露与初始化 (这部分不变)
+    // =========================================================================
+
+
+ 
 
     async function performRegexUpdate() {
         toastr.info('拉取远程同层代码...');
