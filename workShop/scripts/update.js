@@ -508,15 +508,15 @@ async function checkForFutureEchoes(isManualTrigger = false) {
 
                 localStorage.setItem('pendingDualUpdate', 'step1_worldbook');
 
-                toastr.info('启动第一阶段：世界书重塑中...');
-                await performWorldbookUpdate();
-
+                toastr.info('启动第一阶段：正则更新中...');
+            
+   await performRegexUpdate();
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 localStorage.setItem('pendingDualUpdate', 'step2_regex');
-                toastr.info('世界书完全重塑完成！启动正则更新...');
+                toastr.info('启动第二截断，世界书更新中...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                await performRegexUpdate();
+             await performWorldbookUpdate();    
 
                 localStorage.removeItem('worldbookBackup');
                 localStorage.removeItem('pendingDualUpdate');
