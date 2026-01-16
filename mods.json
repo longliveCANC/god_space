@@ -504,5 +504,15 @@
       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod003game.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-dlc-游戏制作人之他们只玩过传奇？！.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 30.png"
+  },{
+    "id": "mod18",
+    "name": "AI输出结束后提醒",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["功能脚本"],
+    "description":"在AI消息生成结束后，代码给你吱一声。正文层和变量层的音效不一样。妈妈再也不用担心在等AI输出去干别的活的时候没人提醒了。",
+       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod18overnotice.js",
+    "worldBookUrl": "",
+    "previewImage": ""
   }
 ]
