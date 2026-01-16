@@ -15190,7 +15190,8 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.25';
+let current_game_version = '3.5.14';
+window.current_game_version = current_game_version;
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -45153,10 +45154,9 @@ checkbox.checked = savedValue === null ? false : savedValue === 'true';
 document.addEventListener('DOMContentLoaded', async () => {
 
      const pendingUpdate = localStorage.getItem('pendingDualUpdate');
-    const savedBackup = localStorage.getItem('worldbookBackup');
-   
+
     // 🔑 如果有备份数据，说明导入世界书后刷新了，需要恢复词条
-    if (savedBackup && pendingUpdate === 'step1_worldbook') {
+    if (pendingUpdate) {
         const worldbookName = '小蝌蚪找妈妈-同层版';
         const uidsToBackup = [30,32 ];
         
@@ -45194,8 +45194,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
     } else if (pendingUpdate === 'step2_regex') {
-        localStorage.removeItem('pendingDualUpdate');
-        toastr.success('🎉 双重重塑完美完成！');
+   toastr.info('我们还在更新，先不打扰了');
+   return;
     }else{
 
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
@@ -45749,7 +45749,7 @@ initializeReadingMode();
    setTimeout(async () => {
      await loadWorldbookSettingsFromChat();
       await initDisplay();
-     checkForFutureEchoes(false);
+    //  checkForFutureEchoes(false);
     }, 2000);
 
 console.log('数据检测前');
