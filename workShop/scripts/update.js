@@ -155,52 +155,29 @@
         if (modal) modal.style.display = 'none';
     }
 
-    // 简化的远程加载函数，需要根据实际情况调整
- async function loadRemoteJson(url, fallbackData = {}) {
+ async function loadRemoteJson(url, fallbackData = null) {
+    const cacheBustingUrl = new URL(url);
+    cacheBustingUrl.searchParams.set('t', new Date().getTime());
+
+    console.log(`[Updater] 准备请求: ${cacheBustingUrl.toString()}`);
+
     try {
-        console.log('开始加载映射...',url);
-           const cacheBustingUrl = `${url}?v=${new Date().getTime()}`;
-        // const cacheBustingUrl = `${url}`;
-        console.log(`NOVA V9.5: 正在使用“破除缓存”模式请求 -> ${cacheBustingUrl}`);
-    
+        const response = await fetch(cacheBustingUrl.toString());
 
-
-               const response = await fetch(cacheBustingUrl);
+        // 明确检查HTTP状态码，fetch本身不认为404是网络错误
         if (!response.ok) {
-            throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+            // 主动抛出一个包含状态码的错误，这样catch块就能捕获到
+            throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
         }
-        
-        let jsonText = await response.text();
-        console.log(`获取到JSON文本，长度: ${jsonText.length}字符`);
-        
-        // 首次尝试直接解析
-        try {
-            const data = JSON.parse(jsonText);
-            console.log('JSON解析成功！');
-            return data;
-        } catch (parseError) {
-            console.warn('直接解析失败，尝试清理JSON...', parseError.message);
-            
-            // 诊断错误
-            diagnoseJSONError(jsonText, parseError);
-            
-            // 尝试清理和修复
-            const sanitizedJSON = sanitizeJSON(jsonText);
-            
-            if (validateJSON(sanitizedJSON)) {
-                console.log('JSON清理成功，重新解析...');
-                const data = JSON.parse(sanitizedJSON);
-                console.log('清理后的JSON解析成功！');
-                return data;
-            } else {
-                throw new Error('JSON清理后仍然无效');
-            }
-        }
-        
+
+        const data = await response.json();
+        console.log(`[Updater] JSON请求成功，获取到数据。`);
+        return data;
+
     } catch (error) {
-        console.error('加载映射失败:', error.message);
-        
-        console.log('使用fallback数据');
+        // 现在任何错误（网络中断、HTTP错误、JSON解析失败）都会在这里被捕获
+        console.error(`[Updater] loadRemoteJson 失败! URL: ${url}`, error);
+        // 返回备用数据，而不是向上抛出异常
         return fallbackData;
     }
 }
@@ -382,13 +359,19 @@
                 }
             }
 
-        } catch (error) {
-            console.error('检查更新时出错:', error);
-            if (isManualTrigger) {
-                toastr.error('网络有问题？检查更新出错了。');
-            }
+           } catch (error) {
+        // ✨ 重点修改这里
+        console.error('----------- 检查更新时发生严重错误 -----------');
+        console.error('错误名称:', error.name);
+        console.error('错误信息:', error.message);
+        console.error('错误堆栈:', error.stack);
+        console.error('-------------------------------------------');
+
+        if (isManualTrigger) {
+            toastr.error('网络有问题？检查更新出错了 (详情请看控制台)。');
         }
     }
+}
 
     async function performRegexUpdate() {
         toastr.info('拉取远程同层代码...');
