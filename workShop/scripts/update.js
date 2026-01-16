@@ -410,37 +410,59 @@
                     </div>
                 `).join('');
 
-                if (!document.getElementById('update-modal')) {
-                    debugToast('未找到模态框DOM，正在创建...', 11.1);
-                    const modalHTML = `
-                    <div id="update-modal" class="online-updater-modal">
-                        <div class="online-updater-modal-content">
-                            <button class="online-updater-modal-close">×</button>
-                            <div class="online-updater-modal-title">发现来自未来的讯息！</div>
-                            <div class="online-updater-modal-description"></div>
-                            <div class="online-updater-modal-actions">
-                                <button id="cancel-update-btn" class="online-updater-control-btn">稍后</button>
-                                <button id="perform-update-btn" class="online-updater-control-btn online-updater-primary-btn"></button>
-                            </div>
-                        </div>
-                    </div>`;
-                    // document.body.insertAdjacentHTML('beforeend', modalHTML);
-const tempDiv = document.createElement('div');
-tempDiv.innerHTML = modalHTML;
-// 将模态框元素本身附加到body的末尾
-document.body.appendChild(tempDiv.firstChild);
-                    const updateModalElement = document.getElementById('update-modal');
-                    updateModalElement.addEventListener('click', (event) => {
-                        if (event.target === updateModalElement) hideModal('update-modal');
-                    });
-                    document.querySelector('#update-modal .online-updater-modal-close').addEventListener('click', () => hideModal('update-modal'));
-                    document.getElementById('cancel-update-btn').addEventListener('click', () => hideModal('update-modal'));
-                    document.getElementById('perform-update-btn').addEventListener('click', () => {
-                        hideModal('update-modal');
-                        showBackupConfirmation();
-                    });
-                    debugToast('模态框DOM创建并绑定事件成功', 11.2, 'success');
-                }
+    if (!document.getElementById('update-modal')) {
+    debugToast('未找到模态框DOM，正在创建...', 11.1);
+    const modalHTML = `
+    <div id="update-modal" class="online-updater-modal">
+        <div class="online-updater-modal-content">
+            <button class="online-updater-modal-close">×</button>
+            <div class="online-updater-modal-title">发现来自未来的讯息！</div>
+            <div class="online-updater-modal-description"></div>
+            <div class="online-updater-modal-actions">
+                <button id="cancel-update-btn" class="online-updater-control-btn">稍后</button>
+                <button id="perform-update-btn" class="online-updater-control-btn online-updater-primary-btn"></button>
+            </div>
+        </div>
+    </div>`;
+    
+    // ✅ 改为这样：
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = modalHTML;
+    const modalElement = tempDiv.firstChild;
+    
+    if (modalElement) {
+        document.body.appendChild(modalElement);
+        
+        // 现在绑定事件
+        modalElement.addEventListener('click', (event) => {
+            if (event.target === modalElement) hideModal('update-modal');
+        });
+        
+        const closeBtn = modalElement.querySelector('.online-updater-modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => hideModal('update-modal'));
+        }
+        
+        const cancelBtn = modalElement.querySelector('#cancel-update-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => hideModal('update-modal'));
+        }
+        
+        const performBtn = modalElement.querySelector('#perform-update-btn');
+        if (performBtn) {
+            performBtn.addEventListener('click', () => {
+                hideModal('update-modal');
+                showBackupConfirmation();
+            });
+        }
+        
+        debugToast('模态框DOM创建并绑定事件成功', 11.2, 'success');
+    } else {
+        debugToast('模态框创建失败：firstChild 为 null', 11.1, 'error');
+        toastr.error('无法创建更新对话框');
+        return;
+    }
+}
 
                 const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
                 document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
@@ -540,8 +562,12 @@ document.body.appendChild(tempDiv.firstChild);
                     </div>
                 </div>
             </div>`;
-            document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
+          const tempDiv = document.createElement('div');
+tempDiv.innerHTML = confirmationModalHTML;
+const confirmModal = tempDiv.firstChild;
 
+if (confirmModal) {
+    document.body.appendChild(confirmModal);
             const modal = document.getElementById('backup-confirmation-modal');
             modal.querySelector('.online-updater-modal-close').onclick = () => hideModal('backup-confirmation-modal');
             modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
@@ -569,7 +595,7 @@ document.body.appendChild(tempDiv.firstChild);
         }
         showModal('backup-confirmation-modal');
     }
-
+}
     // =========================================================================
     // 5. 全局API暴露与初始化
     // =========================================================================
