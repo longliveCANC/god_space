@@ -28,8 +28,8 @@
             z-index: 1050;
             left: 0;
             top: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             overflow: auto;
             background-color: rgba(0, 0, 0, 0.7);
             -webkit-backdrop-filter: blur(5px);
@@ -136,7 +136,7 @@
         @media (max-width: 768px) {
             .online-updater-modal-content {
                 margin: 20px auto;
-                width: 95%;
+                width: 100vw;
                 padding: 20px 15px;
             }
             .online-updater-modal-title {
