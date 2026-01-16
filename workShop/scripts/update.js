@@ -19,7 +19,7 @@
     const styles = `
         /* 模态框基础样式 */
         .online-updater-modal {
-            display: none;
+           display: none !important; /* 默认隐藏，但用 important 提升优先级 */
             position: fixed;
             z-index: 1050;
             left: 0;
@@ -161,7 +161,7 @@
     // =========================================================================
     // 2. 辅助函数
     // =========================================================================
-    function showModal(modalId, title = null, descriptionHTML = null) {
+     function showModal(modalId, title = null, descriptionHTML = null) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         if (title) {
@@ -172,12 +172,14 @@
             const descEl = modal.querySelector('.online-updater-modal-description');
             if (descEl) descEl.innerHTML = descriptionHTML;
         }
-        modal.style.display = 'block';
+        /* 修改这里：使用 setProperty 来覆盖 !important */
+        modal.style.setProperty('display', 'block', 'important');
     }
 
-    function hideModal(modalId) {
+     function hideModal(modalId) {
         const modal = document.getElementById(modalId);
-        if (modal) modal.style.display = 'none';
+        /* 修改这里 */
+        if (modal) modal.style.setProperty('display', 'none', 'important');
     }
 
     async function loadRemoteJson(url, fallbackData = null) {
