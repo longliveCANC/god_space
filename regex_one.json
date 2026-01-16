@@ -15191,7 +15191,17 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.5.26';
+window.current_game_version = '3.5.27';
+
+const pendingUpdate = localStorage.getItem('pendingDualUpdate');
+
+if (pendingUpdate) {
+  toastr.info('还在更新呢，暂停进入界面');
+  // 中断整个 script 的执行
+  throw new Error('update in progress');
+}
+
+
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -35631,7 +35641,7 @@ let backupData = {};
              try {
                  // A. 保存历史记录 (此时内存里的 conversationHistory 已经包含了刚才追加的时间戳)
                  await saveHistory();
- if(noBackup === "false" && !((double_api === "true" && batches === 1))){
+ if(noBackup === "false" && turnId!=0 && (double_api==="false"||(double_api === 'true' && isContinuationVar))){
   
      // B. 保存快照 (使用刚才冻结好的 snapshotData)
   
