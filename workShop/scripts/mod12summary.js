@@ -141,6 +141,45 @@
         console.log('[Summary Plugin] Settings UI injected into Game Settings page.');
     }
 
+// 新增：处理消息渲染前的摘要检测
+async function processSummaryBeforeRender(hookData) {
+    // 检查历史记录
+    if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {
+        return hookData;
+    }
+
+    const latestHistoryEntry = conversationHistory[conversationHistory.length - 1];
+    
+    // 只检查 AI 消息
+    if (latestHistoryEntry.role !== 'assistant') {
+        return hookData;
+    }
+
+    const messageContent = latestHistoryEntry.content || "";
+    const sTag = settings.startTag;
+    const eTag = settings.endTag;
+
+    if (!sTag || !eTag) return hookData;
+
+    // 检测是否存在至少一对完整的摘要标签
+    const pattern = `${escapeRegExp(sTag)}[\\s\\S]*?${escapeRegExp(eTag)}`;
+    const summaryRegex = new RegExp(pattern);
+
+    if (summaryRegex.test(messageContent)) {
+        // 发现摘要标签，插入占位符
+        if (typeof collectedBatchOps !== 'undefined' && Array.isArray(collectedBatchOps)) {
+            collectedBatchOps.push({
+                type: 'memory',
+                path: 'summary.small',
+                key: '_',
+                value: '_'
+            });
+            console.log('[Summary Plugin] Summary tag detected in history, placeholder inserted.');
+        }
+    }
+    return hookData;
+}
+window.NovaHooks.add('before_message_render', processSummaryBeforeRender);
     // 5. 注册钩子并启动 UI
     window.NovaHooks.add('before_ai_response_save', processSummaryBeforeSave);
 
