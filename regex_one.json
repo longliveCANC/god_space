@@ -15190,7 +15190,7 @@ pointer-events: auto;
 </body>
 
 <script>
-let current_game_version = '3.5.23';
+let current_game_version = '3.5.24';
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -35691,7 +35691,7 @@ let backupData = {};
              try {
                  // A. 保存历史记录 (此时内存里的 conversationHistory 已经包含了刚才追加的时间戳)
                  await saveHistory();
- if(noBackup === "false"){
+ if(noBackup === "false" || !((double_api === "true" && batches === 1))){
   
      // B. 保存快照 (使用刚才冻结好的 snapshotData)
             
@@ -58052,6 +58052,10 @@ title: '重新查看教程',
 text: '想必映入你眼帘的就是这个重看教程按钮，是的，在这里可以重新查看教程。<br>但是为了性能考虑(毕竟现在的代码已经太多了)，你如果想查看进阶的其他界面的教程，得先前往创意工坊界面的公告分类，去开启【更多的教程】脚本。',
  
         },{
+            selector: '#open-reconfig-modal-btn',
+title: '重新调整模组',
+text: '这里也很重要。这里是重新调整我们开局选的左右两边的游戏内置模组的地方，方便用于游戏局内临时开关功能。<br>需要注意的是，在这里做的调整无法被记忆至下一次开局，只有在开局左右两边设置的搭配，才能被记忆至下一次开局。'
+        },{
             selector: '#settings-modal',
 
 title: '创意工坊-脚本',
@@ -58064,33 +58068,75 @@ text:'这个卡最重要的就是创意工坊，创意工坊内的内容大体�
      }
         },{
             selector: '#workshop-mod-list',
-
+  delay: 500,
 title: '如何开启一个脚本',
 text:'1、选择你心仪的脚本，点击脚本右下角的启用。', 
+    onStart: () => {
+        const targetElement = document.querySelector('#workshop-mod-list');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '#workshop-reload-runtime-btn',
-
+  delay: 500,
 title: '如何开启一个脚本',
 text:'2、点击右上角的重载。当然你先别点重载，点了引导程序就看不着了。', 
-
+    onStart: () => {
+        const targetElement = document.querySelector('#workshop-reload-runtime-btn');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '#workshop-mod-list',
-
+  delay: 500,
 title: '如何挂载一个世界书',
 text:'那么如何挂载世界书呢？就是直接点击下载世界书，导入酒馆，然后外挂在全局或者角色都生效了。', 
-
+    onStart: () => {
+        const targetElement = document.querySelector('#workshop-mod-list');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '#ws-manage-btn',
-
+  delay: 500,
 title: '世界书管理',
 text:'<br>我们有专门的世界书管理界面，这个只是为了在世界书挂的太多的情况下方便的切换组合的，没有别的用途。<br>就是我指的这个按钮。<br>就先不打开了，属于进阶教程，后续再更。', 
-
+    onStart: () => {
+        const targetElement = document.querySelector('#ws-manage-btn');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
         },{
             selector: '.mod-card',
-
+  delay: 500,
 title: '查看详情',
 text:'点进去可以查看详情页，有图片显示，也可以在里面订阅作品和作者哦！<br>订阅作品的话，你会收到作品更新的推送。订阅作者的话，你会收到作者新作品的推送。',
-         },{
+    onStart: () => {
+        const targetElement = document.querySelector('.mod-card');
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }  
+},{
           
 
 title: '推荐的创意工坊模组',
@@ -58197,7 +58243,6 @@ text:'我说完了。你可以继续游戏啦。<br>游玩愉快。',
         },
         ]
     }
-    // 你可以在这里继续添加 'workshop', 'data' 等模块
 };
 
 
