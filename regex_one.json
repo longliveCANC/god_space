@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.5.27';
+window.current_game_version = '3.6.1';
 
 const pendingUpdate = localStorage.getItem('pendingDualUpdate');
 
@@ -57636,7 +57636,7 @@ const GuideEngine = (function(window, document) {
 // 教程配置中心
 // ==========================================
 let  TUTORIAL_MODULES = {
-    'intro': {
+      'intro': {
         name: '开局：世界构建',
         steps: [
             {
@@ -58076,7 +58076,7 @@ text:'还没有结束！还有一些比较重要的配置项希望你能了解�
             selector: '#check-for-updates-btn',
 title: '其他的基础功能-在线更新',
   delay: 500,
-text:'这一页的其他设置都能顾名思义，但是这一行格外重要，需要你注意。这里是检查游戏版本、在线更新的地方，以及如果在线更新不灵，单独强制更新的地方。', 
+text:'这一页的其他设置都能顾名思义，但是这一行格外重要，需要你注意。这里是检查游戏版本的地方，更新一般都是自动更新。右边俩按钮是如果在线更新不灵，单独强制更新的地方。', 
     onStart: () => {
         const targetElement = document.querySelector('#check-for-updates-btn');
         if (targetElement) {
@@ -58155,8 +58155,7 @@ title: '好了！',
 text:'我说完了。你可以继续游戏啦。<br>游玩愉快。',
         },
         ]
-    }
-};
+    }};
 
 
 document.addEventListener('DOMContentLoaded', async () => {
