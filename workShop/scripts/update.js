@@ -305,11 +305,13 @@
                 if (isManualTrigger) toastr.warning('未找到有效的更新日志。');
                 return;
             }
+        const latestVersionInfo = updateLogs[updateLogs.length - 1];
+        const latestVersion = latestVersionInfo.version;
 
-            const latestVersionInfo = updateLogs[updateLogs.length - 1];
-            const latestVersion = latestVersionInfo.version;
-              const current_game_version = window.top.current_game_version;
-        // --- ✨ 修改结束 ---
+        
+            const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
+        // 从 loader.js 为我们准备的稳定变量中读取版本号
+        const current_game_version = window.top[STABLE_VERSION_VAR];
 
         // 添加一个保护，防止任何一个版本号为空
         if (!latestVersion || !current_game_version) {
