@@ -35631,10 +35631,10 @@ let backupData = {};
              try {
                  // A. 保存历史记录 (此时内存里的 conversationHistory 已经包含了刚才追加的时间戳)
                  await saveHistory();
- if(noBackup === "false" || !((double_api === "true" && batches === 1))){
+ if(noBackup === "false" && !((double_api === "true" && batches === 1))){
   
      // B. 保存快照 (使用刚才冻结好的 snapshotData)
-            
+  
   console.log(`[Nova的记忆保险箱] (后台) 保存快照 ID:${turnId} 分支:${currentSwipeIndex}`);
          // 传入 swipeIndex
          await saveSnapshot(turnId, chatVars, currentSwipeIndex);
