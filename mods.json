@@ -520,7 +520,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["其他"],
-    "description":"如图，会将称号、地图、分阶段好感、立绘映射、资源条统统加入识小球，使其可以被方便的编辑。",
+    "description":"如图，会将称号、地图、分阶段好感、立绘映射、资源条统统加入识小球，使其可以被方便的编辑。[立绘,分阶段好感]是哈基米在初始化了之后就看不见的东西，被智能隐藏了，因此这些数据要改的话建议手操。",
       "scriptUrl": "",
      "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-显示全部分类.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 31.png"
