@@ -514,5 +514,15 @@
        "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod18overnotice.js",
     "worldBookUrl": "",
     "previewImage": ""
+  },{
+    "id": "x-mod-显示全部分类",
+    "name": "在识小球显示全部分类",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["其他"],
+    "description":"如图，会将称号、地图、分阶段好感、立绘映射、资源条统统加入识小球，使其可以被方便的编辑。",
+      "scriptUrl": "",
+     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-显示全部分类.json",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 31.png"
   }
 ]
