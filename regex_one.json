@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.2';
+window.current_game_version = '3.6.3';
 
 
 
@@ -34301,7 +34301,7 @@ async function handleSend(options = {}) {
          * 调用 setFeatures 方法，传入 { enabled: true } 对象，
          * 确保提示词模板功能被开启。
          */
-        EjsTemplate.setFeatures({ enabled: true });
+        EjsTemplate.setFeatures({ enabled: true,sandbox:false });
         
         // 强制开启成功后，给出提示
         console.info('提示词模板已强制开启。');
@@ -34345,28 +34345,28 @@ batches = 1;
 // ===== 新增：捕获提示词的逻辑 =====
 if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
     // 创建一个监听器来捕获即将发送的完整提示词
-    const capturePromptListener = (generate_data, dry_run) => {
-        if (!dry_run && generate_data && generate_data.prompt) {
-            prompts_be_sent = JSON.stringify(generate_data.prompt, null, 2);
+//     const capturePromptListener = (generate_data, dry_run) => {
+//         if (!dry_run && generate_data && generate_data.prompt) {
+//             prompts_be_sent = JSON.stringify(generate_data.prompt, null, 2);
             
-            // 添加 try-catch 防止存储失败影响后续流程
-            try {
-                if(isContinuationVar){
-                    localStorage.setItem('last_captured_prompt_api', prompts_be_sent); 
-                }else{
- localStorage.setItem('last_captured_prompt', prompts_be_sent);
-                }
+//             // 添加 try-catch 防止存储失败影响后续流程
+//             try {
+//                 if(isContinuationVar){
+//                     localStorage.setItem('last_captured_prompt_api', prompts_be_sent); 
+//                 }else{
+//  localStorage.setItem('last_captured_prompt', prompts_be_sent);
+//                 }
                
-                console.log('[Nova的提示词捕获器] 已成功捕获并存储提示词');
-            } catch (error) {
-                console.warn('[Nova的提示词捕获器] 存储提示词失败:', error.message);
-                // 存储失败不影响主流程，仅记录警告
-            }
-        }
-    };
+//                 console.log('[Nova的提示词捕获器] 已成功捕获并存储提示词');
+//             } catch (error) {
+//                 console.warn('[Nova的提示词捕获器] 存储提示词失败:', error.message);
+//                 // 存储失败不影响主流程，仅记录警告
+//             }
+//         }
+//     };
     
     // 使用 eventOnce 确保只捕获一次
-    eventOnce(tavern_events.GENERATE_AFTER_DATA, capturePromptListener);
+    // eventOnce(tavern_events.GENERATE_AFTER_DATA, capturePromptListener);
 }
 // ===== 捕获逻辑结束 =====
  
@@ -35154,6 +35154,9 @@ AI回复: ${theAImessage}
         }
 
                 } else {
+             const prompts_be_sent = JSON.stringify(commonConfig, null, 2);
+            
+            localStorage.setItem('last_captured_prompt', prompts_be_sent);
                     console.log("[Nova] 触发标准生成 (Preset Enabled)");
                     aiFullResponse = await generate({
                         ...commonConfig,
@@ -35408,6 +35411,9 @@ AI回复: ${theAImessage}
            showNovaAlert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
         }
                 } else {
+                      const prompts_be_sent = JSON.stringify(commonConfig, null, 2);
+            
+            localStorage.setItem('last_captured_prompt', prompts_be_sent);
                      console.log("[Nova] 触发标准生成 (Preset Enabled)");
                      aiFullResponse = await generate({
                         ...commonConfig,
