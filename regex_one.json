@@ -15191,15 +15191,9 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.1';
+window.current_game_version = '3.6.2';
 
-const pendingUpdate = localStorage.getItem('pendingDualUpdate');
 
-if (pendingUpdate) {
-  toastr.info('还在更新呢，暂停进入界面');
-  // 中断整个 script 的执行
-  throw new Error('update in progress');
-}
 
 
  let prompts_be_sent = null;
@@ -45152,9 +45146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 🔑 如果有备份数据，说明导入世界书后刷新了，需要恢复词条
     if (pendingUpdate) {
-  toastr.info('还在更新呢，暂停进入界面');
  
-   return;
     }else{
 
 checkWorldbookBinding('小蝌蚪找妈妈-同层版');
