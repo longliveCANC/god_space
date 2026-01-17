@@ -2129,12 +2129,7 @@ this.floater.addEventListener('touchstart', (e) => {
                const relationBtn = this.container.querySelector('.mod01-relation-toggle');
             const relationData = assaData?.global_lore?.settings?.角色关系 || assaData?.world_lore?.settings?.角色关系;
 
-            // 只有当数据存在且不为空对象时显示
-            if (relationData && Object.keys(relationData).length > 0) {
-                relationBtn.style.display = 'block';
-            } else {
-                relationBtn.style.display = 'none';
-            }
+       relationBtn.style.display = 'block';
 
             const safeGet = (path) => path.split('.').reduce((acc, k) => acc && acc[k], assaData) || {};
 
