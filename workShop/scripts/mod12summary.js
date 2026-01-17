@@ -61,7 +61,7 @@
                 // 执行命令
                 try {
                     if (window.worldHelper && window.worldHelper.processUpdateMemoryCommands) {
-                        await window.worldHelper.processUpdateMemoryCommands(commandString, -1);
+                        // await window.worldHelper.processUpdateMemoryCommands(commandString, -1);
                         console.log('[Summary Plugin] UpdateMemory command executed successfully.');
                     }
                 } catch (error) {
