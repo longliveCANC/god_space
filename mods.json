@@ -483,17 +483,8 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod15tachie.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-生成立绘.json",
     "previewImage": ""
-  } ,{
-    "id": "mod17",
-    "name": "兼容无需油猴生图插件的异步(imagesync)",
-    "author": "assa",
-    "version": "1.0",
-    "tags": ["功能脚本","插件兼容"],
-    "description":"兼容2.0版本的无需油猴生图插件的异步功能。启动该脚本就默认生效了",
-     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod17imagesync.js",
-    "worldBookUrl": "",
-    "previewImage": ""
   } 
+ 
   ,{
     "id": "x-dlc-游戏制作人之他们只玩过传奇？！",
     "name": "游戏制作人之他们只玩过传奇？！",

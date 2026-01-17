@@ -1874,24 +1874,78 @@ loadData() {
             this.animationId = requestAnimationFrame(() => this.loop());
         }
 
-  show() {
+ 
+ 
+show() {
     // --- 新增：同步主题颜色 ---
     if (window.GameAPI && window.GameAPI.getThemeVar) {
         this.colors.nodeStroke = window.GameAPI.getThemeVar('--primary-color') || '#005f66';
         this.colors.nodeHoverStroke = window.GameAPI.getThemeVar('--secondary-color') || '#00faff';
-        this.colors.globalLink = `${window.GameAPI.getThemeVar('--secondary-color') || '#2979FF'}80`; // 加透明度
+        this.colors.globalLink = `${window.GameAPI.getThemeVar('--secondary-color') || '#2979FF'}80`;
         this.colors.worldLink = `${window.GameAPI.getThemeVar('--primary-color') || '#00E676'}80`;
     }
 
     this.resize();
     const hasData = this.loadData();
-    if (!hasData) {
-        // 可以加一个友好的提示
-        return;
-    }
+    
+    // 显示面板（无论是否有数据）
     this.panel.classList.add('active');
     this.isActive = true;
-    this.loop();
+    
+    if (hasData) {
+        // 有数据则启动物理模拟动画
+        this.loop();
+    } else {
+        // 没有数据：显示空界面提示
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.drawEmptyState();
+    }
+}
+
+// 新增：绘制空界面的方法
+drawEmptyState() {
+    const ctx = this.ctx;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    
+    // 绘制背景
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, w, h);
+    
+    // 绘制暗角效果
+    const gradient = ctx.createRadialGradient(w/2, h/2, w/3, w/2, h/2, w);
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0.8)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+    
+    // 绘制提示信息
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // 图标
+    ctx.font = 'bold 60px sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.fillText('⊙', w/2, h/2 - 60);
+    
+    // 标题
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillText('暂无关系数据', w/2, h/2 + 20);
+    
+    // 副文本
+    ctx.font = '14px sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillText('请在"全局关系"或"世界关系"中添加角色关系', w/2, h/2 + 60);
+    ctx.fillText('或勾选"显示"你"以查看与用户的关系', w/2, h/2 + 90);
+    
+    // 装饰线
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(w/2 - 150, h/2 + 120);
+    ctx.lineTo(w/2 + 150, h/2 + 120);
+    ctx.stroke();
 }
 reloadDataAndRestart() {
     cancelAnimationFrame(this.animationId);
