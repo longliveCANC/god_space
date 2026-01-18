@@ -942,7 +942,7 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
 
             Object.entries(eventsData).forEach(([eventName, data]) => {
                 if (typeof data !== 'object') return;
-   eventName = data.name || eventName;
+   eventName = data.name || data.名称 ||eventName;
                 const status = data['状态'] || '未知';
                 let statusClass = 'mod16-status-pending';
                 if (status === '进行中') statusClass = 'mod16-status-active';
