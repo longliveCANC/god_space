@@ -34489,12 +34489,12 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
             return;
         }
         if(isContinuationVar){
-  userText = `中断写作任务，按照最新要求执行`;
+  userText = playerinput;
         continuationText = `[中断写作任务，新任务：遵循之前的对话中，user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循全部更新规则(将以下文本当作你'本轮输出的正文')，确保不输出任何新的正文，只专注memory更新: \nuser:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n请直接从<statusAnalyze>开始。summary的更新是重中之重，不得遗忘！]`;
         console.log("[Nova's Whisper] 正在请求重新生成变量...");
       
         }else{
-  userText = `Continue`;
+  userText = playerinput;
         continuationText = `[续写：Continue the following message. Do not include ANY parts of the original message. DO NOT include ANY parts of thinking，立刻输出小说正文。Use capitalization and punctuation as if your reply is a part of the original message: ${lastAiMessage.content}]`;
         console.log("[Nova's Whisper] 正在请求延续上一段故事...");
       
