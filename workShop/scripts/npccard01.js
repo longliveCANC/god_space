@@ -997,6 +997,189 @@
     display: none;
 }
 
+/* 放在 style.textContent 的合适位置，例如在 .mod01-meta-alert 之前 */
+
+/* --- 新增：NSFW 模块样式 --- */
+.mod01-nsfw-section {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden; /* 配合折叠动画 */
+    transition: all 0.3s ease-out;
+}
+.mod01-nsfw-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    background: linear-gradient(45deg, rgba(123, 31, 162, 0.2), rgba(233, 30, 99, 0.1)); /* 紫色到粉色的渐变 */
+    user-select: none;
+}
+.mod01-nsfw-header:hover {
+    background: linear-gradient(45deg, rgba(123, 31, 162, 0.3), rgba(233, 30, 99, 0.2));
+}
+.mod01-nsfw-title {
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #f06292; /* 亮粉色 */
+    margin-left: 10px;
+}
+.mod01-nsfw-arrow {
+    transition: transform 0.3s ease;
+    color: #f06292;
+    margin-left: auto; /* 推到最右边 */
+}
+.mod01-nsfw-section.collapsed .mod01-nsfw-arrow {
+    transform: rotate(-90deg);
+}
+.mod01-nsfw-body {
+    padding: 20px;
+    background: rgba(0,0,0,0.2);
+    max-height: 2000px; /* 用于折叠动画 */
+    transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+}
+.mod01-nsfw-section.collapsed .mod01-nsfw-body {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+/* NSFW 子模块样式 */
+.mod01-nsfw-subsection {
+    margin-bottom: 25px;
+}
+.mod01-nsfw-subtitle {
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    color: var(--secondary-color);
+    border-bottom: 1px dashed var(--border-color);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+.mod01-nsfw-subtitle i {
+    margin-right: 8px;
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+}
+.mod01-nsfw-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary-color);
+}
+.mod01-nsfw-kink-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+.mod01-nsfw-kink-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    border-radius: 6px;
+}
+.mod01-nsfw-kink-title {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+.mod01-nsfw-desire-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.mod01-nsfw-desire-chip {
+    background: rgba(255, 77, 109, 0.1); /* 红色系背景 */
+    border: 1px solid rgba(255, 77, 109, 0.3);
+    padding: 8px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.mod01-nsfw-desire-chip:hover {
+    background: rgba(255, 77, 109, 0.2);
+    border-color: #ff4d6d;
+}
+.mod01-nsfw-desire-chip strong {
+    color: #ff4d6d;
+    margin-right: 6px;
+}
+.mod01-nsfw-counter-grid {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.mod01-nsfw-counter {
+    text-align: center;
+    padding: 5px 15px;
+}
+.mod01-nsfw-counter-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #ff4d6d;
+    font-family: monospace;
+    text-shadow: 0 0 8px rgba(255, 77, 109, 0.5);
+}
+.mod01-nsfw-counter-label {
+    font-size: 11px;
+    color: var(--text-secondary-color);
+    text-transform: uppercase;
+}
+
+/* --- 新增：NSFW 过滤开关 --- */
+.mod01-nsfw-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #f06292;
+    cursor: pointer;
+    user-select: none;
+}
+.mod01-nsfw-switch {
+    position: relative;
+    width: 34px;
+    height: 20px;
+}
+.mod01-nsfw-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.mod01-nsfw-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255,255,255,0.1);
+    transition: .4s;
+    border-radius: 20px;
+}
+.mod01-nsfw-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .mod01-nsfw-slider {
+    background-color: #E91E63; /* 粉红色 */
+    box-shadow: 0 0 8px #E91E63;
+}
+input:checked + .mod01-nsfw-slider:before {
+    transform: translateX(14px);
+}
+
+
         `;
         document.head.appendChild(style);
     }
@@ -2439,7 +2622,7 @@ this.allItems.forEach((item, index) => {
             const data = npc.data;
   this.loadCG(npc.name);
             // --- 妈妈帮你更新了忽略列表 ---
-            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp','game批注'];
+            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp','game批注','nsfw'];
 
 
             // --- 0. 顶部区域：名字、外貌、好感度 (这部分保持不变) ---
@@ -2623,7 +2806,10 @@ this.allItems.forEach((item, index) => {
                 ignoreKeys.push('小习惯');
             }
 
-
+              if (data.nsfw) {
+                this.renderNsfw(root, data.nsfw, data.事件);
+                ignoreKeys.push('nsfw'); // 确保不会被通用逻辑再次渲染
+            }
 
 
 
@@ -2670,6 +2856,8 @@ this.allItems.forEach((item, index) => {
                 ignoreKeys.push('关键记忆');
             }
 
+     
+
           Object.keys(data).forEach(k => {
                 const value = data[k];
                 // ★ 妈妈的重点修改：_ 开头的字段是最高优先级，直接跳过
@@ -2705,6 +2893,158 @@ this.allItems.forEach((item, index) => {
                 ignoreKeys.push('game批注');
             }
         }
+
+        // 在 NovaNPCSystemV2 类中，可以放在 renderCard 之后
+        renderNsfw(container, nsfwData, eventData) {
+            const isNsfwFiltered = window.novaNsfwFilterActive === true;
+            const sec = document.createElement('div');
+            sec.className = 'mod01-nsfw-section mod01-section';
+            // 过滤模式下默认展开，否则默认折叠
+            if (!isNsfwFiltered) {
+                sec.classList.add('collapsed');
+            }
+
+            let bodyHtml = '';
+            const renderedKeys = [];
+
+            // 1. 渲染性器信息 (阴茎/小穴)
+            const genitalKey = Object.keys(nsfwData).find(k => k.includes('阴茎信息') || k.includes('小穴信息'));
+            if (genitalKey) {
+                const icon = genitalKey.includes('阴茎') ? '🍆' : '🍑';
+                let statusText = '';
+                if (eventData && eventData.性器状态) {
+                    statusText = `<span style="font-size: 12px; color: var(--primary-color); margin-left: 10px;">(${eventData.性器状态})</span>`;
+                }
+                bodyHtml += `
+                    <div class="mod01-nsfw-subsection">
+                        <div class="mod01-nsfw-subtitle"><i class="fas fa-venus-mars"></i>${icon} ${genitalKey} ${statusText}</div>
+                        <p class="mod01-nsfw-text">${nsfwData[genitalKey]}</p>
+                    </div>
+                `;
+                renderedKeys.push(genitalKey);
+            }
+
+            // 2. 渲染性癖
+            if (nsfwData.性癖) {
+                let kinkContent = '';
+                if (typeof nsfwData.性癖 === 'string') {
+                    kinkContent = `<p class="mod01-nsfw-text">${nsfwData.性癖}</p>`;
+                } else if (typeof nsfwData.性癖 === 'object') {
+                    kinkContent += '<div class="mod01-nsfw-kink-grid">';
+                    Object.entries(nsfwData.性癖).forEach(([k, v]) => {
+                        kinkContent += `
+                            <div class="mod01-nsfw-kink-card">
+                                <div class="mod01-nsfw-kink-title">${k}</div>
+                                <div class="mod01-nsfw-text" style="font-size:13px;">${v}</div>
+                            </div>
+                        `;
+                    });
+                    kinkContent += '</div>';
+                }
+                bodyHtml += `
+                    <div class="mod01-nsfw-subsection">
+                        <div class="mod01-nsfw-subtitle"><i class="fas fa-heart"></i> 性癖</div>
+                        ${kinkContent}
+                    </div>
+                `;
+                renderedKeys.push('性癖');
+            }
+
+            // 3. 渲染性经验
+            if (nsfwData.性经验) {
+                bodyHtml += `
+                    <div class="mod01-nsfw-subsection">
+                        <div class="mod01-nsfw-subtitle"><i class="fas fa-book-dead"></i> 性经验</div>
+                        <p class="mod01-nsfw-text">${nsfwData.性经验}</p>
+                    </div>
+                `;
+                renderedKeys.push('性经验');
+            }
+
+            // 4. 渲染性渴望度
+            if (nsfwData.性渴望度) {
+                let desireContent = '';
+                if (typeof nsfwData.性渴望度 === 'string') {
+                    desireContent = `<p class="mod01-nsfw-text">${nsfwData.性渴望度}</p>`;
+                } else if (typeof nsfwData.性渴望度 === 'object') {
+                    if (nsfwData.性渴望度.总体) {
+                        desireContent += `<p class="mod01-nsfw-text" style="margin-bottom:15px;">${nsfwData.性渴望度.总体}</p>`;
+                    }
+                    if (nsfwData.性渴望度.部位 && typeof nsfwData.性渴望度.部位 === 'object') {
+                        desireContent += '<div class="mod01-nsfw-desire-grid">';
+                        Object.entries(nsfwData.性渴望度.部位).forEach(([k, v]) => {
+                            desireContent += `<div class="mod01-nsfw-desire-chip"><strong>${k}:</strong> <em>“${v}”</em></div>`;
+                        });
+                        desireContent += '</div>';
+                    }
+                }
+                bodyHtml += `
+                    <div class="mod01-nsfw-subsection">
+                        <div class="mod01-nsfw-subtitle"><i class="fas fa-fire-alt"></i> 性渴望度</div>
+                        ${desireContent}
+                    </div>
+                `;
+                renderedKeys.push('性渴望度');
+            }
+
+            // 5. 动态渲染所有数值类型的字段 (如内射次数)
+            const counterItems = [];
+            Object.entries(nsfwData).forEach(([key, value]) => {
+                if (typeof value === 'number' && !renderedKeys.includes(key)) {
+                    counterItems.push({ key, value });
+                    renderedKeys.push(key);
+                }
+            });
+            if (counterItems.length > 0) {
+                let countersHtml = '<div class="mod01-nsfw-counter-grid">';
+                counterItems.forEach(item => {
+                    countersHtml += `
+                        <div class="mod01-nsfw-counter">
+                            <div class="mod01-nsfw-counter-value">${item.value}</div>
+                            <div class="mod01-nsfw-counter-label">${item.key}</div>
+                        </div>
+                    `;
+                });
+                countersHtml += '</div>';
+                bodyHtml += `
+                    <div class="mod01-nsfw-subsection">
+                        <div class="mod01-nsfw-subtitle"><i class="fas fa-sort-numeric-up-alt"></i> 数据统计</div>
+                        ${countersHtml}
+                    </div>
+                `;
+            }
+
+            // 6. 默认递归渲染其他未知字段
+            Object.keys(nsfwData).forEach(key => {
+                if (!renderedKeys.includes(key) && !key.startsWith('_')) {
+                    const val = nsfwData[key];
+                    bodyHtml += `<div class="mod01-nsfw-subsection">`;
+                    bodyHtml += `<div class="mod01-nsfw-subtitle"><i class="fas fa-question-circle"></i> ${key}</div>`;
+                    const contentDiv = document.createElement('div');
+                    this.renderDeepObject(contentDiv, val);
+                    bodyHtml += contentDiv.outerHTML;
+                    bodyHtml += `</div>`;
+                }
+            });
+
+            // 组装最终HTML
+            sec.innerHTML = `
+                <div class="mod01-nsfw-header">
+                    <i class="fas fa-exclamation-triangle" style="color:#E91E63;"></i>
+                    <span class="mod01-nsfw-title">❤ NSFW ❤</span>
+                    <i class="fas fa-chevron-down mod01-nsfw-arrow"></i>
+                </div>
+                <div class="mod01-nsfw-body">${bodyHtml}</div>
+            `;
+
+            // 绑定折叠事件
+            sec.querySelector('.mod01-nsfw-header').onclick = () => {
+                sec.classList.toggle('collapsed');
+            };
+
+            container.appendChild(sec);
+        }
+
         renderOfflineEvents(container, offlineData) {
             const box = document.createElement('div');
             box.className = 'mod01-timeline-box mod01-section';
