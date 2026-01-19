@@ -12881,8 +12881,8 @@ pointer-events: auto;
         <input type="radio" id="things-off" name="things-mode" value="76" >
 
 
-         <input type="radio" id="time-on" name="time-mode" value="78" > 
-        <input type="radio" id="time-off" name="time-mode" value="79" checked>
+         <input type="radio" id="time-on" name="time-mode" value="78" checked> 
+        <input type="radio" id="time-off" name="time-mode" value="79">
 
            <input type="radio" id="spacialdate-on" name="spacialdate-mode" value="on" > 
         <input type="radio" id="spacialdate-off" name="spacialdate-mode" value="off" checked>
@@ -15331,7 +15331,7 @@ add_update: memory('path.key', 'new_value');//new_value can be string/num/json o
 rename: memory('path.old_key', 'path.new_key');
 move: memory('old_path.key', 'new_path.key');
 delete: delete('path', 'key');
-回顾完毕。开始执行。
+回顾完毕。
 </build>
                 `,
          position: 'absolute_top'  // 改为 absolute_top，使其在最顶部
@@ -23026,7 +23026,7 @@ async function handleModeSelection() {
         const thingsvalue = getSafeValue('things-mode', '77');
 
         // HTML: value="79" checked (对应 id="time-off")
-        const timevalue = getSafeValue('time-mode', '79');
+        const timevalue = getSafeValue('time-mode', '78');
 
         // HTML: value="off" checked
         const spacialdatevalue = getSafeValue('spacialdate-mode', 'off'); 
@@ -35125,7 +35125,7 @@ const theAImessage  = formatAsTavernRegexedString(lastAiMessage.content,'ai_outp
 AI回复: ${theAImessage}
 
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
-在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令。`;
+在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，使用<!-- -->标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
      
           // 1. 使用 await 来等待异步的提示词组装函数完成
             const promptPayload = await assembleComplexPrompt({ continuationText: thetext });
