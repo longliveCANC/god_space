@@ -57204,7 +57204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = container.querySelector('#gs-btn-submit');
             if (submitBtn) {
                 submitBtn.addEventListener('click', () => {
-                    const submitPrompt = `<request:系统提示，现在玩家想要申请提交任务。你现在有一个额外任务，你需要在生成正文之前，使用build标签包裹思考内容，检索game.memory和game.history，判断玩家是否达成了条件。若达成条件，则设置任务状态为已完成、脱离世界并结算奖励等生成后续剧情。若没有达成条件，则在正文中生成对应驳回的剧情。>`;
+                    const submitPrompt = `<request:系统提示，现在玩家想要申请提交任务。你现在有一个额外任务，你需要在生成正文之前，使用build标签包裹思考内容，检索game.memory和game.history，判断玩家是否达成了条件。若达成条件，则设置任务状态为已完成并结算奖励等生成后续剧情。若没有达成条件，则在正文中生成对应驳回的剧情。>`;
                     window.GameAPI.triggerassa(`/setinput <${window.GameAPI.userName}申请提交任务：${taskName}>。\n${submitPrompt}\n`);
                 });
             }
@@ -57299,7 +57299,9 @@ if (status === '已完成' && !isArchived) {
                 const fullCommand = commandsToExecute.join('\n');
                 console.log('[Task System] Auto-archiving tasks:', fullCommand);
                 // 一次性执行所有归档指令
-                await worldHelper.processUpdateMemoryCommands(fullCommand, -1);
+                 window.GameAPI.triggerassa(`/setinput <updateMemory>${fullCommand}</updateMemory>\n`);
+         
+                // await worldHelper.processUpdateMemoryCommands(fullCommand, -1);
             }
         } catch (e) {
             console.error('[Task System] Auto-archive failed:', e);
@@ -57317,10 +57319,10 @@ if (status === '已完成' && !isArchived) {
         return hookData; // 直接返回原始数据
     }
 
-    // 注册到 before_message_render 钩子上
-    window.NovaHooks.add('before_message_render', processAutoArchiveBeforeRender);
+    // 注册到 before_ai_response_save 钩子上
+    window.NovaHooks.add('before_ai_response_save', processAutoArchiveBeforeRender);
 
-    console.log('[Task System] Auto-archive hook registered on before_message_render.');
+    console.log('[Task System] Auto-archive hook registered on before_ai_response_save.');
 })();
 });
 
