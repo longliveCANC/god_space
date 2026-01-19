@@ -41960,6 +41960,9 @@ if(isThingsRecord ==="true"){
 if(is_genji !== "true"){
           document.getElementById('genji_bookmark').style.display = 'none';
  
+}else{
+      document.getElementById('genji_bookmark').style.display = 'flex';
+ 
 }
 if(dice_use ==="false"){
       document.getElementById('roll-result-orb').style.display = 'none';
@@ -41973,6 +41976,9 @@ document.getElementById('map-view-orb').style.display = 'none';
 if(is_complex_task !== "true"){
           document.getElementById('task_bookmark').style.display = 'none';
      document.getElementById('page-task-orb').style.display = 'none';
+}else{
+      document.getElementById('task_bookmark').style.display = 'flex';
+     document.getElementById('page-task-orb').style.display = 'flex';
 }
    if (version === '7') {
  document.getElementById('world_settings_bookmark').style.display = 'none';
@@ -57095,7 +57101,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button class="gs-btn secondary" id="gs-btn-archive">归档</button>
                     <button class="gs-btn danger" id="gs-btn-delete">删除记录</button>
                 `;
-            } else if (status === '待接取') {
+            } else if (status === '待接取'||status === '待接受'||status === '待接收') {
                 // 任务“待接取”
                 buttonsHtml = `<button class="gs-btn" id="gs-btn-accept">接取任务</button>`;
             } else {
