@@ -43333,7 +43333,7 @@ dice_use= String(chatdata.dice_use||'true');
     is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'false';
     is_chat_mode = String(localStorage.getItem('is_chat_mode')) || 'false';
 if_confirm_phase2_generation= String(localStorage.getItem('if_confirm_phase2_generation')) || 'false';
-render_and_play_audio= String(localStorage.getItem('render_and_play_audio')) || 'false';
+render_and_play_audio= String(localStorage.getItem('render_and_play_audio')) || 'true';
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
@@ -46167,7 +46167,7 @@ function setupReconfigModal() {
         { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'false', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
        { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
   { name: '显示音乐播放器', key: 'GlobalMusicWidgetVisible', default: 'true', desc: '开启后，则显示音乐播放器。设置后需要重载前端生效' },
-  { name: '完整渲染时再次播放bgm', key: 'render_and_play_audio', default: 'false', desc: '开启后，完整渲染时（编辑结束、异步结束）会自动播放bgm' },
+  { name: '完整渲染时再次播放bgm', key: 'render_and_play_audio', default: 'true', desc: '开启后，完整渲染时（编辑结束、异步结束）会自动播放bgm' },
     ];
     // 定义分类元数据
      const CATEGORIES = [
