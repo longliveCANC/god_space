@@ -57508,7 +57508,7 @@ document.addEventListener('DOMContentLoaded', function() {
             taskKeys.forEach(key => {
                 const task = tasks[key];
                 const status = String(task['状态'] || '');
-                const isArchived = String(task['_showInEJS']) === 'false';
+                const isArchived = String(task['_filter']) === 'true';
 if (status === '已完成' && !isArchived) {
     const isSettled = task['已结算'];
     // 检查已结算字段，兼容字符串和布尔值
