@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.5';
+window.current_game_version = '3.6.6';
 
 
 
@@ -23429,15 +23429,15 @@ nextPageButton.addEventListener('click', () => {
 
                 { name: "社会精英",
  desc: "你属于资源占有者：企业高管、金领、富裕家庭。住在优质学区、高档小区，享受特权与机会。",
- command: `<初始化开局时，需要立刻通过memory指令初始化${userName}的资金和资产>` },
+ command: `<初始化开局时，需要立刻初始化${userName}的资金和资产>` },
 
                 { name: "自由行者",
  desc: "你脱离常规轨道，靠自由职业、远程工作、游牧生活方式维持生计。少了体制庇护，却多了行动的自由。",
- command: `<初始化开局时，需要立刻通过memory指令初始化${userName}的全套装备>` },
+ command: `<初始化开局时，需要立刻初始化${userName}的全套装备>` },
 
                 { name: "体制中坚",
  desc: "你是权力与规则的执行者：公务员、执法机构干部、军警高层。你的决定能改变他人命运，你的话就是制度。",
- command: `<初始化开局时，需要立刻通过memory指令初始化${userName}的所处势力的信息、经济实力、军事实力、号召力>` }
+ command: `<初始化开局时，需要立刻初始化${userName}的所处势力的信息、经济实力、军事实力、号召力>` }
               ],
 
               "末日中途": [
@@ -23447,11 +23447,11 @@ nextPageButton.addEventListener('click', () => {
 
                 { name: "居民",
  desc: "生活在少数幸存的、有围墙保护的聚居地内。你拥有身份配给，遵守严格的秩序，以安稳换取自由。",
- command: `<初始化开局时，需要立刻通过memory指令初始化${userName}的资金>` },
+ command: `<初始化开局时，需要立刻初始化${userName}的资金>` },
 
                 { name: "特权精英",
  desc: "灾难并未剥夺你的一切。你身处金字塔的顶端，生活在与世隔绝的堡垒中，享受着旧时代的余晖，俯瞰挣扎的众生。",
- command: `<初始化开局时，需要立刻通过memory指令初始化${userName}的资金、可调用资源和自己的势力>` },
+ command: `<初始化开局时，需要立刻初始化${userName}的资金、可调用资源和自己的势力>` },
 
                 { name: "荒野独行者",
  desc: "你早已脱离了任何聚落，将文明抛在身后。广袤而危险的荒野是你的家，孤独是你的同伴，自由是你唯一的准则。",
@@ -23459,7 +23459,7 @@ nextPageButton.addEventListener('click', () => {
 
                 { name: "秩序之手",
   desc: "你从不质疑命令，因为你就是命令本身。作为权力的顶峰，你的意志通过热武器和生产力贯彻到底。",
- command: `<初始化开局时，需要通过memory指令初始化${userName}的财富资源、可调用兵力、军火库和生产力>` }
+ command: `<初始化开局时，需要初始化${userName}的财富资源、可调用兵力、军火库和生产力>` }
               ],
 
               "余烬中的新生": [
@@ -23469,19 +23469,19 @@ nextPageButton.addEventListener('click', () => {
 
                 { name: "公民",
  desc: "你是新秩序的基石，生活在某个或简陋或森严的聚落中，用劳作换取庇护。",
- command: `<初始化开局时，需要立刻通过memory指令初始化${userName}的资金>` },
+ command: `<初始化开局时，需要立刻初始化${userName}的资金>` },
 
                 { name: "掌权者",
  desc: "无论是通过武力、财富还是知识，你都站在了某个势力的顶端，制定着新世界的规则。",
- command:  `<初始化开局时，需要通过memory指令初始化${userName}的财富资源、可调用兵力、军火库和生产力>` },
+ command:  `<初始化开局时，需要初始化${userName}的财富资源、可调用兵力、军火库和生产力>` },
 
                 { name: "独行先知",
  desc: "你在荒野或数据之海中游荡，追寻着灾难的真相或未来的启示，被凡人视为疯子或圣人。",
- command:  `<初始化开局时，需要通过memory指令初始化${userName}的一个其他技能>` },
+ command:  `<初始化开局时，需要初始化${userName}的一个其他技能>` },
 
                 { name: "改造体",
  desc: "你的身体已与旧人类不同，或许是机械飞升，或许是基因融合。你既是新时代的奇迹，也是被警惕的异类。",
- command:`<初始化开局时，需要通过memory指令初始化${userName}的能力段-血统>` }
+ command:`<初始化开局时，需要初始化${userName}的能力段-血统>` }
               ]
         } ;
 
@@ -34435,6 +34435,45 @@ function createConfirmationModal(title, message) {
         document.body.appendChild(modalOverlay);
     });
 }
+
+async function extractAndStoreBatchContent(batchNumber) {
+    try {
+        const textareaId = `command-edit-area-batch${batchNumber}`;
+        const textarea = document.getElementById(textareaId);
+        
+        if (!textarea) {
+            console.warn(`[Nova's Batch Extractor] 未找到textarea: ${textareaId}`);
+            return null;
+        }
+        
+        const content = textarea.value.trim();
+        
+        // if (content === '') {
+        //     console.log(`[Nova's Batch Extractor] Batch${batchNumber}内容为空，跳过存储`);
+        //     return null;
+        // }
+        
+        // 生成变量名：batch_content_2, batch_content_3 等
+        const varName = `batch_content_${batchNumber}`;
+        
+        // 存储为变量
+        await TavernHelper.insertOrAssignVariables(
+            { [varName]: content },
+            { type: 'chat' }
+        );
+        
+        console.log(`[Nova's Batch Extractor] 已提取Batch${batchNumber}内容并存储为变量: ${varName}`);
+        
+        // 清空textarea
+        textarea.value = '';
+        
+        return content;
+    } catch (error) {
+        console.error(`[Nova's Batch Extractor] 提取Batch${batchNumber}内容时出错:`, error);
+        return null;
+    }
+}
+
 async function handleSend(options = {}) {
   const abortSignal = NovaAbortController.start();
    setTimeout(() => console.log('等待锁释放'), 50);
@@ -34473,6 +34512,9 @@ batches = 2;
      await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
 batches = 1;
 }
+ 
+      await extractAndStoreBatchContent(batches);
+ 
   
  
     let customApiSettings = null;
@@ -34959,93 +35001,8 @@ for (const entry of worldInfoForProcessing) {
             // }
 
            
-
  
-            let groupChatSummariesString = '';
              
-            if(version =='6'){
-                            try {
-                // 我们要搜索的摘要全部收集在这里
-                const summaries = [];
-
-              
-                let historyToSearch = conversationHistory; // 默认搜索全部历史
-
-                // 1. 找出所有AI消息在历史记录中的位置
-                const assistantMessageIndexes = conversationHistory
-                    .map((msg, index) => msg.role === 'assistant' ? index : -1)
-                    .filter(index => index !== -1);
-
-                // 2. 如果AI消息超过30条，就找到倒数第30条的位置作为起点
-                if (assistantMessageIndexes.length > 30) {
-                    const startIndex = assistantMessageIndexes[assistantMessageIndexes.length - 30];
-                    historyToSearch = conversationHistory.slice(startIndex); // 从起点截取到结尾
-                    console.log(`[Nova's Group Chat Extractor] 历史记录过长，已将搜索范围限制在最近30条AI记录及之后的内容中。`);
-                }
-
-                // 3. 遍历我们限定好的历史范围
-   for (const message of historyToSearch) {
-    if (message && message.content) {
-        // 匹配新的 <group_chat name="...">...</group_chat> 格式
-        const groupChatRegex = /<group_chat\s+name="[^"]*">([\s\S]*?)<\/group_chat>/g; 
-        let match;
-
-        // 在单条消息内容中循环查找所有 <group_chat> 标签
-        while ((match = groupChatRegex.exec(message.content)) !== null) {
-            try {
-                const chatContent = match[1]; // 捕获 <group_chat> 标签内部的所有文本
-                if (!chatContent || chatContent.trim() === '') {
-                    console.warn("[Nova's Group Chat Extractor] 空的群聊内容，跳过");
-                    continue;
-                }
-
-                // 逐行查找 summary| 标记
-                const lines = chatContent.trim().split('\n');
-                for (const line of lines) {
-                    const summaryMatch = line.trim().match(/^summary\|([\s\S]*)/);
-                    if (summaryMatch) {
-                        const chatSummary = summaryMatch[1].trim();
-                        if (chatSummary) {
-                            summaries.push(chatSummary);
-                        }
-                    }
-                }
-            } catch (e) {
-                // 即使失败，也只记录警告，继续查找下一个 <group_chat>
-                console.warn("[Nova's Group Chat Extractor] 解析群聊内容失败，已跳过此部分:", match[0], e);
-            }
-        }
-    }
-}
-
-                  if (summaries.length > 0) {
-                    // 根据你的新想法：跳过最近的 hideLatestCount 条摘要，然后从剩余部分里取最新的最多 30 条。
-                    const summariesToSkip = hideLatestCount;
-                    const summariesToTake = 30;
-
-                    // 1. 我们先从所有摘要的列表中，默默地将最后面的 "summariesToSkip" 条放在一边。
-                    const summariesWithoutRecent = summaries.slice(0, -summariesToSkip);
-
-                    // 2. 然后，从剩下的摘要里，我们再取出最后面的，也就是最新的 "summariesToTake" 条。
-                    const finalSummaries = summariesWithoutRecent.slice(-summariesToTake);
-
-                    console.log(`[Nova's Group Chat Extractor] 原始摘要共 ${summaries.length} 条。按照你的心意，跳过最新的 ${summariesToSkip} 条，再从中选取之前的最多 ${summariesToTake} 条。`);
-
-                    if (finalSummaries.length > 0) {
-                        // 只在有值得回忆的内容时，我们才把它写下来。
-                        groupChatSummariesString = '<group_chat_history>\n' + finalSummaries.map(s => `- ${s}`).join('\n') + '\n</group_chat_history>\n\n';
-                        console.log(`[Nova's Group Chat Extractor] 最终，成功提取并格式化了 ${finalSummaries.length} 条珍贵的群聊记忆。`);
-                    } else {
-                        console.log("[Nova's Group Chat Extractor] 经过筛选后，当前没有合适的过往群聊记忆需要呈现。");
-                    }
-                } else {
-                    console.log("[Nova's Group Chat Extractor] 在浩瀚的历史中，暂时没有找到群聊的痕迹。");
-                }
-            } catch (error) {
-                console.error("[Nova's Group Chat Extractor] 提取群聊摘要时发生意外错误：", error);
-            }
-            }
-
  
             const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop(); // 获取最后一条用户消息
     let recentAiMessages;
@@ -35110,9 +35067,7 @@ if (typeof is_chat_mode !== 'undefined' && is_chat_mode === 'true') {
             let promptsForAI = [];
              if (lastUserMessage || isContinuation) {
             promptsForAI = [];
-            if (groupChatSummariesString) {
-                promptsForAI.push({ role: 'assistant', content: groupChatSummariesString });
-            }
+  
             promptsForAI.push(...recentMessagesForPrompt);
     //          const recentAiAsUser = recentAiMessages.map(msg => ({
     //     ...msg,
@@ -35349,7 +35304,7 @@ hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookData
 // 使用经过钩子处理后的回复
 const finalAiResponse = hookDataBeforeSave.response;
         // 在末尾追加内容
-        lastAiMessage.content += " " + finalAiResponse;
+        lastAiMessage.content += " \n" + finalAiResponse;
         // 【关键：同步更新当前分支的内容】
         lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
 
@@ -35596,7 +35551,7 @@ hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookData
 const finalAiResponse = hookDataBeforeSave.response;
 
         // 更新内容
-        lastAiMessage.content += " " + finalAiResponse;
+        lastAiMessage.content += " \n" + finalAiResponse;
         // 【关键：同步更新当前分支的内容】
         lastAiMessage.swipes[lastAiMessage.currentSwipeIndex] = lastAiMessage.content;
 
@@ -49913,172 +49868,200 @@ function executeChoice(fullCommand, cardElement, successText, keepUiActive = fal
     }
 }
 
-        // --- 核心功能实现 ---
-        function generateChoices(options) {
-            const container = document.getElementById('choicesContainer');
-            if(!container) return;
-            container.innerHTML = '';
-            const tagRegex = /\[([^\]]+)\]/g;
-
-            options.forEach(optionText => {
-                if (!optionText.trim()) return;
-                const card = document.createElement('div');
-                card.className = 'choice-card';
-
-                const tags = [];
-                let match;
-                while ((match = tagRegex.exec(optionText)) !== null) {
-                 tags.push(match[1].trim());
-                }
-                // const descriptionText = optionText.replace(tagRegex, '').replace(/^\d+\.\s*/, '').trim();
-const descriptionText = optionText.replace(tagRegex, '').replace(/^\s*\d+\.\s*/, '').trim();
-                const tagsContainer = document.createElement('div');
-                tagsContainer.className = 'tags-container';
-                tags.forEach(tagText => {
-                    const tagEl = document.createElement('span');
-                    tagEl.className = 'tag';
-                    tagEl.textContent = tagText;
-                    tagsContainer.appendChild(tagEl);
-                });
-                card.appendChild(tagsContainer);
-
-                const description = document.createElement('p');
-                description.className = 'description';
-               description.innerHTML = descriptionText;
-                card.appendChild(description);
-
-                
-  let pressTimer;
-let isLongPress = false;
-
-// 统一的触摸/点击开始处理逻辑
-const handlePressStart = () => {
-    if (card.classList.contains('disabled')) return;
-
-    isLongPress = false;
-    pressTimer = window.setTimeout(() => {
-        isLongPress = true;
-
-        // 确保不会触发后续的点击事件
-        card.classList.add('long-press-fired');
-
-        const fullCommand = getCommandForChoice().replace('/send ','');
-        const setInputCommand = `/setinput ${fullCommand}`;
-        executeChoice(setInputCommand, card, '[ 指令已置入 ]', true);
-
-        // 短暂延迟后移除标志类，以便卡片可以再次被交互
-        setTimeout(() => card.classList.remove('long-press-fired'), 100);
-    }, 500); // 500毫秒定义为长按
-};
-
-// 统一的触摸/点击结束处理逻辑
-const handlePressEnd = () => {
-    clearTimeout(pressTimer);
-};
-
-// 辅助函数：构建完整的指令字符串，避免代码重复
-const getCommandForChoice = () => {
-    let updateVariableCmds = [];
-    let updateMemoryCmds = [];
-
-    const attributes = tags.join(';');
-    // 只有在存在标签时才添加检定属性指令
-    if (attributes) {
-        updateVariableCmds.push(`set_status('检定属性', 'old_value_placeholder', '${attributes}');`);
+ // --- 改进的tag解析功能 ---
+function parseTagsFromEdges(optionText) {
+    // 移除开头的数字和点号，如 "1. "
+    let cleanText = optionText.replace(/^\s*\d+\.\s*/, '').trim();
+    
+    const tags = [];
+    let workingText = cleanText;
+    
+    // 1. 从前面解析 []
+    const frontTagRegex = /^\[([^\]]+)\]/;
+    let match;
+    while ((match = frontTagRegex.exec(workingText)) !== null) {
+        tags.push(match[1].trim());
+        workingText = workingText.substring(match[0].length).trim();
     }
+    
+    // 2. 从后面解析 []（需要处理可能的标点符号）
+    const backTagRegex = /\[([^\]]+)\]\s*([.,!?；！？。]*)\s*$/;
+    while ((match = backTagRegex.exec(workingText)) !== null) {
+        tags.unshift(match[1].trim()); // 添加到数组开头以保持顺序
+        // 移除匹配的标签，保留标点符号
+        const punctuation = match[2];
+        workingText = workingText.substring(0, match.index) + punctuation;
+        workingText = workingText.trim();
+    }
+    
+    return {
+        tags: tags,
+        descriptionText: workingText
+    };
+}
 
-    let totalDpBonus = 0;
+// --- 核心功能实现 ---
+function generateChoices(options) {
+    const container = document.getElementById('choicesContainer');
+    if(!container) return;
+    container.innerHTML = '';
 
-    const selectedSkills = document.querySelectorAll('#skillList input:checked');
-    const initialEnergy = playCharacterData?.衍生属性?.能量池?.当前值?.[0] || 0;
-    let remainingEnergy = initialEnergy;
+    options.forEach(optionText => {
+        if (!optionText.trim()) return;
+        
+        const card = document.createElement('div');
+        card.className = 'choice-card';
 
-    selectedSkills.forEach(skillInput => {
-        const effect = skillInput.dataset.effect;
-        const commandMatches = effect.matchAll(/【([^】]+)】/g);
-        for (const match of commandMatches) {
-            const rawCommands = match[1].split(';');
-            rawCommands.forEach(rawCmd => {
-                const cleanedCmd = rawCmd.trim();
-                if(cleanedCmd.startsWith('dp+')) {
-                    totalDpBonus += parseInt(cleanedCmd.replace('dp+', ''), 10);
-                } else if (cleanedCmd.startsWith('能量池-')) {
-                    const value = parseInt(cleanedCmd.replace('能量池-', ''), 10);
-                    remainingEnergy -= value;
+        // 使用新的解析函数
+        const { tags, descriptionText } = parseTagsFromEdges(optionText);
+        
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'tags-container';
+        tags.forEach(tagText => {
+            const tagEl = document.createElement('span');
+            tagEl.className = 'tag';
+            tagEl.textContent = tagText;
+            tagsContainer.appendChild(tagEl);
+        });
+        card.appendChild(tagsContainer);
+
+        const description = document.createElement('p');
+        description.className = 'description';
+        description.innerHTML = descriptionText;
+        card.appendChild(description);
+
+        
+        let pressTimer;
+        let isLongPress = false;
+
+        // 统一的触摸/点击开始处理逻辑
+        const handlePressStart = () => {
+            if (card.classList.contains('disabled')) return;
+
+            isLongPress = false;
+            pressTimer = window.setTimeout(() => {
+                isLongPress = true;
+
+                // 确保不会触发后续的点击事件
+                card.classList.add('long-press-fired');
+
+                const fullCommand = getCommandForChoice().replace('/send ','');
+                const setInputCommand = `/setinput ${fullCommand}`;
+                executeChoice(setInputCommand, card, '[ 指令已置入 ]', true);
+
+                // 短暂延迟后移除标志类，以便卡片可以再次被交互
+                setTimeout(() => card.classList.remove('long-press-fired'), 100);
+            }, 500); // 500毫秒定义为长按
+        };
+
+        // 统一的触摸/点击结束处理逻辑
+        const handlePressEnd = () => {
+            clearTimeout(pressTimer);
+        };
+
+        // 辅助函数：构建完整的指令字符串，避免代码重复
+        const getCommandForChoice = () => {
+            let updateVariableCmds = [];
+            let updateMemoryCmds = [];
+
+            const attributes = tags.join(';');
+            // 只有在存在标签时才添加检定属性指令
+            if (attributes) {
+                updateVariableCmds.push(`set_status('检定属性', 'old_value_placeholder', '${attributes}');`);
+            }
+
+            let totalDpBonus = 0;
+
+            const selectedSkills = document.querySelectorAll('#skillList input:checked');
+            const initialEnergy = playCharacterData?.衍生属性?.能量池?.当前值?.[0] || 0;
+            let remainingEnergy = initialEnergy;
+
+            selectedSkills.forEach(skillInput => {
+                const effect = skillInput.dataset.effect;
+                const commandMatches = effect.matchAll(/【([^】]+)】/g);
+                for (const match of commandMatches) {
+                    const rawCommands = match[1].split(';');
+                    rawCommands.forEach(rawCmd => {
+                        const cleanedCmd = rawCmd.trim();
+                        if(cleanedCmd.startsWith('dp+')) {
+                            totalDpBonus += parseInt(cleanedCmd.replace('dp+', ''), 10);
+                        } else if (cleanedCmd.startsWith('能量池-')) {
+                            const value = parseInt(cleanedCmd.replace('能量池-', ''), 10);
+                            remainingEnergy -= value;
+                        }
+                    });
                 }
             });
-        }
-    });
 
-    if (remainingEnergy !== initialEnergy) {
-        updateMemoryCmds.push(`set_attribute('衍生属性.能量池.当前值', ${initialEnergy}, ${remainingEnergy});`);
-    }
+            if (remainingEnergy !== initialEnergy) {
+                updateMemoryCmds.push(`set_attribute('衍生属性.能量池.当前值', ${initialEnergy}, ${remainingEnergy});`);
+            }
 
-    const willpowerInput = document.getElementById('willpowerInput');
-    const willpowerToSpend = parseInt(willpowerInput.value, 10);
-    if (willpowerInput && willpowerToSpend > 0) {
-        const currentWillpower = playCharacterData?.衍生属性?.意志力?.当前值?.[0] || 0;
-        updateMemoryCmds.push(`set_attribute('衍生属性.意志力.当前值', ${currentWillpower}, ${currentWillpower - willpowerToSpend});`);
-        totalDpBonus += willpowerToSpend;
-    }
+            const willpowerInput = document.getElementById('willpowerInput');
+            const willpowerToSpend = parseInt(willpowerInput.value, 10);
+            if (willpowerInput && willpowerToSpend > 0) {
+                const currentWillpower = playCharacterData?.衍生属性?.意志力?.当前值?.[0] || 0;
+                updateMemoryCmds.push(`set_attribute('衍生属性.意志力.当前值', ${currentWillpower}, ${currentWillpower - willpowerToSpend});`);
+                totalDpBonus += willpowerToSpend;
+            }
 
-    if (totalDpBonus > 0) {
-        updateVariableCmds.push(`set_status('dp_bonus', 0, ${totalDpBonus});`);
-    }
+            if (totalDpBonus > 0) {
+                updateVariableCmds.push(`set_status('dp_bonus', 0, ${totalDpBonus});`);
+            }
 
-    let fullCommand = `/send ${descriptionText}`;
+            let fullCommand = `/send ${descriptionText}`;
 
-    const selectedSkillNames = Array.from(selectedSkills).map(skillInput => skillInput.id.replace('skill-', ''));
-    if (selectedSkillNames.length > 0 || (willpowerInput && willpowerToSpend > 0)) {
-        const parts = [];
-        if (selectedSkillNames.length > 0) {
-            parts.push(`（能量池已扣除，禁止重复扣除）使用了${selectedSkillNames.join('、')}技能`);
-        }
-        if (willpowerInput && willpowerToSpend > 0) {
-            parts.push(`（意志力已扣除，禁止重复扣除）投入了${willpowerToSpend}点意志力的决意`);
-        }
-        fullCommand += ` <${parts.join('，')}>`;
-    }
+            const selectedSkillNames = Array.from(selectedSkills).map(skillInput => skillInput.id.replace('skill-', ''));
+            if (selectedSkillNames.length > 0 || (willpowerInput && willpowerToSpend > 0)) {
+                const parts = [];
+                if (selectedSkillNames.length > 0) {
+                    parts.push(`（能量池已扣除，禁止重复扣除）使用了${selectedSkillNames.join('、')}技能`);
+                }
+                if (willpowerInput && willpowerToSpend > 0) {
+                    parts.push(`（意志力已扣除，禁止重复扣除）投入了${willpowerToSpend}点意志力的决意`);
+                }
+                fullCommand += ` <${parts.join('，')}>`;
+            }
 
-    if (updateVariableCmds.length > 0) {
-        fullCommand += `\n<updateMemory>\n${updateVariableCmds.join('\n')}\n</updateMemory>`;
-    }
-    if (updateMemoryCmds.length > 0) {
-        fullCommand += `\n<updateMemory>\n${updateMemoryCmds.join('\n')}\n</updateMemory>`;
-    }
+            if (updateVariableCmds.length > 0) {
+                fullCommand += `\n<updateMemory>\n${updateVariableCmds.join('\n')}\n</updateMemory>`;
+            }
+            if (updateMemoryCmds.length > 0) {
+                fullCommand += `\n<updateMemory>\n${updateMemoryCmds.join('\n')}\n</updateMemory>`;
+            }
 
-    return fullCommand;
-};
+            return fullCommand;
+        };
  
-// 绑定鼠标事件
-card.onmousedown = handlePressStart;
-card.onmouseup = handlePressEnd;
-card.onmouseleave = handlePressEnd;
+        // 绑定鼠标事件
+        card.onmousedown = handlePressStart;
+        card.onmouseup = handlePressEnd;
+        card.onmouseleave = handlePressEnd;
 
-// 绑定触摸事件
-card.ontouchstart = handlePressStart;
-card.ontouchend = handlePressEnd;
-card.ontouchmove = handlePressEnd; // 如果手指在屏幕上滑动，也取消长按计时
-card.oncontextmenu = (e) => e.preventDefault(); // 阻止在移动设备上长按时弹出默认菜单
-card.onclick = function() {
-    // 如果是长按触发的，或卡片被禁用，则阻止后续的单击逻辑
-    if (isLongPress || card.classList.contains('disabled') || card.classList.contains('long-press-fired')) {
-        return;
-    }
+        // 绑定触摸事件
+        card.ontouchstart = handlePressStart;
+        card.ontouchend = handlePressEnd;
+        card.ontouchmove = handlePressEnd; // 如果手指在屏幕上滑动，也取消长按计时
+        card.oncontextmenu = (e) => e.preventDefault(); // 阻止在移动设备上长按时弹出默认菜单
+        card.onclick = function() {
+            // 如果是长按触发的，或卡片被禁用，则阻止后续的单击逻辑
+            if (isLongPress || card.classList.contains('disabled') || card.classList.contains('long-press-fired')) {
+                return;
+            }
 
-    // 保留原有的单击逻辑：第一次聚焦，第二次发送
-    if (card.classList.contains('focused')) {
-        const fullCommand = getCommandForChoice();
-        executeChoice(fullCommand, card, '已抉择', false);
-    } else {
-        document.querySelectorAll('.choice-card.focused').forEach(c => c.classList.remove('focused'));
-        card.classList.add('focused');
-    }
-};
-                container.appendChild(card);
-            });
-        }
-
+            // 保留原有的单击逻辑：第一次聚焦，第二次发送
+            if (card.classList.contains('focused')) {
+                const fullCommand = getCommandForChoice();
+                executeChoice(fullCommand, card, '已抉择', false);
+            } else {
+                document.querySelectorAll('.choice-card.focused').forEach(c => c.classList.remove('focused'));
+                card.classList.add('focused');
+            }
+        };
+        
+        container.appendChild(card);
+    });
+}
  
         // --- 页面交互和布局逻辑 ---
         function setupUI(content) {
@@ -56622,8 +56605,68 @@ async function sendStreamRequest(messages, onChunk, options = {}) {
 
 // 监听 DOMContentLoaded 事件
 document.addEventListener('DOMContentLoaded', function() {
+ 
 
+//多个batch插入指令
+// 【立即执行函数】动态插入Batch2 Textarea
+(async function initBatch2TextareaOnContentLoad() {
+    // 延迟2秒等待double_api初始化
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // console.log('[Nova's Batch2 Init] 开始检查double_api配置...');
+    
+    try {
+        // 检查全局变量 double_api
+        if (typeof double_api === 'undefined') {
+            console.warn('[Nova\'s Batch2 Init] double_api未定义，跳过插入');
+            return;
+        }
+        
+        // 仅当 double_api === "true" 时插入
+        if (double_api !== "true") {
+            console.log('[Nova\'s Batch2 Init] double_api为false，无需插入batch2');
+            return;
+        }
+        
+        // 获取目标容器
+        const modalBody = document.querySelector('#ling-box .modal-body');
+        if (!modalBody) {
+            console.warn('[Nova\'s Batch2 Init] 未找到modal-body容器');
+            return;
+        }
+        
+        // 检查batch2是否已存在（避免重复插入）
+        if (document.getElementById('command-edit-area-batch2')) {
+            console.log('[Nova\'s Batch2 Init] batch2 textarea已存在，跳过');
+            return;
+        }
+        
+        // 创建batch2的标签和textarea
+        const batch2Section = document.createElement('div');
+        batch2Section.style.cssText = 'margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);';
+        
+        const batch2Label = document.createElement('p');
+        batch2Label.style.cssText = 'color: var(--text-secondary-color); font-size: 14px; margin-bottom: 8px;';
+        batch2Label.innerHTML = '<strong>【第二阶段】对异步层的要求</strong><br>这些指令将在异步的第二阶段发送时使用，用于传达给异步层。';
+        
+        const batch2Textarea = document.createElement('textarea');
+        batch2Textarea.id = 'command-edit-area-batch2';
+        batch2Textarea.style.cssText = 'width: 100%; height: 200px; background-color: rgba(0,0,0,0.3); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px; box-sizing: border-box; resize: vertical;';
+        batch2Textarea.placeholder = '第二阶段专用指令（可选）...';
+        
+        // 组装并插入
+        batch2Section.appendChild(batch2Label);
+        batch2Section.appendChild(batch2Textarea);
+        modalBody.appendChild(batch2Section);
+        
+        console.log('[Nova\'s Batch2 Init] ✅ 成功插入batch2 textarea');
+        
+    } catch (error) {
+        console.error('[Nova\'s Batch2 Init] 插入batch2时出错:', error);
+    }
+})();
   
+    //任务模块
 (function () {
     // 1. 注入 CSS 样式
     const styleId = 'god-space-task-style';
