@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.8';
+window.current_game_version = '3.6.9';
 
 
 
@@ -15209,6 +15209,12 @@ let currencyAliases = {
     "经验值": ["属性点", "历练点"]
 };
 
+ let PATH_ALIASES = {
+    '货币': ['currency', 'Currency', 'CURRENCY'],
+    // 未来可以在这里添加更多别名配置
+    // '属性': ['attribute', 'Attribute'],
+    // '技能': ['skill', 'Skill']
+};
     // 全局变量存储数据
     let currentGameData = null;
    // --- 全局变量和数据获取 ---
@@ -26700,96 +26706,371 @@ console.log(`[Assa] 📝 对象冒号修复后: ${content.substring(0, 200)}...`
             console.log("[Core] [reset] - 重置完成，世界已回归虚无。");
         }
     };
+// --- IndexedDB 辅助工具 ---
+const MusicDB = {
+    dbName: 'GlobalMusicDB',
+    version: 1,
+    db: null,
 
-
- window.GlobalChatAudio = {
-    audio: new Audio(),
-    currentMeta: { song: '', artist: '', id: null, domId: null }, 
-    fadeTimer: null,
-    defaultVolume: 0.5, 
-sLoopEnabled: false, // 新增：单曲循环开关
     init: function() {
-        this.audio.volume = this.defaultVolume;
-        // 绑定事件
- this.audio.onended = () => { 
-    if (this.isLoopEnabled) {
-        // 如果开启了单曲循环,重新播放
-        this.audio.currentTime = 0;
-        this.audio.play();
-    } else {
-        // 否则按原逻辑处理
-        this.updateAllUiState(false); 
-        this.resetProgressUI();
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('playlist')) {
+                    db.createObjectStore('playlist', { keyPath: 'id', autoIncrement: true });
+                }
+            };
+            request.onsuccess = (e) => {
+                this.db = e.target.result;
+                resolve(this.db);
+            };
+            request.onerror = (e) => reject(e);
+        });
+    },
+
+    saveSetting: async function(key, value) {
+        if (!this.db) await this.init();
+        const tx = this.db.transaction('settings', 'readwrite');
+        tx.objectStore('settings').put({ key, value });
+    },
+
+    getSetting: async function(key) {
+        if (!this.db) await this.init();
+        return new Promise(resolve => {
+            const req = this.db.transaction('settings', 'readonly').objectStore('settings').get(key);
+            req.onsuccess = () => resolve(req.result ? req.result.value : null);
+            req.onerror = () => resolve(null);
+        });
+    },
+
+    addSong: async function(songData) {
+        if (!this.db) await this.init();
+        const tx = this.db.transaction('playlist', 'readwrite');
+        tx.objectStore('playlist').put(songData);
+    },
+
+    getAllSongs: async function() {
+        if (!this.db) await this.init();
+        return new Promise(resolve => {
+            const req = this.db.transaction('playlist', 'readonly').objectStore('playlist').getAll();
+            req.onsuccess = () => resolve(req.result || []);
+        });
+    },
+
+    deleteSong: async function(id) {
+        if (!this.db) await this.init();
+        const tx = this.db.transaction('playlist', 'readwrite');
+        tx.objectStore('playlist').delete(id);
+    },
+
+    clearPlaylist: async function() {
+        if (!this.db) await this.init();
+        const tx = this.db.transaction('playlist', 'readwrite');
+        tx.objectStore('playlist').clear();
     }
 };
-        this.audio.onpause = () => this.updateAllUiState(false);
-        this.audio.onplay = () => this.updateAllUiState(true);
-        // 核心：时间更新监听
-        this.audio.ontimeupdate = () => this.updateProgress();
-        // 元数据加载后显示总时长
-        this.audio.onloadedmetadata = () => this.updateProgress();
+
+// --- 主逻辑 ---
+window.GlobalChatAudio = {
+    audio: new Audio(),
+    audioCtx: null, // 音频上下文
+    analyser: null, // 频谱分析器
+    dataArray: null,
+
+    // 状态
+    playlist: [], // 当前播放列表 (内存中)
+    currentIndex: -1,
+    playMode: 'sequence', // sequence, loop-one, loop-all, random
+    storageMode: 'temp', // temp (临时), perm (永久), none (不存)
+    queueMode: 'interrupt', // interrupt (插队播放), queue (排队)
+
+    defaultVolume: 0.5,
+
+    // UI 元素引用
+    widgetEl: null,
+
+     init: async function() {
+        this.audio.crossOrigin = "anonymous";
+        this.audio.volume = this.defaultVolume;
+
+        await MusicDB.init();
+
+        // 1. 加载设置
+        const savedVol = await MusicDB.getSetting('volume');
+        if (savedVol) {
+            this.defaultVolume = savedVol;
+            this.audio.volume = savedVol;
+        }
+        const savedStorage = await MusicDB.getSetting('storageMode');
+        if (savedStorage) this.storageMode = savedStorage;
+        const savedQueue = await MusicDB.getSetting('queueMode');
+        if (savedQueue) this.queueMode = savedQueue;
+
+        // 2. 如果是永久存储模式，加载歌曲列表
+        if (this.storageMode === 'perm') {
+            const songs = await MusicDB.getAllSongs();
+            if (songs && songs.length > 0) {
+                this.playlist = songs;
+                console.log(`从IndexedDB加载了 ${songs.length} 首歌曲。`);
+            }
+        }
+
+        // 3. 初始化UI
+        const visibleSetting = localStorage.getItem('GlobalMusicWidgetVisible');
+        this.isWidgetVisible = visibleSetting === null ? true : (visibleSetting === 'true');
+
+        this.injectWidget();
+        this.bindAudioEvents();
+        this.bindWidgetEvents();
+
+        // 4. 渲染并检查可见性
+        this.renderPlaylist(); // 渲染从DB加载的列表
+        this.checkWidgetVisibility(); // 根据列表是否有歌决定是否显示
     },
-    setLoop: function(enabled) {
-    this.isLoopEnabled = enabled;
-    console.log('单曲循环已' + (enabled ? '开启' : '关闭'));
-},
-toggleLoop: function(domId) {
-    this.isLoopEnabled = !this.isLoopEnabled;
-    
-    // 更新所有循环按钮的视觉状态
-    document.querySelectorAll('.music-loop-btn').forEach(btn => {
-        if (this.isLoopEnabled) {
-            btn.classList.add('active');
+     injectWidget: function() {
+        if (document.getElementById('global-music-widget')) return;
+
+        // 图标 SVG 定义
+        const icons = {
+            prev: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>`,
+            next: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>`,
+            play: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`,
+            pause: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
+            list: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`,
+            settings: `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
+         sequence: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 11.9V11H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg>`,
+            loopAll: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`,
+            loopOne: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1v4h-1v2h2z"/></svg>`,
+            random: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`
+        };
+
+        const div = document.createElement('div');
+        div.id = 'global-music-widget';
+        div.innerHTML = `
+            <div id="widget-drawer">
+                <div class="drawer-content" id="drawer-playlist-content" style="display:none;"></div>
+                <div class="drawer-content" id="drawer-settings-content" style="display:none;">
+                    <!-- 设置内容保持不变 -->
+                    <div class="setting-row">
+                        <span class="setting-label">存储模式</span>
+                        <select class="setting-select" onchange="GlobalChatAudio.setStorageMode(this.value)">
+                            <option value="temp">临时 (刷新后消失)</option>
+                            <option value="perm">永久 (IndexedDB)</option>
+                            <option value="none">不存储</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">点歌模式</span>
+                        <select class="setting-select" onchange="GlobalChatAudio.setQueueMode(this.value)">
+                            <option value="interrupt">立即播放 (插队)</option>
+                            <option value="queue">加入队尾 (排队)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <button class="widget-btn" style="color:var(--danger-color);border:1px solid var(--danger-color);width:100%;border-radius:4px;" onclick="GlobalChatAudio.clearAll()">清空列表</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget-disc-container" id="widget-disc-area" onclick="GlobalChatAudio.toggleExpand()">
+                <canvas id="music-visualizer-canvas"></canvas>
+                <div class="widget-disc" id="widget-disc"></div>
+            </div>
+
+            <div class="widget-info-panel">
+                 <div class="widget-top-controls">
+                    <button class="widget-btn" id="widget-mode-btn" onclick="GlobalChatAudio.toggleMode()" title="顺序播放">
+                        ${icons.sequence}
+                    </button>
+                </div>
+ 
+                <div class="widget-song-name" id="widget-title">未播放</div>
+                <div class="widget-artist-source">
+                    <span id="widget-artist">-</span>
+                    <span style="opacity:0.5">|</span>
+                    <span id="widget-source">-</span>
+                </div>
+
+                <!-- 进度条区域 -->
+                <div class="widget-progress-container" id="widget-prog-ctn">
+                    <div class="widget-progress-bar" id="widget-prog-bar"></div>
+                </div>
+                <!-- 新增：时间显示 -->
+                <div class="widget-time-row">
+                    <span id="widget-time-now">0:00</span>
+                    <span id="widget-time-total">0:00</span>
+                </div>
+
+                <div class="widget-controls">
+                    <button class="widget-btn" onclick="GlobalChatAudio.prev()" title="上一首">${icons.prev}</button>
+                    <button class="widget-btn" id="widget-play-pause" onclick="GlobalChatAudio.togglePlay()">${icons.play}</button>
+                    <button class="widget-btn" onclick="GlobalChatAudio.next()" title="下一首">${icons.next}</button>
+
+                    <!-- 音量控制 -->
+                    <div class="widget-volume-ctrl">
+                        <input type="range" class="widget-volume-slider" min="0" max="1" step="0.01" value="${this.defaultVolume}" oninput="GlobalChatAudio.setVolume(this.value)" title="音量">
+                    </div>
+
+                    <button class="widget-btn" onclick="GlobalChatAudio.toggleDrawer('playlist')" title="播放列表">${icons.list}</button>
+                    <button class="widget-btn" onclick="GlobalChatAudio.toggleDrawer('settings')" title="设置">${icons.settings}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(div);
+        this.widgetEl = div;
+
+        // 初始化设置UI状态
+        setTimeout(() => {
+            const sSel = document.querySelector(`select[onchange*="setStorageMode"]`);
+            if(sSel) sSel.value = this.storageMode;
+            const qSel = document.querySelector(`select[onchange*="setQueueMode"]`);
+            if(qSel) qSel.value = this.queueMode;
+        }, 500);
+    },
+   // --- 新增：处理小卡片点击的入口函数 ---
+    handleCardClick: function(songName, artistName, domId) {
+        const isCurrentlyPlayingThisSong = () => {
+        if (this.audio.paused || this.currentIndex < 0) return false;
+        const currentSong = this.playlist[this.currentIndex];
+        if (!currentSong) return false;
+
+        // 比较当前播放的歌曲和点击的卡片是否为同一首 (仅比较歌名)
+        const normalize = (str) => (str || '').toLowerCase().replace(/\s/g, '');
+        const cardSong = normalize(songName);
+        const currentSongName = normalize(currentSong.song);
+
+        // 关键修改：只比较歌名
+        return (currentSongName.includes(cardSong) || cardSong.includes(currentSongName));
+    };
+
+        if (isCurrentlyPlayingThisSong()) {
+            // 如果点击的是正在播放的歌曲，则执行 暂停/播放
+            this.togglePlay();
         } else {
-            btn.classList.remove('active');
+            // 否则，执行点歌逻辑
+            this.playMusic(songName, artistName, domId);
         }
-    });
-    
-    console.log('单曲循环已' + (this.isLoopEnabled ? '开启' : '关闭'));
-},
-   setVolume: function(value) {
-        const newVolume = parseFloat(value);
-        if (isNaN(newVolume)) return;
-
-        // 更新 audio 元素的实时音量
-        this.audio.volume = newVolume;
-        // 更新默认音量，这样下次播放或切歌时会记住这个设置
-        this.defaultVolume = newVolume;
-
-        // (可选) 为了让所有滑块UI同步，但按你要求，我们先不加，保持简单
-        // document.querySelectorAll('.volume-slider').forEach(slider => slider.value = newVolume);
+    },
+    // 绑定音频事件
+    bindAudioEvents: function() {
+        this.audio.onended = () => this.handleSongEnd();
+        this.audio.onpause = () => this.updateUiState(false);
+        this.audio.onplay = () => {
+            this.updateUiState(true);
+            this.initAudioContext(); // 确保上下文启动
+        };
+        // this.audio.ontimeupdate = () => this.updateProgress();
+        // this.audio.onloadedmetadata = () => this.updateProgress();
+        this.audio.onerror = (e) => {
+            console.error("播放出错，尝试下一首", e);
+            setTimeout(() => this.next(true), 2000);
+        };
     },
 
-    // 格式化时间 (秒 -> mm:ss)
-    formatTime: function(seconds) {
-        if (!seconds || isNaN(seconds)) return "0:00";
-        const m = Math.floor(seconds / 60);
-        const s = Math.floor(seconds % 60);
-        return `${m}:${s.toString().padStart(2, '0')}`;
+   bindWidgetEvents: function() {
+        const widget = this.widgetEl;
+        const discArea = document.getElementById('widget-disc-area');
+
+        let isDragging = false;
+        let hasMoved = false; // 新增：判断是否发生了移动
+        let startX, startY, initialLeft, initialBottom;
+
+        discArea.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            hasMoved = false;
+            widget.classList.add('dragging');
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = widget.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialBottom = window.innerHeight - rect.bottom;
+            // e.preventDefault(); // 注意：不要阻止默认，否则可能影响点击
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true; // 移动超过5px才算拖拽
+
+            widget.style.left = (initialLeft + dx) + 'px';
+            widget.style.bottom = (initialBottom - dy) + 'px';
+            widget.style.transform = 'none';
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            widget.classList.remove('dragging');
+
+            // 如果只是点击没有拖拽，且点击的是圆盘区域，则触发展开
+            // 注意：因为我们在 HTML 里加了 onclick="toggleExpand"，这里不需要手动触发
+            // 但如果拖拽了，需要阻止 onclick 触发吗？
+            // 简单的做法：HTML onclick 可能会在 mouseup 后触发。
+            // 可以在 toggleExpand 里判断一下，或者利用 capture phase。
+            // 这里最简单的方案：如果 hasMoved 为 true，则在 capture 阶段阻止 click 事件
+            if (hasMoved) {
+                const preventClick = (ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    document.removeEventListener('click', preventClick, true);
+                };
+                document.addEventListener('click', preventClick, true);
+            }
+        });
+
+        // 进度条点击
+        const progCtn = document.getElementById('widget-prog-ctn');
+        progCtn.addEventListener('click', (e) => {
+            const rect = progCtn.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            if (this.audio.duration) {
+                this.audio.currentTime = this.audio.duration * percent;
+            }
+        });
     },
 
+    // --- 核心播放逻辑 ---
+
+     // --- 优化后的 playMusic (强化去重) ---
     playMusic: async function(songName, artistName, domId, isAutoPlay = false) {
-        const fullName = `${songName}-${artistName}`;
-        
-        // 1. 暂停当前
-        if (this.currentMeta.fullName === fullName && !this.audio.paused) {
-            this.fadeOutAndPause();
-            return;
-        }
-        // 2. 继续播放
-        if (this.currentMeta.fullName === fullName && this.audio.paused && this.audio.src) {
-            this.fadeInAndPlay();
-            return;
-        }
-
-        // 3. 切歌
-        // 先把旧的进度条清空
-        if (this.currentMeta.domId && this.currentMeta.domId !== domId) {
-            this.resetProgressUI(this.currentMeta.domId); 
-        }
-
         this.setLoadingState(domId, true);
 
+        const normalize = (str) => (str || '').toLowerCase().replace(/\s/g, '');
+        const qName = normalize(songName);
+        const qArt = normalize(artistName);
+
+        // 查找逻辑保持不变，它已经足够健壮
+        const existingIndex = this.playlist.findIndex(s => {
+            const sName = normalize(s.song);
+            const sArt = normalize(s.artist);
+            const nameMatch = sName.includes(qName) || qName.includes(sName);
+            const artistMatch = (qArt && sArt) ? (sArt.includes(qArt) || qArt.includes(sArt)) : true;
+            return nameMatch && artistMatch;
+        });
+
+        if (existingIndex !== -1) {
+            console.log("列表已存在，直接播放索引:", existingIndex);
+            this.playlist[existingIndex].domId = domId; // 更新domId以同步UI
+
+            // 关键：直接调用 playIndex 播放，而不是 togglePlay
+            // 因为 playMusic 的意图就是“播放这首歌”
+            this.playIndex(existingIndex);
+
+            this.setLoadingState(domId, false);
+            if (!this.widgetEl.classList.contains('expanded')) {
+                this.toggleExpand();
+            }
+            return; // 结束函数
+        }
+
+        // --- 如果列表中不存在，才继续执行搜索和添加 ---
         try {
             const result = await this.searchSong(songName, artistName);
             if (!result || !result.url) {
@@ -26798,337 +27079,673 @@ toggleLoop: function(domId) {
                 return;
             }
 
-       this.currentMeta = { 
-                song: result.song, 
-                artist: result.singer, 
-                source: result.source, // 新增：保存来源（网易云/QQ音乐）
-                fullName: fullName, 
-                domId: domId 
+            const songData = {
+                id: Date.now(),
+                song: result.song,
+                artist: result.singer,
+                source: result.source,
+                url: result.url,
+                cover: result.cover || '',
+                domId: domId,
+                originalQuery: `${songName}-${artistName}`
             };
-            await this.crossFadeSwitch(result.url);
-            
-            if(isAutoPlay) console.log("BGM 自动播放: " + songName);
 
+         if (this.storageMode === 'perm') {
+            // 从数据库中获取所有歌曲，检查是否存在
+            const allDbSongs = await MusicDB.getAllSongs();
+            const normalize = (str) => (str || '').toLowerCase().replace(/\s/g, '');
+            const isDuplicate = allDbSongs.some(dbSong =>
+                normalize(dbSong.song) === normalize(songData.song) &&
+                normalize(dbSong.artist) === normalize(songData.artist)
+            );
+
+            if (!isDuplicate) {
+                await MusicDB.addSong(songData);
+                console.log("新歌曲，已存入IndexedDB:", songData.song);
+            } else {
+                console.log("歌曲已存在于IndexedDB，无需重复存储:", songData.song);
+            }
+        }
+
+            // 播放逻辑
+            if (this.queueMode === 'queue' && this.playlist.length > 0 && !this.audio.paused) {
+                this.playlist.push(songData);
+                this.showToast(`已添加到播放队列: ${songData.song}`);
+            } else {
+                if (this.currentIndex === -1) {
+                    this.playlist.push(songData);
+                    this.currentIndex = this.playlist.length - 1;
+                } else {
+                    this.playlist.splice(this.currentIndex + 1, 0, songData);
+                    this.currentIndex++;
+                }
+                this.playCurrent();
+            }
+            this.renderPlaylist();
         } catch (e) {
-            console.error("播放失败", e);
+            console.error("处理失败", e);
         } finally {
             this.setLoadingState(domId, false);
         }
     },
+       // 检查可见性：由 LocalStorage 开关 和 列表是否为空 共同决定
+    checkWidgetVisibility: function() {
+        const widget = document.getElementById('global-music-widget');
+        if (!widget) return;
 
-    crossFadeSwitch: function(newUrl) {
-        return new Promise((resolve) => {
-            const fadeOut = setInterval(() => {
-                if (this.audio.volume > 0.05) {
-                    this.audio.volume -= 0.05;
-                } else {
-                    clearInterval(fadeOut);
-                    this.audio.pause();
-                    this.audio.src = newUrl;
-                    this.audio.load(); 
-                    
-                    this.audio.play().then(() => {
-                        let vol = 0;
-                        this.audio.volume = 0;
-                        const fadeIn = setInterval(() => {
-                              if (vol < this.defaultVolume) {
-                            vol += 0.05;
-                            // ✨ 修改这里：确保音量不会超过 this.defaultVolume
-                            this.audio.volume = Math.min(vol, this.defaultVolume);
-                            } else {
-                                clearInterval(fadeIn);
-                                resolve();
-                            }
-                        }, 100); 
-                    }).catch(e => { console.error(e); resolve(); });
+        const hasSongs = this.playlist && this.playlist.length > 0;
+
+        if (this.isWidgetVisible && hasSongs) {
+            widget.classList.remove('hidden');
+        } else {
+            widget.classList.add('hidden');
+            widget.classList.remove('expanded'); // 隐藏时自动收起
+            document.getElementById('widget-drawer').classList.remove('open'); // 关闭抽屉
+        }
+    },
+
+    // 切换展开/收起 (点击圆盘)
+     // --- 优化后的 toggleExpand ---
+    toggleExpand: function() {
+        const widget = this.widgetEl;
+        const drawer = document.getElementById('widget-drawer');
+        widget.classList.toggle('expanded');
+
+        // 如果是收起操作
+        if (!widget.classList.contains('expanded')) {
+            // 同时关闭抽屉并恢复 overflow 状态
+            drawer.classList.remove('open');
+            widget.style.overflow = 'hidden';
+        }
+    },
+
+    // 切换抽屉内容 (列表 或 设置)
+     // --- 优化后的 toggleDrawer ---
+    toggleDrawer: function(type) {
+        const drawer = document.getElementById('widget-drawer');
+        const widget = this.widgetEl; // 获取主容器的引用
+
+        if (!type) type = 'playlist';
+
+        const isOpening = !drawer.classList.contains('open') || this.currentDrawerType !== type;
+
+        // 如果是关闭操作，或者切换tab页
+        if (!isOpening) {
+            drawer.classList.remove('open');
+            widget.style.overflow = 'hidden'; // 关闭时，恢复overflow: hidden
+            return;
+        }
+
+        // --- 以下是打开操作 ---
+
+        // 确保主面板是展开的
+        widget.classList.add('expanded');
+
+        // 切换内容显示
+        const playlistContent = document.getElementById('drawer-playlist-content');
+        const settingsContent = document.getElementById('drawer-settings-content');
+        if (type === 'playlist') {
+            playlistContent.style.display = 'block';
+            settingsContent.style.display = 'none';
+        } else {
+            playlistContent.style.display = 'none';
+            settingsContent.style.display = 'block';
+        }
+
+        this.currentDrawerType = type;
+
+        // 先让抽屉可见，再添加 open 类以触发动画
+        widget.style.overflow = 'visible'; // 关键：允许内容溢出
+        drawer.classList.add('open');
+    },
+
+    // 设置音量
+    setVolume: function(val) {
+        this.audio.volume = val;
+        MusicDB.saveSetting('volume', val);
+    },
+
+    // 切换全局显隐变量
+    toggleGlobalVisibility: function() {
+        this.isWidgetVisible = !this.isWidgetVisible;
+        localStorage.setItem('GlobalMusicWidgetVisible', this.isWidgetVisible);
+        this.showToast(this.isWidgetVisible ? "已开启显示 (有歌时显示)" : "已全局隐藏");
+        this.checkWidgetVisibility();
+    },
+
+    // 修改 clearAll，清空后隐藏
+    clearAll: async function() {
+        this.playlist = [];
+        this.currentIndex = -1;
+        this.audio.pause();
+        this.audio.src = '';
+        await MusicDB.clearPlaylist();
+        this.renderPlaylist();
+        this.updateUiState(false);
+
+        // 清空后隐藏控件
+        this.checkWidgetVisibility();
+    },
+    playCurrent: function() {
+        if (this.currentIndex < 0 || this.currentIndex >= this.playlist.length) return;
+
+        const song = this.playlist[this.currentIndex];
+
+        // 更新音频源
+        this.audio.src = song.url;
+        this.audio.load();
+        this.audio.play().catch(e => console.error("播放被阻止", e));
+
+        // 更新 UI
+        this.updateWidgetInfo(song);
+        this.renderPlaylist(); // 更新高亮
+
+        // 自动展开悬浮窗提示用户
+        const w = document.getElementById('global-music-widget');
+        w.classList.add('active');
+        setTimeout(() => w.classList.remove('active'), 3000);
+    },
+
+    handleSongEnd: function() {
+        if (this.playMode === 'loop-one') {
+            this.audio.currentTime = 0;
+            this.audio.play();
+        } else if (this.playMode === 'random') {
+            // 随机播放
+            let nextIndex = Math.floor(Math.random() * this.playlist.length);
+            // 尽量不重复同一首
+            if (this.playlist.length > 1 && nextIndex === this.currentIndex) {
+                nextIndex = (nextIndex + 1) % this.playlist.length;
+            }
+            this.currentIndex = nextIndex;
+            this.playCurrent();
+        } else {
+            // 顺序播放 / 列表循环
+            this.next(true); // true 表示是自动切歌
+        }
+    },
+
+    next: function(isAuto = false) {
+        if (this.playlist.length === 0) return;
+
+        if (this.currentIndex < this.playlist.length - 1) {
+            this.currentIndex++;
+            this.playCurrent();
+        } else {
+            // 列表结束
+            if (this.playMode === 'loop-all' || isAuto) {
+                // 如果是自动播放且到了末尾，看是否循环
+                if (this.playMode === 'loop-all' || this.playMode === 'sequence') {
+                     // 这里逻辑：sequence 模式下，播完最后一首通常停止，或者回到第一首停止？
+                     // 既然是BGM，通常回到第一首继续播比较好，或者停止。
+                     // 这里设定：sequence 播完停止，loop-all 回到开头
+                     if (this.playMode === 'loop-all') {
+                         this.currentIndex = 0;
+                         this.playCurrent();
+                     } else {
+                         // sequence 结束，停止
+                         this.audio.pause();
+                     }
                 }
-            }, 50);
+            }
+        }
+    },
+
+    prev: function() {
+        if (this.playlist.length === 0) return;
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.playCurrent();
+        }
+    },
+
+    // --- 频谱可视化 ---
+    initAudioContext: function() {
+        if (this.audioCtx) return;
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.audioCtx = new AudioContext();
+            this.analyser = this.audioCtx.createAnalyser();
+            this.analyser.fftSize = 64; // 只要少量条目，性能好且适合小图标
+
+            const source = this.audioCtx.createMediaElementSource(this.audio);
+            source.connect(this.analyser);
+            this.analyser.connect(this.audioCtx.destination);
+
+            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+            this.drawVisualizer();
+        } catch (e) {
+            console.log("AudioContext 初始化失败 (可能是跨域限制):", e);
+        }
+    },
+
+    drawVisualizer: function() {
+        if (!this.analyser) return;
+
+        const canvas = document.getElementById('music-visualizer-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width = canvas.offsetWidth;
+        const height = canvas.height = canvas.offsetHeight;
+
+        const render = () => {
+            requestAnimationFrame(render);
+            this.analyser.getByteFrequencyData(this.dataArray);
+
+            ctx.clearRect(0, 0, width, height);
+
+            // 环形可视化
+            const cx = width / 2;
+            const cy = height / 2;
+            const radius = 42; // 比唱片稍大
+            const bars = 20;
+            const step = (Math.PI * 2) / bars;
+
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+
+            for (let i = 0; i < bars; i++) {
+                const value = this.dataArray[i] || 0;
+                const barHeight = (value / 255) * 20;
+
+                const angle = i * step;
+                // 计算条的起点 (圆周上)
+                const x1 = cx + Math.cos(angle) * radius;
+                const y1 = cy + Math.sin(angle) * radius;
+                // 计算条的终点 (向外辐射)
+                const x2 = cx + Math.cos(angle) * (radius + barHeight);
+                const y2 = cy + Math.sin(angle) * (radius + barHeight);
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = ctx.fillStyle;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        };
+        render();
+    },
+
+    // --- UI 更新与控制 ---
+
+    updateWidgetInfo: function(song) {
+        document.getElementById('widget-title').textContent = song.song;
+        document.getElementById('widget-artist').textContent = song.artist;
+        document.getElementById('widget-source').textContent = song.source;
+
+        const disc = document.getElementById('widget-disc');
+        if (song.cover) {
+            disc.style.backgroundImage = `url('${song.cover}')`;
+        } else {
+            disc.style.backgroundImage = 'none'; // 或者默认图
+        }
+    },
+
+   updateProgress: function() {
+        const cur = this.audio.currentTime || 0;
+        const dur = this.audio.duration || 0;
+        const pct = dur > 0 ? (cur / dur) * 100 : 0;
+
+        const bar = document.getElementById('widget-prog-bar');
+        if (bar) bar.style.width = pct + '%';
+
+        // 更新时间文本
+        const tNow = document.getElementById('widget-time-now');
+        const tTotal = document.getElementById('widget-time-total');
+        if (tNow) tNow.textContent = this.formatTime(cur);
+        if (tTotal) tTotal.textContent = this.formatTime(dur);
+    },
+
+    updateUiState: function(isPlaying) {
+        const btn = document.getElementById('widget-play-pause');
+        const disc = document.getElementById('widget-disc');
+
+        // SVG 图标
+        const iconPlay = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+        const iconPause = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+
+        if (btn) btn.innerHTML = isPlaying ? iconPause : iconPlay;
+
+        if (disc) {
+            if (isPlaying) disc.classList.add('playing');
+            else disc.classList.remove('playing');
+        }
+
+        this.updateAllUiState(isPlaying);
+
+        // 开启进度条更新循环
+        if (isPlaying) {
+            if (!this.progressTimer) {
+                this.progressTimer = setInterval(() => this.updateProgress(), 500);
+            }
+        } else {
+            if (this.progressTimer) {
+                clearInterval(this.progressTimer);
+                this.progressTimer = null;
+            }
+        }
+    },
+
+    renderPlaylist: function() {
+        const container = document.getElementById('drawer-playlist-content');
+        if (!container) return;
+
+        container.innerHTML = '';
+        this.playlist.forEach((song, index) => {
+            const div = document.createElement('div');
+            div.className = `playlist-item ${index === this.currentIndex ? 'playing' : ''}`;
+            div.innerHTML = `
+                <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" onclick="GlobalChatAudio.playIndex(${index})">
+                    ${index + 1}. ${song.song} - ${song.artist}
+                </div>
+                <div class="del-btn" onclick="GlobalChatAudio.removeSong(${index})">✕</div>
+            `;
+            container.appendChild(div);
         });
     },
 
-    fadeOutAndPause: function() {
-        const fadeOut = setInterval(() => {
-            if (this.audio.volume > 0.05) this.audio.volume -= 0.1;
-            else { clearInterval(fadeOut); this.audio.pause(); this.updateAllUiState(false); }
-        }, 50);
+    // --- 交互方法 ---
+
+    togglePlay: function() {
+        if (this.audio.paused) {
+            if (this.audio.src) this.audio.play();
+        } else {
+            this.audio.pause();
+        }
     },
 
-    fadeInAndPlay: function() {
-        this.audio.volume = 0;
-        this.audio.play();
-        const fadeIn = setInterval(() => {
-            if (this.audio.volume < this.defaultVolume) {
-                // ✨ 把原来的那行代码换成下面这行 ✨
-                this.audio.volume = Math.min(this.defaultVolume, this.audio.volume + 0.1);
-            } else {
-                clearInterval(fadeIn);
-            }
-        }, 50);
+    playIndex: function(index) {
+        this.currentIndex = index;
+        this.playCurrent();
     },
 
+    removeSong: async function(index) {
+        const song = this.playlist[index];
+        this.playlist.splice(index, 1);
 
- searchSong: async function(name, singer) {
-    console.log('========== 开始搜索歌曲 ==========');
-    console.log('歌曲名:', name);
-    console.log('歌手名:', singer);
-    
-    const Http_Get = (url) => new Promise(resolve => $.ajax({ url, method: 'GET', timeout: 5000, success: resolve, error: () => resolve(null) }));
-    const checkUrl = (url) => new Promise(r => { const a = new Audio(); a.src = url; a.onloadedmetadata = () => r(true); a.onerror = () => r(false); setTimeout(() => r(false), 2000); });
+        if (this.storageMode === 'perm' && song.id) {
+            await MusicDB.deleteSong(song.id);
+        }
 
-    let result = null;
-
-    
-    // 步骤2: QQ音乐搜索 (歌曲名 + 歌手)
-    if (!result && singer) {
-        console.log('→ 步骤2: QQ音乐搜索 (歌曲+歌手):', name + " " + singer);
-        result = await this.qqSearch(name + " " + singer, Http_Get);
-        if (result) console.log('✓ 步骤2成功，找到歌曲');
-    }
-    
-
-    
-    // 步骤4: QQ音乐搜索 (仅歌曲名)
-    if (!result) {
-        console.log('→ 步骤4: QQ音乐搜索 (仅歌曲名):', name);
-        result = await this.qqSearch(name, Http_Get);
-        if (result) console.log('✓ 步骤4成功，找到歌曲');
-    }
-
-            
-    // 步骤1: 网易云搜索 (歌曲名 + 歌手)
-    if (singer) {
-        console.log('→ 步骤1: 网易云搜索 (歌曲+歌手):', name + " " + singer);
-        result = await this.wySearch(name + " " + singer, Http_Get);
-        if (result) console.log('✓ 步骤1成功，找到歌曲');
-    }
-    // 步骤3: 网易云搜索 (仅歌曲名)
-    if (!result) {
-        console.log('→ 步骤3: 网易云搜索 (仅歌曲名):', name);
-        result = await this.wySearch(name, Http_Get);
-        if (result) console.log('✓ 步骤3成功，找到歌曲');
-    }
-    
-    console.log('========== 搜索结果 ==========');
-    console.log(result ? '成功找到歌曲' : '❌ 未找到任何可用歌曲');
-    if (result) {
-        console.log('最终选择:', result);
-    }
-    console.log('================================');
-    
-    return result;
-},
- wySearch: async function(query, httpGet) {
-    console.log('  [网易云] 搜索关键词:', query);
-    let res = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
-    
-    console.log('  [网易云] 搜索API响应:', res);
-    
-    if (res && res.data && res.data.length) {
-        console.log(`  [网易云] 找到 ${res.data.length} 首歌曲，尝试获取播放链接...`);
-        
-        for (let i = 0; i < Math.min(res.data.length, 3); i++) {
-            let d = res.data[i];
-            console.log(`  [网易云] 尝试第 ${i+1} 首:`, {
-                歌曲: d.song,
-                歌手: d.singer,
-                ID: d.id,
-                专辑: d.album,
-                时长: d.time,
-                是否VIP: d.pay || '未知'
-            });
-            
-            let r = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + d.id);
-            console.log(`  [网易云] 获取链接API响应:`, r);
-            
-            if (r && r.data && r.data.url) {
-                console.log(`  [网易云] ✓ 成功获取播放链接:`, r.data.url);
-                return { url: r.data.url, song: d.song, singer: d.singer, source: "网易云" };
+        // 如果删的是当前正在播的
+        if (index === this.currentIndex) {
+            // 停止播放或播下一首
+            if (this.playlist.length > 0) {
+                this.currentIndex = index % this.playlist.length; // 保持索引或归零
+                this.playCurrent();
             } else {
-                console.log(`  [网易云] ✗ 未获取到播放链接 (可能是VIP歌曲)`);
+                this.audio.pause();
+                this.audio.src = '';
+                this.updateUiState(false);
             }
+        } else if (index < this.currentIndex) {
+            this.currentIndex--;
         }
-        console.log('  [网易云] 所有候选歌曲均无法播放');
-    } else {
-        console.log('  [网易云] 搜索无结果');
-    }
-    return null;
-},
+        this.renderPlaylist();
+    },
 
-qqSearch: async function(query, httpGet) {
-    console.log('  [QQ音乐] 搜索关键词:', query);
-    
-    // ✨ 新增：相似度计算函数
-    const calculateSimilarity = (searchQuery, songData) => {
-        let score = 0;
-        const queryLower = searchQuery.toLowerCase();
-        const songLower = songData.song.toLowerCase();
-        const singerLower = (songData.singer || '').toLowerCase();
-        
-        // 1. 歌曲名完全匹配 +100分
-        if (songLower === queryLower) {
-            score += 100;
+    clearAll: async function() {
+        this.playlist = [];
+        this.currentIndex = -1;
+        this.audio.pause();
+        this.audio.src = '';
+        await MusicDB.clearPlaylist();
+        this.renderPlaylist();
+        this.updateUiState(false);
+    },
+
+     toggleMode: function() {
+        const modes = ['sequence', 'loop-all', 'loop-one', 'random'];
+        const icons = { // 使用与上面 injectWidget 中相同的图标对象
+            sequence: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 11.9V11H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg>`,
+            'loop-all': `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`,
+            'loop-one': `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1v4h-1v2h2z"/></svg>`,
+            random: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>`
+        };
+        const titles = ['顺序播放', '列表循环', '单曲循环', '随机播放'];
+
+        let idx = modes.indexOf(this.playMode);
+        idx = (idx + 1) % modes.length;
+        this.playMode = modes[idx];
+
+        const btn = document.getElementById('widget-mode-btn');
+        btn.innerHTML = icons[this.playMode];
+        btn.title = titles[idx];
+        this.showToast("模式切换: " + titles[idx]);
+    },
+
+ 
+
+    switchTab: function(tabName) {
+        document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.drawer-content').forEach(c => c.style.display = 'none');
+
+        if (tabName === 'playlist') {
+            document.querySelector('.drawer-tab:nth-child(1)').classList.add('active');
+            document.getElementById('drawer-playlist-content').style.display = 'block';
+        } else {
+            document.querySelector('.drawer-tab:nth-child(2)').classList.add('active');
+            document.getElementById('drawer-settings-content').style.display = 'block';
         }
-        // 2. 歌曲名包含搜索词 +50分
-        else if (songLower.includes(queryLower) || queryLower.includes(songLower)) {
-            score += 50;
-        }
-        
-        // 3. 歌手名匹配 +30分
-        if (queryLower.includes(singerLower) || singerLower.includes(queryLower)) {
-            score += 30;
-        }
-        
-        // 4. 惩罚：包含 (Album Version)、(Explicit)、(Live) 等后缀 -10分
-        if (songLower.match(/\(album version\)|\(explicit\)|\(deluxe\)/)) {
-            score -= 10;
-        }
-        
-        // 5. 严重惩罚：Live版本 -50分
-        if (songLower.match(/live/gi)) {
-            score -= 50;
-        }
-        
-        // 6. 奖励：专辑名就是歌曲名（通常是单曲）+20分
-        if (songData.album && songLower.includes(songData.album.toLowerCase())) {
-            score += 20;
-        }
-        
-        // 7. 惩罚：歌曲名和搜索词完全不相关 -100分
-        const searchWords = queryLower.split(' ');
-        const hasMatch = searchWords.some(word => 
-            songLower.includes(word) || singerLower.includes(word)
-        );
-        if (!hasMatch) {
-            score -= 100;
-        }
-        
-        return score;
-    };
-    
-    let res = await httpGet("https://api.vkeys.cn/v2/music/tencent?word=" + encodeURIComponent(query));
-    
-    console.log('  [QQ音乐] 搜索API响应:', res);
-    
-    if (res && res.data && res.data.length) {
-        console.log(`  [QQ音乐] 找到 ${res.data.length} 首歌曲，开始智能匹配...`);
-        
-        // ✨ 新增：计算所有歌曲的相似度并排序
-        const scoredSongs = res.data.map(d => ({
-            ...d,
-            similarity: calculateSimilarity(query, d)
-        })).sort((a, b) => b.similarity - a.similarity); // 从高到低排序
-        
-        console.log('  [QQ音乐] 相似度排序结果:');
-        scoredSongs.slice(0, 5).forEach((d, i) => {
-            console.log(`    ${i+1}. [${d.similarity}分] ${d.song} - ${d.singer}`);
-        });
-        
-        // ✨ 修改：按相似度从高到低尝试
-        for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
-            let d = scoredSongs[i];
-            
-            // 跳过相似度为负的（完全不相关）
-            if (d.similarity < 0) {
-                console.log(`  [QQ音乐] 跳过不相关歌曲 (${d.similarity}分):`, d.song);
-                continue;
-            }
-            
-            // 跳过live版本
-            if(d.song.match(/live/gi)) {
-                console.log(`  [QQ音乐] 跳过Live版本:`, d.song);
-                continue;
-            }
-            
-            console.log(`  [QQ音乐] 尝试第 ${i+1} 首 [${d.similarity}分]:`, {
-                歌曲: d.song,
-                歌手: d.singer,
-                ID: d.id,
-                专辑: d.album,
-                时长: d.interval,
-                音质: d.quality,
-                是否VIP: d.pay
-            });
-            
-            let r = await httpGet("https://api.vkeys.cn/v2/music/tencent?id=" + d.id);
-            console.log(`  [QQ音乐] 获取链接API响应:`, r);
-            
-            if (r && r.data && r.data.url) {
-                console.log(`  [QQ音乐] ✓ 成功获取播放链接 [${d.similarity}分]:`, r.data.url);
-                return { url: r.data.url, song: d.song, singer: d.singer, source: "QQ音乐" };
-            } else {
-                console.log(`  [QQ音乐] ✗ 未获取到播放链接 (${d.pay})`);
-            }
-        }
-        console.log('  [QQ音乐] 所有候选歌曲均无法播放');
-    } else {
-        console.log('  [QQ音乐] 搜索无结果');
-    }
-    return null;
-},
-// ================= UI 更新 =================
+    },
+
+    setStorageMode: function(val) {
+        this.storageMode = val;
+        MusicDB.saveSetting('storageMode', val);
+        if (val === 'none') MusicDB.clearPlaylist(); // 如果选不存储，是否清空？按需
+    },
+
+    setQueueMode: function(val) {
+        this.queueMode = val;
+        MusicDB.saveSetting('queueMode', val);
+    },
+
+    // --- 辅助 ---
+    formatTime: function(seconds) {
+        if (!seconds || isNaN(seconds)) return "0:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    },
 
     setLoadingState: function(domId, isLoading) {
+        // 兼容旧逻辑
         const btn = document.getElementById('play-btn-' + domId);
-        if (!btn) return;
-        btn.innerHTML = isLoading 
-            ? `<div class="spinner" style="width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div>`
-            : '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>';
+        if (btn) btn.innerHTML = isLoading ? '...' : (this.audio.paused ? '▶' : '⏸');
     },
 
     updateAllUiState: function(isPlaying) {
+        // 兼容旧逻辑：更新聊天记录里的按钮
         document.querySelectorAll('.global-music-play-btn').forEach(el => {
             el.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>';
         });
-        if (isPlaying && this.currentMeta.domId) {
-            const currentBtn = document.getElementById('play-btn-' + this.currentMeta.domId);
-            if (currentBtn) currentBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>';
+        if (isPlaying && this.currentIndex >= 0) {
+            const currentSong = this.playlist[this.currentIndex];
+            if (currentSong && currentSong.domId) {
+                const btn = document.getElementById('play-btn-' + currentSong.domId);
+                if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>';
+            }
         }
     },
 
-    // ✨ 新增：更新进度条和时间文字
-    updateProgress: function() {
-        if (!this.currentMeta.domId) return;
+    showToast: function(msg) {
+        console.log(msg);
+        // 可以加一个界面上的 toast
+    },
+     // --- 搜索逻辑 (完整版) ---
+    searchSong: async function(name, singer) {
+        console.log('========== 开始搜索歌曲 ==========');
+        console.log('歌曲名:', name);
+        console.log('歌手名:', singer);
 
-        const curTime = this.audio.currentTime || 0;
-        const duration = this.audio.duration || 0;
-        const percent = duration > 0 ? (curTime / duration) * 100 : 0;
+        const Http_Get = (url) => new Promise(resolve => $.ajax({ url, method: 'GET', timeout: 5000, success: resolve, error: () => resolve(null) }));
+        // 检查URL有效性的函数，如果你的API足够稳定，可以考虑移除以加速
+        // const checkUrl = (url) => new Promise(r => { const a = new Audio(); a.src = url; a.onloadedmetadata = () => r(true); a.onerror = () => r(false); setTimeout(() => r(false), 2000); });
 
-        // 更新时间文字
-        const timeEl = document.getElementById('time-' + this.currentMeta.domId);
-     if (timeEl) {
-        
-            timeEl.textContent = `${this.formatTime(curTime)} / ${this.formatTime(duration)} • ${this.currentMeta.source} - ${this.currentMeta.song}`;
-            
-            // 如果担心文字太长，可以顺便加上样式控制（可选）
-            timeEl.style.whiteSpace = "nowrap";
-            timeEl.style.overflow = "hidden";
-            timeEl.style.textOverflow = "ellipsis";
+        let result = null;
+
+        // 步骤1: QQ音乐搜索 (歌曲名 + 歌手)
+        if (!result && singer) {
+            console.log('→ 步骤1: QQ音乐搜索 (歌曲+歌手):', name + " " + singer);
+            result = await this.qqSearch(name + " " + singer, Http_Get);
+            if (result) console.log('✓ 步骤1成功，找到歌曲');
         }
 
-        // 更新进度条宽度
-        const barEl = document.getElementById('prog-bar-' + this.currentMeta.domId);
-        if (barEl) {
-            barEl.style.width = percent + "%";
+        // 步骤2: QQ音乐搜索 (仅歌曲名)
+        if (!result) {
+            console.log('→ 步骤2: QQ音乐搜索 (仅歌曲名):', name);
+            result = await this.qqSearch(name, Http_Get);
+            if (result) console.log('✓ 步骤2成功，找到歌曲');
         }
+
+        // 步骤3: 网易云搜索 (歌曲名 + 歌手)
+        if (!result && singer) {
+            console.log('→ 步骤3: 网易云搜索 (歌曲+歌手):', name + " " + singer);
+            result = await this.wySearch(name + " " + singer, Http_Get);
+            if (result) console.log('✓ 步骤3成功，找到歌曲');
+        }
+
+        // 步骤4: 网易云搜索 (仅歌曲名)
+        if (!result) {
+            console.log('→ 步骤4: 网易云搜索 (仅歌曲名):', name);
+            result = await this.wySearch(name, Http_Get);
+            if (result) console.log('✓ 步骤4成功，找到歌曲');
+        }
+
+        console.log('========== 搜索结果 ==========');
+        if (result) {
+            console.log('✓ 成功找到歌曲:', result);
+        } else {
+            console.log('❌ 未找到任何可用歌曲');
+        }
+        console.log('================================');
+
+        return result;
     },
 
-    // ✨ 新增：重置进度UI (当歌曲结束或切歌时)
-    resetProgressUI: function(specificId) {
-        const id = specificId || this.currentMeta.domId;
-        if (!id) return;
-        
-        const timeEl = document.getElementById('time-' + id);
-        if (timeEl) timeEl.textContent = "0:00 / 0:00";
-        
-        const barEl = document.getElementById('prog-bar-' + id);
-        if (barEl) barEl.style.width = "0%";
+    wySearch: async function(query, httpGet) {
+        console.log('  [网易云] 搜索关键词:', query);
+        let res = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
+
+        console.log('  [网易云] 搜索API响应:', res);
+
+        if (res && res.data && res.data.length) {
+            console.log(`  [网易云] 找到 ${res.data.length} 首歌曲，尝试获取播放链接...`);
+
+            for (let i = 0; i < Math.min(res.data.length, 3); i++) {
+                let d = res.data[i];
+                console.log(`  [网易云] 尝试第 ${i+1} 首:`, {
+                    歌曲: d.song,
+                    歌手: d.singer,
+                    ID: d.id,
+                    专辑: d.album,
+                    时长: d.time,
+                    是否VIP: d.pay || '未知'
+                });
+
+                let r = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + d.id);
+                console.log(`  [网易云] 获取链接API响应:`, r);
+
+                if (r && r.data && r.data.url) {
+                    console.log(`  [网易云] ✓ 成功获取播放链接:`, r.data.url);
+                    // ✨ 修改点: 返回对象中增加 cover 字段
+                    return {
+                        url: r.data.url,
+                        song: d.song,
+                        singer: d.singer,
+                        source: "网易云",
+                        cover: d.pic || '' // 使用API返回的pic字段作为封面，如果没有则为空字符串
+                    };
+                } else {
+                    console.log(`  [网易云] ✗ 未获取到播放链接 (可能是VIP歌曲)`);
+                }
+            }
+            console.log('  [网易云] 所有候选歌曲均无法播放');
+        } else {
+            console.log('  [网易云] 搜索无结果');
+        }
+        return null;
     },
 
-    showToast: function(msg) { console.log(msg); }
+    qqSearch: async function(query, httpGet) {
+        console.log('  [QQ音乐] 搜索关键词:', query);
+
+        const calculateSimilarity = (searchQuery, songData) => {
+            let score = 0;
+            const queryLower = searchQuery.toLowerCase();
+            const songLower = songData.song.toLowerCase();
+            const singerLower = (songData.singer || '').toLowerCase();
+            if (songLower === queryLower) { score += 150; }
+            else if (songLower.includes(queryLower) || queryLower.includes(songLower)) { score += 50; }
+            if (queryLower.includes(singerLower) || singerLower.includes(queryLower)) { score += 30; }
+            if (songLower.match(/\(album version\)|\(explicit\)|\(deluxe\)/)) { score -= 10; }
+            if (songLower.match(/live/gi)) { score -= 50; }
+            if (songData.album && songLower.includes(songData.album.toLowerCase())) { score += 20; }
+            const searchWords = queryLower.split(' ');
+            const hasMatch = searchWords.some(word => songLower.includes(word) || singerLower.includes(word));
+            if (!hasMatch) { score -= 100; }
+            return score;
+        };
+
+        let res = await httpGet("https://api.vkeys.cn/v2/music/tencent?word=" + encodeURIComponent(query));
+        console.log('  [QQ音乐] 搜索API响应:', res);
+
+        if (res && res.data && res.data.length) {
+            console.log(`  [QQ音乐] 找到 ${res.data.length} 首歌曲，开始智能匹配...`);
+
+            const scoredSongs = res.data.map(d => ({
+                ...d,
+                similarity: calculateSimilarity(query, d)
+            })).sort((a, b) => b.similarity - a.similarity);
+
+            console.log('  [QQ音乐] 相似度排序结果:');
+            scoredSongs.slice(0, 5).forEach((d, i) => {
+                console.log(`    ${i+1}. [${d.similarity}分] ${d.song} - ${d.singer}`);
+            });
+
+            for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
+                let d = scoredSongs[i];
+                if (d.similarity < 0) {
+                    console.log(`  [QQ音乐] 跳过不相关歌曲 (${d.similarity}分):`, d.song);
+                    continue;
+                }
+                if (d.song.match(/live/gi)) {
+                    console.log(`  [QQ音乐] 跳过Live版本:`, d.song);
+                    continue;
+                }
+
+                console.log(`  [QQ音乐] 尝试第 ${i+1} 首 [${d.similarity}分]:`, {
+                    歌曲: d.song, 歌手: d.singer, ID: d.id, 专辑: d.album, 时长: d.interval, 音质: d.quality, 是否VIP: d.pay
+                });
+
+                let r = await httpGet("https://api.vkeys.cn/v2/music/tencent?id=" + d.id);
+                console.log(`  [QQ音乐] 获取链接API响应:`, r);
+
+                if (r && r.data && r.data.url) {
+                    console.log(`  [QQ音乐] ✓ 成功获取播放链接 [${d.similarity}分]:`, r.data.url);
+                    // ✨ 修改点: 返回对象中增加 cover 字段
+                    return {
+                        url: r.data.url,
+                        song: d.song,
+                        singer: d.singer,
+                        source: "QQ音乐",
+                        cover: d.cover // 直接使用API返回的cover字段
+                    };
+                } else {
+                    console.log(`  [QQ音乐] ✗ 未获取到播放链接 (${d.pay})`);
+                }
+            }
+            console.log('  [QQ音乐] 所有候选歌曲均无法播放');
+        } else {
+            console.log('  [QQ音乐] 搜索无结果');
+        }
+        return null;
+    }
+
 };
 
 GlobalChatAudio.init();
-
 // 补充 CSS (包含进度条样式)
  if (!document.getElementById('music-global-style')) {
     const style = document.createElement('style');
@@ -27210,6 +27827,377 @@ GlobalChatAudio.init();
 }
 .music-loop-btn.active:hover {
     filter: brightness(1.1);
+}
+    
+/* --- 悬浮播放器容器 --- */
+#global-music-widget {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 380px;
+    height: fit-content;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    z-index: 9999;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+    /* 默认隐藏一半 */
+    transform: translateX(-55%);
+    backdrop-filter: blur(10px);
+    color: var(--text-color);
+    font-family: var(--base-font-family);
+}
+
+/* 悬浮/激活状态：完全显示 */
+#global-music-widget:hover,
+#global-music-widget.active,
+#global-music-widget.dragging {
+    transform: translateX(0);
+}
+
+/* --- 唱片区域 (包含封面和频谱) --- */
+.widget-disc-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    margin-right: 15px;
+    cursor: grab;
+}
+
+/* 频谱 Canvas (在唱片后面) */
+#music-visualizer-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140%; /* 比唱片大一圈 */
+    height: 140%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* 唱片本体 */
+.widget-disc {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #000;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    z-index: 1;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 10px var(--glow-color);
+    animation: rotateDisc 10s linear infinite;
+    animation-play-state: paused;
+}
+.widget-disc.playing {
+    animation-play-state: running;
+}
+/* 唱片中心孔 */
+.widget-disc::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 15px; height: 15px;
+    background: var(--container-bg-color);
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+}
+
+@keyframes rotateDisc { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* --- 信息与控制区 --- */
+.widget-info-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.widget-song-name {
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--primary-color);
+    margin-bottom: 2px;
+}
+
+.widget-artist-source {
+    font-size: 12px;
+    color: var(--text-secondary-color);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.widget-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.widget-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+.widget-btn:hover { color: var(--primary-color); }
+.widget-btn.active { color: var(--primary-color); text-shadow: 0 0 5px var(--glow-color); }
+
+/* 进度条微调 */
+.widget-progress-container {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    margin-top: 8px;
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+.widget-progress-bar {
+    height: 100%;
+    background: var(--primary-color);
+    width: 0%;
+    border-radius: 2px;
+    position: relative;
+}
+/* 进度条拖拽点 */
+.widget-progress-bar::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: -3px;
+    width: 9px;
+    height: 9px;
+    background: var(--text-color);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.widget-progress-container:hover .widget-progress-bar::after { opacity: 1; }
+
+/* --- 播放列表/设置面板 (向上展开) --- */
+#widget-drawer {
+    position: absolute;
+ 
+    max-height: 0;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    display: flex;
+    flex-direction: column;
+        width: 100%;
+    left: 0;
+    bottom: 100%;
+     z-index: 10; /* 新增：确保抽屉在最上层 */
+}
+#widget-drawer.open {
+    max-height: 300px;
+}
+
+.drawer-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.drawer-tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+    background: rgba(0,0,0,0.2);
+    color: var(--text-secondary-color);
+}
+.drawer-tab.active {
+    background: transparent;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+/* 滚动条美化 (可选) */
+.drawer-content::-webkit-scrollbar { width: 4px; }
+.drawer-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+/* 1. 右上角控制区样式 */
+.widget-top-controls {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    z-index: 5;
+}
+.drawer-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+/* 滚动条样式 */
+.drawer-content::-webkit-scrollbar { width: 4px; }
+.drawer-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+/* 列表项 */
+.playlist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 12px;
+    cursor: pointer;
+}
+.playlist-item:hover { background: rgba(255,255,255,0.05); }
+.playlist-item.playing { color: var(--primary-color); }
+.playlist-item .del-btn { color: var(--danger-color); opacity: 0.6; margin-left: 8px; }
+.playlist-item .del-btn:hover { opacity: 1; text-shadow: 0 0 5px var(--danger-glow-color); }
+
+/* 设置项 */
+.setting-row {
+    margin-bottom: 12px;
+}
+.setting-label { font-size: 12px; color: var(--text-secondary-color); margin-bottom: 4px; display: block; }
+.setting-select {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 4px;
+    border-radius: 4px;
+    outline: none;
+}
+ 
+/* --- 修改 #global-music-widget --- */
+#global-music-widget {
+    /* 基础定位和样式保持不变 */
+    position: fixed;
+    bottom: 20px;
+    left: -20px; /* 稍微向左隐藏一点，让圆盘贴边 */
+ 
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0 50px 50px 0; /* 圆润的右侧边缘 */
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+    color: var(--text-color);
+
+    /* 关键修改：默认宽度只够放圆盘，溢出隐藏 */
+    width: 100px;
+    overflow: hidden;
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s, transform 0.3s;
+}
+
+/* 展开状态：显示完整面板 */
+#global-music-widget.expanded {
+    width: 380px;
+    border-radius: 0 12px 12px 0; /* 展开后变回圆角矩形 */
+    left: 0;
+}
+
+/* 隐藏状态：完全消失 (由 JS 控制类名) */
+#global-music-widget.hidden {
+    display: none !important;
+}
+
+/* --- 修改圆盘区域 --- */
+.widget-disc-container {
+    /* 保持不变，但增加点击交互提示 */
+    cursor: pointer;
+    flex-shrink: 0; /* 防止被压缩 */
+    margin-right: 20px; /* 增加与右侧内容的间距 */
+}
+
+/* --- 修改信息面板 --- */
+.widget-info-panel {
+    /* 默认透明度0，展开时渐显 */
+    opacity: 0;
+    transition: opacity 0.2s ease 0.1s;
+    min-width: 240px; /* 确保内容不换行 */
+}
+#global-music-widget.expanded .widget-info-panel {
+    opacity: 1;
+}
+
+/* --- 3. 原本卡片的样式清理 (隐藏不需要的元素) --- */
+/* 隐藏原卡片的时间、循环按钮、音量等，只保留标题和播放按钮 */
+.music-card-lite .music-time-text,
+.music-card-lite .music-loop-btn,
+.music-card-lite input[type="range"] {
+    display: none !important;
+}
+/* 调整原卡片进度条样式，使其看起来只是装饰或简易显示 */
+.music-card-lite .music-progress-track {
+    margin-top: 8px;
+    opacity: 0.5;
+}
+
+/* --- 新增：音量滑块样式 --- */
+.widget-volume-ctrl {
+    display: flex;
+    align-items: center;
+    margin-left: auto; /* 靠右 */
+    width: 60px;
+}
+.widget-volume-slider {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    outline: none;
+}
+.widget-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+}
+
+/* --- 修改 Drawer (列表/设置) --- */
+ 
+/* 隐藏原本的 Tab */
+.drawer-tabs { display: none; }
+
+/* 新增：时间行样式 */
+.widget-time-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-secondary-color);
+    margin-top: 4px;
+    margin-bottom: 4px;
+    font-family: monospace;
+}
+
+/* 调整：控制栏上边距 */
+.widget-controls {
+    margin-top: 2px;
+}
+
+/* 调整：SVG 图标对齐 */
+.widget-btn svg {
+    display: block; /* 消除 inline 间隙 */
 }
     `;
     document.head.appendChild(style);
@@ -27419,7 +28407,7 @@ await initDisplay();
         </svg>
     </div>
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
-                     onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
+                     onclick="GlobalChatAudio.handleCardClick('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                 </div>
             </div>`;
@@ -27588,7 +28576,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         </svg>
     </div>
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
-                     onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
+                     onclick="GlobalChatAudio.handleCardClick('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                 </div>
             </div>`;
@@ -28135,7 +29123,7 @@ iframeMarkers.forEach(marker => {
 
         setTimeout(() => {
             if (window.GlobalChatAudio) {
-                window.GlobalChatAudio.playMusic(song, artist, domId, true);
+                window.GlobalChatAudio.handleCardClick(song, artist, domId, true);
             }
         }, 100);
     }
@@ -30473,6 +31461,21 @@ if (attr.互动属性?.沉着?.传奇) {
 }
 }
  
+function normalizePathPart(part) {
+    // 遍历所有配置的别名映射
+    for (const [canonical, aliases] of Object.entries(PATH_ALIASES)) {
+        // 如果当前部分匹配标准名称,直接返回
+        if (part === canonical) {
+            return canonical;
+        }
+        // 如果匹配任何别名,返回标准名称
+        if (aliases.includes(part)) {
+            return canonical;
+        }
+    }
+    // 没有匹配的别名,返回原值
+    return part;
+}
 
 function _updatePlayerValue(data, path, valueStr) {
     // === 妈妈的魔法准备阶段 ===
@@ -30490,14 +31493,20 @@ function _updatePlayerValue(data, path, valueStr) {
     }
 
     // 2. 货币别名处理（这部分是你的绝妙创意，妈妈为你珍藏）
-    let pathParts = cleanedPath.split('.');
-    if (pathParts.length > 1 && pathParts[0] === '货币') {
-        const currencyName = pathParts[1];
-        const canonicalName = getCanonicalCurrencyName(currencyName); // 假设 getCanonicalCurrencyName 函数存在
-        if (canonicalName) {
-            pathParts[1] = canonicalName;
-        }
+  // 2. 路径别名处理(支持多级路径别名配置)
+let pathParts = cleanedPath.split('.');
+
+// 先对所有路径部分进行别名标准化
+pathParts = pathParts.map(part => normalizePathPart(part));
+
+// 然后处理货币子项的别名(保留原有的货币内部逻辑)
+if (pathParts.length > 1 && pathParts[0] === '货币') {
+    const currencyName = pathParts[1];
+    const canonicalName = getCanonicalCurrencyName(currencyName);
+    if (canonicalName) {
+        pathParts[1] = canonicalName;
     }
+}
 
     // 3. 智能解析新值 (finalValue)
     // 妈妈要在这里施展洞察魔法，看看新值究竟是一个简单的珠宝，还是一个藏着无数珍宝的首饰盒。
@@ -45008,6 +46017,7 @@ function setupReconfigModal() {
  
         { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'true', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
        { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
+  { name: '显示音乐播放器', key: 'GlobalMusicWidgetVisible', default: 'true', desc: '开启后，则显示音乐播放器。设置后需要重载前端生效' },
 
     ];
     // 定义分类元数据
@@ -51889,7 +52899,7 @@ const switchActiveChat = (type, id) => {
     </div>
 
                 <div class="global-music-play-btn" id="play-btn-${domId}" 
-                     onclick="GlobalChatAudio.playMusic('${safeSong}', '${safeArtist}', '${domId}')">
+                     onclick="GlobalChatAudio.handleCardClick('${safeSong}', '${safeArtist}', '${domId}')">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
                 </div>
             </div>`;
