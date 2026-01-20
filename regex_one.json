@@ -27719,7 +27719,7 @@ this.activeTimer = setTimeout(() => {
 
  
 qqSearch: async function(songName, singerName, httpGet) {
-    const query = songName;
+    const query = songName + " " + singerName;
     console.log('  [QQ音乐] 搜索关键词:', query);
 
     // 标准化函数：去除所有标点符号和空格
