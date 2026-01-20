@@ -27155,8 +27155,8 @@ this.activeTimer = setTimeout(() => {
     checkWidgetVisibility: function() {
         const widget = document.getElementById('global-music-widget');
         if (!widget) return;
-
-        const hasSongs = this.playlist && this.playlist.length > 0;
+// const hasSongs = this.playlist && this.playlist.length > 0;
+        const hasSongs = this.playlist && this.playlist.length > -1;
 
         if (this.isWidgetVisible && hasSongs) {
             widget.classList.remove('hidden');
