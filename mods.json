@@ -112,7 +112,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["dlc"],
-    "description": "带简单分阶段的领养小孩模拟器，需外挂该世界书并开启无世界观。小孩有专属的属性字段，其余的随意。没有开局，自己随便输入吧，什么随机初始化啥的。建议关骰子。专属该dlc的美化正在施工中...",
+    "description": "[需重修，请不要下载该mod]带简单分阶段的领养小孩模拟器，需外挂该世界书并开启无世界观。小孩有专属的属性字段，其余的随意。没有开局，自己随便输入吧，什么随机初始化啥的。建议关骰子。专属该dlc的美化正在施工中...",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养小孩-外挂版世界书.json",
     "previewImage": ""
@@ -122,7 +122,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["dlc"],
-    "description": "带有些复杂的分阶段的被领养模拟器，这个单纯外挂世界书有点玩不了，得用专门的带开局选择界面的卡。\n卡链接：<a style=\"color:green\" href=\"https://discord.com/channels/1291925535324110879/1402545064697135164\" target=\"_blank\">→Discord频道←</a>\n需外挂该世界书并开启无世界观。大人有专属的属性字段，其余的随意。 ",
+    "description": "[需重修，请不要下载该mod]带有些复杂的分阶段的被领养模拟器，这个单纯外挂世界书有点玩不了，得用专门的带开局选择界面的卡。\n卡链接：<a style=\"color:green\" href=\"https://discord.com/channels/1291925535324110879/1402545064697135164\" target=\"_blank\">→Discord频道←</a>\n需外挂该世界书并开启无世界观。大人有专属的属性字段，其余的随意。 ",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养大人-外挂版世界书.json",
     "previewImage": ""
