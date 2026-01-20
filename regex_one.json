@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.4';
+window.current_game_version = '3.6.5';
 
 
 
@@ -15238,6 +15238,7 @@ let is_worldbook_lock = "false";
 let if_waiting_roll= "false";
 let  is_quick_rewirte_backup= "false";
 let is_chat_mode= "false";
+let if_confirm_phase2_generation = "false";
 let dice_use = "true";
 let bookItemSettings = null;
 let batches = 1;
@@ -34192,24 +34193,26 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
         }
     }
 };
-
 function createConfirmationModal(title, message) {
     return new Promise((resolve) => {
         // --- 创建弹窗结构 ---
         const modalOverlay = document.createElement('div');
         modalOverlay.id = 'nova-confirmation-overlay';
         modalOverlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-           
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999;  
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            z-index: 9999;
+            pointer-events: none; /* 关键：不阻挡后面的点击事件 */
         `;
 
         const modalContent = document.createElement('div');
         modalContent.style.cssText = `
             background: var(--container-bg-color, rgba(10, 25, 47, 0.75));
             border: 1px solid var(--border-color, rgba(0, 250, 255, 0.3));
-            box-shadow: 0 0 15px var(--glow-color, rgba(0, 250, 255, 0.5));
+    
             border-radius: 8px;
             padding: 25px;
             width: 90%;
@@ -34217,21 +34220,69 @@ function createConfirmationModal(title, message) {
             text-align: center;
             font-family: var(--base-font-family, sans-serif);
             color: var(--text-color, #e6f1ff);
+            position: fixed;
+            top: 50px;
+            right: 20px;
+            cursor: move;
+            user-select: none;
+            pointer-events: auto; /* 弹窗本身允许交互 */
+            touch-action: none; /* 阻止移动设备的默认行为 */
         `;
+
+        const modalHeader = document.createElement('div');
+        modalHeader.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            cursor: grab;
+            user-select: none;
+        `;
+        modalHeader.onmousedown = () => {
+            modalHeader.style.cursor = 'grabbing';
+        };
+        modalHeader.onmouseup = () => {
+            modalHeader.style.cursor = 'grab';
+        };
 
         const modalTitle = document.createElement('h3');
         modalTitle.textContent = title;
         modalTitle.style.cssText = `
             color: var(--primary-color, #00faff);
-            margin-top: 0; margin-bottom: 15px;
+            margin: 0;
             font-size: 1.5em;
+            flex: 1;
+            text-align: left;
         `;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = `
+            background: transparent;
+            border: none;
+            color: var(--text-secondary-color, #a8c0e1);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        `;
+        closeBtn.onmouseover = () => {
+            closeBtn.style.color = 'var(--primary-color, #00faff)';
+        };
+        closeBtn.onmouseout = () => {
+            closeBtn.style.color = 'var(--text-secondary-color, #a8c0e1)';
+        };
 
         const modalMessage = document.createElement('p');
         modalMessage.textContent = message;
         modalMessage.style.cssText = `
             color: var(--text-secondary-color, #a8c0e1);
-            margin-bottom: 30px;
+            margin: 0 0 30px 0;
             line-height: 1.6;
         `;
 
@@ -34243,12 +34294,17 @@ function createConfirmationModal(title, message) {
             const button = document.createElement('button');
             button.textContent = text;
             button.style.cssText = `
-                flex: 1; padding: 12px 20px; border-radius: 5px;
-                font-size: 1em; font-weight: bold; cursor: pointer;
+                flex: 1; 
+                padding: 12px 20px; 
+                border-radius: 5px;
+                font-size: 1em; 
+                font-weight: bold; 
+                cursor: pointer;
                 transition: all 0.3s ease;
                 color: var(--text-color, #e6f1ff);
                 border: 1px solid ${isAccept ? 'var(--success-color, #4dff88)' : 'var(--danger-color, #ff4d4d)'};
                 background-color: transparent;
+                pointer-events: auto;
             `;
             button.onmouseover = () => {
                 button.style.boxShadow = `0 0 10px ${isAccept ? 'var(--success-glow-color, rgba(77, 255, 136, 0.5))' : 'var(--danger-glow-color, rgba(255, 77, 77, 0.5))'}`;
@@ -34264,21 +34320,117 @@ function createConfirmationModal(title, message) {
         const acceptButton = createButton('接受结果', true);
         const rejectButton = createButton('拒绝并中断', false);
 
+        // --- 拖动逻辑 ---
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        const handleMouseDown = (e) => {
+            // 只在标题区域点击时才能拖动
+            if (e.target === modalHeader || e.target === modalTitle) {
+                isDragging = true;
+                const rect = modalContent.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+                modalHeader.style.cursor = 'grabbing';
+            }
+        };
+
+        const handleMouseMove = (e) => {
+            if (!isDragging) return;
+            
+            // 计算新位置
+            let newX = e.clientX - dragOffsetX;
+            let newY = e.clientY - dragOffsetY;
+            
+            // 限制在视口范围内
+            const maxX = window.innerWidth - modalContent.offsetWidth;
+            const maxY = window.innerHeight - modalContent.offsetHeight;
+            
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+            
+            modalContent.style.left = newX + 'px';
+            modalContent.style.top = newY + 'px';
+            modalContent.style.right = 'auto';
+        };
+
+        const handleMouseUp = () => {
+            isDragging = false;
+            modalHeader.style.cursor = 'grab';
+        };
+
+        // 添加触摸支持（移动设备）
+        const handleTouchStart = (e) => {
+            if (e.target === modalHeader || e.target === modalTitle) {
+                isDragging = true;
+                const rect = modalContent.getBoundingClientRect();
+                dragOffsetX = e.touches[0].clientX - rect.left;
+                dragOffsetY = e.touches[0].clientY - rect.top;
+            }
+        };
+
+        const handleTouchMove = (e) => {
+            if (!isDragging) return;
+            
+            // 防止页面滚动
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            
+            let newX = e.touches[0].clientX - dragOffsetX;
+            let newY = e.touches[0].clientY - dragOffsetY;
+            
+            const maxX = window.innerWidth - modalContent.offsetWidth;
+            const maxY = window.innerHeight - modalContent.offsetHeight;
+            
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+            
+            modalContent.style.left = newX + 'px';
+            modalContent.style.top = newY + 'px';
+            modalContent.style.right = 'auto';
+        };
+
+        const handleTouchEnd = () => {
+            isDragging = false;
+        };
+
         // --- 事件处理 ---
         const cleanupAndResolve = (value) => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
             document.body.removeChild(modalOverlay);
             resolve(value);
         };
 
         acceptButton.onclick = () => cleanupAndResolve(true);
         rejectButton.onclick = () => cleanupAndResolve(false);
+        closeBtn.onclick = () => cleanupAndResolve(false); // 关闭等同于拒绝
+
+        // 添加鼠标和触摸事件监听
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
 
         // --- 组装并显示 ---
+        modalHeader.appendChild(modalTitle);
+        modalHeader.appendChild(closeBtn);
+        
         buttonContainer.appendChild(rejectButton);
         buttonContainer.appendChild(acceptButton);
-        modalContent.appendChild(modalTitle);
+        
+        modalContent.appendChild(modalHeader);
         modalContent.appendChild(modalMessage);
         modalContent.appendChild(buttonContainer);
+        
+        // 添加拖动事件监听器
+        modalContent.addEventListener('mousedown', handleMouseDown);
+        modalContent.addEventListener('touchstart', handleTouchStart);
+        
         modalOverlay.appendChild(modalContent);
         document.body.appendChild(modalOverlay);
     });
@@ -35681,33 +35833,56 @@ let backupData = {};
         await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
         batches = 1;
         toastr.warning('第一阶段生成异常,已取消变量更新', '流程中断');
-        // 继续执行 finally 块的清理工作,不再执行下面的第二阶段代码
     } else {
-        // 【原有代码】只有通过验证才执行
-        overlay.classList.remove('active');
-        sendButton.disabled = false;
-        sendButton.textContent = '→';
-        document.getElementById('continue-button').disabled = false;
-        document.getElementById('continue-var-button').disabled = false;  
+        // 【新增】检查是否需要弹框确认
+        let userConfirmedPhase2 = true; // 默认为true（不需要确认时）
         
-        await restoreWorldbookNow();
-        console.log("[Nova's Double API] 世界书已恢复至原始状态,开始第二阶段生成。");
-
-        await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
-        batches = 2;
+        if (if_confirm_phase2_generation === 'true') {
+            console.log("[Nova's Double API] 检测到需要用户确认,弹出确认框...");
+            userConfirmedPhase2 = await createConfirmationModal(
+                '第二阶段生成确认',
+                '第一阶段已完成。是否继续生成记忆更新（第二阶段）？取消了也可以随时使用继续[异步]重新进行第二阶段。'
+            );
+        }
         
-        setTimeout(async ()=>{ 
-            await handleSend({
-                isContinuation: true,
-                isContinuationVar: true
-            })
+        // 用户确认后才继续第二阶段
+        if (userConfirmedPhase2) {
+            // 【原有代码】
+            overlay.classList.remove('active');
+            sendButton.disabled = false;
+            sendButton.textContent = '→';
+            document.getElementById('continue-button').disabled = false;
+            document.getElementById('continue-var-button').disabled = false;  
+            
+            await restoreWorldbookNow();
+            console.log("[Nova's Double API] 世界书已恢复至原始状态,开始第二阶段生成。");
 
-       
-        }, 500);
+            await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
+            batches = 2;
+            
+            setTimeout(async ()=>{ 
+                await handleSend({
+                    isContinuation: true,
+                    isContinuationVar: true
+                })
+            }, 500);
 
-  await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
-        batches = 1;
-        console.log("[Nova's Double API] 双重流程执行完毕。");
+            await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+            batches = 1;
+            console.log("[Nova's Double API] 双重流程执行完毕。");
+        } else {
+            // 用户拒绝第二阶段
+            console.log("[Nova's Double API] 用户拒绝第二阶段生成，取消变量更新");
+            await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+            batches = 1;
+            toastr.warning('已取消第二阶段生成', '用户选择');
+            
+            overlay.classList.remove('active');
+            sendButton.disabled = false;
+            sendButton.textContent = '→';
+            document.getElementById('continue-button').disabled = false;
+            document.getElementById('continue-var-button').disabled = false;
+        }
     }
 }
     } catch (e) {
@@ -41881,7 +42056,7 @@ dice_use= String(chatdata.dice_use||'true');
     if_waiting_roll = String(localStorage.getItem('if_waiting_roll')) || 'false';
     is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'true';
     is_chat_mode = String(localStorage.getItem('is_chat_mode')) || 'false';
-
+if_confirm_phase2_generation= String(localStorage.getItem('if_confirm_phase2_generation')) || 'false';
 
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
    const saveIdDisplay = document.getElementById('current-save-id-display');
@@ -44711,9 +44886,11 @@ function setupReconfigModal() {
         { name: '二次渲染', key: 'if_render_after_2batch', default: 'false', desc: '异步变量层生成结束后，对全部内容重新渲染' },
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
+           { name: '异步前确认', key: 'if_confirm_phase2_generation', default: 'false', desc: '开启后，在生成异步前，会弹出一个确认框' },
+ 
         { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'true', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
        { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
-   
+
     ];
     // 定义分类元数据
      const CATEGORIES = [
