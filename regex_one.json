@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.9';
+window.current_game_version = '3.6.10';
 
 
 
@@ -26972,14 +26972,17 @@ window.GlobalChatAudio = {
         };
     },
 
-   bindWidgetEvents: function() {
+     // --- 位于 GlobalChatAudio 对象内部 ---
+
+    bindWidgetEvents: function() {
         const widget = this.widgetEl;
         const discArea = document.getElementById('widget-disc-area');
 
         let isDragging = false;
-        let hasMoved = false; // 新增：判断是否发生了移动
+        let hasMoved = false;
         let startX, startY, initialLeft, initialBottom;
 
+        // mousedown 和 mousemove 逻辑保持不变...
         discArea.addEventListener('mousedown', (e) => {
             isDragging = true;
             hasMoved = false;
@@ -26989,16 +26992,13 @@ window.GlobalChatAudio = {
             const rect = widget.getBoundingClientRect();
             initialLeft = rect.left;
             initialBottom = window.innerHeight - rect.bottom;
-            // e.preventDefault(); // 注意：不要阻止默认，否则可能影响点击
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
-
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true; // 移动超过5px才算拖拽
-
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
             widget.style.left = (initialLeft + dx) + 'px';
             widget.style.bottom = (initialBottom - dy) + 'px';
             widget.style.transform = 'none';
@@ -27009,23 +27009,36 @@ window.GlobalChatAudio = {
             isDragging = false;
             widget.classList.remove('dragging');
 
-            // 如果只是点击没有拖拽，且点击的是圆盘区域，则触发展开
-            // 注意：因为我们在 HTML 里加了 onclick="toggleExpand"，这里不需要手动触发
-            // 但如果拖拽了，需要阻止 onclick 触发吗？
-            // 简单的做法：HTML onclick 可能会在 mouseup 后触发。
-            // 可以在 toggleExpand 里判断一下，或者利用 capture phase。
-            // 这里最简单的方案：如果 hasMoved 为 true，则在 capture 阶段阻止 click 事件
             if (hasMoved) {
+                // 1. 强制收起详情面板和抽屉
+                widget.classList.remove('expanded');
+                const drawer = document.getElementById('widget-drawer');
+                if (drawer) {
+                    drawer.classList.remove('open');
+                    widget.style.overflow = 'hidden';
+                }
+
+                // 2. 激活控件以显示完整圆盘
+                widget.classList.add('active');
+
+                // 3. 设置延时器，2秒后自动吸附
+                if (this.activeTimer) clearTimeout(this.activeTimer);
+                this.activeTimer = setTimeout(() => {
+                    if (!widget.matches(':hover')) {
+                        widget.classList.remove('active');
+                    }
+                }, 2000);
+
+                // 阻止后续的点击事件
                 const preventClick = (ev) => {
                     ev.stopPropagation();
-                    ev.preventDefault();
                     document.removeEventListener('click', preventClick, true);
                 };
                 document.addEventListener('click', preventClick, true);
             }
         });
 
-        // 进度条点击
+        // 进度条点击逻辑保持不变...
         const progCtn = document.getElementById('widget-prog-ctn');
         progCtn.addEventListener('click', (e) => {
             const rect = progCtn.getBoundingClientRect();
@@ -27226,24 +27239,47 @@ window.GlobalChatAudio = {
         // 清空后隐藏控件
         this.checkWidgetVisibility();
     },
+     // --- 位于 GlobalChatAudio 对象内部 ---
+
     playCurrent: function() {
         if (this.currentIndex < 0 || this.currentIndex >= this.playlist.length) return;
 
         const song = this.playlist[this.currentIndex];
-
-        // 更新音频源
         this.audio.src = song.url;
         this.audio.load();
         this.audio.play().catch(e => console.error("播放被阻止", e));
 
-        // 更新 UI
         this.updateWidgetInfo(song);
-        this.renderPlaylist(); // 更新高亮
+        this.renderPlaylist();
 
-        // 自动展开悬浮窗提示用户
-        const w = document.getElementById('global-music-widget');
-        w.classList.add('active');
-        setTimeout(() => w.classList.remove('active'), 3000);
+        const widget = this.widgetEl;
+        if (!widget) return;
+
+        // --- 关键逻辑修正 ---
+
+        // 1. 强制关闭详情面板和抽屉。这是播放时的第一要务。
+        widget.classList.remove('expanded');
+        const drawer = document.getElementById('widget-drawer');
+        if (drawer) {
+            drawer.classList.remove('open');
+            widget.style.overflow = 'hidden'; // 恢复overflow
+        }
+
+        // 2. 添加 'active' 类，让控件滑出进行短暂提示
+        widget.classList.add('active');
+
+        // 3. 清除旧的计时器
+        if (this.activeTimer) {
+            clearTimeout(this.activeTimer);
+        }
+
+        // 4. 设置新的计时器，3秒后移除 'active' 类，让控件自动吸附回去
+        this.activeTimer = setTimeout(() => {
+            // 只有当鼠标没有悬浮在控件上时，才执行吸附
+            if (!widget.matches(':hover')) {
+                widget.classList.remove('active');
+            }
+        }, 3000);
     },
 
     handleSongEnd: function() {
@@ -27588,17 +27624,16 @@ window.GlobalChatAudio = {
         // 步骤1: QQ音乐搜索 (歌曲名 + 歌手)
         if (!result && singer) {
             console.log('→ 步骤1: QQ音乐搜索 (歌曲+歌手):', name + " " + singer);
-            result = await this.qqSearch(name + " " + singer, Http_Get);
+            result = await this.qqSearch(name,singer, Http_Get);
             if (result) console.log('✓ 步骤1成功，找到歌曲');
         }
 
         // 步骤2: QQ音乐搜索 (仅歌曲名)
-        if (!result) {
-            console.log('→ 步骤2: QQ音乐搜索 (仅歌曲名):', name);
-            result = await this.qqSearch(name, Http_Get);
-            if (result) console.log('✓ 步骤2成功，找到歌曲');
-        }
-
+    //      if (!result && singer) {
+    //     console.log('→ 步骤1: QQ音乐搜索 (歌曲+歌手):', name + " " + singer);
+    //     result = await this.qqSearch(name, singer, Http_Get);  // ← 修改：分别传递
+    //     if (result) console.log('✓ 步骤1成功，找到歌曲');
+    // }
         // 步骤3: 网易云搜索 (歌曲名 + 歌手)
         if (!result && singer) {
             console.log('→ 步骤3: 网易云搜索 (歌曲+歌手):', name + " " + singer);
@@ -27623,128 +27658,180 @@ window.GlobalChatAudio = {
 
         return result;
     },
+     // --- 位于 GlobalChatAudio 对象内部 ---
 
     wySearch: async function(query, httpGet) {
         console.log('  [网易云] 搜索关键词:', query);
-        let res = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
+        // 步骤1: 搜索歌曲列表
+        let searchRes = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
 
-        console.log('  [网易云] 搜索API响应:', res);
+        if (searchRes && searchRes.data && searchRes.data.length) {
+            console.log(`  [网易云] 找到 ${searchRes.data.length} 首候选歌曲，开始获取链接...`);
 
-        if (res && res.data && res.data.length) {
-            console.log(`  [网易云] 找到 ${res.data.length} 首歌曲，尝试获取播放链接...`);
+            // 遍历候选歌曲
+            for (let i = 0; i < Math.min(searchRes.data.length, 3); i++) {
+                let songInfo = searchRes.data[i];
+                console.log(`  [网易云] 尝试第 ${i + 1} 首: ${songInfo.song} - ${songInfo.singer}`);
 
-            for (let i = 0; i < Math.min(res.data.length, 3); i++) {
-                let d = res.data[i];
-                console.log(`  [网易云] 尝试第 ${i+1} 首:`, {
-                    歌曲: d.song,
-                    歌手: d.singer,
-                    ID: d.id,
-                    专辑: d.album,
-                    时长: d.time,
-                    是否VIP: d.pay || '未知'
-                });
+                // 步骤2: 使用歌曲ID获取播放链接
+                let linkRes = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + songInfo.id);
 
-                let r = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + d.id);
-                console.log(`  [网易云] 获取链接API响应:`, r);
-
-                if (r && r.data && r.data.url) {
-                    console.log(`  [网易云] ✓ 成功获取播放链接:`, r.data.url);
-                    // ✨ 修改点: 返回对象中增加 cover 字段
+                if (linkRes && linkRes.data && (linkRes.data.url || linkRes.data.play_url)) {
+                    const finalUrl = linkRes.data.play_url || linkRes.data.url;
+                    console.log(`  [网易云] ✓ 成功获取播放链接:`, finalUrl);
+                    // 成功获取，返回完整信息
                     return {
-                        url: r.data.url,
-                        song: d.song,
-                        singer: d.singer,
+                        url: finalUrl,
+                        song: songInfo.song,
+                        singer: songInfo.singer,
                         source: "网易云",
-                        cover: d.pic || '' // 使用API返回的pic字段作为封面，如果没有则为空字符串
+                        cover: songInfo.pic || ''
                     };
                 } else {
-                    console.log(`  [网易云] ✗ 未获取到播放链接 (可能是VIP歌曲)`);
+                    console.log(`  [网易云] ✗ 未获取到播放链接 (可能是VIP或无版权)`);
                 }
             }
-            console.log('  [网易云] 所有候选歌曲均无法播放');
+            console.log('  [网易云] 所有候选歌曲均无法获取播放链接');
         } else {
             console.log('  [网易云] 搜索无结果');
         }
         return null;
     },
 
-    qqSearch: async function(query, httpGet) {
-        console.log('  [QQ音乐] 搜索关键词:', query);
+ 
+qqSearch: async function(songName, singerName, httpGet) {
+    const query = songName + " " + singerName;
+    console.log('  [QQ音乐] 搜索关键词:', query);
 
-        const calculateSimilarity = (searchQuery, songData) => {
-            let score = 0;
-            const queryLower = searchQuery.toLowerCase();
-            const songLower = songData.song.toLowerCase();
-            const singerLower = (songData.singer || '').toLowerCase();
-            if (songLower === queryLower) { score += 150; }
-            else if (songLower.includes(queryLower) || queryLower.includes(songLower)) { score += 50; }
-            if (queryLower.includes(singerLower) || singerLower.includes(queryLower)) { score += 30; }
-            if (songLower.match(/\(album version\)|\(explicit\)|\(deluxe\)/)) { score -= 10; }
-            if (songLower.match(/live/gi)) { score -= 50; }
-            if (songData.album && songLower.includes(songData.album.toLowerCase())) { score += 20; }
-            const searchWords = queryLower.split(' ');
-            const hasMatch = searchWords.some(word => songLower.includes(word) || singerLower.includes(word));
-            if (!hasMatch) { score -= 100; }
-            return score;
-        };
+    // 标准化函数：去除所有标点符号和空格
+    const normalize = (str) => {
+        if (!str) return '';
+        return str.toLowerCase()
+            .replace(/[\s\-—–.,。，、!！?？()（）[\]【】{}「」『』<>《》""'':：;；…~～@#$%^&*+=|\\\/]/g, '');
+    };
 
-        let res = await httpGet("https://api.vkeys.cn/v2/music/tencent?word=" + encodeURIComponent(query));
-        console.log('  [QQ音乐] 搜索API响应:', res);
+    // 计算两个字符串的相似度（基于字符匹配比率）
+    const calculateSimilarity = (songName, singerName, songData) => {
+        let score = 0;
+        
+        const querySongNorm = normalize(songName);
+        const querySingerNorm = normalize(singerName);
+        const dataSongNorm = normalize(songData.song);
+        const dataSingerNorm = normalize(songData.singer || '');
+        
+        console.log('  调试信息:');
+        console.log('    查询歌名:', `"${songName}" → "${querySongNorm}"`);
+        console.log('    查询歌手:', `"${singerName}" → "${querySingerNorm}"`);
+        console.log('    数据歌名:', `"${songData.song}" → "${dataSongNorm}"`);
+        console.log('    数据歌手:', `"${songData.singer}" → "${dataSingerNorm}"`);
+        
+        // 歌名相似度计算
+        if (dataSongNorm === querySongNorm) {
+            score += 100;
+            console.log('    ✓ 歌名完全匹配 +200');
+        } else {
+            // 计算字符匹配率
+            const songMatchRatio = calculateMatchRatio(querySongNorm, dataSongNorm);
+            const songScore = Math.floor(songMatchRatio * 150);
+            score += songScore;
+            console.log(`    ○ 歌名相似度 ${(songMatchRatio * 100).toFixed(1)}% +${songScore}`);
+        }
+        
+        // 歌手相似度计算
+        if (querySingerNorm && dataSingerNorm) {
+            if (dataSingerNorm === querySingerNorm) {
+                score += 100;
+                console.log('    ✓ 歌手完全匹配 +100');
+            } else {
+                const singerMatchRatio = calculateMatchRatio(querySingerNorm, dataSingerNorm);
+                const singerScore = Math.floor(singerMatchRatio * 80);
+                score += singerScore;
+                console.log(`    ○ 歌手相似度 ${(singerMatchRatio * 100).toFixed(1)}% +${singerScore}`);
+            }
+        }
+        
+        // Live版本惩罚
+        if (songData.song.match(/live/gi)) {
+            score -= 30;
+            console.log('    ✗ Live版本 -30');
+        }
+        
+        console.log('    总分:', score);
+        return score;
+    };
 
-        if (res && res.data && res.data.length) {
-            console.log(`  [QQ音乐] 找到 ${res.data.length} 首歌曲，开始智能匹配...`);
+    // 计算两个字符串的匹配比率
+    const calculateMatchRatio = (str1, str2) => {
+        if (!str1 || !str2) return 0;
+        if (str1 === str2) return 1;
+        
+        // 方法1: 包含关系
+        if (str2.includes(str1)) return str1.length / str2.length;
+        if (str1.includes(str2)) return str2.length / str1.length;
+        
+        // 方法2: 共同字符数 / 总字符数
+        const chars1 = new Set(str1);
+        const chars2 = new Set(str2);
+        let commonChars = 0;
+        
+        for (let char of chars1) {
+            if (chars2.has(char)) commonChars++;
+        }
+        
+        return commonChars / Math.max(chars1.size, chars2.size);
+    };
 
-            const scoredSongs = res.data.map(d => ({
-                ...d,
-                similarity: calculateSimilarity(query, d)
-            })).sort((a, b) => b.similarity - a.similarity);
+    let res = await httpGet("https://api.vkeys.cn/v2/music/tencent?word=" + encodeURIComponent(query));
+    console.log('  [QQ音乐] 搜索API响应:', res);
 
-            console.log('  [QQ音乐] 相似度排序结果:');
-            scoredSongs.slice(0, 5).forEach((d, i) => {
-                console.log(`    ${i+1}. [${d.similarity}分] ${d.song} - ${d.singer}`);
+    if (res && res.data && res.data.length) {
+        console.log(`  [QQ音乐] 找到 ${res.data.length} 首歌曲，开始智能匹配...`);
+
+        const scoredSongs = res.data.map(d => ({
+            ...d,
+            similarity: calculateSimilarity(songName, singerName, d)
+        })).sort((a, b) => b.similarity - a.similarity);
+
+        console.log('  [QQ音乐] 相似度排序结果:');
+        scoredSongs.slice(0, 5).forEach((d, i) => {
+            console.log(`    ${i+1}. [${d.similarity}分] ${d.song} - ${d.singer}`);
+        });
+
+        for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
+            let d = scoredSongs[i];
+            
+            if (d.similarity < 100) {
+                console.log(`  [QQ音乐] 跳过低相似度歌曲 (${d.similarity}分):`, d.song);
+                continue;
+            }
+
+            console.log(`  [QQ音乐] 尝试第 ${i+1} 首 [${d.similarity}分]:`, {
+                歌曲: d.song, 歌手: d.singer, ID: d.id
             });
 
-            for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
-                let d = scoredSongs[i];
-                if (d.similarity < 0) {
-                    console.log(`  [QQ音乐] 跳过不相关歌曲 (${d.similarity}分):`, d.song);
-                    continue;
-                }
-                if (d.song.match(/live/gi)) {
-                    console.log(`  [QQ音乐] 跳过Live版本:`, d.song);
-                    continue;
-                }
+            let r = await httpGet("https://api.vkeys.cn/v2/music/tencent?id=" + d.id);
+            console.log(`  [QQ音乐] 获取链接API响应:`, r);
 
-                console.log(`  [QQ音乐] 尝试第 ${i+1} 首 [${d.similarity}分]:`, {
-                    歌曲: d.song, 歌手: d.singer, ID: d.id, 专辑: d.album, 时长: d.interval, 音质: d.quality, 是否VIP: d.pay
-                });
-
-                let r = await httpGet("https://api.vkeys.cn/v2/music/tencent?id=" + d.id);
-                console.log(`  [QQ音乐] 获取链接API响应:`, r);
-
-                if (r && r.data && r.data.url) {
-                    console.log(`  [QQ音乐] ✓ 成功获取播放链接 [${d.similarity}分]:`, r.data.url);
-                    // ✨ 修改点: 返回对象中增加 cover 字段
-                    return {
-                        url: r.data.url,
-                        song: d.song,
-                        singer: d.singer,
-                        source: "QQ音乐",
-                        cover: d.cover // 直接使用API返回的cover字段
-                    };
-                } else {
-                    console.log(`  [QQ音乐] ✗ 未获取到播放链接 (${d.pay})`);
-                }
+            if (r && r.data && r.data.url) {
+                console.log(`  [QQ音乐] ✓ 成功获取播放链接 [${d.similarity}分]:`, r.data.url);
+                return {
+                    url: r.data.url,
+                    song: d.song,
+                    singer: d.singer,
+                    source: "QQ音乐",
+                    cover: d.cover
+                };
+            } else {
+                console.log(`  [QQ音乐] ✗ 未获取到播放链接`);
             }
-            console.log('  [QQ音乐] 所有候选歌曲均无法播放');
-        } else {
-            console.log('  [QQ音乐] 搜索无结果');
         }
-        return null;
+        console.log('  [QQ音乐] 所有候选歌曲均无法播放');
+    } else {
+        console.log('  [QQ音乐] 搜索无结果');
     }
-
+    return null;
+}
 };
-
 GlobalChatAudio.init();
 // 补充 CSS (包含进度条样式)
  if (!document.getElementById('music-global-style')) {
@@ -46010,7 +46097,7 @@ function setupReconfigModal() {
         { name: '一直启用商店', key: 'we_need_shop', default: 'false', desc: '使商店即使在末日和无世界观也可以开启' },
         { name: '显示更新通知', key: 'is_show_notifications', default: 'true', desc: '关闭后不再弹出变量更新提示' },
         { name: '不再备份快照', key: 'is_no_backup', default: 'false', desc: '不再进行存档快照备份和每回合消息的备份' },
-        { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染' },
+        { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染。异步必须开启这个' },
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
            { name: '异步前确认', key: 'if_confirm_phase2_generation', default: 'false', desc: '开启后，在生成异步前，会弹出一个确认框' },
