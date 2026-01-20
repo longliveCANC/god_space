@@ -34193,7 +34193,7 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
         }
     }
 };
-function createConfirmationModal(title, message) {
+ function createConfirmationModal(title, message) {
     return new Promise((resolve) => {
         // --- 创建弹窗结构 ---
         const modalOverlay = document.createElement('div');
@@ -34221,8 +34221,10 @@ function createConfirmationModal(title, message) {
             font-family: var(--base-font-family, sans-serif);
             color: var(--text-color, #e6f1ff);
             position: fixed;
-            top: 50px;
-            right: 20px;
+            top: auto;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
             cursor: move;
             user-select: none;
             pointer-events: auto; /* 弹窗本身允许交互 */
@@ -34352,7 +34354,8 @@ function createConfirmationModal(title, message) {
             
             modalContent.style.left = newX + 'px';
             modalContent.style.top = newY + 'px';
-            modalContent.style.right = 'auto';
+            modalContent.style.bottom = 'auto';
+            modalContent.style.transform = 'none';
         };
 
         const handleMouseUp = () => {
@@ -34389,7 +34392,8 @@ function createConfirmationModal(title, message) {
             
             modalContent.style.left = newX + 'px';
             modalContent.style.top = newY + 'px';
-            modalContent.style.right = 'auto';
+            modalContent.style.bottom = 'auto';
+            modalContent.style.transform = 'none';
         };
 
         const handleTouchEnd = () => {
@@ -34435,7 +34439,6 @@ function createConfirmationModal(title, message) {
         document.body.appendChild(modalOverlay);
     });
 }
-
 async function extractAndStoreBatchContent(batchNumber) {
     try {
         const textareaId = `command-edit-area-batch${batchNumber}`;
