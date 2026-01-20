@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.7';
+window.current_game_version = '3.6.8';
 
 
 
