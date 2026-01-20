@@ -26091,7 +26091,7 @@ if (forceUpdateRegexButton) {
 
         document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
          
-            showNovaAlert.info('统一更新已失效，请分别强制更新吧！先强制更新正则，然后再强制更新世界书。');
+            showNovaAlert('统一更新已失效，请分别强制更新吧！先强制更新正则，然后再强制更新世界书。你怎么还在用这个更新？你的脚本库里有【线上更新】名称的脚本吗？没有的话，请前往帖子顶楼替换更新最新版本的卡哦');
             
      
         });
