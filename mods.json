@@ -6,7 +6,7 @@
     "author": "assa",
     "version": "1.7",
     "tags": ["⭐公告"],
-    "description": "第一次启用脚本后，需要点击重载刷新界面。\ndlc需要开启无世界观。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a color=\"green\" href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
+    "description": "第一次启用脚本后，需要点击重载刷新界面。\ndlc需要开启无世界观。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
 
@@ -122,7 +122,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["dlc"],
-    "description": "带有些复杂的分阶段的被领养模拟器，这个单纯外挂世界书有点玩不了，得用专门的带开局选择界面的卡。\n卡链接：<a color=\"green\" href=\"https://discord.com/channels/1291925535324110879/1402545064697135164\" target=\"_blank\">→Discord频道←</a>\n需外挂该世界书并开启无世界观。大人有专属的属性字段，其余的随意。 ",
+    "description": "带有些复杂的分阶段的被领养模拟器，这个单纯外挂世界书有点玩不了，得用专门的带开局选择界面的卡。\n卡链接：<a style=\"color:green\" href=\"https://discord.com/channels/1291925535324110879/1402545064697135164\" target=\"_blank\">→Discord频道←</a>\n需外挂该世界书并开启无世界观。大人有专属的属性字段，其余的随意。 ",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/领养大人-外挂版世界书.json",
     "previewImage": ""
@@ -142,7 +142,7 @@
     "author": "GG棒",
     "version": "2.0",
     "tags": ["dlc"],
-    "description": "感谢GG棒开放二创授权！\n二改:assa\n<h3>地球被高等文明选中，所有人被传送到一个孤岛，开始钓鱼，所有生活物资都只能靠钓鱼获取。</h3>\n原链接(请多多为原作者点赞喵！):<a color=\"green\" href=\"https://discord.com/channels/1291925535324110879/1360574221775802570\" target=\"_blank\">→Discord频道←</a>",
+    "description": "感谢GG棒开放二创授权！\n二改:assa\n<h3>地球被高等文明选中，所有人被传送到一个孤岛，开始钓鱼，所有生活物资都只能靠钓鱼获取。</h3>\n原链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1291925535324110879/1360574221775802570\" target=\"_blank\">→Discord频道←</a>",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-dlc-垂钓诸天.json",
     "previewImage": ""
@@ -162,7 +162,7 @@
     "author": "北极星星",
     "version": "2.0",
     "tags": ["dlc"],
-   "description": "感谢北极星星开放二创授权！\n二改:assa\n<h3>异世界的你穿越成为朝鲜金将军，决心要改变朝鲜现状，将遇到多方面的核心冲突与挑战。</h3>\n原链接(请多多为原作者点赞喵！):<a color=\"green\" href=\"https://discord.com/channels/1134557553011998840/1380171223367028768\" target=\"_blank\">→Discord频道←</a>",
+   "description": "感谢北极星星开放二创授权！\n二改:assa\n<h3>异世界的你穿越成为朝鲜金将军，决心要改变朝鲜现状，将遇到多方面的核心冲突与挑战。</h3>\n原链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1380171223367028768\" target=\"_blank\">→Discord频道←</a>",
    "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-dlc-《将军模拟器》.json",
     "previewImage": ""
@@ -479,7 +479,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["功能脚本"],
-    "description": "该脚本必须配备此插件并设置好你的生图模型，才能继续生图。以及一定要关掉原本的npc立绘功能啊。 <a color=\"green\" href=\"https://discord.com/channels/1134557553011998840/1215675312721887272\" target=\"_blank\">→插件的Discord频道←</a> \n你可以外挂此插件的官方世界书，也可以不外挂。外挂了官方世界书就会在正文看到cg，不外挂官方世界书，只外挂这个mod的世界书的话，就只会生成立绘。当所有带事件字段的npc都有立绘了之后，不会再占据任何额外的token。里面的绘图提示词你可以自己改。额外的，外挂了此世界书后可以在识小球对立绘映射进行可视化管理。\n机制是，当你删除了某个角色的映射后，下一回合会给你重新生成该角色的立绘。需要注意的是，生成之后，之前的图片会直接被覆盖。",
+    "description": "该脚本必须配备此插件并设置好你的生图模型，才能继续生图。以及一定要关掉原本的npc立绘功能啊。 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1215675312721887272\" target=\"_blank\">→插件的Discord频道←</a> \n你可以外挂此插件的官方世界书，也可以不外挂。外挂了官方世界书就会在正文看到cg，不外挂官方世界书，只外挂这个mod的世界书的话，就只会生成立绘。当所有带事件字段的npc都有立绘了之后，不会再占据任何额外的token。里面的绘图提示词你可以自己改。额外的，外挂了此世界书后可以在识小球对立绘映射进行可视化管理。\n机制是，当你删除了某个角色的映射后，下一回合会给你重新生成该角色的立绘。需要注意的是，生成之后，之前的图片会直接被覆盖。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod15tachie.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-生成立绘.json",
     "previewImage": ""
@@ -491,7 +491,7 @@
     "author": "Sayuki07",
     "version": "1.0",
     "tags": ["豪华dlc"],
-    "description": "感谢Sayuki07开放二创授权！\n二改:assa\n<h3>这是一个发生在2035年的平行世界。\n在这里，名为“创世纪”的开发工具可以快速做出一款游戏。\n但受到全人类范围内的“思想钢印”影响，无论是开发者还是玩家，都无法构想出数值PK以外的游戏模式。\n整个游戏市场被换皮的传奇类游戏垄断：自动寻路、站桩输出、比拼战力数值是唯一的玩法。\n在这个技术极度发达但游戏理念极度贫瘠的世界里，你可以利用地球的游戏设计理念，开发出前所未有的作品，打破思想钢印的束缚。</h3>\n原链接(请多多为原作者点赞喵！):<a color=\"green\" href=\"https://discord.com/channels/1134557553011998840/1458097154488008846\" target=\"_blank\">→Discord频道←</a>\n[含有自定义属性，需要的话，可以开启功能脚本的自定义属性脚本，去应用一下这个世界观的自定义属性。该dlc关闭了数值约束和基础属性和技能的分阶段]",
+    "description": "感谢Sayuki07开放二创授权！\n二改:assa\n<h3>这是一个发生在2035年的平行世界。\n在这里，名为“创世纪”的开发工具可以快速做出一款游戏。\n但受到全人类范围内的“思想钢印”影响，无论是开发者还是玩家，都无法构想出数值PK以外的游戏模式。\n整个游戏市场被换皮的传奇类游戏垄断：自动寻路、站桩输出、比拼战力数值是唯一的玩法。\n在这个技术极度发达但游戏理念极度贫瘠的世界里，你可以利用地球的游戏设计理念，开发出前所未有的作品，打破思想钢印的束缚。</h3>\n原链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1458097154488008846\" target=\"_blank\">→Discord频道←</a>\n[含有自定义属性，需要的话，可以开启功能脚本的自定义属性脚本，去应用一下这个世界观的自定义属性。该dlc关闭了数值约束和基础属性和技能的分阶段]",
       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod003game.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-dlc-游戏制作人之他们只玩过传奇？！.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 30.png"
@@ -515,5 +515,15 @@
       "scriptUrl": "",
      "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-显示全部分类.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 31.png"
+  },{
+    "id": "x-mod-解析玩家",
+    "name": "解析和记录玩家信息",
+    "author": "LAST泉神丶",
+    "version": "1.0",
+    "tags": ["其他"],
+    "description":"感谢LAST泉神丶开放授权！\n此功能摘自izumi的用户画像模式。\n挂载后，每回合会记录玩家的癖好和暴露出来的信息，并每35回合就深度分析一次用户画像。识小球分类的名称是玩家分析。原链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1414563818587160586\" target=\"_blank\">→Discord频道←</a>",
+      "scriptUrl": "",
+     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-解析玩家.json",
+    "previewImage": ""
   }
 ]
