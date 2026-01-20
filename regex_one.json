@@ -26867,45 +26867,205 @@ toggleLoop: function(domId) {
     },
 
 
-    // 搜索逻辑 (保持不变)
-    searchSong: async function(name, singer) {
-        const Http_Get = (url) => new Promise(resolve => $.ajax({ url, method: 'GET', timeout: 5000, success: resolve, error: () => resolve(null) }));
-        const checkUrl = (url) => new Promise(r => { const a = new Audio(); a.src = url; a.onloadedmetadata = () => r(true); a.onerror = () => r(false); setTimeout(() => r(false), 2000); });
+ searchSong: async function(name, singer) {
+    console.log('========== 开始搜索歌曲 ==========');
+    console.log('歌曲名:', name);
+    console.log('歌手名:', singer);
+    
+    const Http_Get = (url) => new Promise(resolve => $.ajax({ url, method: 'GET', timeout: 5000, success: resolve, error: () => resolve(null) }));
+    const checkUrl = (url) => new Promise(r => { const a = new Audio(); a.src = url; a.onloadedmetadata = () => r(true); a.onerror = () => r(false); setTimeout(() => r(false), 2000); });
 
-        let result = null;
-        if (singer) result = await this.wySearch(name + " " + singer, Http_Get);
-        if (!result && singer) result = await this.qqSearch(name + " " + singer, Http_Get);
-        if (!result) result = await this.wySearch(name, Http_Get);
-        if (!result) result = await this.qqSearch(name, Http_Get);
-        return result;
-    },
+    let result = null;
 
-    wySearch: async function(query, httpGet) {
-        let res = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
-        if (res && res.data && res.data.length) {
-            for (let i = 0; i < Math.min(res.data.length, 3); i++) {
-                let d = res.data[i];
-                let r = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + d.id);
-                if (r && r.data && r.data.url) return { url: r.data.url, song: d.song, singer: d.singer, source: "网易云" };
+    
+    // 步骤2: QQ音乐搜索 (歌曲名 + 歌手)
+    if (!result && singer) {
+        console.log('→ 步骤2: QQ音乐搜索 (歌曲+歌手):', name + " " + singer);
+        result = await this.qqSearch(name + " " + singer, Http_Get);
+        if (result) console.log('✓ 步骤2成功，找到歌曲');
+    }
+    
+
+    
+    // 步骤4: QQ音乐搜索 (仅歌曲名)
+    if (!result) {
+        console.log('→ 步骤4: QQ音乐搜索 (仅歌曲名):', name);
+        result = await this.qqSearch(name, Http_Get);
+        if (result) console.log('✓ 步骤4成功，找到歌曲');
+    }
+
+            
+    // 步骤1: 网易云搜索 (歌曲名 + 歌手)
+    if (singer) {
+        console.log('→ 步骤1: 网易云搜索 (歌曲+歌手):', name + " " + singer);
+        result = await this.wySearch(name + " " + singer, Http_Get);
+        if (result) console.log('✓ 步骤1成功，找到歌曲');
+    }
+    // 步骤3: 网易云搜索 (仅歌曲名)
+    if (!result) {
+        console.log('→ 步骤3: 网易云搜索 (仅歌曲名):', name);
+        result = await this.wySearch(name, Http_Get);
+        if (result) console.log('✓ 步骤3成功，找到歌曲');
+    }
+    
+    console.log('========== 搜索结果 ==========');
+    console.log(result ? '成功找到歌曲' : '❌ 未找到任何可用歌曲');
+    if (result) {
+        console.log('最终选择:', result);
+    }
+    console.log('================================');
+    
+    return result;
+},
+ wySearch: async function(query, httpGet) {
+    console.log('  [网易云] 搜索关键词:', query);
+    let res = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
+    
+    console.log('  [网易云] 搜索API响应:', res);
+    
+    if (res && res.data && res.data.length) {
+        console.log(`  [网易云] 找到 ${res.data.length} 首歌曲，尝试获取播放链接...`);
+        
+        for (let i = 0; i < Math.min(res.data.length, 3); i++) {
+            let d = res.data[i];
+            console.log(`  [网易云] 尝试第 ${i+1} 首:`, {
+                歌曲: d.song,
+                歌手: d.singer,
+                ID: d.id,
+                专辑: d.album,
+                时长: d.time,
+                是否VIP: d.pay || '未知'
+            });
+            
+            let r = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + d.id);
+            console.log(`  [网易云] 获取链接API响应:`, r);
+            
+            if (r && r.data && r.data.url) {
+                console.log(`  [网易云] ✓ 成功获取播放链接:`, r.data.url);
+                return { url: r.data.url, song: d.song, singer: d.singer, source: "网易云" };
+            } else {
+                console.log(`  [网易云] ✗ 未获取到播放链接 (可能是VIP歌曲)`);
             }
         }
-        return null;
-    },
+        console.log('  [网易云] 所有候选歌曲均无法播放');
+    } else {
+        console.log('  [网易云] 搜索无结果');
+    }
+    return null;
+},
 
-    qqSearch: async function(query, httpGet) {
-        let res = await httpGet("https://api.vkeys.cn/v2/music/tencent?word=" + encodeURIComponent(query));
-        if (res && res.data && res.data.length) {
-            for (let i = 0; i < Math.min(res.data.length, 3); i++) {
-                let d = res.data[i];
-                if(d.song.match(/live/gi)) continue;
-                let r = await httpGet("https://api.vkeys.cn/v2/music/tencent?id=" + d.id);
-                if (r && r.data && r.data.url) return { url: r.data.url, song: d.song, singer: d.singer, source: "QQ音乐" };
+qqSearch: async function(query, httpGet) {
+    console.log('  [QQ音乐] 搜索关键词:', query);
+    
+    // ✨ 新增：相似度计算函数
+    const calculateSimilarity = (searchQuery, songData) => {
+        let score = 0;
+        const queryLower = searchQuery.toLowerCase();
+        const songLower = songData.song.toLowerCase();
+        const singerLower = (songData.singer || '').toLowerCase();
+        
+        // 1. 歌曲名完全匹配 +100分
+        if (songLower === queryLower) {
+            score += 100;
+        }
+        // 2. 歌曲名包含搜索词 +50分
+        else if (songLower.includes(queryLower) || queryLower.includes(songLower)) {
+            score += 50;
+        }
+        
+        // 3. 歌手名匹配 +30分
+        if (queryLower.includes(singerLower) || singerLower.includes(queryLower)) {
+            score += 30;
+        }
+        
+        // 4. 惩罚：包含 (Album Version)、(Explicit)、(Live) 等后缀 -10分
+        if (songLower.match(/\(album version\)|\(explicit\)|\(deluxe\)/)) {
+            score -= 10;
+        }
+        
+        // 5. 严重惩罚：Live版本 -50分
+        if (songLower.match(/live/gi)) {
+            score -= 50;
+        }
+        
+        // 6. 奖励：专辑名就是歌曲名（通常是单曲）+20分
+        if (songData.album && songLower.includes(songData.album.toLowerCase())) {
+            score += 20;
+        }
+        
+        // 7. 惩罚：歌曲名和搜索词完全不相关 -100分
+        const searchWords = queryLower.split(' ');
+        const hasMatch = searchWords.some(word => 
+            songLower.includes(word) || singerLower.includes(word)
+        );
+        if (!hasMatch) {
+            score -= 100;
+        }
+        
+        return score;
+    };
+    
+    let res = await httpGet("https://api.vkeys.cn/v2/music/tencent?word=" + encodeURIComponent(query));
+    
+    console.log('  [QQ音乐] 搜索API响应:', res);
+    
+    if (res && res.data && res.data.length) {
+        console.log(`  [QQ音乐] 找到 ${res.data.length} 首歌曲，开始智能匹配...`);
+        
+        // ✨ 新增：计算所有歌曲的相似度并排序
+        const scoredSongs = res.data.map(d => ({
+            ...d,
+            similarity: calculateSimilarity(query, d)
+        })).sort((a, b) => b.similarity - a.similarity); // 从高到低排序
+        
+        console.log('  [QQ音乐] 相似度排序结果:');
+        scoredSongs.slice(0, 5).forEach((d, i) => {
+            console.log(`    ${i+1}. [${d.similarity}分] ${d.song} - ${d.singer}`);
+        });
+        
+        // ✨ 修改：按相似度从高到低尝试
+        for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
+            let d = scoredSongs[i];
+            
+            // 跳过相似度为负的（完全不相关）
+            if (d.similarity < 0) {
+                console.log(`  [QQ音乐] 跳过不相关歌曲 (${d.similarity}分):`, d.song);
+                continue;
+            }
+            
+            // 跳过live版本
+            if(d.song.match(/live/gi)) {
+                console.log(`  [QQ音乐] 跳过Live版本:`, d.song);
+                continue;
+            }
+            
+            console.log(`  [QQ音乐] 尝试第 ${i+1} 首 [${d.similarity}分]:`, {
+                歌曲: d.song,
+                歌手: d.singer,
+                ID: d.id,
+                专辑: d.album,
+                时长: d.interval,
+                音质: d.quality,
+                是否VIP: d.pay
+            });
+            
+            let r = await httpGet("https://api.vkeys.cn/v2/music/tencent?id=" + d.id);
+            console.log(`  [QQ音乐] 获取链接API响应:`, r);
+            
+            if (r && r.data && r.data.url) {
+                console.log(`  [QQ音乐] ✓ 成功获取播放链接 [${d.similarity}分]:`, r.data.url);
+                return { url: r.data.url, song: d.song, singer: d.singer, source: "QQ音乐" };
+            } else {
+                console.log(`  [QQ音乐] ✗ 未获取到播放链接 (${d.pay})`);
             }
         }
-        return null;
-    },
-
-    // ================= UI 更新 =================
+        console.log('  [QQ音乐] 所有候选歌曲均无法播放');
+    } else {
+        console.log('  [QQ音乐] 搜索无结果');
+    }
+    return null;
+},
+// ================= UI 更新 =================
 
     setLoadingState: function(domId, isLoading) {
         const btn = document.getElementById('play-btn-' + domId);
