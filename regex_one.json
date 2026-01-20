@@ -27022,12 +27022,21 @@ window.GlobalChatAudio = {
                 widget.classList.add('active');
 
                 // 3. 设置延时器，2秒后自动吸附
-                if (this.activeTimer) clearTimeout(this.activeTimer);
-                this.activeTimer = setTimeout(() => {
-                    if (!widget.matches(':hover')) {
-                        widget.classList.remove('active');
-                    }
-                }, 2000);
+           if (this.activeTimer) clearTimeout(this.activeTimer);
+this.activeTimer = setTimeout(() => {
+    if (!widget.matches(':hover')) {
+        widget.classList.remove('active');
+        // 吸附时检查并收起展开状态
+        if (widget.classList.contains('expanded')) {
+            widget.classList.remove('expanded');
+            const drawer = document.getElementById('widget-drawer');
+            if (drawer) {
+                drawer.classList.remove('open');
+                widget.style.overflow = 'hidden';
+            }
+        }
+    }
+}, 2000);
 
                 // 阻止后续的点击事件
                 const preventClick = (ev) => {
@@ -27274,12 +27283,21 @@ window.GlobalChatAudio = {
         }
 
         // 4. 设置新的计时器，3秒后移除 'active' 类，让控件自动吸附回去
-        this.activeTimer = setTimeout(() => {
-            // 只有当鼠标没有悬浮在控件上时，才执行吸附
-            if (!widget.matches(':hover')) {
-                widget.classList.remove('active');
+  this.activeTimer = setTimeout(() => {
+    // 只有当鼠标没有悬浮在控件上时，才执行吸附
+    if (!widget.matches(':hover')) {
+        widget.classList.remove('active');
+        // 吸附时检查并收起展开状态
+        if (widget.classList.contains('expanded')) {
+            widget.classList.remove('expanded');
+            const drawer = document.getElementById('widget-drawer');
+            if (drawer) {
+                drawer.classList.remove('open');
+                widget.style.overflow = 'hidden';
             }
-        }, 3000);
+        }
+    }
+}, 3000);
     },
 
     handleSongEnd: function() {
