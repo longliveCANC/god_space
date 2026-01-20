@@ -15239,7 +15239,7 @@ let is_restore_prompt = "true";
 let weneedshop = "false";
 let is_show_notifications = "true";
 let ifScanMemory = "false";
-let if_render_after_2batch="false";
+let if_render_after_2batch="true";
 let is_worldbook_lock = "false";
 let if_waiting_roll= "false";
 let  is_quick_rewirte_backup= "false";
@@ -43178,10 +43178,10 @@ dice_use= String(chatdata.dice_use||'true');
     weneedshop = String(localStorage.getItem('we_need_shop')) || 'false';
     is_show_notifications = String(localStorage.getItem('is_show_notifications')) || 'true';
     noBackup = String(localStorage.getItem('is_no_backup')) || 'false';
-    if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'false';
+    if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'true';
     is_worldbook_lock = String(localStorage.getItem('is_worldbook_lock')) || 'false';
     if_waiting_roll = String(localStorage.getItem('if_waiting_roll')) || 'false';
-    is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'true';
+    is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'false';
     is_chat_mode = String(localStorage.getItem('is_chat_mode')) || 'false';
 if_confirm_phase2_generation= String(localStorage.getItem('if_confirm_phase2_generation')) || 'false';
 
@@ -46010,12 +46010,12 @@ function setupReconfigModal() {
         { name: '一直启用商店', key: 'we_need_shop', default: 'false', desc: '使商店即使在末日和无世界观也可以开启' },
         { name: '显示更新通知', key: 'is_show_notifications', default: 'true', desc: '关闭后不再弹出变量更新提示' },
         { name: '不再备份快照', key: 'is_no_backup', default: 'false', desc: '不再进行存档快照备份和每回合消息的备份' },
-        { name: '二次渲染', key: 'if_render_after_2batch', default: 'false', desc: '异步变量层生成结束后，对全部内容重新渲染' },
+        { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染' },
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
            { name: '异步前确认', key: 'if_confirm_phase2_generation', default: 'false', desc: '开启后，在生成异步前，会弹出一个确认框' },
  
-        { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'true', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
+        { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'false', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
        { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
   { name: '显示音乐播放器', key: 'GlobalMusicWidgetVisible', default: 'true', desc: '开启后，则显示音乐播放器。设置后需要重载前端生效' },
 
