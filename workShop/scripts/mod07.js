@@ -989,7 +989,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
                 const textarea = overlay.querySelector('textarea');
                 textarea.select();
                 document.execCommand('copy');
-                worldHelper.showNovaAlert('已复制到剪贴板！', 'success');
+                worldHelper.showNovaAlert('已复制到剪贴板！');
                 overlay.remove();
             };
         };
@@ -1379,7 +1379,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
             }
              localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(currentLinkageRules));
             injectCustomLogic();
-            worldHelper.showNovaAlert('规则已更新', 'success');
+            worldHelper.showNovaAlert('规则已更新');
         };
     }
     // 渲染左侧编辑区
@@ -1612,7 +1612,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
             }
 
             saveLocalTemplate(name, currentFullData.play_character_data);
-            worldHelper.showNovaAlert(`模板【${name}】已保存到本地！`, 'success');
+            worldHelper.showNovaAlert(`模板【${name}】已保存到本地！`);
             nameInput.value = ''; // 清空输入框
             renderStoreContent(); // 刷新列表
         };
@@ -1653,7 +1653,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
                         injectCustomLogic();
                         selectedCategory = null;
                         renderEditorContent();
-                        worldHelper.showNovaAlert(`已加载本地模板：${tmplName}`, 'success');
+                        worldHelper.showNovaAlert(`已加载本地模板：${tmplName}`);
                     }
                 };
 
@@ -1667,7 +1667,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
                     if (confirmed) {
                         deleteLocalTemplate(tmplName);
                         renderStoreContent(); // 刷新
-                        worldHelper.showNovaAlert(`已删除模板：${tmplName}`, 'info');
+                        worldHelper.showNovaAlert(`已删除模板：${tmplName}`);
                     }
                 };
 
@@ -1704,7 +1704,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
                     currentFullData.play_character_data.基础技能 = JSON.parse(JSON.stringify(set.skill));
                     selectedCategory = null;
                     renderEditorContent();
-                    worldHelper.showNovaAlert(`已应用模板：${setName}`, 'success');
+                    worldHelper.showNovaAlert(`已应用模板：${setName}`);
                 }
             };
             container.appendChild(card);
@@ -1733,7 +1733,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
             `;
             card.onclick = () => {
                 if (!selectedCategory) {
-                    worldHelper.showNovaAlert('请先在左侧点击选择一个分类框！', 'warning');
+                    worldHelper.showNovaAlert('请先在左侧点击选择一个分类框！');
                     return;
                 }
                 if (selectedCategory.type !== p.type) {
@@ -1742,7 +1742,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
                 }
                 selectedCategory.obj[p.name] = JSON.parse(JSON.stringify(p.val));
                 renderEditorContent();
-                worldHelper.showNovaAlert(`已添加 ${p.name}`, 'success');
+                worldHelper.showNovaAlert(`已添加 ${p.name}`);
             };
             container.appendChild(card);
         });
@@ -1870,7 +1870,7 @@ container.querySelector('#m7-editor-area').onclick = () => {
             // 写入世界书
             await setLorebookEntries(LOREBOOK_NAME, [{ uid: 0, content: updatedContent }]);
 
-            worldHelper.showNovaAlert('世界线变动成功！数据已保存。', 'success');
+            worldHelper.showNovaAlert('世界线变动成功！数据已保存。');
         } catch (e) {
             console.error(e);
             worldHelper.showNovaAlert('保存失败: ' + e.message, 'danger');
