@@ -45,16 +45,23 @@
         const isVariation = !!variation; // 是否为差分
         // 命名规则：有差分则 "Name-Var"，无差分则 "Name"
         const saveKey = isVariation ? `${charName}-${variation}` : charName;
-            // if (!isVariation) {
-            //         const commandString = `/setinput <updateMemory>\nmemory('img_map.${charName}','${charName}')\n</updateMemory>`;
-            //         console.log(`[Tachie Plugin] 触发指令: ${commandString}`);
-
-            //         if (window.GameAPI && window.GameAPI.triggerassa) {
-            //             // -1 通常表示当前上下文或不特定指代
-            //           await window.GameAPI.triggerassa(commandString);
-            //           await  window.worldHelper.processUpdateMemoryCommands(commandString,-1);
-            //         }
-            //     }
+          if (window.imageDB) {
+            try {
+                const existingImage = await window.imageDB.get('CustomNpcs', saveKey);
+                if (existingImage) {
+                    console.log(`[Tachie Plugin] 检测到本地已存在图片: ${saveKey}，跳过生成请求。`);
+                    
+                    // 如果是主图（非差分），仍需尝试同步内存状态
+                    if (!isVariation && window.GameAPI && window.GameAPI.triggerassa) {
+                        const commandString = `/setinput <updateMemory>\nmemory('img_map.${charName}','${charName}')\n</updateMemory>`;
+                        await window.GameAPI.triggerassa(commandString);
+                    }
+                    return; // 终止函数，不发请求
+                }
+            } catch (dbErr) {
+                console.warn(`[Tachie Plugin] 查询数据库失败，尝试继续请求:`, dbErr);
+            }
+        }
         console.log(`[Tachie Plugin] 准备生成: ${saveKey}, ID: ${requestId}`);
 
         // 2. 定义响应监听器
@@ -105,7 +112,7 @@ if (!isVariation) {
 
     if (window.GameAPI && window.GameAPI.triggerassa) {
         await window.GameAPI.triggerassa(commandString);
-        await window.worldHelper.processUpdateMemoryCommands(commandString, -1);
+        await processUpdateMemoryCommands(commandString, -1);
     }
 }
         // 4. 发送请求
@@ -154,7 +161,7 @@ if (!isVariation) {
 
                 // 调用后台生成逻辑
                 // 注意：这里不使用 await 阻塞循环，让它们并行在后台跑
-                handleImageGeneration(charName, variation, prompt);
+               await handleImageGeneration(charName, variation, prompt);
             }
 
             // 【可选】从回复中移除标签，避免在聊天界面显示 XML 代码
@@ -165,9 +172,51 @@ if (!isVariation) {
 
         return hookData;
     }
+    async function processTachieTagstest(hookData) {
+ 
+        if (!hookData || !hookData.message.content) return hookData;
 
+        // 正则说明：
+        // <tachie\s+char="([^"]+)"   -> 匹配 <tachie char="角色名"
+        // (?:\s+variations="([^"]+)")? -> 可选匹配 variations="差分名"
+        // >([\s\S]*?)<\/tachie>      -> 匹配中间的所有内容作为 prompt
+        const regex = /<tachie\s+char="([^"]+)"(?:\s+variations="([^"]+)")?>([\s\S]*?)<\/tachie>/gi;
+
+        // 获取所有匹配项
+        const matches = [...hookData.message.content.matchAll(regex)];
+
+        // if (matches.length > 0) {
+        //     console.log(`[Tachie Plugin] 检测到 ${matches.length} 个生成请求。`);
+
+        //     // 【倒序检索】处理
+        //     // 虽然 matchAll 是按顺序的，我们这里反转数组来模拟倒序处理逻辑
+        //     // 或者如果你的意思是“以最后出现的为准”，倒序处理通常更方便
+        //     const reversedMatches = matches.reverse();
+
+        //     for (const match of reversedMatches) {
+        //         const fullTag = match[0];
+        //         const charName = match[1];
+        //         const variation = match[2]; // 如果没有 variations 属性，这里是 undefined
+        //         const prompt = match[3];
+
+        //         // 调用后台生成逻辑
+        //         // 注意：这里不使用 await 阻塞循环，让它们并行在后台跑
+        //         handleImageGeneration(charName, variation, prompt);
+        //     }
+
+        //     // 【可选】从回复中移除标签，避免在聊天界面显示 XML 代码
+        //     // 如果你想保留标签，请注释掉下面这行
+        //     hookData.message.content = hookData.message.content.replace(regex, '');
+
+        // }
+
+        return hookData;
+    }
     // ================= 注册插件 =================
     window.NovaHooks.add('before_ai_response_save', processTachieTags);
+
+        // window.NovaHooks.add('before_message_render', processTachieTagstest);
+ 
     console.log('[Tachie Plugin] 立绘生成插件已加载 (倒序检索模式)。');
 
 })();
