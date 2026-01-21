@@ -104,29 +104,34 @@
 
     // =========================================================================
     // 🛠️ 关键修复：数据格式转换器 (Storage Format -> Runtime Format)
+     // =========================================================================
+    // 🛠️ 修复版：数据格式转换器
     // =========================================================================
     function normalizeWorldbookEntry(raw) {
-        // 如果已经是运行时格式（有 strategy 字段），则直接返回
+        // 如果已经是运行时格式，直接返回
         if (raw.strategy && typeof raw.strategy === 'object') return raw;
 
-        // 1. 基础字段映射
+        // 1. 基础字段
         const entry = {
             uid: raw.uid,
-            name: raw.comment || raw.name || '未命名条目', // 存储格式用 comment，运行时用 name
+            name: raw.comment || raw.name || '未命名条目',
             content: raw.content || '',
-            enabled: raw.disable === false, // 存储格式用 disable(true/false)，运行时用 enabled
+            enabled: raw.disable === false,
             order: typeof raw.order === 'number' ? raw.order : 100,
             probability: typeof raw.probability === 'number' ? raw.probability : 100,
-            displayIndex: raw.displayIndex || 0
+            displayIndex: raw.displayIndex || 0,
+
+            // ✨ 修复分组丢失问题
+            group: raw.group || '',
+            groupOverride: raw.groupOverride || false,
+            groupWeight: typeof raw.groupWeight === 'number' ? raw.groupWeight : 100,
         };
 
-        // 2. 策略 (Strategy) 映射
-        // 存储格式分散在 constant, vectorized, selective 等字段
+        // 2. 策略 (Strategy)
         let type = 'selective';
         if (raw.constant) type = 'constant';
         else if (raw.vectorized) type = 'vectorized';
 
-        // 逻辑映射: 0=any, 1=all, 2=not_any, 3=not_all (这是常见映射，根据你的JSON调整)
         const logicMap = { 0: 'and_any', 1: 'and_all', 2: 'not_any', 3: 'not_all' };
 
         entry.strategy = {
@@ -139,8 +144,7 @@
             scan_depth: raw.scanDepth || null
         };
 
-        // 3. 位置 (Position) 映射
-        // 存储格式是数字 0-6
+        // 3. 位置 (Position)
         const posTypeMap = {
             0: 'before_character_definition',
             1: 'after_character_definition',
@@ -152,18 +156,29 @@
         };
         const roleMap = { 0: 'system', 1: 'user', 2: 'assistant' };
 
+        // ✨ 智能位置修正
+        // 如果原始数据包含 role 且不为 null，优先视为 at_depth (深度插入)
+        // 你的数据中 position: 4 但 role: 0，这在某些版本中是深度插入的特征
+        let posType = posTypeMap[raw.position];
+        if (raw.position === 4 && typeof raw.role === 'number') {
+             posType = 'at_depth';
+        }
+        // 如果映射失败，默认回退到 'at_depth' (通常比回退到角色定义更安全)
+        if (!posType) posType = 'at_depth';
+
         entry.position = {
-            type: posTypeMap[raw.position] || 'before_character_definition',
+            type: posType,
             role: roleMap[raw.role] || 'system',
-            depth: raw.depth || 4,
-            order: raw.order || 0 // 这里通常复用外层的 order
+            // ✨ 修复 depth 为 0 时被错误变成 4 的问题
+            depth: (typeof raw.depth === 'number') ? raw.depth : 4,
+            order: raw.order || 0
         };
 
-        // 4. 递归与效果 (Recursion & Effect)
+        // 4. 递归与效果
         entry.recursion = {
             prevent_incoming: !!raw.preventRecursion,
             prevent_outgoing: !!raw.excludeRecursion,
-            delay_until: raw.delayUntilRecursion ? 1 : null // 简化处理
+            delay_until: raw.delayUntilRecursion ? 1 : null
         };
 
         entry.effect = {
@@ -172,11 +187,11 @@
             delay: raw.delay || null
         };
 
-        // 保留其他可能需要的字段
         if (raw.id) entry.id = raw.id;
 
         return entry;
     }
+
 
     // =========================================================================
     // 3. 核心业务逻辑
