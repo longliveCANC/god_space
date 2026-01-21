@@ -7,7 +7,7 @@
     window.isTavernOnlineUpdaterLoaded = true;
 
     // =========================================================================
-    // ✨ 1. 引入 Toastr 调试器 & 样式
+    // ✨ 1. 样式注入
     // =========================================================================
     const styles = `
         body { transform: none !important; filter: none !important; }
@@ -103,6 +103,82 @@
     }
 
     // =========================================================================
+    // 🛠️ 关键修复：数据格式转换器 (Storage Format -> Runtime Format)
+    // =========================================================================
+    function normalizeWorldbookEntry(raw) {
+        // 如果已经是运行时格式（有 strategy 字段），则直接返回
+        if (raw.strategy && typeof raw.strategy === 'object') return raw;
+
+        // 1. 基础字段映射
+        const entry = {
+            uid: raw.uid,
+            name: raw.comment || raw.name || '未命名条目', // 存储格式用 comment，运行时用 name
+            content: raw.content || '',
+            enabled: raw.disable === false, // 存储格式用 disable(true/false)，运行时用 enabled
+            order: typeof raw.order === 'number' ? raw.order : 100,
+            probability: typeof raw.probability === 'number' ? raw.probability : 100,
+            displayIndex: raw.displayIndex || 0
+        };
+
+        // 2. 策略 (Strategy) 映射
+        // 存储格式分散在 constant, vectorized, selective 等字段
+        let type = 'selective';
+        if (raw.constant) type = 'constant';
+        else if (raw.vectorized) type = 'vectorized';
+
+        // 逻辑映射: 0=any, 1=all, 2=not_any, 3=not_all (这是常见映射，根据你的JSON调整)
+        const logicMap = { 0: 'and_any', 1: 'and_all', 2: 'not_any', 3: 'not_all' };
+
+        entry.strategy = {
+            type: type,
+            keys: raw.key || [],
+            keys_secondary: {
+                logic: logicMap[raw.selectiveLogic] || 'and_any',
+                keys: raw.keysecondary || []
+            },
+            scan_depth: raw.scanDepth || null
+        };
+
+        // 3. 位置 (Position) 映射
+        // 存储格式是数字 0-6
+        const posTypeMap = {
+            0: 'before_character_definition',
+            1: 'after_character_definition',
+            2: 'before_example_messages',
+            3: 'after_example_messages',
+            4: 'before_author_note',
+            5: 'after_author_note',
+            6: 'at_depth'
+        };
+        const roleMap = { 0: 'system', 1: 'user', 2: 'assistant' };
+
+        entry.position = {
+            type: posTypeMap[raw.position] || 'before_character_definition',
+            role: roleMap[raw.role] || 'system',
+            depth: raw.depth || 4,
+            order: raw.order || 0 // 这里通常复用外层的 order
+        };
+
+        // 4. 递归与效果 (Recursion & Effect)
+        entry.recursion = {
+            prevent_incoming: !!raw.preventRecursion,
+            prevent_outgoing: !!raw.excludeRecursion,
+            delay_until: raw.delayUntilRecursion ? 1 : null // 简化处理
+        };
+
+        entry.effect = {
+            sticky: raw.sticky || null,
+            cooldown: raw.cooldown || null,
+            delay: raw.delay || null
+        };
+
+        // 保留其他可能需要的字段
+        if (raw.id) entry.id = raw.id;
+
+        return entry;
+    }
+
+    // =========================================================================
     // 3. 核心业务逻辑
     // =========================================================================
 
@@ -115,36 +191,27 @@
             toastr.info('正在下载最新世界书数据...');
             const remoteData = await loadRemoteJson(bookJsonUrl);
 
-            if (!remoteData) {
-                throw new Error("无法获取远程世界书数据");
-            }
+            if (!remoteData) throw new Error("无法获取远程世界书数据");
 
-            // ============================================================
-            // 🛠️ 数据格式标准化 (Object -> Array)
-            // ============================================================
+            // 1. 解析 JSON 为数组
             let newEntriesRaw = [];
-
-            // 1. 如果本身就是数组，直接用
             if (Array.isArray(remoteData)) {
                 newEntriesRaw = remoteData;
-            }
-            // 2. 如果是 { entries: ... } 结构
-            else if (remoteData && remoteData.entries) {
+            } else if (remoteData && remoteData.entries) {
                 if (Array.isArray(remoteData.entries)) {
                     newEntriesRaw = remoteData.entries;
                 } else if (typeof remoteData.entries === 'object') {
-                    // 关键点：如果是对象，提取所有值组成数组。
-                    // 酒馆API只认数组，且条目ID存储在 value.uid 中，
-                    // 所以丢弃 key (如 "0", "1") 是安全的。
                     newEntriesRaw = Object.values(remoteData.entries);
                 }
             }
 
             if (!Array.isArray(newEntriesRaw) || newEntriesRaw.length === 0) {
-                console.error("解析后的数据:", newEntriesRaw);
-                throw new Error("远程数据格式无法解析，entries 不是有效的数组");
+                throw new Error("远程数据格式无法解析");
             }
-            // ============================================================
+
+            // ✨ 2. 关键步骤：将 Raw 数据转换为 Runtime 数据
+            const newEntriesRuntime = newEntriesRaw.map(normalizeWorldbookEntry);
+            console.log('[Updater] 已转换远程数据格式:', newEntriesRuntime.length, '条');
 
             const allBooks = TavernHelper.getWorldbookNames();
             const exists = allBooks.includes(worldbookName);
@@ -153,24 +220,24 @@
                 toastr.info(`正在合并更新「${worldbookName}」...`);
 
                 await TavernHelper.updateWorldbookWith(worldbookName, (currentEntries) => {
-                    // 确保 currentEntries 也是数组
+                    // currentEntries 已经是 Runtime 格式，不需要转换
                     const safeCurrentEntries = Array.isArray(currentEntries) ? currentEntries : Object.values(currentEntries);
 
-                    // 1. 提取本地需要保留的条目 (根据 uid)
+                    // 提取本地保留条目
                     const keptEntries = safeCurrentEntries.filter(entry => protectedIDs.includes(entry.uid));
-                    console.log(`[Updater] 保留了 ${keptEntries.length} 个本地条目`);
 
-                    // 2. 提取远程新条目 (排除掉冲突的 uid)
-                    const incomingEntries = newEntriesRaw.filter(entry => !protectedIDs.includes(entry.uid));
+                    // 提取远程新条目 (排除冲突ID)
+                    const incomingEntries = newEntriesRuntime.filter(entry => !protectedIDs.includes(entry.uid));
 
-                    // 3. 合并数组
+                    // 合并
                     return [...incomingEntries, ...keptEntries];
                 });
 
                 toastr.success(`世界书已平滑更新！(保留了本地修改)`);
             } else {
                 toastr.info(`未检测到世界书，正在创建...`);
-                await TavernHelper.createWorldbook(worldbookName, newEntriesRaw);
+                // 创建时也建议使用转换后的数据，以防 createWorldbook 内部处理不一致
+                await TavernHelper.createWorldbook(worldbookName, newEntriesRuntime);
                 toastr.success(`世界书创建成功！`);
             }
 
