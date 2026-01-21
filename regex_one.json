@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.12';
+window.current_game_version = '3.6.13';
 
 
 
@@ -15300,6 +15300,75 @@ let userName = '用户';
         window.isZeroLevelUIInitialized = true;
         //console.log("[HTML] ✨ UI脚本首次启动，已盖上唯一灵魂印记。");
     'use strict';
+
+    // --- 🆕 新增配置结构 🆕 ---
+ let BATCH_PIPELINE_CONFIG = [
+    // Batch 0: 预处理
+    {
+        id: 0,
+        name: "Pre-Processing",
+        ex_batches: []
+    },
+    // Batch 1: 主对话
+    {
+        id: 1,
+        name: "Main Chat",
+        ex_batches: [
+            {
+                id: 0,
+                name: "Standard Generation",
+                enabled: true,
+                render: true,
+                type: 'chat',
+                api_config: 'default',
+                processing_msg: "回应你的行动中..." // <--- 新增
+            }
+        ]
+    },
+    // Batch 2: 记忆更新
+    {
+        id: 2,
+        name: "Memory Update",
+        ex_batches: [
+            {
+                id: 0,
+                name: "Memory Analysis",
+                enabled: true,
+                render: false,
+                type: 'memory',
+                bound_worldbooks: ['小蝌蚪找妈妈', 'x-mod', 'x-dlc'],
+                api_config: 'custom_v2',
+                processing_msg: "正在分析记忆变更..." // <--- 新增
+            }
+        ]
+    },
+    // Batch 3: 示例扩展
+    {
+        id: 3,
+        name: "Deep Summary",
+        ex_batches: [
+            {
+                id: 0,
+                name: "Chapter Summary",
+                enabled: false,
+                render: false,
+                type: 'extension',
+                bound_worldbooks: ['自动摘要-规则书', '剧情梳理-Mod'],
+                api_config: 'default',
+                processing_msg: "正在撰写章节摘要..." // <--- 新增
+            }
+        ]
+    }
+];
+
+// 获取当前步骤配置的辅助函数
+const getPipelineStep = (bIndex, exIndex) => {
+    const batch = BATCH_PIPELINE_CONFIG.find(b => b.id === bIndex);
+    if (!batch) return null;
+    const exBatch = batch.ex_batches.find(ex => ex.id === exIndex);
+    return exBatch ? { ...exBatch, batchName: batch.name } : null;
+};
+
 
     let INJECTED_PROMPTS = [
  
@@ -23048,7 +23117,7 @@ async function handleModeSelection() {
         const bgmvalue = getSafeValue('bgm-mode', 'on');
            const apivalue = getSafeValue('doubleapi-mode', 'off');
 
-                 const doublememoryalue = getSafeValue('doublememory-mode', 'on');
+                 const doublememoryalue = getSafeValue('doublememory-mode', 'off');
 
         // HTML: value="52" checked (对应 id="behavior-on")
         const behaviorValue = getSafeValue('behavior-mode', '52');
@@ -27119,7 +27188,7 @@ window.GlobalChatAudio = {
             }
 
             const songData = {
-                id: Date.now(),
+            
                 song: result.song,
                 artist: result.singer,
                 source: result.source,
@@ -27657,7 +27726,7 @@ window.GlobalChatAudio = {
         let result = null;
 
         // 步骤1: QQ音乐搜索 (歌曲名 + 歌手)
-        if (!result && singer) {
+        if (!result) {
             console.log('→ 步骤1: QQ音乐搜索 (歌曲+歌手):', name + " " + singer);
             result = await this.qqSearch(name,singer, Http_Get);
             if (result) console.log('✓ 步骤1成功，找到歌曲');
@@ -27670,16 +27739,16 @@ window.GlobalChatAudio = {
     //     if (result) console.log('✓ 步骤1成功，找到歌曲');
     // }
         // 步骤3: 网易云搜索 (歌曲名 + 歌手)
-        if (!result && singer) {
+        if (!result) {
             console.log('→ 步骤3: 网易云搜索 (歌曲+歌手):', name + " " + singer);
-            result = await this.wySearch(name + " " + singer, Http_Get);
+            result = await this.wySearch(singer,name, Http_Get);
             if (result) console.log('✓ 步骤3成功，找到歌曲');
         }
 
         // 步骤4: 网易云搜索 (仅歌曲名)
         if (!result) {
             console.log('→ 步骤4: 网易云搜索 (仅歌曲名):', name);
-            result = await this.wySearch(name, Http_Get);
+            result = await this.wySearch(singer,name, Http_Get);
             if (result) console.log('✓ 步骤4成功，找到歌曲');
         }
 
@@ -27695,43 +27764,127 @@ window.GlobalChatAudio = {
     },
      // --- 位于 GlobalChatAudio 对象内部 ---
 
-    wySearch: async function(query, httpGet) {
-        console.log('  [网易云] 搜索关键词:', query);
-        // 步骤1: 搜索歌曲列表
-        let searchRes = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
+ wySearch: async function(singerName, songName, httpGet) {
+    // 注意：根据你原本的代码习惯，第一个参数是歌手，第二个是歌名
+    // 如果反了，请交换 calculateSimilarity 调用时的参数顺序
+    const query = singerName + " " + songName;
+    console.log('  [网易云] 搜索关键词:', query);
 
-        if (searchRes && searchRes.data && searchRes.data.length) {
-            console.log(`  [网易云] 找到 ${searchRes.data.length} 首候选歌曲，开始获取链接...`);
+    // --- 移植的辅助函数开始 ---
 
-            // 遍历候选歌曲
-            for (let i = 0; i < Math.min(searchRes.data.length, 3); i++) {
-                let songInfo = searchRes.data[i];
-                console.log(`  [网易云] 尝试第 ${i + 1} 首: ${songInfo.song} - ${songInfo.singer}`);
+    // 1. 标准化字符串：去除标点、空格、转小写
+    const normalize = (str) => {
+        if (!str) return '';
+        return str.toLowerCase()
+            .replace(/[\s\-—–.,。，、!！?？()（）[\]【】{}「」『』<>《》""'':：;；…~～@#$%^&*+=|\\\/]/g, '');
+    };
 
-                // 步骤2: 使用歌曲ID获取播放链接
-                let linkRes = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + songInfo.id);
-
-                if (linkRes && linkRes.data && (linkRes.data.url || linkRes.data.play_url)) {
-                    const finalUrl = linkRes.data.play_url || linkRes.data.url;
-                    console.log(`  [网易云] ✓ 成功获取播放链接:`, finalUrl);
-                    // 成功获取，返回完整信息
-                    return {
-                        url: finalUrl,
-                        song: songInfo.song,
-                        singer: songInfo.singer,
-                        source: "网易云",
-                        cover: songInfo.pic || ''
-                    };
-                } else {
-                    console.log(`  [网易云] ✗ 未获取到播放链接 (可能是VIP或无版权)`);
-                }
-            }
-            console.log('  [网易云] 所有候选歌曲均无法获取播放链接');
-        } else {
-            console.log('  [网易云] 搜索无结果');
+    // 2. 计算匹配率
+    const calculateMatchRatio = (str1, str2) => {
+        if (!str1 || !str2) return 0;
+        if (str1 === str2) return 1;
+        if (str2.includes(str1)) return str1.length / str2.length;
+        if (str1.includes(str2)) return str2.length / str1.length;
+        const chars1 = new Set(str1);
+        const chars2 = new Set(str2);
+        let commonChars = 0;
+        for (let char of chars1) {
+            if (chars2.has(char)) commonChars++;
         }
-        return null;
-    },
+        return commonChars / Math.max(chars1.size, chars2.size);
+    };
+
+    // 3. 计算相似度分数
+    const calculateSimilarity = (querySong, querySinger, dataObj) => {
+        let score = 0;
+        const qSongNorm = normalize(querySong);
+        const qSingerNorm = normalize(querySinger);
+        const dSongNorm = normalize(dataObj.song);
+        const dSingerNorm = normalize(dataObj.singer || '');
+
+        // 歌名匹配
+        if (dSongNorm === qSongNorm) {
+            score += 100;
+        } else {
+            const ratio = calculateMatchRatio(qSongNorm, dSongNorm);
+            score += Math.floor(ratio * 150); // 歌名权重高
+        }
+
+        // 歌手匹配
+        if (qSingerNorm && dSingerNorm) {
+            if (dSingerNorm === qSingerNorm) {
+                score += 100;
+            } else {
+                const ratio = calculateMatchRatio(qSingerNorm, dSingerNorm);
+                score += Math.floor(ratio * 80);
+            }
+        }
+
+        // Live/翻唱 简单惩罚 (可选)
+        if (dataObj.song.match(/live/gi)) score -= 30;
+
+        return score;
+    };
+    // --- 辅助函数结束 ---
+
+    // 步骤1: 搜索歌曲列表
+    let searchRes = await httpGet("https://api.vkeys.cn/v2/music/netease?word=" + encodeURIComponent(query));
+
+    if (searchRes && searchRes.data && searchRes.data.length) {
+        console.log(`  [网易云] 原始结果 ${searchRes.data.length} 条，开始智能打分排序...`);
+
+        // 设定最低分数线 (低于此分数的直接忽略)
+        const MIN_SCORE = 60;
+
+        // 计算分数并排序
+        const scoredSongs = searchRes.data.map(d => ({
+            ...d,
+            // 注意参数顺序：(搜索歌名, 搜索歌手, 数据对象)
+            score: calculateSimilarity(songName, singerName, d)
+        })).sort((a, b) => b.score - a.score);
+
+        // 打印前5名的分数供调试
+        console.log('  [网易云] 相似度排序前5名:');
+        scoredSongs.slice(0, 5).forEach((d, i) => {
+            console.log(`    ${i + 1}. [${d.score}分] ${d.song} - ${d.singer}`);
+        });
+
+        // 遍历候选歌曲 (最多尝试前5首)
+        for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
+            let songInfo = scoredSongs[i];
+
+            // 核心逻辑：分数拦截
+            if (songInfo.score < MIN_SCORE) {
+                console.log(`  [网易云] 候选歌曲 "${songInfo.song}" 分数 (${songInfo.score}) 低于阈值 (${MIN_SCORE})，停止尝试。`);
+                // 因为是降序排列，如果当前这首都不合格，后面的更不合格，直接跳出循环
+                break;
+            }
+
+            console.log(`  [网易云] 尝试第 ${i + 1} 首 [${songInfo.score}分]: ${songInfo.song} - ${songInfo.singer}`);
+
+            // 步骤2: 获取链接
+            let linkRes = await httpGet("https://api.vkeys.cn/v2/music/netease?id=" + songInfo.id);
+
+            if (linkRes && linkRes.data && (linkRes.data.url || linkRes.data.play_url)) {
+                const finalUrl = linkRes.data.play_url || linkRes.data.url;
+                console.log(`  [网易云] ✓ 成功获取播放链接:`, finalUrl);
+                return {
+                    url: finalUrl,
+                    song: songInfo.song,
+                    singer: songInfo.singer,
+                    source: "网易云",
+                    cover: songInfo.pic || ''
+                };
+            } else {
+                console.log(`  [网易云] ✗ 未获取到播放链接 (可能是VIP或无版权)`);
+            }
+        }
+        console.log('  [网易云] 没有找到符合分数要求且可播放的歌曲');
+    } else {
+        console.log('  [网易云] 搜索无结果');
+    }
+    return null;
+},
 
  
 qqSearch: async function(songName, singerName, httpGet) {
@@ -27754,11 +27907,11 @@ qqSearch: async function(songName, singerName, httpGet) {
         const dataSongNorm = normalize(songData.song);
         const dataSingerNorm = normalize(songData.singer || '');
         
-        console.log('  调试信息:');
-        console.log('    查询歌名:', `"${songName}" → "${querySongNorm}"`);
-        console.log('    查询歌手:', `"${singerName}" → "${querySingerNorm}"`);
-        console.log('    数据歌名:', `"${songData.song}" → "${dataSongNorm}"`);
-        console.log('    数据歌手:', `"${songData.singer}" → "${dataSingerNorm}"`);
+        // console.log('  调试信息:');
+        // console.log('    查询歌名:', `"${songName}" → "${querySongNorm}"`);
+        // console.log('    查询歌手:', `"${singerName}" → "${querySingerNorm}"`);
+        // console.log('    数据歌名:', `"${songData.song}" → "${dataSongNorm}"`);
+        // console.log('    数据歌手:', `"${songData.singer}" → "${dataSingerNorm}"`);
         
         // 歌名相似度计算
         if (dataSongNorm === querySongNorm) {
@@ -27835,7 +27988,7 @@ qqSearch: async function(songName, singerName, httpGet) {
         for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
             let d = scoredSongs[i];
             
-            if (d.similarity < 100) {
+            if (d.similarity < 60) {
                 console.log(`  [QQ音乐] 跳过低相似度歌曲 (${d.similarity}分):`, d.song);
                 continue;
             }
@@ -30227,7 +30380,8 @@ continueBtn.addEventListener('click', () => {
     popupMenu.classList.remove('active');
 });
 continuevarBtn.addEventListener('click', () => {
-    handleSend({ isContinuation: true,isContinuationVar: true });
+    handleSend({ isContinuation: true, batchIndex: 2,
+                        exBatchIndex:0,isContinuationVar: true });
     popupMenu.classList.remove('active');
 });
 // 点击页面其他任何地方，关闭菜单
@@ -33213,14 +33367,16 @@ function handleNotificationsFromBatch(operations) {
     });
 
       const isOnlyStatusUpdates = opsToProcess.every(op => op.type === 'set_status');
-
-    if (!hasSummaryUpdate && !isOnlyStatusUpdates && opsToProcess.length > 0) {
-        showUpdateNotification('没有正常输出小总结，掉变量了？请在左下角按情况使用重roll/继续/继续[变量]', 'danger');
-        // 这里假设 showNovaAlert 是你已有的函数
-        if (typeof showNovaAlert === 'function') {
-            showNovaAlert('没有正常输出小总结', 'danger');
-        }
-    }
+if(hasSummaryUpdate){
+     showUpdateNotification(`小总结正常`);
+}
+    // if (!hasSummaryUpdate && !isOnlyStatusUpdates && opsToProcess.length > 0) {
+    //     showUpdateNotification('没有正常输出小总结，掉变量了？请在左下角按情况使用重roll/继续/继续[变量]', 'danger');
+    //     // 这里假设 showNovaAlert 是你已有的函数
+    //     if (typeof showNovaAlert === 'function') {
+    //         showNovaAlert('没有正常输出小总结', 'danger');
+    //     }
+    // }
 }
  
 
@@ -35203,12 +35359,17 @@ function throttle(func, limit) {
  * @param {object} params - 参数对象，为未来扩展保留。
  * @returns {Promise<RolePrompt[]>} - 返回一个包含多个角色的提示词数组。
  */
-const assembleComplexPrompt = async (params = {}) => {
+ const assembleComplexPrompt = async (params = {}) => {
+    const { continuationText, targetBookNames,ignoreGlobalInjects = false  } = params; // 解构参数
     console.log("[Nova's Prompt Assembler] 开始为你编织独特的灵感丝线...");
 
     try {
         // --- 1. 获取所有相关的世界书条目 ---
-        const targetPrefixes = ['小蝌蚪找妈妈', 'x-mod', 'x-dlc'];
+        // 🆕 如果传入了 targetBookNames 则使用传入的，否则使用默认的兼容列表 (Batch 2)
+        const targetPrefixes = targetBookNames && targetBookNames.length > 0
+            ? targetBookNames
+            : ['小蝌蚪找妈妈', 'x-mod', 'x-dlc'];
+
         const globalBooks = getGlobalWorldbookNames();
         const charBooks = getCharWorldbookNames('current');
         const allBoundBookNames = new Set([...globalBooks, charBooks.primary, ...charBooks.additional].filter(Boolean));
@@ -35332,35 +35493,41 @@ console.log(`[Nova's Prompt Assembler] 分组处理后剩下 ${finalEntriesToPro
         }
        // --- [新增代码块开始] ---
         // --- 5.5. 注入外部自定义提示词 ---
- 
+     if (!ignoreGlobalInjects && typeof INJECTED_PROMPTS !== 'undefined') {
             console.log(`[Nova's Prompt Assembler] 开始注入 ${INJECTED_PROMPTS.length} 个自定义提示词...`);
 
-          // 筛选和分类要注入的提示词
-const absoluteTopPrompts = INJECTED_PROMPTS.filter(p => p.position === 'absolute_top' && p.role && p.content);
-const startPrompts = INJECTED_PROMPTS.filter(p => p.position === 'start' && p.role && p.content);
-const endPrompts = INJECTED_PROMPTS.filter(p => p.position === 'end' && p.role && p.content);
+            // 🆕 【修复点2】去掉 const，直接赋值给上面定义的变量
+            absoluteTopPrompts = INJECTED_PROMPTS.filter(p => p.position === 'absolute_top' && p.role && p.content);
+
+            // 其他局部变量依然可以在这里定义，因为它们只在这里用
+            const startPrompts = INJECTED_PROMPTS.filter(p => p.position === 'start' && p.role && p.content);
+            const endPrompts = INJECTED_PROMPTS.filter(p => p.position === 'end' && p.role && p.content);
+
             const indexedPrompts = INJECTED_PROMPTS
                 .filter(p => typeof p.position === 'number' && p.role && p.content)
-                .sort((a, b) => b.position - a.position); // 按索引从大到小排序，方便插入
+                .sort((a, b) => b.position - a.position);
 
-            // 1. 插入带数字索引的提示词 (从后往前插入，避免影响未处理项的索引)
+            // 1. 插入带数字索引的提示词
             for (const prompt of indexedPrompts) {
                 finalPromptArray.splice(prompt.position, 0, { role: prompt.role, content: prompt.content });
             }
 
-            // 2. 插入开头的提示词 (倒序遍历以保证最终顺序与定义时一致)
+            // 2. 插入开头的提示词
             for (let i = startPrompts.length - 1; i >= 0; i--) {
-                 const prompt = startPrompts[i];
-                 finalPromptArray.unshift({ role: prompt.role, content: prompt.content });
+                const prompt = startPrompts[i];
+                finalPromptArray.unshift({ role: prompt.role, content: prompt.content });
             }
 
-            // 3. 插入结尾的提示词 (正序遍历即可)
+            // 3. 插入结尾的提示词
             for (const prompt of endPrompts) {
                 finalPromptArray.push({ role: prompt.role, content: prompt.content });
             }
 
             console.log("[Nova's Prompt Assembler] 自定义提示词注入完成。");
- 
+        } else {
+            console.log("[Nova's Prompt Assembler] 跳过全局 INJECTED_PROMPTS 注入 (ExBatch 模式)。");
+            // 此时 absoluteTopPrompts 保持为 []，下面的代码不会报错
+        }
         // --- [新增代码块结束] ---
         // --- 6. 内容净化 ---
  finalPromptArray = finalPromptArray.map(prompt => {
@@ -35399,45 +35566,19 @@ const endPrompts = INJECTED_PROMPTS.filter(p => p.position === 'end' && p.role &
 
  
  // --- 7. 附加来自参数的最终提示词 ---
-        if (params && params.continuationText && typeof params.continuationText === 'string' && params.continuationText.trim()) {
+  if (params && params.continuationText && typeof params.continuationText === 'string' && params.continuationText.trim()) {
             console.log("[Nova's Prompt Assembler] 正在附加来自参数的最终提示词...");
             finalPromptArray.push({
                 role: 'user',
                 content: params.continuationText.trim()
             });
 
+            // 🆕 【修复点3】现在这里可以安全访问 absoluteTopPrompts 了
+            // 如果 ignoreGlobalInjects 为 true，这里长度为 0，循环不执行，安全。
             for (let i = absoluteTopPrompts.length - 1; i >= 0; i--) {
-     const prompt = absoluteTopPrompts[i];
-     finalPromptArray.push({ role: prompt.role, content: prompt.content });
-}
-//        finalPromptArray.push({
-//                 role: 'model',
-//                 content: `
-//  <think>
-// 收到memory更新任务。我已仔细阅读game传入的内容。我会：
-// 1. 仔细阅读玩家输入和我的回复内容
-// 2. 按照格式逐项Analyze
-// 3. 输出<updateMemory>：根据分析执行具体的memory指令
-
-// 我会确保：
-// - 不输出任何正文内容
-// - 不遗漏summary的更新
-// - 所有变化都同步到memory
-// - 指令格式严格规范
-// - 不遗漏任何需要更新/初始化的字段
-// - 不遗漏game的所有要求和提醒
-// 好，继续游戏游戏进程。
-// </think>
-// <build>
-// 回顾指令格式：
-// add_update: memory('path.key', 'new_value');//new_value can be string/num/json object
-// rename: memory('path.old_key', 'path.new_key');
-// move: memory('old_path.key', 'new_path.key');
-// delete: delete('path', 'key');
-// 回顾完毕。开始执行。我将从<statusAnalyze>开始。
-// </build>
-//                 `
-//             });
+                const prompt = absoluteTopPrompts[i];
+                finalPromptArray.push({ role: prompt.role, content: prompt.content });
+            }
         }
         // --- [新增代码块结束] ---
         console.log("[Nova's Prompt Assembler] 提示词编织完成！最终结构:", finalPromptArray);
@@ -35811,9 +35952,51 @@ async function extractAndStoreBatchContent(batchNumber) {
     }
 }
 
-async function handleSend(options = {}) {
-  const abortSignal = NovaAbortController.start();
-   setTimeout(() => console.log('等待锁释放'), 50);
+ async function handleSend(options = {}) {
+    const abortSignal = NovaAbortController.start();
+    setTimeout(() => console.log('等待锁释放'), 50);
+
+    // --- 🆕 逻辑修正：优先级调整 🆕 ---
+    // 1. 优先使用传入的 batchIndex，如果没有传，默认为 1
+    let currentBatchIndex = options.batchIndex !== undefined ? options.batchIndex : 1;
+    let currentExBatchIndex = options.exBatchIndex !== undefined ? options.exBatchIndex : 0;
+
+    // 2. 兼容旧逻辑：只有在 batchIndex 未定义 且 isContinuationVar 为 true 时，才强制设为 2
+    // 这样递归调用时传入的 batchIndex: 3 就不会被覆盖了
+    if (options.isContinuationVar && options.batchIndex === undefined) {
+        currentBatchIndex = 2;
+        currentExBatchIndex = 0;
+    }
+
+    // 获取当前步骤的详细配置
+    const currentStepConfig = getPipelineStep(currentBatchIndex, currentExBatchIndex);
+
+    // 如果配置不存在（比如越界），则终止
+    if (!currentStepConfig && currentBatchIndex > 0) {
+        console.error(`[Nova Pipeline] 未找到配置: Batch ${currentBatchIndex} Ex ${currentExBatchIndex}`);
+        return;
+    }
+
+    console.log(`[Nova Pipeline] 执行中: Batch ${currentBatchIndex} - ${currentStepConfig?.name || 'Init'} (Ex: ${currentExBatchIndex})`);
+
+    // 2. 更新变量传递给外界 (batch, exbatch)
+    await TavernHelper.insertOrAssignVariables(
+        {
+            batch: currentBatchIndex,
+            exbatch: currentExBatchIndex,
+            // 兼容旧变量，Batch 2 视为 batches=2
+            batches: currentBatchIndex
+        },
+        { type: 'chat' }
+    );
+
+    // 3. 确定是否是“后台/变量更新”模式 (用于后续逻辑判断)
+    // Batch 1 (Chat) 以外的通常都是后台模式
+    const isBackgroundStep = currentBatchIndex !== 1;
+    // 映射到旧变量以便复用逻辑
+    const isContinuationVar = isBackgroundStep;
+
+
     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
 
     // 1. 检查 EjsTemplate 对象是否存在，以及 setFeatures 方法是否存在
@@ -35840,7 +36023,7 @@ async function handleSend(options = {}) {
         console.error('EjsTemplate setFeatures 失败:', error);
         return;  
     }
-   const { isReroll = false, isContinuation = false,isContinuationVar = false } = options;
+   const { isReroll = false, isContinuation = false } = options;
 if(isContinuationVar){
  await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
 batches = 2;
@@ -35854,25 +36037,44 @@ batches = 1;
  
   
  
+     // --- 🆕 API 配置加载逻辑 🆕 ---
     let customApiSettings = null;
-    try {
-        const storedApiSettings = localStorage.getItem('nova_custom_api_settings');
-        if (storedApiSettings) {
-            customApiSettings = JSON.parse(storedApiSettings);
-            console.log("[Nova's API Manager] 已加载自定义API配置。");
-        }
-    } catch (e) {
-        console.warn("[Nova's API Manager] 读取自定义API配置失败:", e);
+    // 根据当前 ExBatch 配置决定使用哪个 API
+    const apiConfigKey = currentStepConfig?.api_config;
+
+    if (apiConfigKey && apiConfigKey !== 'default') {
+        // 尝试加载指定的 API 配置
+        // 假设 'custom_v2' 对应 'nova_custom_api_settings'，其他对应 localStorage 中的 key
+        const storageKey = apiConfigKey === 'custom_v2' ? 'nova_custom_api_settings' : apiConfigKey;
+        
+            try {
+        const stored = localStorage.getItem(storageKey);
+     
+            // 如果没有获取到配置，检查 v2 开关状态
+            const isV2Enabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+            if (!isV2Enabled) {
+                console.log(` v2 未启用，将使用默认 API`);
+                // 这里可以显式设置为使用默认 API
+                // 通过不设置 customApiSettings 或者设置特殊标记
+            }else{
+            customApiSettings = JSON.parse(stored);
+            console.log(`[Nova API] 已加载 API 配置: ${apiConfigKey}`);
+       
+            }
+      
+        } catch (e) { console.warn("API Config Load Error", e); }
     }
+
+    // 只有在非默认 API 且配置存在时才应用
+    const activeCustomApi = customApiSettings;
+    // --- 🆕 API 配置加载结束 🆕 ---
 
    await TavernHelper.insertOrAssignVariables(
             { checklock: 'false' },
             { type: 'chat' }
   );
  
-    const applyCustomApi = (isContinuationVar === true && localStorage.getItem('enable_custom_api_v2') === 'true');  
-    const activeCustomApi = applyCustomApi ? customApiSettings : undefined;
-
+ 
 // ===== 新增：捕获提示词的逻辑 =====
 if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
     // 创建一个监听器来捕获即将发送的完整提示词
@@ -35882,13 +36084,11 @@ if (is_restore_prompt === 'true' && !isReroll && !isContinuation) {
             
             // 添加 try-catch 防止存储失败影响后续流程
             try {
-                if(isContinuationVar){
-                    localStorage.setItem('last_captured_prompt_api', prompts_be_sent); 
-                }else{
- localStorage.setItem('last_captured_prompt', prompts_be_sent);
-                }
-               
-                console.log('[Nova的提示词捕获器] 已成功捕获并存储提示词');
+                 const storageKey = `last_captured_prompt_b${currentBatchIndex}_ex${currentExBatchIndex}`;
+                localStorage.setItem(storageKey, prompts_be_sent);
+
+                // 保留一份最新的作为通用查看（可选）
+                localStorage.setItem('last_captured_prompt', prompts_be_sent);
             } catch (error) {
                 console.warn('[Nova的提示词捕获器] 存储提示词失败:', error.message);
                 // 存储失败不影响主流程，仅记录警告
@@ -36010,7 +36210,7 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
        
         userInput.value = cleanCommand + userInput.value;
 
-       let continuationText;
+       let continuationText = '';
      if (isContinuation) {
         // 这是"继续"模式，我们在这里构造特殊的 userText
         const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
@@ -36021,7 +36221,7 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
         }
         if(isContinuationVar){
   userText = playerinput;
-        continuationText = `[中断写作任务，新任务：遵循之前的对话中，user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循全部更新规则(将以下文本当作你'本轮输出的正文')，确保不输出任何新的正文，只专注memory更新: \nuser:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n请直接从<statusAnalyze>开始。summary的更新是重中之重，不得遗忘！]`;
+        // continuationText = `[中断写作任务，新任务：遵循之前的对话中，user给你的**全部**对memory的更新规则，直接对以下正文进行memory的分析，和完整初始化应该初始化的内容和应该更新的内容。和历史memory保持连贯性，确保没有未知字段，确保不和历史memory重复，确保遵循全部更新规则(将以下文本当作你'本轮输出的正文')，确保不输出任何新的正文，只专注memory更新: \nuser:${playerinput}\nmodel:${lastAiMessage.content}\n\n\n请直接从<statusAnalyze>开始。summary的更新是重中之重，不得遗忘！]`;
         console.log("[Nova's Whisper] 正在请求重新生成变量...");
       
         }else{
@@ -36179,13 +36379,24 @@ console.log("userMessageCount：",userMessageCount);
     document.getElementById('continue-button').disabled = true; // 💖 禁用菜单里的继续按钮
     document.getElementById('continue-var-button').disabled = true;   
     sendButton.textContent = '...';
+   sendButton.textContent = '...';
 
         const aiResponseBubble = document.createElement('div');
         aiResponseBubble.classList.add('message-bubble', 'assistant-message');
-           if (isContinuationVar) {
-            aiResponseBubble.innerHTML = "<em>正在生成memory更新信息中...</em>";
+
+        // --- 🆕 动态气泡文本修改 🆕 ---
+        // 优先使用配置中的 processing_msg，如果没有则使用默认文案
+        const dynamicMsg = currentStepConfig?.processing_msg || "正在处理中...";
+
+        if (isBackgroundStep) {
+            // 后台步骤 (Batch >= 2)
+            aiResponseBubble.innerHTML = `<em>${dynamicMsg}</em>`;
         } else {
-            aiResponseBubble.innerHTML = "<em>回应你的行动中...</em>";
+            // 主对话步骤 (Batch 1)
+            // 如果配置里没写，默认显示 "回应你的行动中..."
+            aiResponseBubble.innerHTML = currentStepConfig?.processing_msg
+                ? `<em>${currentStepConfig.processing_msg}</em>`
+                : "<em>回应你的行动中...</em>";
         }
         chatHistoryDiv.appendChild(aiResponseBubble);
         // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
@@ -36395,11 +36606,10 @@ if (typeof is_chat_mode !== 'undefined' && is_chat_mode === 'true') {
 } else {
     console.log("[Nova's Prompt Builder] 使用标准模式，仅组装AI历史消息...");
     // 保持原有逻辑：只获取AI的消息
-    if (isContinuationVar) {
+ 
         recentMessagesForPrompt = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
-    } else {
-        recentMessagesForPrompt = historyForPrompt.filter(m => m && m.role === 'assistant').slice(-hideLatestCount);
-    }
+   
+    
 }
             let promptsForAI = [];
              if (lastUserMessage || isContinuation) {
@@ -36547,22 +36757,16 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
   
  
 
-                if (isContinuationVar) {
+                if (isBackgroundStep) {
     try {
+               // 1. 准备提示词上下文
+            let promptPayload;
 
-        if(old_doubleapi === "true"){
-     // const rawModePreset = buildRawPreset();
-                   
-                  aiFullResponse = await generate({
-                        ...commonConfig,
-                          custom_api: activeCustomApi,
-                        overrides: { chat_history: { prompts: [] } }
-                    });
-        }else{
+            if (currentBatchIndex === 2) {
+                // Batch 2: 保留原有的 Memory Update 逻辑
                 continuationText = ``;
-         const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
-const theAImessage  = formatAsTavernRegexedString(lastAiMessage.content,'ai_output', 'prompt', { depth: -1 });
-            
+                const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+                const theAImessage = formatAsTavernRegexedString(lastAiMessage.content, 'ai_output', 'prompt', { depth: -1 });
         const thetext = `请严格按照game给出的要求更新memory，不要输出其他内容：
 
 玩家输入: ${playerinput}
@@ -36571,25 +36775,42 @@ AI回复: ${theAImessage}
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
 在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，使用<!-- -->标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
      
-          // 1. 使用 await 来等待异步的提示词组装函数完成
-            const promptPayload = await assembleComplexPrompt({ continuationText: thetext });
-              const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
-            
-            localStorage.setItem('last_captured_prompt_api', prompts_be_sent);
+            // 调用组装，使用默认或绑定的书
+                promptPayload = await assembleComplexPrompt({
+                    continuationText: thetext,
+                    targetBookNames: currentStepConfig.bound_worldbooks,
+                     ignoreGlobalInjects: false // 传入配置绑定的书
+                });
+
+  
             // 检查 promptPayload 是否有效
             if (!promptPayload || promptPayload.length === 0) {
                 console.log("[Nova] 组装的提示词为空，已取消本次生成。");
                 toastr.info("没有可用于生成的内容（未找到匹配的世界书）。");
                 return; // 提前退出，不执行生成
             }
+  }else{
+             // Batch > 2: 纯扩展逻辑
+                // 这里可以定义 Batch 3+ 的通用提示词模板
+                const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+                const contextText = ``;
 
+                promptPayload = await assembleComplexPrompt({
+                    continuationText: contextText,
+                    targetBookNames: currentStepConfig.bound_worldbooks || [] ,
+                     ignoreGlobalInjects: true// 必须绑定书，否则为空
+                });
+        }
+           const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
+            const storageKey = `last_captured_prompt_b${currentBatchIndex}_ex${currentExBatchIndex}`;
+            localStorage.setItem(storageKey, prompts_be_sent);
             // 2. 调用我们的自定义请求函数，它现在接收的是 RolePrompt[]
             aiFullResponse = await sendCustomGenerationRequest(
                 promptPayload,
                { signal: abortSignal }
             );
-        }
       
+   
  
         } catch (error) {
             // 捕获 sendCustomGenerationRequest 中抛出的错误（用户取消除外）
@@ -36802,56 +37023,70 @@ const finalAiResponse = hookDataBeforeSave.response;
                 };
 
  
-                   if (isContinuationVar) {
- try {
-   
-            
-     if(old_doubleapi === "true"){
-     // const rawModePreset = buildRawPreset();
-                   
-                  aiFullResponse = await generate({
-                        ...commonConfig,
-                          custom_api: activeCustomApi,
-                        overrides: { chat_history: { prompts: [] } }
-                    });
-        }else{
-              continuationText = ``;
-         const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
-const theAImessage  = formatAsTavernRegexedString(lastAiMessage.content, 'ai_output', 'prompt', { depth: -1 });
-            
+ 
+                if (isBackgroundStep) {
+        try {
+               // 1. 准备提示词上下文
+            let promptPayload;
+
+            if (currentBatchIndex === 2) {
+                // Batch 2: 保留原有的 Memory Update 逻辑
+                continuationText = ``;
+                const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+                const theAImessage = formatAsTavernRegexedString(lastAiMessage.content, 'ai_output', 'prompt', { depth: -1 });
         const thetext = `请严格按照game给出的要求更新memory，不要输出其他内容：
 
 玩家输入: ${playerinput}
 AI回复: ${theAImessage}
 
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
-在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令。`;
+在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，使用<!-- -->标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
      
-          // 1. 使用 await 来等待异步的提示词组装函数完成
-            const promptPayload = await assembleComplexPrompt({ continuationText: thetext });
-                   const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
-            
-            localStorage.setItem('last_captured_prompt_api', prompts_be_sent);
+            // 调用组装，使用默认或绑定的书
+                promptPayload = await assembleComplexPrompt({
+                    continuationText: thetext,
+                    targetBookNames: currentStepConfig.bound_worldbooks,
+                     ignoreGlobalInjects: false // 传入配置绑定的书
+                });
+
+           
             // 检查 promptPayload 是否有效
             if (!promptPayload || promptPayload.length === 0) {
                 console.log("[Nova] 组装的提示词为空，已取消本次生成。");
                 toastr.info("没有可用于生成的内容（未找到匹配的世界书）。");
                 return; // 提前退出，不执行生成
             }
+  }else{
+             // Batch > 2: 纯扩展逻辑
+                // 这里可以定义 Batch 3+ 的通用提示词模板
+                const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
+                const contextText = ``;
 
+                promptPayload = await assembleComplexPrompt({
+                    continuationText: contextText,
+                    targetBookNames: currentStepConfig.bound_worldbooks || [] ,
+                     ignoreGlobalInjects: true// 必须绑定书，否则为空
+                });
+        }
+          const prompts_be_sent = JSON.stringify(promptPayload, null, 2);
+            const storageKey = `last_captured_prompt_b${currentBatchIndex}_ex${currentExBatchIndex}`;
+            localStorage.setItem(storageKey, prompts_be_sent);
+            // 同时也更新一下通用的 api 提示词记录，方便调试
+            // localStorage.setItem('last_captured_prompt_api', prompts_be_sent);
             // 2. 调用我们的自定义请求函数，它现在接收的是 RolePrompt[]
             aiFullResponse = await sendCustomGenerationRequest(
                 promptPayload,
                { signal: abortSignal }
             );
-        }
+      
+   
  
         } catch (error) {
             // 捕获 sendCustomGenerationRequest 中抛出的错误（用户取消除外）
             console.error("[Nova] 变量生成流程最终捕获到错误:", error.message);
-           showNovaAlert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
+            //showNovaAlert(`生成时发生错误: ${error.message}`); // 给用户一个明确的反馈
         }
-                } else {
+                }else {
                      console.log("[Nova] 触发标准生成 (Preset Enabled)");
                      aiFullResponse = await generate({
                         ...commonConfig,
@@ -37101,82 +37336,81 @@ let backupData = {};
 
  
            setTimeout(heavySaveTasks, 500);
- if (double_api === 'true' && !isContinuationVar) {
-    console.log("[Nova's Double API] 检测到双重API请求,准备进入第二阶段...");
-    
-    // 【新增】验证机制 - 检查是否应该继续第二阶段
-    let shouldProceedToPhase2 = true;
-    
-    // 检查1: 新正文是否有文本内容
-    if (!aiFullResponse || aiFullResponse.trim() === '') {
-        console.warn("[Nova's Double API] 阻拦:第一阶段未生成有效文本,取消变量生成");
-        shouldProceedToPhase2 = false;
-    }
-    
-    // 检查2: conversationHistory最新消息是否为AI消息
-    const lastMessage = conversationHistory[conversationHistory.length - 1];
-    if (!lastMessage || lastMessage.role !== 'assistant') {
-        console.warn("[Nova's Double API] 阻拦:历史记录异常,最新消息不是AI回复,取消变量生成");
-        shouldProceedToPhase2 = false;
-    }
-    
-    // 如果任何检查失败,重置批次并跳过第二阶段
-    if (!shouldProceedToPhase2) {
-        await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
-        batches = 1;
-        toastr.warning('第一阶段生成异常,已取消变量更新', '流程中断');
-    } else {
-        // 【新增】检查是否需要弹框确认
-        let userConfirmedPhase2 = true; // 默认为true（不需要确认时）
-        
-        if (if_confirm_phase2_generation === 'true') {
-            console.log("[Nova's Double API] 检测到需要用户确认,弹出确认框...");
-            userConfirmedPhase2 = await createConfirmationModal(
-                '第二阶段生成确认',
-                '第一阶段已完成。是否继续生成记忆更新（第二阶段）？取消了也可以随时使用继续[异步]重新进行第二阶段。'
-            );
-        }
-        
-        // 用户确认后才继续第二阶段
-        if (userConfirmedPhase2) {
-            // 【原有代码】
-            overlay.classList.remove('active');
-            sendButton.disabled = false;
-            sendButton.textContent = '→';
-            document.getElementById('continue-button').disabled = false;
-            document.getElementById('continue-var-button').disabled = false;  
-            
-            await restoreWorldbookNow();
-            console.log("[Nova's Double API] 世界书已恢复至原始状态,开始第二阶段生成。");
+     if (!abortSignal.aborted) {
 
-            await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
-            batches = 2;
-            
-            setTimeout(async ()=>{ 
-                await handleSend({
-                    isContinuation: true,
-                    isContinuationVar: true
-                })
-            }, 500);
+        // 定义寻找下一个可用步骤的函数
+        const findNextStep = (startBatch, startEx) => {
+            let b = startBatch;
+            let ex = startEx + 1; // 先看当前 Batch 的下一个 ExBatch
 
-            await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
-            batches = 1;
-            console.log("[Nova's Double API] 双重流程执行完毕。");
+            // 简单的双重循环查找
+            while (true) {
+                const batchConfig = BATCH_PIPELINE_CONFIG.find(item => item.id === b);
+                if (!batchConfig) return null; // 没有更多 Batch 了，结束
+
+                // 检查当前 Batch 是否有剩余的 ExBatch
+                if (ex < batchConfig.ex_batches.length) {
+                    const nextExBatch = batchConfig.ex_batches[ex];
+                    if (nextExBatch.enabled) {
+                        return { batchIndex: b, exBatchIndex: ex };
+                    }
+                    ex++; // 尝试下一个 ExBatch
+                } else {
+                    // 当前 Batch 结束，进入下一个 Batch
+                    b++;
+                    ex = 0; // 重置 ExBatch 索引
+                }
+            }
+        };
+
+        const nextStep = findNextStep(currentBatchIndex, currentExBatchIndex);
+
+        if (nextStep) {
+            console.log(`[Nova Pipeline] 准备进入下一阶段: Batch ${nextStep.batchIndex} Ex ${nextStep.exBatchIndex}`);
+
+            // 检查是否需要用户确认 (仅在 Batch 1 -> Batch 2 之间保留确认逻辑，或者根据配置)
+            let userConfirmed = true;
+            if (currentBatchIndex === 1 && nextStep.batchIndex === 2 && if_confirm_phase2_generation === 'true') {
+                 userConfirmed = await createConfirmationModal('第二阶段确认', '是否继续生成记忆更新？');
+            }
+
+            if (userConfirmed) {
+                // UI 状态恢复 (解锁按钮，因为 handleSend 开头会重新锁)
+                overlay.classList.remove('active');
+                sendButton.disabled = false;
+
+                // 恢复世界书 (如果之前被污染)
+                await restoreWorldbookNow();
+
+                // 递归调用 handleSend 执行下一步
+                // 使用 setTimeout 避免调用栈过深，并给 UI 喘息时间
+                setTimeout(async () => {
+                    await handleSend({
+                        isContinuation: true, // 保持继续状态
+                        // 传递新的索引
+                        batchIndex: nextStep.batchIndex,
+                        exBatchIndex: nextStep.exBatchIndex,
+                        // 传递旧的标记以兼容
+                        isContinuationVar: nextStep.batchIndex >= 2
+                    });
+                }, 500);
+            } else {
+                console.log("[Nova Pipeline] 用户取消或流程结束。");
+                // 重置状态
+                await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
+            }
         } else {
-            // 用户拒绝第二阶段
-            console.log("[Nova's Double API] 用户拒绝第二阶段生成，取消变量更新");
-            await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
-            batches = 1;
-            toastr.warning('已取消第二阶段生成', '用户选择');
-            
-            overlay.classList.remove('active');
-            sendButton.disabled = false;
-            sendButton.textContent = '→';
-            document.getElementById('continue-button').disabled = false;
-            document.getElementById('continue-var-button').disabled = false;
+            console.log("[Nova Pipeline] 流水线全部执行完毕。");
+            // 全部结束，重置回初始状态
+            await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
+
+            // 触发最终的渲染 (如果配置要求)
+            if (typeof if_render_after_2batch !== 'undefined' && if_render_after_2batch === 'true') {
+                 await worldHelper.renderHistory(false, true);
+            }
         }
     }
-}
+    // --- 🆕 流水线逻辑结束 🆕 ---
     } catch (e) {
         if (double_api === 'true') {
         await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
@@ -46158,7 +46392,7 @@ function setupReconfigModal() {
         // --- 系统设定 (System) ---
         { name: '异步变量', uid: 35, group: 'api', category: 'system', desc: '额外调用一次api专门更新变量，破限较弱。自动识别x-mod/x-dlc开头的世界书信息发送' },
         { name: '同步变量', uid: 40, group: 'api', category: 'system', desc: '正文和变量在同一个回复中' },
-          { name: '老版异步变量', uid: 86, group: 'api', category: 'system', desc: '额外调用一次api专门更新变量，使用原本的api、预设和全部世界书' },
+      
         { name: '强调时间开', uid: 78, group: 'time', category: 'system', desc: '小总结显示时间地点信息，同时给正文自动增加时间戳' },
         { name: '强调时间关', uid: 79, group: 'time', category: 'system', desc: '没有以上功能' },
  
@@ -58845,7 +59079,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const task = tasks[key];
                 const status = String(task['状态'] || '');
                 const isArchived = String(task['_filter']) === 'true';
-if (status === '已完成' && !isArchived) {
+if (status === '已完成' && String(task['_filter'])!="true") {
     const isSettled = task['已结算'];
     // 检查已结算字段，兼容字符串和布尔值
     const settledCheck = isSettled === true || isSettled === 'true';
@@ -58885,7 +59119,7 @@ if (status === '已完成' && !isArchived) {
     }
 
     // 注册到 before_ai_response_save 钩子上
-    window.NovaHooks.add('before_ai_response_save', processAutoArchiveBeforeRender);
+    window.NovaHooks.add('before_message_render', processAutoArchiveBeforeRender);
 
     console.log('[Task System] Auto-archive hook registered on before_ai_response_save.');
 })();

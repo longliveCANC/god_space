@@ -382,9 +382,11 @@
                     <div class="online-updater-modal-description">
                         <p style="color: #e0c080;">即将执行无感更新：</p>
                         <ul style="margin-bottom: 10px;">
-                            <li>1. 更新正则脚本</li>
-                            <li>2. 等待 5 秒缓冲</li>
-                            <li>3. 合并更新世界书 (保留本地 ID: 30, 32)</li>
+                           
+                            <li>1. 合并更新世界书 (保留本地 ID: 30, 32)</li>
+                              <li>2. 等待 2 秒缓冲</li>
+                     <li>3. 更新正则脚本</li>
+                          
                         </ul>
                         <p>请确认你已备份其他重要的个人修改。</p>
                     </div>
@@ -408,10 +410,11 @@
                 localStorage.setItem('pendingDualUpdate', 'processing');
 
                 try {
-                    await performRegexUpdate();
-                    toastr.info('正则更新完毕，等待 5 秒...');
-                    await new Promise(r => setTimeout(r, 5000));
                     await performWorldbookUpdate();
+                    
+                    toastr.info('世界书更新完毕，等待 2 秒...');
+                    await new Promise(r => setTimeout(r, 2000));
+                    await performRegexUpdate();
                     await refreshVersionAfterUpdate();
                     toastr.success('所有更新已完成！');
                 } catch (e) {
