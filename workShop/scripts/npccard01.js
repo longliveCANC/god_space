@@ -1178,7 +1178,44 @@ input:checked + .mod01-nsfw-slider {
 input:checked + .mod01-nsfw-slider:before {
     transform: translateX(14px);
 }
+/* 图标容器：支持 Emoji 或 图片 */
+.mod01-item-icon {
+    font-size: 24px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+}
 
+/* 布局调整：让图标和文字内容并排 */
+.mod01-item-card-main {
+    display: flex;
+    align-items: flex-start;
+}
+
+.mod01-item-content {
+    flex: 1;
+}
+
+/* 备注/评论样式：像诗句一样的美化 */
+.mod01-item-comment {
+    margin-top: 8px;
+    padding-top: 6px;
+     
+    font-size: 11px;
+    font-style: italic;
+ 
+    line-height: 1.4;
+}
+
+/* 数量标签微调：不遮挡评论 */
+.mod01-item-card-count {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    opacity: 0.8;
+}
 
         `;
         document.head.appendChild(style);
@@ -3170,106 +3207,112 @@ this.allItems.forEach((item, index) => {
             container.appendChild(box);
         }
 
-        renderInventoryPaged(container, invData, title) {
-            container.innerHTML = `<div class="mod01-sec-title">${title}</div>`;
+ renderInventoryPaged(container, invData, title) {
+    container.innerHTML = `<div class="mod01-sec-title">${title}</div>`;
 
-            // ★ 妈妈的重点修改：在数据转换时就过滤掉 _ 开头的
-            const itemsArray = Object.entries(invData)
-                .filter(([key, val]) => !key.startsWith('_') && typeof val === 'object')
-                .map(([name, data]) => ({ name, data }));
+    // 过滤掉 _ 开头的私有数据
+    const itemsArray = Object.entries(invData)
+        .filter(([key, val]) => !key.startsWith('_') && typeof val === 'object')
+        .map(([name, data]) => ({ name, data }));
 
-            if (itemsArray.length === 0) {
-                container.innerHTML += '<div style="opacity:0.5;font-size:12px;">此区域暂无物品</div>';
-                return;
-            }
+    if (itemsArray.length === 0) {
+        container.innerHTML += '<div style="opacity:0.5;font-size:12px;">此区域暂无物品</div>';
+        return;
+    }
 
-            const pageSize = 1;
-            let currentPage = 1;
-            const totalPages = Math.ceil(itemsArray.length / pageSize);
+    const pageSize = 1;
+    let currentPage = 1;
+    const totalPages = Math.ceil(itemsArray.length / pageSize);
 
-            const grid = document.createElement('div');
-            grid.className = 'mod01-inventory-grid';
+    const grid = document.createElement('div');
+    grid.className = 'mod01-inventory-grid';
 
-            const controlBar = document.createElement('div');
-            controlBar.className = 'mod01-pagination';
+    const controlBar = document.createElement('div');
+    controlBar.className = 'mod01-pagination';
 
-            const renderPage = () => {
-                grid.innerHTML = '';
-                const startIndex = (currentPage - 1) * pageSize;
-                const slice = itemsArray.slice(startIndex, startIndex + pageSize);
+    const renderPage = () => {
+        grid.innerHTML = '';
+        const startIndex = (currentPage - 1) * pageSize;
+        const slice = itemsArray.slice(startIndex, startIndex + pageSize);
 
-                slice.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'mod01-item-card';
+        slice.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'mod01-item-card';
 
-                    let detailsHtml = '';
-                    const specialKeys = ['quality', 'type', 'num'];
+            let detailsHtml = '';
+            // ★ 新增：将 icon 和 comment 加入特殊键位，不参与常规行列渲染
+            const specialKeys = ['quality', 'type', 'num', 'icon', 'comment'];
 
-                    Object.entries(item.data).forEach(([key, value]) => {
-                         // ★ 妈妈的重点修改：再次确认过滤 _ 字段
-                         if (key.startsWith('_') || specialKeys.includes(key)) return;
-                        const label = this.KEY_MAP[key] || key;
-                        detailsHtml += `
-                            <div class="mod01-item-detail-row">
-                                <span class="mod01-item-detail-label">${label}:</span>
-                                <span class="mod01-item-detail-value">${value}</span>
-                            </div>
-                        `;
-                    });
+            Object.entries(item.data).forEach(([key, value]) => {
+                if (key.startsWith('_') || specialKeys.includes(key)) return;
+                const label = this.KEY_MAP[key] || key;
+                detailsHtml += `
+                    <div class="mod01-item-detail-row">
+                        <span class="mod01-item-detail-label">${label}:</span>
+                        <span class="mod01-item-detail-value">${value}</span>
+                    </div>
+                `;
+            });
 
-                    // ★ 妈妈的重点修改：调整了HTML结构，让种类紧跟名字
-                    card.innerHTML = `
+            // ★ 核心修改：组装增强版 HTML 结构
+            card.innerHTML = `
+                <div class="mod01-item-card-main">
+                    ${item.data.icon ? `<div class="mod01-item-icon">${item.data.icon}</div>` : ''}
+                    <div class="mod01-item-content">
                         <div class="mod01-item-card-header">
                             <span class="mod01-item-card-title">${item.name}</span>
                             ${item.data.type ? `<span class="mod01-item-card-type-tag">${item.data.type}</span>` : ''}
-                            ${item.data.quality ? `<span class="mod01-item-card-quality">${item.data.quality}</span>` : ''}
+                            ${item.data.quality ? `<span class="mod01-item-card-quality" data-q="${item.data.quality}">${item.data.quality}</span>` : ''}
                         </div>
                         <div class="mod01-item-card-details">${detailsHtml}</div>
-                        ${item.data.num ? `<div class="mod01-item-card-count">x${item.data.num}</div>` : ''}
-                    `;
-                    grid.appendChild(card);
-                });
-            };
+                    </div>
+                </div>
+                ${item.data.comment ? `<div class="mod01-item-comment">“ ${item.data.comment} ”</div>` : ''}
+                ${item.data.num ? `<div class="mod01-item-card-count">x${item.data.num}</div>` : ''}
+            `;
+            grid.appendChild(card);
+        });
+    };
 
-            // 分页控制器逻辑 (这部分保持不变)
-            if (totalPages > 1) {
-                const createBtn = (text, onClick) => {
-                    const btn = document.createElement('div');
-                    btn.className = 'mod01-page-btn';
-                    btn.innerText = text;
-                    btn.onclick = onClick;
-                    return btn;
-                };
-                const btnFirst = createBtn('<<', () => changePage(1));
-                const btnPrev  = createBtn('<',  () => changePage(currentPage - 1));
-                const pageInfo = document.createElement('div');
-                pageInfo.className = 'mod01-page-info';
-                const btnNext  = createBtn('>',  () => changePage(currentPage + 1));
-                const btnLast  = createBtn('>>', () => changePage(totalPages));
+    // 分页控制器逻辑 (保持不变)
+    if (totalPages > 1) {
+        const createBtn = (text, onClick) => {
+            const btn = document.createElement('div');
+            btn.className = 'mod01-page-btn';
+            btn.innerText = text;
+            btn.onclick = onClick;
+            return btn;
+        };
+        const btnFirst = createBtn('<<', () => changePage(1));
+        const btnPrev  = createBtn('<',  () => changePage(currentPage - 1));
+        const pageInfo = document.createElement('div');
+        pageInfo.className = 'mod01-page-info';
+        const btnNext  = createBtn('>',  () => changePage(currentPage + 1));
+        const btnLast  = createBtn('>>', () => changePage(totalPages));
 
-                const updateControls = () => {
-                    pageInfo.innerText = `${currentPage} / ${totalPages}`;
-                    const setDis = (btn, cond) => cond ? btn.classList.add('disabled') : btn.classList.remove('disabled');
-                    setDis(btnFirst, currentPage <= 1); setDis(btnPrev, currentPage <= 1);
-                    setDis(btnNext, currentPage >= totalPages); setDis(btnLast, currentPage >= totalPages);
-                };
+        const updateControls = () => {
+            pageInfo.innerText = `${currentPage} / ${totalPages}`;
+            const setDis = (btn, cond) => cond ? btn.classList.add('disabled') : btn.classList.remove('disabled');
+            setDis(btnFirst, currentPage <= 1); setDis(btnPrev, currentPage <= 1);
+            setDis(btnNext, currentPage >= totalPages); setDis(btnLast, currentPage >= totalPages);
+        };
 
-                const changePage = (target) => {
-                    if (target < 1 || target > totalPages) return;
-                    currentPage = target;
-                    renderPage();
-                    updateControls();
-                };
-
-                controlBar.appendChild(btnFirst); controlBar.appendChild(btnPrev); controlBar.appendChild(pageInfo);
-                controlBar.appendChild(btnNext); controlBar.appendChild(btnLast);
-                container.appendChild(controlBar);
-                updateControls();
-            }
-
-            container.appendChild(grid);
+        const changePage = (target) => {
+            if (target < 1 || target > totalPages) return;
+            currentPage = target;
             renderPage();
-        }
+            updateControls();
+        };
+
+        controlBar.appendChild(btnFirst); controlBar.appendChild(btnPrev); controlBar.appendChild(pageInfo);
+        controlBar.appendChild(btnNext); controlBar.appendChild(btnLast);
+        container.appendChild(controlBar);
+        updateControls();
+    }
+
+    container.appendChild(grid);
+    renderPage();
+}
  
        // --- 修改：接收 npcName 和 npcTag 参数 ---
         renderMemoriesPaged(container, memObj, npcName, npcTag) {
