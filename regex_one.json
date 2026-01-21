@@ -26975,6 +26975,9 @@ window.GlobalChatAudio = {
 
      // --- 位于 GlobalChatAudio 对象内部 ---
 
+     // --- 位于 GlobalChatAudio 对象内部 ---
+     // --- 位于 GlobalChatAudio 对象内部 ---
+
     bindWidgetEvents: function() {
         const widget = this.widgetEl;
         const discArea = document.getElementById('widget-disc-area');
@@ -26983,35 +26986,47 @@ window.GlobalChatAudio = {
         let hasMoved = false;
         let startX, startY, initialLeft, initialBottom;
 
-        // mousedown 和 mousemove 逻辑保持不变...
-        discArea.addEventListener('mousedown', (e) => {
+        // --- 统一的事件处理逻辑 ---
+
+        const handleStart = (e) => {
+            const point = e.touches ? e.touches[0] : e;
             isDragging = true;
             hasMoved = false;
             widget.classList.add('dragging');
-            startX = e.clientX;
-            startY = e.clientY;
+
+            startX = point.clientX;
+            startY = point.clientY;
+
             const rect = widget.getBoundingClientRect();
             initialLeft = rect.left;
             initialBottom = window.innerHeight - rect.bottom;
-        });
+        };
 
-        document.addEventListener('mousemove', (e) => {
+        const handleMove = (e) => {
             if (!isDragging) return;
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
+            if (e.cancelable && e.type === 'touchmove') {
+                e.preventDefault(); // 防止手机滚动
+            }
+
+            const point = e.touches ? e.touches[0] : e;
+            const dx = point.clientX - startX;
+            const dy = point.clientY - startY;
+
             if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved = true;
+
+            // 拖拽时暂时禁用 CSS transform，保证跟手
             widget.style.left = (initialLeft + dx) + 'px';
             widget.style.bottom = (initialBottom - dy) + 'px';
             widget.style.transform = 'none';
-        });
+        };
 
-        document.addEventListener('mouseup', (e) => {
+        const handleEnd = (e) => {
             if (!isDragging) return;
             isDragging = false;
             widget.classList.remove('dragging');
 
             if (hasMoved) {
-                // 1. 强制收起详情面板和抽屉
+                // 1. 收起面板
                 widget.classList.remove('expanded');
                 const drawer = document.getElementById('widget-drawer');
                 if (drawer) {
@@ -27019,36 +27034,37 @@ window.GlobalChatAudio = {
                     widget.style.overflow = 'hidden';
                 }
 
-                // 2. 激活控件以显示完整圆盘
-                widget.classList.add('active');
+                // 2. 边缘吸附核心逻辑
+                // 强制回到左侧边缘位置
+                widget.style.left = '-20px';
 
-                // 3. 设置延时器，2秒后自动吸附
-           if (this.activeTimer) clearTimeout(this.activeTimer);
-this.activeTimer = setTimeout(() => {
-    if (!widget.matches(':hover')) {
-        widget.classList.remove('active');
-        // 吸附时检查并收起展开状态
-        if (widget.classList.contains('expanded')) {
-            widget.classList.remove('expanded');
-            const drawer = document.getElementById('widget-drawer');
-            if (drawer) {
-                drawer.classList.remove('open');
-                widget.style.overflow = 'hidden';
-            }
-        }
-    }
-}, 2000);
+                // 【关键修改】：清除内联 transform，让 CSS 的 translateX(-55%) 重新生效
+                widget.style.transform = '';
 
-                // 阻止后续的点击事件
+                // 3. 移除激活状态，触发 CSS 缩回动画
+                widget.classList.remove('active');
+
+                // 4. 清理定时器和事件
+                if (this.activeTimer) clearTimeout(this.activeTimer);
+
                 const preventClick = (ev) => {
                     ev.stopPropagation();
                     document.removeEventListener('click', preventClick, true);
                 };
                 document.addEventListener('click', preventClick, true);
             }
-        });
+        };
 
-        // 进度条点击逻辑保持不变...
+        // --- 绑定事件 ---
+        discArea.addEventListener('mousedown', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
+
+        discArea.addEventListener('touchstart', handleStart, { passive: false });
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd);
+
+        // 进度条点击
         const progCtn = document.getElementById('widget-prog-ctn');
         progCtn.addEventListener('click', (e) => {
             const rect = progCtn.getBoundingClientRect();
@@ -27747,7 +27763,7 @@ qqSearch: async function(songName, singerName, httpGet) {
         // 歌名相似度计算
         if (dataSongNorm === querySongNorm) {
             score += 100;
-            console.log('    ✓ 歌名完全匹配 +200');
+            console.log('    ✓ 歌名完全匹配 +100');
         } else {
             // 计算字符匹配率
             const songMatchRatio = calculateMatchRatio(querySongNorm, dataSongNorm);
@@ -28305,6 +28321,7 @@ GlobalChatAudio.init();
 .widget-btn svg {
     display: block; /* 消除 inline 间隙 */
 }
+    
     `;
     document.head.appendChild(style);
 }
@@ -28479,7 +28496,7 @@ await initDisplay();
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim().replace('music-','');
-        const artist = (parts[1] || '未知歌手').trim();
+        const artist = (parts[1] || '').trim();
         
         const domId = 'music_' + Math.floor(Math.random() * 1000000);
         const safeSong = song.replace(/'/g, "\\'");
@@ -28659,7 +28676,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim();
-        const artist = (parts[1] || '未知歌手').trim();
+        const artist = (parts[1] || '').trim();
         
         const domId = 'music_' + Math.floor(Math.random() * 1000000);
         const safeSong = song.replace(/'/g, "\\'");
@@ -53023,7 +53040,7 @@ const switchActiveChat = (type, id) => {
         raw = raw.replace(/[\r\n]/g, '').trim();
         const parts = raw.split('$');
         const song = (parts[0] || '未知歌曲').trim();
-        const artist = (parts[1] || '未知歌手').trim();
+        const artist = (parts[1] || '').trim();
         
         const domId = 'music_' + Math.floor(Math.random() * 1000000);
         const safeSong = song.replace(/'/g, "\\'");
