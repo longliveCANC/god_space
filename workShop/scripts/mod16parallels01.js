@@ -859,6 +859,10 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
                         title = value.title;
                         content = value.content;
                         source = value.source || '未知来源';
+                    }   else if (value.title && value.desc) {
+                       title = value.title;
+                        content = value.desc;
+                         source = value.source || '未知来源';
                     }
                     // 格式3: 最新的格式，值为只有一个键值对的对象 { "标题": "内容 from 来源" }
                     else if (Object.keys(value).length === 1) {
