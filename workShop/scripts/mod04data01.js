@@ -384,7 +384,7 @@
             position: relative;
         }
         .mod04-comment-box::before {
-            content: "USER NOTE";
+            content: "NOTE";
             position: absolute;
             top: -10px; left: 10px;
             background: #ff4d4d;
