@@ -828,7 +828,7 @@
         e.preventDefault();
 
         // 提示用户
-        worldHelper.showNovaAlert('正在连接世界本源...', 'info');
+        // worldHelper.showNovaAlert('正在连接世界本源...', 'info');
         await autoImportDiyAttributes();
 
         // --- 新增/修改：读取本地联动规则 ---
