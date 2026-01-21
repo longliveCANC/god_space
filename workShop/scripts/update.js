@@ -23,7 +23,7 @@
         }
         /* 模态框基础样式 */
         .online-updater-modal {
-           display: none !important; /* 默认隐藏，但用 important 提升优先级 */
+           display: none !important;
             position: fixed;
             z-index: 1050;
             left: 0;
@@ -176,13 +176,11 @@
             const descEl = modal.querySelector('.online-updater-modal-description');
             if (descEl) descEl.innerHTML = descriptionHTML;
         }
-        /* 修改这里：使用 setProperty 来覆盖 !important */
         modal.style.setProperty('display', 'block', 'important');
     }
 
      function hideModal(modalId) {
         const modal = document.getElementById(modalId);
-        /* 修改这里 */
         if (modal) modal.style.setProperty('display', 'none', 'important');
     }
 
@@ -239,24 +237,17 @@
     }
 
     // =========================================================================
-    // 3. 版本刷新函数 (关键！)
+    // 3. 版本刷新函数
     // =========================================================================
-    /**
-     * 更新完成后，立即重新获取版本号
-     */
     async function refreshVersionAfterUpdate() {
         console.log('[Updater] 更新完成，正在刷新版本号...');
-        
         const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
-        
-        // 尝试从 loader.js 定义的地方找到当前版本
         const targetWindow = findVarInFrames(window.top, 'current_game_version');
-        
+
         if (targetWindow && targetWindow.current_game_version) {
             const newVersion = targetWindow.current_game_version;
             window.top[STABLE_VERSION_VAR] = newVersion;
             console.log(`[Updater] 版本已刷新: ${newVersion}`);
-            toastr.success(`版本已刷新至 ${newVersion}`);
             return newVersion;
         } else {
             console.warn('[Updater] 无法找到新的版本号，可能需要页面刷新');
@@ -264,13 +255,9 @@
         }
     }
 
-    /**
-     * 递归遍历所有 iFrame，寻找目标变量（从 loader.js 复制）
-     */
     function findVarInFrames(currentWindow, targetVar) {
         try {
             if (typeof currentWindow[targetVar] !== 'undefined') {
-                console.log(`[Updater] 在窗口 ${currentWindow.location.href} 中找到变量 '${targetVar}'`);
                 return currentWindow;
             }
         } catch (e) {
@@ -292,24 +279,26 @@
 
     async function performWorldbookUpdate() {
         const worldbookName = '小蝌蚪找妈妈-同层版';
-        const uidsToBackup = [30, 32];
+        const uidsToBackup = [30, 32]; // 需要跳过更新（保留本地）的ID
         const bookJsonUrl = createCacheBustedUrl('https://longlivecanc.github.io/god_space/book.json');
 
         try {
             const allBooks = TavernHelper.getWorldbookNames();
 
+            // 1. 备份特定ID
             if (allBooks.includes(worldbookName)) {
                 toastr.info(`正在备份「${worldbookName}」中的特定词条...`);
                 const currentWorldbook = await TavernHelper.getWorldbook(worldbookName);
                 const backedUpEntries = currentWorldbook.filter(entry => uidsToBackup.includes(entry.uid));
 
                 localStorage.setItem('worldbookBackup', JSON.stringify(backedUpEntries));
-                toastr.success(`已成功备份 ${backedUpEntries.length} 个词条`);
+                toastr.success(`已成功备份 ${backedUpEntries.length} 个本地保留词条`);
 
                 await TavernHelper.deleteWorldbook(worldbookName);
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
+            // 2. 导入新书
             const rawWorldbookContent = await fetch(bookJsonUrl).then(res => res.text());
             await TavernHelper.importRawWorldbook(`${worldbookName}.json`, rawWorldbookContent);
 
@@ -317,12 +306,14 @@
             await waitForWorldToSettle(worldbookName);
             await new Promise(resolve => setTimeout(resolve, 500));
 
+            // 3. 恢复备份的ID (跳过更新)
             const savedBackup = localStorage.getItem('worldbookBackup');
             if (savedBackup) {
                 const backedUpEntries = JSON.parse(savedBackup);
-                toastr.info('正在恢复已备份的词条...');
+                toastr.info('正在恢复保留的词条...');
 
                 await TavernHelper.updateWorldbookWith(worldbookName, (newWorldbook) => {
+                    // 移除新书中可能存在的这些ID，用备份的覆盖
                     const cleanedNewWorldbook = newWorldbook.filter(entry => !uidsToBackup.includes(entry.uid));
                     return [...cleanedNewWorldbook, ...backedUpEntries];
                 });
@@ -338,6 +329,7 @@
             TavernHelper.builtin.reloadEditor(worldbookName, true);
             await new Promise(resolve => setTimeout(resolve, 400));
 
+            // 4. 重新绑定
             const currentBindings = await TavernHelper.getCharWorldbookNames('current') || { primary: null, additional: [] };
             currentBindings.primary = worldbookName;
             await TavernHelper.rebindCharWorldbooks('current', currentBindings);
@@ -348,140 +340,10 @@
                 toastr.success(`当前角色已和「${worldbookName}」绑定！`);
             }
 
-            // ✨ 更新完成后立即刷新版本号
-            await refreshVersionAfterUpdate();
-
         } catch (error) {
-            toastr.error(`出错了，请查看控制台。`);
-            console.error(`执行更新时发生错误:`, error);
+            toastr.error(`世界书更新出错，请查看控制台。`);
+            console.error(`执行世界书更新时发生错误:`, error);
             localStorage.removeItem('worldbookBackup');
-        }
-    }
-
-    async function checkForFutureEchoes(isManualTrigger = false) {
-        // debugToast('函数开始执行', 1);
-
-        if (isManualTrigger) {
-            toastr.info('正在向github发出问询，请稍候...');
-        }
-
-        try {
-            // debugToast('进入 try 块', 2);
-            // debugToast('准备调用 loadRemoteJson', 3);
-            const updateLogs = await loadRemoteJson(
-                'https://longlivecanc.github.io/god_space/update_log.json',
-                []
-            );
-            // debugToast('loadRemoteJson 执行完毕', 4, 'success');
-
-            if (!Array.isArray(updateLogs) || updateLogs.length === 0) {
-                // debugToast('日志为空，准备退出', 5);
-                if (isManualTrigger) toastr.warning('未找到有效的更新日志。');
-                return;
-            }
-            // debugToast('日志不为空，继续执行', 6);
-
-            const latestVersionInfo = updateLogs[updateLogs.length - 1];
-            const latestVersion = latestVersionInfo.version;
-            // debugToast(`获取到最新版本号: ${latestVersion}`, 7);
-
-            const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
-            const current_game_version = window.top[STABLE_VERSION_VAR];
-            // debugToast(`获取到当前版本号: ${current_game_version}`, 8);
-
-            if (!latestVersion || !current_game_version) {
-                debugToast('版本号缺失，无法比较', 9, 'error');
-                toastr.error(`版本号缺失，无法比较。最新: ${latestVersion}, 当前: ${current_game_version}`);
-                return;
-            }
-            // debugToast('版本号齐全，准备比较', 10);
-
-            if (compareVersions(latestVersion, current_game_version) > 0) {
-                // debugToast('发现新版本！准备构建UI', 11, 'success');
-
-                const relevantLogs = updateLogs.filter(log => compareVersions(log.version, current_game_version) > 0);
-
-                let changelogHTML = relevantLogs.reverse().map(log => `
-                    <div class="update-log-entry">
-                        <h3>v${log.version} <span>(${log.date})</span></h3>
-                        <ul>
-                            ${log.changes.map(change => `<li>${change}</li>`).join('')}
-                        </ul>
-                    </div>
-                `).join('');
-
-    if (!document.getElementById('update-modal')) {
-    // debugToast('未找到模态框DOM，正在创建...', 11.1);
-    const modalHTML = `
-    <div id="update-modal" class="online-updater-modal">
-        <div class="online-updater-modal-content">
-            <button class="online-updater-modal-close">×</button>
-            <div class="online-updater-modal-title">发现来自未来的讯息！</div>
-            <div class="online-updater-modal-description"></div>
-            <div class="online-updater-modal-actions">
-                <button id="cancel-update-btn" class="online-updater-control-btn">稍后</button>
-                <button id="perform-update-btn" class="online-updater-control-btn online-updater-primary-btn"></button>
-            </div>
-        </div>
-    </div>`;
-    
-    // ✅ 改为这样：
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = modalHTML;
-        const modalElement = tempDiv.firstElementChild;  // 使用 firstElementChild 而不是 firstChild
-    
-    
-    if (modalElement) {
-        document.body.appendChild(modalElement);
-        
-        // 现在绑定事件
-        modalElement.addEventListener('click', (event) => {
-            if (event.target === modalElement) hideModal('update-modal');
-        });
-        
-        const closeBtn = modalElement.querySelector('.online-updater-modal-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => hideModal('update-modal'));
-        }
-        
-        const cancelBtn = modalElement.querySelector('#cancel-update-btn');
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => hideModal('update-modal'));
-        }
-        
-        const performBtn = modalElement.querySelector('#perform-update-btn');
-        if (performBtn) {
-            performBtn.addEventListener('click', () => {
-                hideModal('update-modal');
-                showBackupConfirmation();
-            });
-        }
-        
-        // debugToast('模态框DOM创建并绑定事件成功', 11.2, 'success');
-    } else {
-        // debugToast('模态框创建失败：firstChild 为 null', 11.1, 'error');
-        toastr.error('无法创建更新对话框');
-        return;
-    }
-}
-
-                const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
-                document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
-
-                // debugToast('准备显示模态框', 11.3);
-                showModal('update-modal', modalTitle, changelogHTML);
-
-            } else {
-                // debugToast('当前已是最新版本', 12);
-                if (isManualTrigger) {
-                    toastr.success(`太棒了！你的世界已是最新版本(${current_game_version})，无需更新。`);
-                }
-            }
-            // debugToast('函数正常执行完毕', 13, 'success');
-
-        } catch (error) {
-            debugToast('进入了 catch 块！', 99, 'error');
-            toastr.error(`发生严重错误: ${error.message}`);
         }
     }
 
@@ -522,9 +384,8 @@
             const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
             const updatedPurgeRule = {
                 ...oldPurgeRuleTemplate,
-                      find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)/gs", // 赋予其全新的侦测法则
-     
-                };
+                find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)/gs",
+            };
 
             const otherCharacterRules = allCharacterRules.filter(
                 rule => rule.script_name !== '统一' && rule.script_name !== '去除1'
@@ -535,14 +396,106 @@
 
             await TavernHelper.replaceTavernRegexes(finalCharacterRules, { scope: 'character' });
 
-            toastr.success(`正则已更新"统一"与"去除1"并置于最前，其他正则已保留！`);
-
-            // ✨ 更新完成后立即刷新版本号
-            await refreshVersionAfterUpdate();
+            toastr.success(`正则已更新"统一"与"去除1"并置于最前！`);
 
         } catch (error) {
             console.error('在重塑角色法则的过程中发生了意料之外的次元风暴:', error);
-            toastr.error('更新失败了。请查看控制台中的详细记录。');
+            toastr.error('正则更新失败了。请查看控制台中的详细记录。');
+            throw error; // 抛出错误以中断后续流程
+        }
+    }
+
+    async function checkForFutureEchoes(isManualTrigger = false) {
+        if (isManualTrigger) {
+            toastr.info('正在向github发出问询，请稍候...');
+        }
+
+        try {
+            const updateLogs = await loadRemoteJson(
+                'https://longlivecanc.github.io/god_space/update_log.json',
+                []
+            );
+
+            if (!Array.isArray(updateLogs) || updateLogs.length === 0) {
+                if (isManualTrigger) toastr.warning('未找到有效的更新日志。');
+                return;
+            }
+
+            const latestVersionInfo = updateLogs[updateLogs.length - 1];
+            const latestVersion = latestVersionInfo.version;
+            const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
+            const current_game_version = window.top[STABLE_VERSION_VAR];
+
+            if (!latestVersion || !current_game_version) {
+                toastr.error(`版本号缺失，无法比较。最新: ${latestVersion}, 当前: ${current_game_version}`);
+                return;
+            }
+
+            if (compareVersions(latestVersion, current_game_version) > 0) {
+                const relevantLogs = updateLogs.filter(log => compareVersions(log.version, current_game_version) > 0);
+
+                let changelogHTML = relevantLogs.reverse().map(log => `
+                    <div class="update-log-entry">
+                        <h3>v${log.version} <span>(${log.date})</span></h3>
+                        <ul>
+                            ${log.changes.map(change => `<li>${change}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+                if (!document.getElementById('update-modal')) {
+                    const modalHTML = `
+                    <div id="update-modal" class="online-updater-modal">
+                        <div class="online-updater-modal-content">
+                            <button class="online-updater-modal-close">×</button>
+                            <div class="online-updater-modal-title">发现来自未来的讯息！</div>
+                            <div class="online-updater-modal-description"></div>
+                            <div class="online-updater-modal-actions">
+                                <button id="cancel-update-btn" class="online-updater-control-btn">稍后</button>
+                                <button id="perform-update-btn" class="online-updater-control-btn online-updater-primary-btn"></button>
+                            </div>
+                        </div>
+                    </div>`;
+
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = modalHTML;
+                    const modalElement = tempDiv.firstElementChild;
+
+                    if (modalElement) {
+                        document.body.appendChild(modalElement);
+
+                        modalElement.addEventListener('click', (event) => {
+                            if (event.target === modalElement) hideModal('update-modal');
+                        });
+
+                        const closeBtn = modalElement.querySelector('.online-updater-modal-close');
+                        if (closeBtn) closeBtn.addEventListener('click', () => hideModal('update-modal'));
+
+                        const cancelBtn = modalElement.querySelector('#cancel-update-btn');
+                        if (cancelBtn) cancelBtn.addEventListener('click', () => hideModal('update-modal'));
+
+                        const performBtn = modalElement.querySelector('#perform-update-btn');
+                        if (performBtn) {
+                            performBtn.addEventListener('click', () => {
+                                hideModal('update-modal');
+                                showBackupConfirmation();
+                            });
+                        }
+                    }
+                }
+
+                const modalTitle = `发现新版本！ (当前 v${current_game_version} → 最新 v${latestVersion})`;
+                document.querySelector('#perform-update-btn').textContent = `立即更新至 v${latestVersion}`;
+                showModal('update-modal', modalTitle, changelogHTML);
+
+            } else {
+                if (isManualTrigger) {
+                    toastr.success(`太棒了！你的世界已是最新版本(${current_game_version})，无需更新。`);
+                }
+            }
+
+        } catch (error) {
+            toastr.error(`发生严重错误: ${error.message}`);
         }
     }
 
@@ -555,8 +508,8 @@
                     <div class="online-updater-modal-title">最后一步确认</div>
                     <div class="online-updater-modal-description">
                         <p style="color: #e0c080; font-weight: bold;">此次更新将会覆盖核心正则和世界书文件。</p>
-                        <p style="color: #e0c080; font-weight: bold;">若无法正常更新，请分别使用强制更新按钮来更新。</p>
-                        <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】。准备好了吗？</p>
+                        <p>为了保护你的心血，请确认你已经备份好了所有重要的【对原世界书的更改】。</p>
+                        <p>更新流程：更新正则 -> 等待5秒 -> 更新世界书(保留特定ID)。</p>
                     </div>
                     <div class="online-updater-modal-actions">
                         <button id="cancel-final-update-btn" class="online-updater-control-btn">我先去备份</button>
@@ -564,39 +517,61 @@
                     </div>
                 </div>
             </div>`;
-          const tempDiv = document.createElement('div');
-tempDiv.innerHTML = confirmationModalHTML;
- const confirmModal = tempDiv.firstElementChild;  // ✅ 改这里
-if (confirmModal) {
-    document.body.appendChild(confirmModal);
-            const modal = document.getElementById('backup-confirmation-modal');
-            modal.querySelector('.online-updater-modal-close').onclick = () => hideModal('backup-confirmation-modal');
-            modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) hideModal('backup-confirmation-modal');
-            });
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = confirmationModalHTML;
+            const confirmModal = tempDiv.firstElementChild;
 
-            document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
-                hideModal('backup-confirmation-modal');
+            if (confirmModal) {
+                document.body.appendChild(confirmModal);
+                const modal = document.getElementById('backup-confirmation-modal');
 
-                localStorage.setItem('pendingDualUpdate', 'step1_worldbook');
+                modal.querySelector('.online-updater-modal-close').onclick = () => hideModal('backup-confirmation-modal');
+                modal.querySelector('#cancel-final-update-btn').onclick = () => hideModal('backup-confirmation-modal');
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) hideModal('backup-confirmation-modal');
+                });
 
-                toastr.info('启动第一阶段：正则更新中...');
-                await performRegexUpdate();
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // =========================================================================
+                // ✨ 核心更新流程逻辑 (简化版)
+                // =========================================================================
+                document.getElementById('confirm-final-update-btn').addEventListener('click', async () => {
+                    hideModal('backup-confirmation-modal');
 
-                localStorage.setItem('pendingDualUpdate', 'step2_regex');
-                toastr.info('启动第二阶段，世界书更新中...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                await performWorldbookUpdate();
+                    // 标记开始 (Flag保留)
+                    localStorage.setItem('pendingDualUpdate', 'processing');
 
-                localStorage.removeItem('worldbookBackup');
-                localStorage.removeItem('pendingDualUpdate');
-            });
+                    try {
+                        // 1. 更新正则
+                        toastr.info('启动第一阶段：正则更新中...');
+                        await performRegexUpdate();
+
+                        // 2. 等待 5 秒
+                        toastr.info('正则更新完成，等待5秒缓冲...');
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+
+                        // 3. 更新世界书 (内部包含跳过特定ID逻辑)
+                        toastr.info('启动第二阶段，世界书更新中...');
+                        await performWorldbookUpdate();
+
+                        // 4. 刷新版本号
+                        await refreshVersionAfterUpdate();
+
+                        toastr.success('所有更新流程执行完毕！');
+
+                    } catch (e) {
+                        console.error(e);
+                        toastr.error('更新过程中断，请检查控制台。');
+                    } finally {
+                        // 清理 Flag
+                        localStorage.removeItem('worldbookBackup');
+                        localStorage.removeItem('pendingDualUpdate');
+                    }
+                });
+            }
         }
         showModal('backup-confirmation-modal');
     }
-}
+
     // =========================================================================
     // 5. 全局API暴露与初始化
     // =========================================================================
