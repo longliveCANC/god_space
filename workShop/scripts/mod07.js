@@ -889,8 +889,8 @@
 
         <div class="m7-actions">
             <button class="m7-btn danger" id="m7-close">关闭</button>
-            <button class="m7-btn primary" id="m7-save">应用</button>
-              <button class="m7-btn" id="m7-view-toggle">🔗 联动配置</button>
+            <button class="m7-btn primary" id="m7-save">应用(记得点击！点击后重构或重开生效)</button>
+              <button class="m7-btn" id="m7-view-toggle">🔗 衍生属性配置</button>
         </div>
     </div>
     <div class="m7-body">
