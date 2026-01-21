@@ -14811,7 +14811,7 @@ pointer-events: auto;
 
     <div class="toolbar-btn-group">
 
-        <button id="ws-manage-btn" class="control-btn">⚙️ 管理模组</button>
+        <button id="ws-manage-btn" class="control-btn">⚙️ 管理拓展</button>
 
 
         <button id="ws-dev-menu-btn" class="control-btn" style="border-color: var(--secondary-color); color: var(--secondary-color);">🛠️ 开发者</button>
@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.13';
+window.current_game_version = '3.6.14';
 
 
 
@@ -43567,6 +43567,13 @@ const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') ||
  old_doubleapi = String(chatdata.old_doubleapi||'false');
 
 double_api = String(chatdata.double_api||'false');
+if(double_api === "false"){
+BATCH_PIPELINE_CONFIG[2].ex_batches[0].enabled = false;
+
+}else{
+   BATCH_PIPELINE_CONFIG[2].ex_batches[0].enabled = true;
+ 
+}
 batches = Number(chatdata.batches||1);
 ifScanMemory = String(chatdata.if_scan_memory||'false');
 playerinput= String(chatdata.玩家输入||"");
@@ -43577,8 +43584,8 @@ dice_use= String(chatdata.dice_use||'true');
     weneedshop = String(localStorage.getItem('we_need_shop')) || 'false';
     is_show_notifications = String(localStorage.getItem('is_show_notifications')) || 'true';
     noBackup = String(localStorage.getItem('is_no_backup')) || 'false';
-    // if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'true';
-    if_render_after_2batch = "true";
+    if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'true';
+    // if_render_after_2batch = "true";
     is_worldbook_lock = String(localStorage.getItem('is_worldbook_lock')) || 'false';
     if_waiting_roll = String(localStorage.getItem('if_waiting_roll')) || 'false';
     is_quick_rewirte_backup = String(localStorage.getItem('is_quick_rewirte_backup')) || 'false';
@@ -46410,7 +46417,7 @@ function setupReconfigModal() {
         { name: '一直启用商店', key: 'we_need_shop', default: 'false', desc: '使商店即使在末日和无世界观也可以开启' },
         { name: '显示更新通知', key: 'is_show_notifications', default: 'true', desc: '关闭后不再弹出变量更新提示' },
         { name: '不再备份快照', key: 'is_no_backup', default: 'false', desc: '不再进行存档快照备份和每回合消息的备份' },
-        // { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染。异步必须开启这个' },
+        { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染。异步最好开启这个去渲染弹幕和评论区' },
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
            { name: '异步前确认', key: 'if_confirm_phase2_generation', default: 'false', desc: '开启后，在生成异步前，会弹出一个确认框' },
