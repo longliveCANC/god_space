@@ -15092,7 +15092,7 @@ pointer-events: auto;
                 font-weight: bold;
                 transition: all 0.3s ease;
                 box-shadow: 0 0 10px var(--glow-color);
-            ">正文层</button>
+            ">正文层(暂不可用)</button>
             <button class="prompt-tab" data-tab="api" style="
                 background: rgba(0, 0, 0, 0.4);
                 border: 1px solid var(--border-color);
@@ -15103,7 +15103,7 @@ pointer-events: auto;
                 cursor: pointer;
                 font-weight: bold;
                 transition: all 0.3s ease;
-            ">变量层</button>
+            ">变量层(暂不可用)</button>
         </div>
         
         <!-- 正文层内容 -->
@@ -15191,7 +15191,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.14';
+window.current_game_version = '3.6.15';
 
 
 
@@ -15318,7 +15318,7 @@ let userName = '用户';
                 id: 0,
                 name: "Standard Generation",
                 enabled: true,
-                render: true,
+                render: false,
                 type: 'chat',
                 api_config: 'default',
                 processing_msg: "回应你的行动中..." // <--- 新增
@@ -15426,7 +15426,14 @@ delete: delete('path', 'key');
     
     return { isEnabled, targetHeight, pixelSize };
 }
- 
+ function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
         const themes = [
     // --- 你最初的赛博朋克系列，它们是基石 ---
     { // 主题一：赛博蓝 (Cyber Blue)
@@ -27919,35 +27926,35 @@ qqSearch: async function(songName, singerName, httpGet) {
         // 歌名相似度计算
         if (dataSongNorm === querySongNorm) {
             score += 100;
-            console.log('    ✓ 歌名完全匹配 +100');
+            // console.log('    ✓ 歌名完全匹配 +100');
         } else {
             // 计算字符匹配率
             const songMatchRatio = calculateMatchRatio(querySongNorm, dataSongNorm);
             const songScore = Math.floor(songMatchRatio * 150);
             score += songScore;
-            console.log(`    ○ 歌名相似度 ${(songMatchRatio * 100).toFixed(1)}% +${songScore}`);
+            // console.log(`    ○ 歌名相似度 ${(songMatchRatio * 100).toFixed(1)}% +${songScore}`);
         }
         
         // 歌手相似度计算
         if (querySingerNorm && dataSingerNorm) {
             if (dataSingerNorm === querySingerNorm) {
                 score += 100;
-                console.log('    ✓ 歌手完全匹配 +100');
+                // console.log('    ✓ 歌手完全匹配 +100');
             } else {
                 const singerMatchRatio = calculateMatchRatio(querySingerNorm, dataSingerNorm);
                 const singerScore = Math.floor(singerMatchRatio * 80);
                 score += singerScore;
-                console.log(`    ○ 歌手相似度 ${(singerMatchRatio * 100).toFixed(1)}% +${singerScore}`);
+                // console.log(`    ○ 歌手相似度 ${(singerMatchRatio * 100).toFixed(1)}% +${singerScore}`);
             }
         }
         
         // Live版本惩罚
         if (songData.song.match(/live/gi)) {
             score -= 30;
-            console.log('    ✗ Live版本 -30');
+            // console.log('    ✗ Live版本 -30');
         }
         
-        console.log('    总分:', score);
+        // console.log('    总分:', score);
         return score;
     };
 
@@ -29870,8 +29877,9 @@ async function processFinalMessageModules() {
         const content = lastMessage.content;
        await processSpecialModulesInMessage(content);
         if(is_show_notifications === 'true'){
+            console.log('renderhistory的通知要来了');
         // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
-           handleNotificationsFromBatch();
+           debouncedHandle();
         }
     }
 
@@ -33171,13 +33179,10 @@ const extractBalancedArgs = (str, startTrigger) => {
 };
 
 
-/**
- * 💖 妈妈的新魔法：直接处理已解析的操作列表，不再辛苦地重新阅读文本
- * @param {Array} operations - 包含 {type, path, key, value, ...} 的操作记录列表
- */
-function handleNotificationsFromBatch(operations) {
+ const debouncedHandle = debounce((ops) => {
+   
     // 如果没有传入 operations，就默认使用全局的 collectedBatchOps
-      let  opsToProcess = operations || collectedBatchOps;
+      let  opsToProcess = ops || collectedBatchOps;
 
     if (!opsToProcess || opsToProcess.length === 0) {
         //  showUpdateNotification(`没有发现变量更新指令，请在左下角按情况使用重roll/继续/继续[变量]`, 'danger');
@@ -33380,8 +33385,9 @@ if(hasSummaryUpdate){
     //         showNovaAlert('没有正常输出小总结', 'danger');
     //     }
     // }
-}
- 
+
+}, 200); // 200ms 内多次调用只会触发一次
+
 // window.processUpdateMemoryCommands = processUpdateMemoryCommands;
 async function processUpdateMemoryCommands(commandText, message_id) {
     message_id = -1;
@@ -35954,8 +35960,7 @@ async function extractAndStoreBatchContent(batchNumber) {
         return null;
     }
 }
-
- async function handleSend(options = {}) {
+   async function handleSend(options = {}) {
     const abortSignal = NovaAbortController.start();
     setTimeout(() => console.log('等待锁释放'), 50);
 
@@ -36926,8 +36931,7 @@ const finalAiResponse = hookDataBeforeSave.response;
             // 重新渲染历史，以更新底部的 < > 按钮
             updateLastMessage(aiMessage);
             // 或者如果 updateLastMessage 不支持重绘按钮，可能需要 renderNewMessages 或局部刷新
-            // 建议：renderHistory() 比较稳妥，或者修改 updateLastMessage 让它重绘整个气泡
-
+           
         } else {
             // 普通的新消息
             aiMessage = {
@@ -36985,8 +36989,7 @@ const finalAiResponse = hookDataBeforeSave.response;
             // 重新渲染历史，以更新底部的 < > 按钮
             updateLastMessage(aiMessage);
             // 或者如果 updateLastMessage 不支持重绘按钮，可能需要 renderNewMessages 或局部刷新
-            // 建议：renderHistory() 比较稳妥，或者修改 updateLastMessage 让它重绘整个气泡
-
+             
         } else {
             // 普通的新消息
             aiMessage = {
@@ -37407,9 +37410,14 @@ let backupData = {};
             // 全部结束，重置回初始状态
             await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
 
-            // 触发最终的渲染 (如果配置要求)
-            if (typeof if_render_after_2batch !== 'undefined' && if_render_after_2batch === 'true') {
-                 await worldHelper.renderHistory(false, true);
+        const lastStepConfig = getPipelineStep(currentBatchIndex, currentExBatchIndex);
+
+            // 只有当该步骤的配置明确要求渲染时，才执行
+            if (lastStepConfig && lastStepConfig.render === true) {
+                console.log(`[Nova Pipeline] 根据配置，在 Batch ${currentBatchIndex} Ex ${currentExBatchIndex} 结束后执行最终渲染。`);
+                await worldHelper.renderHistory(false, true);
+            } else {
+                console.log(`[Nova Pipeline] 流水线结束，但最后一步 (Batch ${currentBatchIndex} Ex ${currentExBatchIndex}) 未配置渲染，跳过。`);
             }
         }
     }
@@ -37571,11 +37579,13 @@ if(double_api ==="false" || (double_api === "true" && batches === 2) ){
 console.log("当前批次：",batches);
      if(is_show_notifications === 'true'){
         if((double_api === "true" && batches === 2)){
+
    if(if_render_after_2batch=== 'false'){
-             await  handleNotificationsFromBatch();
+               debouncedHandle();
         }
+
         }else{
-              await  handleNotificationsFromBatch();
+              debouncedHandle();
         }
      
         // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
@@ -37594,15 +37604,7 @@ console.log("当前批次：",batches);
  
             }
         }
-if((double_api === "true" && batches === 2) ){
-         if (typeof if_render_after_2batch !== 'undefined' && if_render_after_2batch === 'true') {
-                    setTimeout(async () => {
-                        console.log("[Nova] 响应配置：双重API/生成结束后刷新历史界面...");
-                           await worldHelper.renderHistory(false, true);
-       
-                    }, 100);
-                }
-}
+ 
 
   }
             // 使用 setTimeout 保持原来的后台恢复行为
@@ -43570,13 +43572,7 @@ const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') ||
  old_doubleapi = String(chatdata.old_doubleapi||'false');
 
 double_api = String(chatdata.double_api||'false');
-if(double_api === "false"){
-BATCH_PIPELINE_CONFIG[2].ex_batches[0].enabled = false;
 
-}else{
-   BATCH_PIPELINE_CONFIG[2].ex_batches[0].enabled = true;
- 
-}
 batches = Number(chatdata.batches||1);
 ifScanMemory = String(chatdata.if_scan_memory||'false');
 playerinput= String(chatdata.玩家输入||"");
@@ -43596,6 +43592,11 @@ dice_use= String(chatdata.dice_use||'true');
 if_confirm_phase2_generation= String(localStorage.getItem('if_confirm_phase2_generation')) || 'false';
 render_and_play_audio= String(localStorage.getItem('render_and_play_audio')) || 'false';
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
+
+//兼容区
+ BATCH_PIPELINE_CONFIG[2].ex_batches[0].enabled = (double_api === "true");
+BATCH_PIPELINE_CONFIG[2].ex_batches[0].render = (if_render_after_2batch === "true");
+
    const saveIdDisplay = document.getElementById('current-save-id-display');
         if (saveIdDisplay) {
             saveIdDisplay.textContent = uniqueSaveId;

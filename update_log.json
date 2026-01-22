@@ -357,5 +357,15 @@
  "修复了因为底层代码在变更中导致无法关闭异步的bug"
 
     ]
+  },{
+    "version": "3.6.15",
+    "date": "2026-1-22",
+    "changes": [
+   "修复了令小盒的异步框可能不出现的bug",
+   "修复了bgm重复加入列表的bug",
+   "修复了正文层还会renderhistory一下的bug",
+   "给notification batch增加了防抖动"
+
+    ]
   }
 ]
