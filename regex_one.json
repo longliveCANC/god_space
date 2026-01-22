@@ -14429,13 +14429,24 @@ pointer-events: auto;
 
                 <div class="setting-item-column" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
     <div class="setting-item" style="margin-bottom: 10px;">
-        <label>启用第二API (若不启用，则默认都使用酒馆的主api。用于异步和随机商店)</label>
+        <label>启用多API (若不启用，则默认全都使用酒馆的主api。用于多异步)</label>
         <div class="switch-container">
             <button id="enable-custom-api-toggle" class="switch-btn" data-state="off"></button>
         </div>
     </div>
 
     <div id="custom-api-settings-container" style="display: none; padding: 15px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid var(--border-color);">
+      <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; align-items: flex-end;">
+    <div style="flex: 1;">
+        <label style="font-size: 12px; color: var(--secondary-color); display: block; margin-bottom: 4px;">当前配置 (Profile)</label>
+        <select id="api-profile-select" class="control-btn" style="width: 100%; text-align: left; padding: 8px; color: white; background-color: black; border: 1px solid var(--primary-color);">
+            <option value="custom_v2">API 2 (Legacy/Default)</option>
+        </select>
+    </div>
+    <button id="add-api-profile-btn" class="control-btn" style="height: 38px; width: 38px; padding: 0;" title="新建配置">➕</button>
+    <button id="rename-api-profile-btn" class="control-btn" style="height: 38px; width: 38px; padding: 0;" title="重命名当前配置">✎</button>
+    <button id="del-api-profile-btn" class="control-btn" style="height: 38px; width: 38px; padding: 0; color: var(--danger-color); border-color: var(--danger-color);" title="删除当前配置">🗑️</button>
+</div>
         <p style="font-size: 0.9em; color: var(--text-secondary-color); margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
             配置用于变量更新的后台任务的独立API通道。
         </p>
@@ -15092,7 +15103,7 @@ pointer-events: auto;
                 font-weight: bold;
                 transition: all 0.3s ease;
                 box-shadow: 0 0 10px var(--glow-color);
-            ">正文层(暂不可用)</button>
+            ">正文层</button>
             <button class="prompt-tab" data-tab="api" style="
                 background: rgba(0, 0, 0, 0.4);
                 border: 1px solid var(--border-color);
@@ -15103,7 +15114,7 @@ pointer-events: auto;
                 cursor: pointer;
                 font-weight: bold;
                 transition: all 0.3s ease;
-            ">变量层(暂不可用)</button>
+            ">变量层</button>
         </div>
         
         <!-- 正文层内容 -->
@@ -15191,7 +15202,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.6.15';
+window.current_game_version = '3.7.1';
 
 
 
@@ -33406,11 +33417,25 @@ async function processUpdateMemoryCommands(commandText, message_id) {
     // 过滤掉因为分割可能产生的无用的小线头。
     const lines = commandLines.map(line => line.trim()).filter(line => line && !line.startsWith('//'));
      //   添加路径清理辅助函数  
- const cleanPath = (path) => {
+  const cleanPath = (path) => {
     if (typeof path !== 'string') return path;
-    
-    const parts = path.split('.');
-    
+
+    // =========== 🔽 修改开始 🔽 ===========
+    // 💖 智能预处理：只转换非数字的键名，严格保护数组索引 💖
+    // 逻辑说明：
+    // 1. 捕获所有 [xxx] 结构，自动去除内部可能存在的引号
+    // 2. 回调函数判断：如果内容是纯数字（如 [0]），直接返回原样，不破坏原有的数组解析逻辑
+    // 3. 如果内容是非数字（如 ['name'] 或 [prop]），才将其转换为 .name 的点号形式
+    const processedPath = path.replace(/\[["']?([^"']+)["']?\]/g, (match, content) => {
+        if (/^\d+$/.test(content)) {
+            return match; // 是数字（数组索引），保持 [0] 不变！
+        }
+        return '.' + content; // 是文本（对象Key），转换为 .content
+    });
+
+    const parts = processedPath.split('.');
+    // =========== 🔼 修改结束 🔼 ===========
+
     const cleanedParts = parts.map((part, index) => {
         // 所有部分都移除引号
         let cleaned = part.replace(/["']/g, '');
@@ -35350,6 +35375,291 @@ function throttle(func, limit) {
         }
     }
 }
+
+ function createConfirmationModal(title, message) {
+    return new Promise((resolve) => {
+        // --- 创建弹窗结构 ---
+        const modalOverlay = document.createElement('div');
+        modalOverlay.id = 'nova-confirmation-overlay';
+        modalOverlay.style.cssText = `
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            z-index: 9999;
+            pointer-events: none; /* 关键：不阻挡后面的点击事件 */
+        `;
+
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: var(--container-bg-color, rgba(10, 25, 47, 0.75));
+            border: 1px solid var(--border-color, rgba(0, 250, 255, 0.3));
+    
+            border-radius: 8px;
+            padding: 25px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            font-family: var(--base-font-family, sans-serif);
+            color: var(--text-color, #e6f1ff);
+            position: fixed;
+            top: auto;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: move;
+            user-select: none;
+            pointer-events: auto; /* 弹窗本身允许交互 */
+            touch-action: none; /* 阻止移动设备的默认行为 */
+        `;
+
+        const modalHeader = document.createElement('div');
+        modalHeader.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            cursor: grab;
+            user-select: none;
+        `;
+        modalHeader.onmousedown = () => {
+            modalHeader.style.cursor = 'grabbing';
+        };
+        modalHeader.onmouseup = () => {
+            modalHeader.style.cursor = 'grab';
+        };
+
+        const modalTitle = document.createElement('h3');
+        modalTitle.textContent = title;
+        modalTitle.style.cssText = `
+            color: var(--primary-color, #00faff);
+            margin: 0;
+            font-size: 1.5em;
+            flex: 1;
+            text-align: left;
+        `;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = `
+            background: transparent;
+            border: none;
+            color: var(--text-secondary-color, #a8c0e1);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        `;
+        closeBtn.onmouseover = () => {
+            closeBtn.style.color = 'var(--primary-color, #00faff)';
+        };
+        closeBtn.onmouseout = () => {
+            closeBtn.style.color = 'var(--text-secondary-color, #a8c0e1)';
+        };
+
+        const modalMessage = document.createElement('p');
+        modalMessage.textContent = message;
+        modalMessage.style.cssText = `
+            color: var(--text-secondary-color, #a8c0e1);
+            margin: 0 0 30px 0;
+            line-height: 1.6;
+        `;
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `display: flex; justify-content: space-around; gap: 15px;`;
+
+        // --- 创建按钮 ---
+        const createButton = (text, isAccept) => {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.style.cssText = `
+                flex: 1; 
+                padding: 12px 20px; 
+                border-radius: 5px;
+                font-size: 1em; 
+                font-weight: bold; 
+                cursor: pointer;
+                transition: all 0.3s ease;
+                color: var(--text-color, #e6f1ff);
+                border: 1px solid ${isAccept ? 'var(--success-color, #4dff88)' : 'var(--danger-color, #ff4d4d)'};
+                background-color: transparent;
+                pointer-events: auto;
+            `;
+            button.onmouseover = () => {
+                button.style.boxShadow = `0 0 10px ${isAccept ? 'var(--success-glow-color, rgba(77, 255, 136, 0.5))' : 'var(--danger-glow-color, rgba(255, 77, 77, 0.5))'}`;
+                button.style.backgroundColor = isAccept ? 'rgba(77, 255, 136, 0.1)' : 'rgba(255, 77, 77, 0.1)';
+            };
+            button.onmouseout = () => {
+                button.style.boxShadow = 'none';
+                button.style.backgroundColor = 'transparent';
+            };
+            return button;
+        };
+
+        const acceptButton = createButton('接受结果', true);
+        const rejectButton = createButton('拒绝并中断', false);
+
+        // --- 拖动逻辑 ---
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        const handleMouseDown = (e) => {
+            // 只在标题区域点击时才能拖动
+            if (e.target === modalHeader || e.target === modalTitle) {
+                isDragging = true;
+                const rect = modalContent.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+                modalHeader.style.cursor = 'grabbing';
+            }
+        };
+
+        const handleMouseMove = (e) => {
+            if (!isDragging) return;
+            
+            // 计算新位置
+            let newX = e.clientX - dragOffsetX;
+            let newY = e.clientY - dragOffsetY;
+            
+            // 限制在视口范围内
+            const maxX = window.innerWidth - modalContent.offsetWidth;
+            const maxY = window.innerHeight - modalContent.offsetHeight;
+            
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+            
+            modalContent.style.left = newX + 'px';
+            modalContent.style.top = newY + 'px';
+            modalContent.style.bottom = 'auto';
+            modalContent.style.transform = 'none';
+        };
+
+        const handleMouseUp = () => {
+            isDragging = false;
+            modalHeader.style.cursor = 'grab';
+        };
+
+        // 添加触摸支持（移动设备）
+        const handleTouchStart = (e) => {
+            if (e.target === modalHeader || e.target === modalTitle) {
+                isDragging = true;
+                const rect = modalContent.getBoundingClientRect();
+                dragOffsetX = e.touches[0].clientX - rect.left;
+                dragOffsetY = e.touches[0].clientY - rect.top;
+            }
+        };
+
+        const handleTouchMove = (e) => {
+            if (!isDragging) return;
+            
+            // 防止页面滚动
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            
+            let newX = e.touches[0].clientX - dragOffsetX;
+            let newY = e.touches[0].clientY - dragOffsetY;
+            
+            const maxX = window.innerWidth - modalContent.offsetWidth;
+            const maxY = window.innerHeight - modalContent.offsetHeight;
+            
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+            
+            modalContent.style.left = newX + 'px';
+            modalContent.style.top = newY + 'px';
+            modalContent.style.bottom = 'auto';
+            modalContent.style.transform = 'none';
+        };
+
+        const handleTouchEnd = () => {
+            isDragging = false;
+        };
+
+        // --- 事件处理 ---
+        const cleanupAndResolve = (value) => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+            document.body.removeChild(modalOverlay);
+            resolve(value);
+        };
+
+        acceptButton.onclick = () => cleanupAndResolve(true);
+        rejectButton.onclick = () => cleanupAndResolve(false);
+        closeBtn.onclick = () => cleanupAndResolve(false); // 关闭等同于拒绝
+
+        // 添加鼠标和触摸事件监听
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+
+        // --- 组装并显示 ---
+        modalHeader.appendChild(modalTitle);
+        modalHeader.appendChild(closeBtn);
+        
+        buttonContainer.appendChild(rejectButton);
+        buttonContainer.appendChild(acceptButton);
+        
+        modalContent.appendChild(modalHeader);
+        modalContent.appendChild(modalMessage);
+        modalContent.appendChild(buttonContainer);
+        
+        // 添加拖动事件监听器
+        modalContent.addEventListener('mousedown', handleMouseDown);
+        modalContent.addEventListener('touchstart', handleTouchStart);
+        
+        modalOverlay.appendChild(modalContent);
+        document.body.appendChild(modalOverlay);
+    });
+}
+async function extractAndStoreBatchContent(batchNumber) {
+    try {
+        const textareaId = `command-edit-area-batch${batchNumber}`;
+        const textarea = document.getElementById(textareaId);
+        
+        if (!textarea) {
+            console.warn(`[Nova's Batch Extractor] 未找到textarea: ${textareaId}`);
+            return null;
+        }
+        
+        const content = textarea.value.trim();
+        
+        // if (content === '') {
+        //     console.log(`[Nova's Batch Extractor] Batch${batchNumber}内容为空，跳过存储`);
+        //     return null;
+        // }
+        
+        // 生成变量名：batch_content_2, batch_content_3 等
+        const varName = `batch_content_${batchNumber}`;
+        
+        // 存储为变量
+        await TavernHelper.insertOrAssignVariables(
+            { [varName]: content },
+            { type: 'chat' }
+        );
+        
+        console.log(`[Nova's Batch Extractor] 已提取Batch${batchNumber}内容并存储为变量: ${varName}`);
+        
+        // 清空textarea
+        textarea.value = '';
+        
+        return content;
+    } catch (error) {
+        console.error(`[Nova's Batch Extractor] 提取Batch${batchNumber}内容时出错:`, error);
+        return null;
+    }
+}
+ 
  const getPositionTypeWeight = (type) => {
     switch (type) {
         case 'before_character_definition': return 1;
@@ -35677,297 +35987,59 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
         }
     }
 };
- function createConfirmationModal(title, message) {
-    return new Promise((resolve) => {
-        // --- 创建弹窗结构 ---
-        const modalOverlay = document.createElement('div');
-        modalOverlay.id = 'nova-confirmation-overlay';
-        modalOverlay.style.cssText = `
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-            z-index: 9999;
-            pointer-events: none; /* 关键：不阻挡后面的点击事件 */
-        `;
 
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = `
-            background: var(--container-bg-color, rgba(10, 25, 47, 0.75));
-            border: 1px solid var(--border-color, rgba(0, 250, 255, 0.3));
-    
-            border-radius: 8px;
-            padding: 25px;
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
-            font-family: var(--base-font-family, sans-serif);
-            color: var(--text-color, #e6f1ff);
-            position: fixed;
-            top: auto;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            cursor: move;
-            user-select: none;
-            pointer-events: auto; /* 弹窗本身允许交互 */
-            touch-action: none; /* 阻止移动设备的默认行为 */
-        `;
 
-        const modalHeader = document.createElement('div');
-        modalHeader.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            cursor: grab;
-            user-select: none;
-        `;
-        modalHeader.onmousedown = () => {
-            modalHeader.style.cursor = 'grabbing';
-        };
-        modalHeader.onmouseup = () => {
-            modalHeader.style.cursor = 'grab';
-        };
 
-        const modalTitle = document.createElement('h3');
-        modalTitle.textContent = title;
-        modalTitle.style.cssText = `
-            color: var(--primary-color, #00faff);
-            margin: 0;
-            font-size: 1.5em;
-            flex: 1;
-            text-align: left;
-        `;
-
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = '✕';
-        closeBtn.style.cssText = `
-            background: transparent;
-            border: none;
-            color: var(--text-secondary-color, #a8c0e1);
-            font-size: 1.5em;
-            cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.2s ease;
-        `;
-        closeBtn.onmouseover = () => {
-            closeBtn.style.color = 'var(--primary-color, #00faff)';
-        };
-        closeBtn.onmouseout = () => {
-            closeBtn.style.color = 'var(--text-secondary-color, #a8c0e1)';
-        };
-
-        const modalMessage = document.createElement('p');
-        modalMessage.textContent = message;
-        modalMessage.style.cssText = `
-            color: var(--text-secondary-color, #a8c0e1);
-            margin: 0 0 30px 0;
-            line-height: 1.6;
-        `;
-
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.cssText = `display: flex; justify-content: space-around; gap: 15px;`;
-
-        // --- 创建按钮 ---
-        const createButton = (text, isAccept) => {
-            const button = document.createElement('button');
-            button.textContent = text;
-            button.style.cssText = `
-                flex: 1; 
-                padding: 12px 20px; 
-                border-radius: 5px;
-                font-size: 1em; 
-                font-weight: bold; 
-                cursor: pointer;
-                transition: all 0.3s ease;
-                color: var(--text-color, #e6f1ff);
-                border: 1px solid ${isAccept ? 'var(--success-color, #4dff88)' : 'var(--danger-color, #ff4d4d)'};
-                background-color: transparent;
-                pointer-events: auto;
-            `;
-            button.onmouseover = () => {
-                button.style.boxShadow = `0 0 10px ${isAccept ? 'var(--success-glow-color, rgba(77, 255, 136, 0.5))' : 'var(--danger-glow-color, rgba(255, 77, 77, 0.5))'}`;
-                button.style.backgroundColor = isAccept ? 'rgba(77, 255, 136, 0.1)' : 'rgba(255, 77, 77, 0.1)';
-            };
-            button.onmouseout = () => {
-                button.style.boxShadow = 'none';
-                button.style.backgroundColor = 'transparent';
-            };
-            return button;
-        };
-
-        const acceptButton = createButton('接受结果', true);
-        const rejectButton = createButton('拒绝并中断', false);
-
-        // --- 拖动逻辑 ---
-        let isDragging = false;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
-
-        const handleMouseDown = (e) => {
-            // 只在标题区域点击时才能拖动
-            if (e.target === modalHeader || e.target === modalTitle) {
-                isDragging = true;
-                const rect = modalContent.getBoundingClientRect();
-                dragOffsetX = e.clientX - rect.left;
-                dragOffsetY = e.clientY - rect.top;
-                modalHeader.style.cursor = 'grabbing';
-            }
-        };
-
-        const handleMouseMove = (e) => {
-            if (!isDragging) return;
-            
-            // 计算新位置
-            let newX = e.clientX - dragOffsetX;
-            let newY = e.clientY - dragOffsetY;
-            
-            // 限制在视口范围内
-            const maxX = window.innerWidth - modalContent.offsetWidth;
-            const maxY = window.innerHeight - modalContent.offsetHeight;
-            
-            newX = Math.max(0, Math.min(newX, maxX));
-            newY = Math.max(0, Math.min(newY, maxY));
-            
-            modalContent.style.left = newX + 'px';
-            modalContent.style.top = newY + 'px';
-            modalContent.style.bottom = 'auto';
-            modalContent.style.transform = 'none';
-        };
-
-        const handleMouseUp = () => {
-            isDragging = false;
-            modalHeader.style.cursor = 'grab';
-        };
-
-        // 添加触摸支持（移动设备）
-        const handleTouchStart = (e) => {
-            if (e.target === modalHeader || e.target === modalTitle) {
-                isDragging = true;
-                const rect = modalContent.getBoundingClientRect();
-                dragOffsetX = e.touches[0].clientX - rect.left;
-                dragOffsetY = e.touches[0].clientY - rect.top;
-            }
-        };
-
-        const handleTouchMove = (e) => {
-            if (!isDragging) return;
-            
-            // 防止页面滚动
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-            
-            let newX = e.touches[0].clientX - dragOffsetX;
-            let newY = e.touches[0].clientY - dragOffsetY;
-            
-            const maxX = window.innerWidth - modalContent.offsetWidth;
-            const maxY = window.innerHeight - modalContent.offsetHeight;
-            
-            newX = Math.max(0, Math.min(newX, maxX));
-            newY = Math.max(0, Math.min(newY, maxY));
-            
-            modalContent.style.left = newX + 'px';
-            modalContent.style.top = newY + 'px';
-            modalContent.style.bottom = 'auto';
-            modalContent.style.transform = 'none';
-        };
-
-        const handleTouchEnd = () => {
-            isDragging = false;
-        };
-
-        // --- 事件处理 ---
-        const cleanupAndResolve = (value) => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            document.removeEventListener('touchmove', handleTouchMove);
-            document.removeEventListener('touchend', handleTouchEnd);
-            document.body.removeChild(modalOverlay);
-            resolve(value);
-        };
-
-        acceptButton.onclick = () => cleanupAndResolve(true);
-        rejectButton.onclick = () => cleanupAndResolve(false);
-        closeBtn.onclick = () => cleanupAndResolve(false); // 关闭等同于拒绝
-
-        // 添加鼠标和触摸事件监听
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
-        document.addEventListener('touchend', handleTouchEnd);
-
-        // --- 组装并显示 ---
-        modalHeader.appendChild(modalTitle);
-        modalHeader.appendChild(closeBtn);
-        
-        buttonContainer.appendChild(rejectButton);
-        buttonContainer.appendChild(acceptButton);
-        
-        modalContent.appendChild(modalHeader);
-        modalContent.appendChild(modalMessage);
-        modalContent.appendChild(buttonContainer);
-        
-        // 添加拖动事件监听器
-        modalContent.addEventListener('mousedown', handleMouseDown);
-        modalContent.addEventListener('touchstart', handleTouchStart);
-        
-        modalOverlay.appendChild(modalContent);
-        document.body.appendChild(modalOverlay);
-    });
-}
-async function extractAndStoreBatchContent(batchNumber) {
-    try {
-        const textareaId = `command-edit-area-batch${batchNumber}`;
-        const textarea = document.getElementById(textareaId);
-        
-        if (!textarea) {
-            console.warn(`[Nova's Batch Extractor] 未找到textarea: ${textareaId}`);
-            return null;
-        }
-        
-        const content = textarea.value.trim();
-        
-        // if (content === '') {
-        //     console.log(`[Nova's Batch Extractor] Batch${batchNumber}内容为空，跳过存储`);
-        //     return null;
-        // }
-        
-        // 生成变量名：batch_content_2, batch_content_3 等
-        const varName = `batch_content_${batchNumber}`;
-        
-        // 存储为变量
-        await TavernHelper.insertOrAssignVariables(
-            { [varName]: content },
-            { type: 'chat' }
-        );
-        
-        console.log(`[Nova's Batch Extractor] 已提取Batch${batchNumber}内容并存储为变量: ${varName}`);
-        
-        // 清空textarea
-        textarea.value = '';
-        
-        return content;
-    } catch (error) {
-        console.error(`[Nova's Batch Extractor] 提取Batch${batchNumber}内容时出错:`, error);
-        return null;
-    }
-}
-   async function handleSend(options = {}) {
+async function handleSend(options = {}) {
     const abortSignal = NovaAbortController.start();
     setTimeout(() => console.log('等待锁释放'), 50);
 
     // --- 🆕 逻辑修正：优先级调整 🆕 ---
     // 1. 优先使用传入的 batchIndex，如果没有传，默认为 1
-    let currentBatchIndex = options.batchIndex !== undefined ? options.batchIndex : 1;
-    let currentExBatchIndex = options.exBatchIndex !== undefined ? options.exBatchIndex : 0;
+    let currentBatchIndex;
+    let currentExBatchIndex;
+
+    // 1. 定义一个寻找下一个可用步骤的辅助函数 (也可以复用你后面定义的 findNextStep)
+    const findFirstValidStep = () => {
+        // 遍历所有 Batch
+        for (const batch of BATCH_PIPELINE_CONFIG) {
+            // 遍历该 Batch 下的所有 ExBatch
+            for (let exIndex = 0; exIndex < batch.ex_batches.length; exIndex++) {
+                const exBatch = batch.ex_batches[exIndex];
+                // 找到第一个启用的 (enabled: true)
+                if (exBatch.enabled) {
+                    return { batchIndex: batch.id, exBatchIndex: exIndex };
+                }
+            }
+        }
+        return null; // 如果全都没开
+    };
+
+    // 2. 确定当前索引
+    if (options.batchIndex !== undefined) {
+        // A. 如果是递归调用（系统传参），直接使用传入的值
+        currentBatchIndex = options.batchIndex;
+        currentExBatchIndex = options.exBatchIndex !== undefined ? options.exBatchIndex : 0;
+    } else {
+        // B. 如果是用户点击发送（新的一轮），寻找起点
+        const firstStep = findFirstValidStep();
+
+        if (firstStep) {
+            // 找到了起点 (可能是 Batch 0，也可能是 Batch 1)
+            currentBatchIndex = firstStep.batchIndex;
+            currentExBatchIndex = firstStep.exBatchIndex;
+              if (typeof double_api !== 'undefined' && double_api === 'false') {
+            currentBatchIndex = 1;
+            currentExBatchIndex = 0;
+        } 
+        } else {
+            // 兜底：如果整个配置里一个开启的都没有，强制回落到 Batch 1 (主对话)
+            // 防止系统瘫痪
+            console.warn("[Nova Pipeline] 没有发现任何启用的步骤，强制执行 Batch 1");
+            currentBatchIndex = 1;
+            currentExBatchIndex = 0;
+        }
+    }
 
     // 2. 兼容旧逻辑：只有在 batchIndex 未定义 且 isContinuationVar 为 true 时，才强制设为 2
     // 这样递归调用时传入的 batchIndex: 3 就不会被覆盖了
@@ -36045,37 +36117,47 @@ batches = 1;
  
   
  
-     // --- 🆕 API 配置加载逻辑 🆕 ---
+     // --- 🆕 API 配置加载逻辑 (Multi-API Support) 🆕 ---
     let customApiSettings = null;
     // 根据当前 ExBatch 配置决定使用哪个 API
     const apiConfigKey = currentStepConfig?.api_config;
 
     if (apiConfigKey && apiConfigKey !== 'default') {
-        // 尝试加载指定的 API 配置
-        // 假设 'custom_v2' 对应 'nova_custom_api_settings'，其他对应 localStorage 中的 key
-        const storageKey = apiConfigKey === 'custom_v2' ? 'nova_custom_api_settings' : apiConfigKey;
-        
-            try {
-        const stored = localStorage.getItem(storageKey);
-     
-            // 如果没有获取到配置，检查 v2 开关状态
+        try {
+            // 1. 检查是否启用第二 API (总开关)
             const isV2Enabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+
             if (!isV2Enabled) {
-                console.log(` v2 未启用，将使用默认 API`);
-                // 这里可以显式设置为使用默认 API
-                // 通过不设置 customApiSettings 或者设置特殊标记
-            }else{
-            customApiSettings = JSON.parse(stored);
-            console.log(`[Nova API] 已加载 API 配置: ${apiConfigKey}`);
-       
+                console.log(`[Nova API] 自定义 API 总开关未启用，将回退到默认 API`);
+            } else {
+                // 2. 根据 key 加载配置
+                if (apiConfigKey === 'custom_v2') {
+                    // Legacy: 读取旧的独立键
+                    const stored = localStorage.getItem('nova_custom_api_settings');
+                    if (stored) customApiSettings = JSON.parse(stored);
+                } else {
+                    // New: 读取统一池中的配置
+                    const pool = JSON.parse(localStorage.getItem('nova_multi_api_pool') || '{}');
+                    if (pool[apiConfigKey]) {
+                        customApiSettings = pool[apiConfigKey];
+                    } else {
+                        console.warn(`[Nova API] 未找到 ID 为 ${apiConfigKey} 的配置，将回退到默认 API`);
+                    }
+                }
+
+                if (customApiSettings) {
+                    console.log(`[Nova API] 已加载 API 配置: ${apiConfigKey} (${customApiSettings.name || 'Unnamed'})`);
+                }
             }
-      
-        } catch (e) { console.warn("API Config Load Error", e); }
+        } catch (e) {
+            console.warn("[Nova API] Config Load Error", e);
+        }
     }
 
     // 只有在非默认 API 且配置存在时才应用
     const activeCustomApi = customApiSettings;
     // --- 🆕 API 配置加载结束 🆕 ---
+
 
    await TavernHelper.insertOrAssignVariables(
             { checklock: 'false' },
@@ -36783,6 +36865,9 @@ AI回复: ${theAImessage}
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
 在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，使用<!-- -->标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
      
+
+   await TavernHelper.insertOrAssignVariables({ AI回复:theAImessage }, { type: 'chat' });
+
             // 调用组装，使用默认或绑定的书
                 promptPayload = await assembleComplexPrompt({
                     continuationText: thetext,
@@ -37047,7 +37132,8 @@ AI回复: ${theAImessage}
 
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
 在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，使用<!-- -->标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
-     
+        await TavernHelper.insertOrAssignVariables({ AI回复:theAImessage }, { type: 'chat' });
+
             // 调用组装，使用默认或绑定的书
                 promptPayload = await assembleComplexPrompt({
                     continuationText: thetext,
@@ -37369,9 +37455,25 @@ let backupData = {};
             }
         };
 
-        const nextStep = findNextStep(currentBatchIndex, currentExBatchIndex);
+     let nextStep = null;
+
+        // 只有当 double_api 为 "true" 时，才去寻找并执行后续步骤 (如 Batch 2)
+        // 如果 double_api 为 "false" (或未定义)，则 nextStep 保持 null，流程在 Batch 1 结束后自然停止
+        if (typeof double_api !== 'undefined' && double_api === 'true') {
+            nextStep = findNextStep(currentBatchIndex, currentExBatchIndex);
+        } else {
+            console.log(`[Nova Pipeline] double_api 为 "${double_api}"，仅执行当前步骤，停止流水线递归。`);
+        }
+
 
         if (nextStep) {
+          if(is_show_notifications === 'true'){
+        if((double_api === "true" && batches === 2)){
+               debouncedHandle();
+
+        } 
+ 
+        }
             console.log(`[Nova Pipeline] 准备进入下一阶段: Batch ${nextStep.batchIndex} Ex ${nextStep.exBatchIndex}`);
 
             // 检查是否需要用户确认 (仅在 Batch 1 -> Batch 2 之间保留确认逻辑，或者根据配置)
@@ -37406,6 +37508,18 @@ let backupData = {};
                 await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
             }
         } else {
+                 if(is_show_notifications === 'true'){
+        if((double_api === "true" && batches === 2)){
+
+   if(if_render_after_2batch=== 'false'){
+               debouncedHandle();
+        }
+
+        }else if(double_api === "false"){
+              debouncedHandle();
+        }
+ 
+        }
             console.log("[Nova Pipeline] 流水线全部执行完毕。");
             // 全部结束，重置回初始状态
             await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
@@ -37575,24 +37689,8 @@ let backupData = {};
          if (isDirty && originalWorldInfo) {
             await initDisplay();
                 
-if(double_api ==="false" || (double_api === "true" && batches === 2) ){
-console.log("当前批次：",batches);
-     if(is_show_notifications === 'true'){
-        if((double_api === "true" && batches === 2)){
-
-   if(if_render_after_2batch=== 'false'){
-               debouncedHandle();
-        }
-
-        }else{
-              debouncedHandle();
-        }
-     
-        // handleUpdateNotifications(content); // 现在创建的标签就不会被清除了
-         
-        }
-
-
+ 
+ 
      if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
             const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
 
@@ -37604,9 +37702,7 @@ console.log("当前批次：",batches);
  
             }
         }
- 
-
-  }
+  
             // 使用 setTimeout 保持原来的后台恢复行为
             setTimeout(() => restoreWorldbookNow().catch(e => console.error("后台恢复世界书时出错:", e)), 500);
         } 
@@ -39530,7 +39626,7 @@ if (fontSizeSlider) {
      * @param {*} value - 输入的数据
      * @returns {string|number} - 处理后的值
      */
-    function SafeGetValue(value) {
+    function nextStepSafeGetValue(value) {
         if (Array.isArray(value)) {
             let res = value.length > 0 ? value[0] : '';
             return(res === '' || res === null || res === undefined) ? '无' : res;
@@ -43593,6 +43689,15 @@ if_confirm_phase2_generation= String(localStorage.getItem('if_confirm_phase2_gen
 render_and_play_audio= String(localStorage.getItem('render_and_play_audio')) || 'false';
   const uniqueSaveId = chatdata.save_slot_id || 'default_save';
 
+//用于在世界书中，可能会有操作，对管线进行操作。进行对话中的临时操作
+  if (chatdata && chatdata.nova_pipeline_config && Array.isArray(chatdata.nova_pipeline_config)) {
+    // 直接覆盖全局变量
+   BATCH_PIPELINE_CONFIG = chatdata.nova_pipeline_config;
+    // console.log("[initDisplay] 已从存档同步 Pipeline 配置");
+} else if (typeof BATCH_PIPELINE_CONFIG === 'undefined') {
+  
+}
+
 //兼容区
  BATCH_PIPELINE_CONFIG[2].ex_batches[0].enabled = (double_api === "true");
 BATCH_PIPELINE_CONFIG[2].ex_batches[0].render = (if_render_after_2batch === "true");
@@ -46401,7 +46506,7 @@ function setupReconfigModal() {
         { name: 'bgm', uid: 88, category: 'visual', desc: '启用背景音乐' },
 
         // --- 系统设定 (System) ---
-        { name: '异步变量', uid: 35, group: 'api', category: 'system', desc: '额外调用一次api专门更新变量，破限较弱。自动识别x-mod/x-dlc开头的世界书信息发送' },
+        { name: '异步变量', uid: 35, group: 'api', category: 'system', desc: '额外调用一次api或多次专门更新变量，破限较弱。变量层(batch2-0)自动识别x-mod/x-dlc开头的世界书信息发送' },
         { name: '同步变量', uid: 40, group: 'api', category: 'system', desc: '正文和变量在同一个回复中' },
       
         { name: '强调时间开', uid: 78, group: 'time', category: 'system', desc: '小总结显示时间地点信息，同时给正文自动增加时间戳' },
@@ -57081,38 +57186,140 @@ function processPromptData(promptData, layerName) {
     console.log(`[Nova] 成功加载${layerName}提示词，长度:`, processedText.length);
     return processedText;
 }
- const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
-if (viewPromptBtn) {
-    viewPromptBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('[Nova] 打开提示词查看器');
-        
+
+
+    // ... 在 processPromptData 函数定义之后 ...
+     // 动态刷新 Tab 页和内容的函数 (修复版)
+    function refreshPromptTabs() {
+        // 1. 精确获取当前弹窗的元素，防止与其他弹窗冲突
         const modal = document.getElementById('prompt-viewer-modal');
-        const displayMain = document.getElementById('prompt-content-display-main');
-        const displayApi = document.getElementById('prompt-content-display-api');
-        
-        if (!modal || !displayMain || !displayApi) {
-            console.error('[Nova] 找不到弹窗元素');
-            toastr.error('界面元素未找到', '错误');
-            return;
+        if (!modal) return;
+
+        const modalContent = modal.querySelector('.modal-content');
+        const tabsContainer = modal.querySelector('.prompt-tabs');
+        const copyBtn = modal.querySelector('#copy-prompt-btn');
+        // 获取底部按钮区域的容器 (那个 flex div)
+        const footerContainer = copyBtn ? copyBtn.parentNode : null;
+
+        if (!modalContent || !tabsContainer) return;
+
+        // 2. 收集所有需要显示的数据源
+        let tabsData = [];
+
+        // (A) 固定层
+        // if (localStorage.getItem('last_captured_prompt')) {
+        //     tabsData.push({ id: 'main', name: '正文层', key: 'last_captured_prompt' });
+        // }
+        // if (localStorage.getItem('last_captured_prompt_api')) {
+        //     tabsData.push({ id: 'api', name: '变量层', key: 'last_captured_prompt_api' });
+        // }
+
+        // (B) 动态层：扫描 b{x}_ex{y}
+        const dynamicKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const match = key.match(/^last_captured_prompt_b(\d+)_ex(\d+)$/);
+            if (match) {
+                dynamicKeys.push({
+                    key: key,
+                    b: parseInt(match[1]),
+                    ex: parseInt(match[2])
+                });
+            }
         }
-        
-        // 加载正文层数据
-        const promptDataMain = localStorage.getItem('last_captured_prompt');
-        displayMain.textContent = processPromptData(promptDataMain, '正文层');
-        
-        // 加载变量层数据
-        const promptDataApi = localStorage.getItem('last_captured_prompt_api');
-        displayApi.textContent = processPromptData(promptDataApi, '变量层');
-        
-        // 显示弹窗
-        modal.style.display = 'flex';
-        console.log('[Nova] 弹窗已显示');
-    });
-} else {
-        console.error('[Nova] 找不到查看提示词按钮');
+
+        // 排序
+        dynamicKeys.sort((a, b) => a.b - b.b || a.ex - b.ex);
+        dynamicKeys.forEach(item => {
+            tabsData.push({
+                id: `b${item.b}_ex${item.ex}`,
+                name: `Batch ${item.b}-${item.ex}`,
+                key: item.key
+            });
+        });
+
+        // 3. 清空现有的 Tab 和 内容区域
+        tabsContainer.innerHTML = '';
+        // 只移除当前弹窗内的 tab-content
+        const oldContents = modalContent.querySelectorAll('.tab-content');
+        oldContents.forEach(el => el.remove());
+
+        // 4. 重新生成 HTML
+        const activeTabStyle = "background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border: 1px solid var(--border-color); border-bottom: none; color: var(--background-color); padding: 10px 20px; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 0 10px var(--glow-color);";
+        const inactiveTabStyle = "background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-bottom: none; color: var(--text-color); padding: 10px 20px; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: bold; transition: all 0.3s ease;";
+
+        tabsData.forEach((tab, index) => {
+            const isFirst = index === 0;
+
+            // 创建 Tab 按钮
+            const btn = document.createElement('button');
+            btn.className = `prompt-tab ${isFirst ? 'active' : ''}`;
+            btn.setAttribute('data-tab', tab.id);
+            btn.style.cssText = isFirst ? activeTabStyle : inactiveTabStyle;
+            btn.textContent = tab.name;
+            tabsContainer.appendChild(btn);
+
+            // 创建内容区域
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'tab-content';
+            contentDiv.id = `tab-${tab.id}`;
+            contentDiv.style.cssText = `
+                flex: 1;
+                overflow-y: auto;
+                background: rgba(0, 0, 0, 0.4);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 16px;
+                box-shadow: inset 0 0 20px rgba(0, 250, 255, 0.2);
+                display: ${isFirst ? 'block' : 'none'};
+            `;
+
+            const rawData = localStorage.getItem(tab.key);
+            const processedText = processPromptData(rawData, tab.name);
+
+            contentDiv.innerHTML = `
+                <pre id="prompt-content-display-${tab.id}" style="
+                    color: var(--text-color);
+                    font-family: 'Courier New', monospace;
+                    font-size: 13px;
+                    line-height: 1.6;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    margin: 0;
+                ">${processedText}</pre>
+            `;
+
+            // 安全插入：检查父子关系
+            if (footerContainer && footerContainer.parentNode === modalContent) {
+                modalContent.insertBefore(contentDiv, footerContainer);
+            } else {
+                // 如果找不到底部按钮或者层级不对，直接追加到最后
+                modalContent.appendChild(contentDiv);
+            }
+        });
+
+        if (tabsData.length === 0) {
+            tabsContainer.innerHTML = '<div style="color:var(--text-color); padding:10px;">无数据</div>';
+        }
+    }
+
+const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
+     if (viewPromptBtn) {
+        viewPromptBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('[Nova] 打开提示词查看器');
+
+            const modal = document.getElementById('prompt-viewer-modal');
+            if (!modal) return;
+
+            // 核心修改：打开前动态刷新所有 Tab 和内容
+            refreshPromptTabs();
+
+            // 显示弹窗
+            modal.style.display = 'flex';
+        });
     }
     
     // 关闭按钮事件
@@ -57189,35 +57396,47 @@ if (copyBtn) {
     const promptTabs = document.querySelectorAll('.prompt-tab');
 const tabContents = document.querySelectorAll('.tab-content');
 
-promptTabs.forEach(tab => {
-    tab.addEventListener('click', function() {
-        const targetTab = this.getAttribute('data-tab');
-        
-        // 移除所有 active 状态
-        promptTabs.forEach(t => {
-            t.classList.remove('active');
-            t.style.background = 'rgba(0, 0, 0, 0.4)';
-            t.style.color = 'var(--text-color)';
-            t.style.boxShadow = 'none';
+     // ... 找到原有的 promptTabs.forEach 部分，删除并替换为 ...
+
+    // 使用事件委托处理 Tab 切换 (支持动态生成的 Tab)
+    const tabsContainer = document.querySelector('.prompt-tabs');
+    if (tabsContainer) {
+        tabsContainer.addEventListener('click', function(e) {
+            // 检查点击的是否是 tab 按钮
+            if (e.target.classList.contains('prompt-tab')) {
+                const clickedTab = e.target;
+                const targetId = clickedTab.getAttribute('data-tab');
+
+                // 1. 重置所有 Tab 样式
+                const allTabs = document.querySelectorAll('.prompt-tab');
+                allTabs.forEach(t => {
+                    t.classList.remove('active');
+                    // 恢复非激活样式
+                    t.style.background = 'rgba(0, 0, 0, 0.4)';
+                    t.style.color = 'var(--text-color)';
+                    t.style.boxShadow = 'none';
+                });
+
+                // 2. 隐藏所有内容区域
+                const allContents = document.querySelectorAll('.tab-content');
+                allContents.forEach(c => c.style.display = 'none');
+
+                // 3. 激活当前 Tab
+                clickedTab.classList.add('active');
+                clickedTab.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
+                clickedTab.style.color = 'var(--background-color)';
+                clickedTab.style.boxShadow = '0 0 10px var(--glow-color)';
+
+                // 4. 显示对应内容
+                const targetContent = document.getElementById(`tab-${targetId}`);
+                if (targetContent) {
+                    targetContent.style.display = 'block';
+                }
+
+                console.log(`[Nova] 切换到 Tab: ${targetId}`);
+            }
         });
-        
-        // 隐藏所有内容
-        tabContents.forEach(content => {
-            content.style.display = 'none';
-        });
-        
-        // 激活当前 tab
-        this.classList.add('active');
-        this.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
-        this.style.color = 'var(--background-color)';
-        this.style.boxShadow = '0 0 10px var(--glow-color)';
-        
-        // 显示对应内容
-        document.getElementById(`tab-${targetTab}`).style.display = 'block';
-        
-        console.log(`[Nova] 切换到${targetTab === 'main' ? '正文层' : '变量层'}`);
-    });
-});
+    }
 
     console.log('[Nova] 提示词查看器事件绑定完成');
 
@@ -57416,15 +57635,14 @@ promptTabs.forEach(tab => {
 
 })();
 
-  // --- 第二API设置逻辑 (Nova 4.0 Final - Tavern API Bridge) ---
+ // --- 第二API设置逻辑 (Nova 4.0 Final - Multi-API Manager) ---
 (function initCustomApiSettings() {
-    // 1. 定义源常量 (与酒馆同步)
     const CHAT_COMPLETION_SOURCES = {
         OPENAI: 'openai',
         CLAUDE: 'claude',
         OPENROUTER: 'openrouter',
         AI21: 'ai21',
-        MAKERSUITE: 'makersuite', // Gemini 的旧称
+        MAKERSUITE: 'makersuite',
         VERTEXAI: 'vertexai',
         MISTRALAI: 'mistralai',
         CUSTOM: 'custom',
@@ -57437,26 +57655,26 @@ promptTabs.forEach(tab => {
         AIMLAPI: 'aimlapi',
         XAI: 'xai',
         POLLINATIONS: 'pollinations',
-        PROXY_OPENAI: 'proxy-openai', // OpenAI 格式反代
-        PROXY_GEMINI: 'proxy-gemini', // Gemini 格式反代
-            GEMINI_SECONDARY: 'gemini-secondary' // <--- 添加这个新的自定义源
+        PROXY_OPENAI: 'proxy-openai',
+        PROXY_GEMINI: 'proxy-gemini',
+        GEMINI_SECONDARY: 'gemini-secondary'
     };
 
- const DEFAULT_API_URLS = {
-    [CHAT_COMPLETION_SOURCES.OPENAI]: 'https://api.openai.com/v1',
-    [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'https://generativelanguage.googleapis.com/v1beta', // Gemini
-    [CHAT_COMPLETION_SOURCES.OPENROUTER]: 'https://openrouter.ai/api/v1',
-    [CHAT_COMPLETION_SOURCES.DEEPSEEK]: 'https://api.deepseek.com',
-    [CHAT_COMPLETION_SOURCES.MISTRALAI]: 'https://api.mistral.ai/v1',
-    [CHAT_COMPLETION_SOURCES.GROQ]: 'https://api.groq.com/openai/v1',
-    [CHAT_COMPLETION_SOURCES.ZEROONEAI]: 'https://api.01.ai/v1',
-    [CHAT_COMPLETION_SOURCES.AIMLAPI]: 'https://api.aimlapi.com',
-    [CHAT_COMPLETION_SOURCES.XAI]: 'https://api.x.ai/v1',
-    [CHAT_COMPLETION_SOURCES.PROXY_OPENAI]: 'http://127.0.0.1:8888/v1', // 加上 /v1
-    [CHAT_COMPLETION_SOURCES.PROXY_GEMINI]: 'http://127.0.0.1:8888/v1beta', // 加上 /v1beta
-    [CHAT_COMPLETION_SOURCES.CUSTOM]: '',
-};
-    // DOM 元素获取 (与之前相同)
+    const DEFAULT_API_URLS = {
+        [CHAT_COMPLETION_SOURCES.OPENAI]: 'https://api.openai.com/v1',
+        [CHAT_COMPLETION_SOURCES.MAKERSUITE]: 'https://generativelanguage.googleapis.com/v1beta',
+        [CHAT_COMPLETION_SOURCES.OPENROUTER]: 'https://openrouter.ai/api/v1',
+        [CHAT_COMPLETION_SOURCES.DEEPSEEK]: 'https://api.deepseek.com',
+        [CHAT_COMPLETION_SOURCES.MISTRALAI]: 'https://api.mistral.ai/v1',
+        [CHAT_COMPLETION_SOURCES.GROQ]: 'https://api.groq.com/openai/v1',
+        [CHAT_COMPLETION_SOURCES.ZEROONEAI]: 'https://api.01.ai/v1',
+        [CHAT_COMPLETION_SOURCES.AIMLAPI]: 'https://api.aimlapi.com',
+        [CHAT_COMPLETION_SOURCES.XAI]: 'https://api.x.ai/v1',
+        [CHAT_COMPLETION_SOURCES.PROXY_OPENAI]: 'http://127.0.0.1:8888/v1',
+        [CHAT_COMPLETION_SOURCES.PROXY_GEMINI]: 'http://127.0.0.1:8888/v1beta',
+        [CHAT_COMPLETION_SOURCES.CUSTOM]: '',
+    };
+
     const els = {
         toggle: document.getElementById('enable-custom-api-toggle'),
         container: document.getElementById('custom-api-settings-container'),
@@ -57468,6 +57686,11 @@ promptTabs.forEach(tab => {
         modelSelect: document.getElementById('fetched-models-select'),
         msgLabel: document.getElementById('fetch-status-msg'),
         testLog: document.getElementById('api-test-result-log'),
+        // 🆕 新增控件
+        profileSelect: document.getElementById('api-profile-select'),
+        addProfileBtn: document.getElementById('add-api-profile-btn'),
+        renameProfileBtn: document.getElementById('rename-api-profile-btn'),
+        delProfileBtn: document.getElementById('del-api-profile-btn'),
         inputs: {
             apiurl: document.getElementById('api-url-input'),
             key: document.getElementById('api-key-input'),
@@ -57480,247 +57703,307 @@ promptTabs.forEach(tab => {
         }
     };
 
-    // --- 核心功能逻辑 (重构) ---
+    // 状态管理
+    let currentProfileId = 'custom_v2'; // 默认为第二API
+    const POOL_KEY = 'nova_multi_api_pool'; // 其他API的统一存储键
+    const LEGACY_KEY = 'nova_custom_api_settings'; // 第二API的专用键 (不动它)
 
-    // 获取模型列表 - **直接调用 API 或通过酒馆后端**
- async function fetchModels() {
-    const url = els.inputs.apiurl.value.trim();
-    const key = els.inputs.key.value.trim();
-    const source = els.sourceSelect.value;
+    // --- 核心功能逻辑 ---
 
-    if (!url || !key) {
-        showStatus('❌ 请先填写 API 地址和密钥', 'var(--danger-color)');
-        return;
-    }
+    async function fetchModels() {
+        const url = els.inputs.apiurl.value.trim();
+        const key = els.inputs.key.value.trim();
+        const source = els.sourceSelect.value;
 
-    showStatus('⏳ 正在获取模型列表...', 'var(--secondary-color)');
-    els.fetchBtn.disabled = true;
+        if (!url || !key) {
+            showStatus('❌ 请先填写 API 地址和密钥', 'var(--danger-color)');
+            return;
+        }
 
-    try {
-        let models = [];
-        
-        // 尝试多种获取方式
-        // 方式1: 尝试酒馆的端点
+        showStatus('⏳ 正在获取模型列表...', 'var(--secondary-color)');
+        els.fetchBtn.disabled = true;
+
         try {
-            const tavernResponse = await fetch('/api/backends/chat-completions/models', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    api_url: url,
-                    api_key: key,
-                    api_type: source,
-                }),
-            });
-            
-            if (tavernResponse.ok) {
-                const data = await tavernResponse.json();
+            let models = [];
+            try {
+                const tavernResponse = await fetch('/api/backends/chat-completions/models', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_url: url, api_key: key, api_type: source }),
+                });
+                if (tavernResponse.ok) {
+                    const data = await tavernResponse.json();
+                    models = data.data || data.models || data;
+                }
+            } catch (e) { console.log('酒馆端点尝试失败，切换到直接调用'); }
+
+            if (!models || models.length === 0) {
+                let modelsEndpoint = '';
+                let headers = { 'Content-Type': 'application/json' };
+                if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
+                    const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+                    modelsEndpoint = `${baseUrl}/models?key=${key}`;
+                } else {
+                    modelsEndpoint = `${url}/models`;
+                    headers['Authorization'] = `Bearer ${key}`;
+                }
+                const directResponse = await fetch(modelsEndpoint, { method: 'GET', headers: headers });
+                if (!directResponse.ok) throw new Error(`HTTP ${directResponse.status}`);
+                const data = await directResponse.json();
                 models = data.data || data.models || data;
             }
-        } catch (e) {
-            console.log('酒馆端点尝试失败，切换到直接调用');
-        }
 
-        // 方式2: 如果酒馆端点失败，直接调用 API
-        if (!models || models.length === 0) {
-            let modelsEndpoint = '';
-            let headers = { 'Content-Type': 'application/json' };
-            
-            // 根据不同的 API 源使用不同的认证方式
-            if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
-                // Gemini/Google AI 使用 URL 参数认证
-                // 确保 URL 已经包含完整路径 (如 http://127.0.0.1:8888/v1beta)
-                const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
-                modelsEndpoint = `${baseUrl}/models?key=${key}`;
+            if (models && models.length > 0) {
+                const modelList = models.map(m => ({ id: typeof m === 'string' ? m : (m.id || m.model || m.name) }));
+                updateModelSelect(modelList);
+                showStatus(`✅ 成功获取 ${modelList.length} 个模型`, 'var(--success-color)');
             } else {
-                // 其他 API 使用 Bearer token
-                modelsEndpoint = `${url}/models`;
+                throw new Error('未找到可用模型');
+            }
+        } catch (e) {
+            console.error('获取模型列表失败:', e);
+            showStatus(`❌ 获取失败: ${e.message}`, 'var(--danger-color)');
+        } finally {
+            els.fetchBtn.disabled = false;
+        }
+    }
+
+    async function testConnection() {
+        const url = els.inputs.apiurl.value.trim();
+        const key = els.inputs.key.value.trim();
+        const model = els.inputs.model.value.trim();
+        const source = els.sourceSelect.value;
+
+        if (!url || !key || !model) {
+            if(typeof showNovaAlert === 'function') showNovaAlert("请确保地址、密钥和模型名称都已填写。");
+            return;
+        }
+
+        els.testLog.style.display = 'block';
+        els.testLog.textContent = "正在发送测试请求...";
+        els.testLog.style.color = "var(--text-secondary-color)";
+        els.testBtn.disabled = true;
+
+        try {
+            const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+            let endpoint = '', headers = { 'Content-Type': 'application/json' }, body = {};
+
+            if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
+                endpoint = `${baseUrl}/${model}:generateContent?key=${key}`;
+                body = {
+                    contents: [{ role: 'user', parts: [{ text: 'Hi' }] }],
+                    generationConfig: { maxOutputTokens: 5 }
+                };
+            } else {
+                endpoint = `${baseUrl}/chat/completions`;
                 headers['Authorization'] = `Bearer ${key}`;
-            }
-            
-            const directResponse = await fetch(modelsEndpoint, {
-                method: 'GET',
-                headers: headers,
-            });
-
-            if (!directResponse.ok) {
-                throw new Error(`HTTP ${directResponse.status}: ${directResponse.statusText}`);
+                body = { model: model, messages: [{ role: 'user', content: 'Hi' }], max_tokens: 5 };
             }
 
-            const data = await directResponse.json();
-            models = data.data || data.models || data;
-        }
+            const response = await fetch(endpoint, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            let responseText = (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini')
+                ? data.candidates?.[0]?.content?.parts?.[0]?.text
+                : data.choices?.[0]?.message?.content;
 
-        if (models && models.length > 0) {
-            const modelList = models.map(m => ({ 
-                id: typeof m === 'string' ? m : (m.id || m.model || m.name) 
-            }));
-            updateModelSelect(modelList);
-            showStatus(`✅ 成功获取 ${modelList.length} 个模型`, 'var(--success-color)');
-        } else {
-            throw new Error('未找到可用模型');
+            els.testLog.textContent = `✅ 连接成功!\n响应: "${(responseText || '').trim()}"`;
+            els.testLog.style.color = "var(--success-color)";
+        } catch (e) {
+            els.testLog.textContent = `❌ 连接失败:\n${e.message}`;
+            els.testLog.style.color = "var(--danger-color)";
+        } finally {
+            els.testBtn.disabled = false;
         }
-    } catch (e) {
-        console.error('获取模型列表失败:', e);
-        showStatus(`❌ 获取失败: ${e.message}`, 'var(--danger-color)');
-    } finally {
-        els.fetchBtn.disabled = false;
-    }
-}
- // 测试连接 - **直接发送 API 请求**
-async function testConnection() {
-    const url = els.inputs.apiurl.value.trim();
-    const key = els.inputs.key.value.trim();
-    const model = els.inputs.model.value.trim();
-    const source = els.sourceSelect.value;
-
-    if (!url || !key || !model) {
-       showNovaAlert("请确保地址、密钥和模型名称都已填写。");
-        return;
     }
 
-    els.testLog.style.display = 'block';
-    els.testLog.textContent = "正在发送测试请求...";
-    els.testLog.style.color = "var(--text-secondary-color)";
-    els.testBtn.disabled = true;
+    function buildCustomApiConfig() {
+        const keyMap = {
+            apiurl: 'api_url', key: 'api_key', model: 'model',
+            max_tokens: 'max_tokens', temperature: 'temperature', top_p: 'top_p',
+            frequency_penalty: 'frequency_penalty', presence_penalty: 'presence_penalty'
+        };
+        const selectedSource = els.sourceSelect.value;
+        let finalApiType = selectedSource === 'gemini-secondary' ? 'makersuite' : selectedSource;
 
-    try {
-        let endpoint = '';
-        let headers = { 'Content-Type': 'application/json' };
-        let body = {};
+        const config = { source: selectedSource, api_type: finalApiType };
+        Object.keys(els.inputs).forEach(inputKey => {
+            const val = els.inputs[inputKey].value.trim();
+            if (val === '') return;
+            const backendKey = keyMap[inputKey];
+            if (!backendKey) return;
+            if (['max_tokens', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty'].includes(inputKey)) {
+                config[backendKey] = Number(val);
+            } else {
+                config[backendKey] = val;
+            }
+        });
+        return config;
+    }
 
-        // 确保 URL 没有尾部斜杠
-        const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+    // --- 🆕 配置文件管理逻辑 🆕 ---
 
-        // 根据不同 API 源构建请求
-        if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
-            // Gemini API
-            endpoint = `${baseUrl}/${model}:generateContent?key=${key}`;
-            body = {
-                contents: [{
-                    role: 'user',  // 添加 role 字段
-                    parts: [{ text: 'Say "Hello, Nova!" in 5 words or less.' }]
-                }],
-                generationConfig: {
-                    maxOutputTokens: 20,
-                    temperature: 0.7
-                }
-            };
-        } else {
-            // OpenAI 兼容 API
-            endpoint = `${baseUrl}/chat/completions`;
-            headers['Authorization'] = `Bearer ${key}`;
-            body = {
-                model: model,
-                messages: [{ role: 'user', content: 'Say "Hello, Nova!" in 5 words or less.' }],
-                max_tokens: 20,
-                temperature: 0.7
-            };
-        }
+    function getApiPool() {
+        try {
+            return JSON.parse(localStorage.getItem(POOL_KEY) || '{}');
+        } catch { return {}; }
+    }
 
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(body)
+    function saveApiPool(pool) {
+        localStorage.setItem(POOL_KEY, JSON.stringify(pool));
+    }
+
+    function refreshProfileSelect() {
+        const pool = getApiPool();
+        els.profileSelect.innerHTML = '';
+
+        // 1. 添加固定的 Legacy API (custom_v2)
+        const legacyOpt = document.createElement('option');
+        legacyOpt.value = 'custom_v2';
+        legacyOpt.textContent = 'API 2 (Legacy/Default)';
+        els.profileSelect.appendChild(legacyOpt);
+
+        // 2. 添加池中的其他 API
+        Object.keys(pool).forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = pool[id].name || `Custom API (${id})`;
+            els.profileSelect.appendChild(opt);
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
-        }
-
-        const data = await response.json();
-        let responseText = '';
-
-        // 解析不同 API 的响应格式
-        if (source === 'makersuite' || source === 'vertexai' || source === 'proxy-gemini') {
-            responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '未获取到响应内容';
-        } else {
-            responseText = data.choices?.[0]?.message?.content || '未获取到响应内容';
-        }
-
-        els.testLog.textContent = `✅ 连接成功!\n模型响应: "${responseText.trim()}"`;
-        els.testLog.style.color = "var(--success-color)";
-
-    } catch (e) {
-        console.error("测试连接失败:", e);
-        els.testLog.textContent = `❌ 连接失败:\n${e.message}`;
-        els.testLog.style.color = "var(--danger-color)";
-    } finally {
-        els.testBtn.disabled = false;
+        els.profileSelect.value = currentProfileId;
+        updateProfileButtonsState();
     }
-}
-    // 构建配置对象
- function buildCustomApiConfig() {
-    // 这个映射表是关键，它将我们输入框的ID/键名“翻译”成后端API期望的格式
-    const keyMap = {
-        apiurl: 'api_url',          // 关键修改：'apiurl' -> 'api_url'
-        key: 'api_key',             // 关键修改：'key' -> 'api_key'
-        model: 'model',
-        max_tokens: 'max_tokens',
-        temperature: 'temperature',
-        top_p: 'top_p',
-        frequency_penalty: 'frequency_penalty',
-        presence_penalty: 'presence_penalty'
-    };
-    const selectedSource = els.sourceSelect.value;
-let finalApiType = selectedSource;
 
-if (selectedSource === 'gemini-secondary') {
-    finalApiType = 'makersuite'; // 或者 'makersuite'，取决于你的代理后端期望的类型
-}
-const config = {
-    // 'source' 字段我们保留自定义名称，用来“欺骗”后端
-    source: selectedSource,
-    // 'api_type' 字段我们使用翻译后的真实名称，让后端知道如何处理它
-    api_type: finalApiType
-};
-    Object.keys(els.inputs).forEach(inputKey => {
-        const val = els.inputs[inputKey].value.trim();
+    function updateProfileButtonsState() {
+        // custom_v2 不允许重命名和删除
+        const isLegacy = currentProfileId === 'custom_v2';
+        els.renameProfileBtn.disabled = isLegacy;
+        els.delProfileBtn.disabled = isLegacy;
+        els.renameProfileBtn.style.opacity = isLegacy ? '0.5' : '1';
+        els.delProfileBtn.style.opacity = isLegacy ? '0.5' : '1';
+    }
 
-        // 如果输入值为空，则跳过，让后端使用默认值
-        if (val === '') return;
+    function loadProfileData(profileId) {
+        currentProfileId = profileId;
+        let config = null;
 
-        // 从映射表中找到后端期望的键名
-        const backendKey = keyMap[inputKey];
-
-        // 如果在映射表中找不到对应的键，也跳过
-        if (!backendKey) return;
-
-        // 对需要是数字的字段进行转换
-        if (['max_tokens', 'temperature', 'top_p', 'frequency_penalty', 'presence_penalty'].includes(inputKey)) {
-            config[backendKey] = Number(val);
+        if (profileId === 'custom_v2') {
+            // 从旧的独立键读取
+            try {
+                config = JSON.parse(localStorage.getItem(LEGACY_KEY));
+            } catch (e) {}
         } else {
-            config[backendKey] = val;
+            // 从统一池读取
+            const pool = getApiPool();
+            config = pool[profileId];
         }
-    });
 
-    console.log("[Nova API Manager] Generated custom_api config for backend:", config);
-    return config;
-}
-    // 保存配置
+        // 填充表单
+        if (config) {
+            if (config.source) els.sourceSelect.value = config.source;
+            const keyMap = {
+                apiurl: 'api_url', key: 'api_key', model: 'model',
+                max_tokens: 'max_tokens', temperature: 'temperature', top_p: 'top_p',
+                frequency_penalty: 'frequency_penalty', presence_penalty: 'presence_penalty'
+            };
+            Object.keys(els.inputs).forEach(inputKey => {
+                const savedKey = keyMap[inputKey];
+                els.inputs[inputKey].value = (savedKey && config[savedKey] !== undefined) ? config[savedKey] : '';
+            });
+        } else {
+            // 如果是新建或空的，重置表单
+            els.sourceSelect.value = 'openai';
+            els.inputs.apiurl.value = DEFAULT_API_URLS['openai'];
+            Object.keys(els.inputs).forEach(k => { if(k !== 'apiurl') els.inputs[k].value = ''; });
+        }
+        updateProfileButtonsState();
+    }
+
     function saveSettings() {
         const config = buildCustomApiConfig();
-        localStorage.setItem('nova_custom_api_settings', JSON.stringify(config));
+
+        if (currentProfileId === 'custom_v2') {
+            // 保存到旧位置，保持兼容
+            localStorage.setItem(LEGACY_KEY, JSON.stringify(config));
+        } else {
+            // 保存到统一池
+            const pool = getApiPool();
+            // 保留原有的 name 属性
+            const existingName = pool[currentProfileId]?.name || `API ${currentProfileId.replace('custom_v', '')}`;
+            pool[currentProfileId] = { ...config, name: existingName };
+            saveApiPool(pool);
+        }
+
         const originalText = els.saveBtn.textContent;
         els.saveBtn.textContent = "✅ 配置已保存";
         setTimeout(() => els.saveBtn.textContent = originalText, 2000);
-        console.log("[Nova API Manager] Saved:", config);
+        console.log(`[Nova API Manager] Saved profile ${currentProfileId}:`, config);
     }
+
+    function createNewProfile() {
+        // 生成唯一ID: custom_v + 时间戳
+        const newId = `custom_v${Date.now()}`;
+        const pool = getApiPool();
+        pool[newId] = {
+            name: `New API ${Object.keys(pool).length + 3}`, // +3 是因为有 default, custom_v2
+            source: 'openai',
+            api_url: DEFAULT_API_URLS['openai'],
+            api_key: '',
+            model: ''
+        };
+        saveApiPool(pool);
+        refreshProfileSelect();
+        els.profileSelect.value = newId;
+        loadProfileData(newId); // 切换并加载
+    }
+
+    function renameCurrentProfile() {
+        if (currentProfileId === 'custom_v2') return;
+        const pool = getApiPool();
+        const currentName = pool[currentProfileId]?.name || '';
+        // 使用简单的 prompt，或者你可以换成你的 showConfirmModal
+        const newName = prompt("请输入新的配置名称:", currentName);
+        if (newName && newName.trim()) {
+            pool[currentProfileId].name = newName.trim();
+            saveApiPool(pool);
+            refreshProfileSelect();
+        }
+    }
+
+    function deleteCurrentProfile() {
+        if (currentProfileId === 'custom_v2') return;
+        if (!confirm("确定要删除这个 API 配置吗？此操作无法撤销。")) return;
+
+        const pool = getApiPool();
+        delete pool[currentProfileId];
+        saveApiPool(pool);
+
+        // 删完切回 v2
+        refreshProfileSelect();
+        els.profileSelect.value = 'custom_v2';
+        loadProfileData('custom_v2');
+    }
+
+    // --- 初始化 ---
 
     function init() {
         populateSourceSelect();
-        loadSettings();
+        refreshProfileSelect(); // 加载下拉框
+        loadProfileData('custom_v2'); // 默认加载 v2
+
+        const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+        updateToggleState(isEnabled);
+
         bindEvents();
     }
 
     function populateSourceSelect() {
         els.sourceSelect.innerHTML = '';
         const specialNames = {
-            'custom': ' (自定义)',
-            'makersuite': ' (Gemini)',
-            'proxy-openai': ' 🔄 (OpenAI格式反代)',
-            'proxy-gemini': ' 🔄 (Gemini格式反代)',
-              'gemini-secondary': ' (Gemini 备用)'
+            'custom': ' (自定义)', 'makersuite': ' (Gemini)',
+            'proxy-openai': ' 🔄 (OpenAI格式反代)', 'proxy-gemini': ' 🔄 (Gemini格式反代)',
+            'gemini-secondary': ' (Gemini 备用)'
         };
         Object.keys(CHAT_COMPLETION_SOURCES).forEach(key => {
             const value = CHAT_COMPLETION_SOURCES[key];
@@ -57731,48 +58014,8 @@ const config = {
         });
     }
 
-     function loadSettings() {
-        const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
-        updateToggleState(isEnabled);
-        try {
-            const stored = localStorage.getItem('nova_custom_api_settings');
-            if (stored) {
-                const config = JSON.parse(stored);
-                if (config.source) els.sourceSelect.value = config.source;
-
-                // --- 修改开始：添加映射逻辑以正确读取 api_url 和 api_key ---
-                const keyMap = {
-                    apiurl: 'api_url',
-                    key: 'api_key',
-                    model: 'model',
-                    max_tokens: 'max_tokens',
-                    temperature: 'temperature',
-                    top_p: 'top_p',
-                    frequency_penalty: 'frequency_penalty',
-                    presence_penalty: 'presence_penalty'
-                };
-
-                Object.keys(els.inputs).forEach(inputKey => {
-                    // 获取保存时使用的键名 (例如 apiurl 对应 api_url)
-                    const savedKey = keyMap[inputKey];
-
-                    // 如果配置中存在该值，则填充到输入框
-                    if (savedKey && config[savedKey] !== undefined) {
-                        els.inputs[inputKey].value = config[savedKey];
-                    }
-                });
-                // --- 修改结束 ---
-
-            } else {
-                els.sourceSelect.value = 'openai';
-                els.inputs.apiurl.value = DEFAULT_API_URLS['openai'];
-            }
-        } catch (e) { console.error("加载配置出错:", e); }
-    }
     function updateToggleState(isEnabled) {
         els.toggle.dataset.state = isEnabled ? 'on' : 'off';
-        // els.toggle.textContent = isEnabled ? '开启' : '关闭';
-    
         els.container.style.display = isEnabled ? 'block' : 'none';
     }
 
@@ -57780,17 +58023,15 @@ const config = {
         const source = els.sourceSelect.value;
         const defaultUrl = DEFAULT_API_URLS[source];
         if (defaultUrl !== undefined) {
-             const currentUrl = els.inputs.apiurl.value.trim();
-             const isDefaultUrl = Object.values(DEFAULT_API_URLS).includes(currentUrl);
-             if (currentUrl === '' || isDefaultUrl) {
-                 els.inputs.apiurl.value = defaultUrl;
-             }
+            const currentUrl = els.inputs.apiurl.value.trim();
+            const isDefaultUrl = Object.values(DEFAULT_API_URLS).includes(currentUrl);
+            if (currentUrl === '' || isDefaultUrl) els.inputs.apiurl.value = defaultUrl;
         }
     }
 
     function updateModelSelect(models) {
         els.modelSelect.innerHTML = '<option value="" disabled selected>-- 选择模型 --</option>';
-        models.sort((a, b) => a.id.localeCompare(b.id)); // 排序
+        models.sort((a, b) => a.id.localeCompare(b.id));
         models.forEach(m => {
             const opt = document.createElement('option');
             opt.value = m.id;
@@ -57798,9 +58039,7 @@ const config = {
             els.modelSelect.appendChild(opt);
         });
         els.modelSelect.style.display = 'block';
-        els.modelSelect.onchange = () => {
-            els.inputs.model.value = els.modelSelect.value;
-        };
+        els.modelSelect.onchange = () => { els.inputs.model.value = els.modelSelect.value; };
     }
 
     function showStatus(text, color) {
@@ -57823,9 +58062,14 @@ const config = {
         });
         els.testBtn.addEventListener('click', (e) => { e.preventDefault(); testConnection(); });
         els.saveBtn.addEventListener('click', saveSettings);
+
+        // 🆕 绑定新按钮事件
+        els.profileSelect.addEventListener('change', (e) => loadProfileData(e.target.value));
+        els.addProfileBtn.addEventListener('click', (e) => { e.preventDefault(); createNewProfile(); });
+        els.renameProfileBtn.addEventListener('click', (e) => { e.preventDefault(); renameCurrentProfile(); });
+        els.delProfileBtn.addEventListener('click', (e) => { e.preventDefault(); deleteCurrentProfile(); });
     }
 
-    // 启动
     init();
 })();
 

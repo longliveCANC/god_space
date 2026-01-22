@@ -525,5 +525,17 @@
       "scriptUrl": "",
      "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-解析玩家.json",
     "previewImage": ""
+  },{
+    "id": "多异步管线",
+    "name": "多异步管线",
+    "author": "assa",
+    "version": "1.0",
+    "is_dowload_raw_name":true,
+    "tags": ["功能脚本"],
+    "description":"使用此mod，在设置界面的第一页的上面会出现多异步管线的配置。配合多api，可以实现无限异步的pip流。世界书是一个示例用例，配置好多异步并应用后，就可以接替原本的弹幕功能，将弹幕任务交给第三个AI。",
+    
+  "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/modA1pip.js",
+     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-b3ex0-弹幕.json",
+    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 31.png"
   }
 ]
