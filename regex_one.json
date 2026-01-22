@@ -27145,99 +27145,102 @@ window.GlobalChatAudio = {
     },
 
     // --- 核心播放逻辑 ---
+playMusic: async function(songName, artistName, domId, isAutoPlay = false) {
+    this.setLoadingState(domId, true);
 
-     // --- 优化后的 playMusic (强化去重) ---
-    playMusic: async function(songName, artistName, domId, isAutoPlay = false) {
-        this.setLoadingState(domId, true);
+    const normalize = (str) => (str || '').toLowerCase().replace(/\s/g, '');
+    const qName = normalize(songName);
+    const qArt = normalize(artistName);
 
-        const normalize = (str) => (str || '').toLowerCase().replace(/\s/g, '');
-        const qName = normalize(songName);
-        const qArt = normalize(artistName);
+    // --- 第一重防护：搜索前查重 (基于用户输入的关键词) ---
+    const existingIndexBefore = this.playlist.findIndex(s => {
+        const sName = normalize(s.song);
+        const sArt = normalize(s.artist);
+        const nameMatch = sName.includes(qName) || qName.includes(sName);
+        const artistMatch = (qArt && sArt) ? (sArt.includes(qArt) || qArt.includes(sArt)) : true;
+        return nameMatch && artistMatch;
+    });
 
-        // 查找逻辑保持不变，它已经足够健壮
-        const existingIndex = this.playlist.findIndex(s => {
-            const sName = normalize(s.song);
-            const sArt = normalize(s.artist);
-            const nameMatch = sName.includes(qName) || qName.includes(sName);
-            const artistMatch = (qArt && sArt) ? (sArt.includes(qArt) || qArt.includes(sArt)) : true;
-            return nameMatch && artistMatch;
-        });
+    if (existingIndexBefore !== -1) {
+        this.handleExistingSong(existingIndexBefore, domId);
+        return; 
+    }
 
-        if (existingIndex !== -1) {
-            console.log("列表已存在，直接播放索引:", existingIndex);
-            this.playlist[existingIndex].domId = domId; // 更新domId以同步UI
-
-            // 关键：直接调用 playIndex 播放，而不是 togglePlay
-            // 因为 playMusic 的意图就是“播放这首歌”
-            this.playIndex(existingIndex);
-
-            this.setLoadingState(domId, false);
-            if (!this.widgetEl.classList.contains('expanded')) {
-                this.toggleExpand();
-            }
-            return; // 结束函数
+    try {
+        const result = await this.searchSong(songName, artistName);
+        if (!result || !result.url) {
+            this.showToast(`未找到: ${songName}`);
+            return;
         }
 
-        // --- 如果列表中不存在，才继续执行搜索和添加 ---
-        try {
-            const result = await this.searchSong(songName, artistName);
-            if (!result || !result.url) {
-                this.showToast(`未找到: ${songName}`);
-                this.setLoadingState(domId, false);
-                return;
-            }
+        // 提取搜索结果的正式名称
+        const resName = normalize(result.song);
+        const resArt = normalize(result.singer);
 
-            const songData = {
-            
-                song: result.song,
-                artist: result.singer,
-                source: result.source,
-                url: result.url,
-                cover: result.cover || '',
-                domId: domId,
-                originalQuery: `${songName}-${artistName}`
-            };
+        // --- 第二重防护：搜索后查重 (基于 API 返回的正式歌名/歌手) ---
+        // 防止用户搜 "晴天" 和 "周杰伦 晴天" 导致队列里出现两首一样的歌
+        const existingIndexAfter = this.playlist.findIndex(s => 
+            normalize(s.song) === resName && normalize(s.artist) === resArt
+        );
 
-         if (this.storageMode === 'perm') {
-            // 从数据库中获取所有歌曲，检查是否存在
+        if (existingIndexAfter !== -1) {
+            console.log("搜索结果在队列中已存在，跳过插入，直接播放");
+            this.handleExistingSong(existingIndexAfter, domId);
+            return;
+        }
+
+        const songData = {
+            song: result.song,
+            artist: result.singer,
+            source: result.source,
+            url: result.url,
+            cover: result.cover || '',
+            domId: domId,
+            originalQuery: `${songName}-${artistName}`
+        };
+
+        // --- 存储逻辑 (IndexedDB) ---
+        if (this.storageMode === 'perm') {
             const allDbSongs = await MusicDB.getAllSongs();
-            const normalize = (str) => (str || '').toLowerCase().replace(/\s/g, '');
-            const isDuplicate = allDbSongs.some(dbSong =>
-                normalize(dbSong.song) === normalize(songData.song) &&
-                normalize(dbSong.artist) === normalize(songData.artist)
+            const isDbDuplicate = allDbSongs.some(dbSong =>
+                normalize(dbSong.song) === resName && normalize(dbSong.artist) === resArt
             );
-
-            if (!isDuplicate) {
-                await MusicDB.addSong(songData);
-                console.log("新歌曲，已存入IndexedDB:", songData.song);
-            } else {
-                console.log("歌曲已存在于IndexedDB，无需重复存储:", songData.song);
-            }
+            if (!isDbDuplicate) await MusicDB.addSong(songData);
         }
 
-            // 播放逻辑
-            if (this.queueMode === 'queue' && this.playlist.length > 0 && !this.audio.paused) {
+        // --- 插入并播放逻辑 ---
+        if (this.queueMode === 'queue' && this.playlist.length > 0 && !this.audio.paused) {
+            this.playlist.push(songData);
+            this.showToast(`已添加到队列: ${songData.song}`);
+        } else {
+            if (this.currentIndex === -1) {
                 this.playlist.push(songData);
-                this.showToast(`已添加到播放队列: ${songData.song}`);
+                this.currentIndex = this.playlist.length - 1;
             } else {
-                if (this.currentIndex === -1) {
-                    this.playlist.push(songData);
-                    this.currentIndex = this.playlist.length - 1;
-                } else {
-                    this.playlist.splice(this.currentIndex + 1, 0, songData);
-                    this.currentIndex++;
-                }
-                this.playCurrent();
+                this.playlist.splice(this.currentIndex + 1, 0, songData);
+                this.currentIndex++;
             }
-            this.renderPlaylist();
-        } catch (e) {
-            console.error("处理失败", e);
-        } finally {
-            this.setLoadingState(domId, false);
+            this.playCurrent();
         }
-    },
-       // 检查可见性：由 LocalStorage 开关 和 列表是否为空 共同决定
-    checkWidgetVisibility: function() {
+        this.renderPlaylist();
+
+    } catch (e) {
+        console.error("播放处理失败", e);
+    } finally {
+        this.setLoadingState(domId, false);
+    }
+},
+
+// 提取公共的“处理已存在歌曲”逻辑
+handleExistingSong: function(index, domId) {
+    this.playlist[index].domId = domId;
+    this.playIndex(index);
+    this.setLoadingState(domId, false);
+    if (!this.widgetEl.classList.contains('expanded')) {
+        this.toggleExpand();
+    }
+},
+      checkWidgetVisibility: function() {
         const widget = document.getElementById('global-music-widget');
         if (!widget) return;
 // const hasSongs = this.playlist && this.playlist.length > 0;
@@ -33379,7 +33382,7 @@ if(hasSummaryUpdate){
     // }
 }
  
-
+// window.processUpdateMemoryCommands = processUpdateMemoryCommands;
 async function processUpdateMemoryCommands(commandText, message_id) {
     message_id = -1;
        updateDetails = {
@@ -43719,7 +43722,7 @@ if(is_complex_task !== "true"){
 
        const orb = document.getElementById('world-shard');
     if (!orb) return;
-    
+   await initBatch2TextareaOnContentLoad();
     // toggle的第二个参数决定是添加还是移除类
     orb.classList.toggle('warning-state', currentGameData.敌方攻击骰池[0] != '');
 const runButton = document.getElementById('run-button');
@@ -58182,17 +58185,11 @@ async function sendStreamRequest(messages, onChunk, options = {}) {
     }
 }
 
-
-// 监听 DOMContentLoaded 事件
-document.addEventListener('DOMContentLoaded', function() {
- 
-
 //多个batch插入指令
 // 【立即执行函数】动态插入Batch2 Textarea
-(async function initBatch2TextareaOnContentLoad() {
+async function initBatch2TextareaOnContentLoad() {
     // 延迟2秒等待double_api初始化
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+  
     // console.log('[Nova's Batch2 Init] 开始检查double_api配置...');
     
     try {
@@ -58244,8 +58241,13 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('[Nova\'s Batch2 Init] 插入batch2时出错:', error);
     }
-})();
+}
   
+// 监听 DOMContentLoaded 事件
+document.addEventListener('DOMContentLoaded', function() {
+ 
+
+
     //任务模块
 (function () {
     // 1. 注入 CSS 样式
