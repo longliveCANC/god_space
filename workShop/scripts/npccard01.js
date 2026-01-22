@@ -1202,7 +1202,7 @@ input:checked + .mod01-nsfw-slider:before {
 .mod01-item-comment {
     margin-top: 8px;
     padding-top: 6px;
-     
+      text-align: center;
     font-size: 11px;
     font-style: italic;
  
@@ -3478,58 +3478,62 @@ this.allItems.forEach((item, index) => {
         }
 
         // --- 修改 4：通用递归渲染 (增加清晰的结构视图) ---
-        renderDeepObject(container, val) {
-            if (val === null || val === undefined) return;
+ // --- 修改 4：通用递归渲染 (增加清晰的结构视图) ---
+renderDeepObject(container, val) {
+    if (val === null || val === undefined) return;
 
-            if (typeof val === 'object') {
-                const wrapper = document.createElement('div');
-                // 这里加个类名用于CSS控制缩进
-                wrapper.className = 'mod01-nested-block';
+    if (typeof val === 'object') {
+        const wrapper = document.createElement('div');
+        // 这里加个类名用于CSS控制缩进
+        wrapper.className = 'mod01-nested-block';
 
-                let hasContent = false;
-                Object.keys(val).forEach(key => {
-                    if(key.startsWith('_')) return;
-                    hasContent = true;
+        let hasContent = false;
+        Object.keys(val).forEach(key => {
+            if(key.startsWith('_')) return;
+            hasContent = true;
 
-                    const row = document.createElement('div');
-                    // 增加一点行间距，看每一行更清楚
-                    row.style.marginBottom = '6px';
-                    row.style.position = 'relative';
+            const row = document.createElement('div');
+            // 增加一点行间距，看每一行更清楚
+            row.style.marginBottom = '6px';
+            row.style.position = 'relative';
 
-                    // 键名
-                    let keyHtml = `<span style="color:var(--secondary-color); font-weight:bold; margin-right:5px;">${key}:</span>`;
-                    if(isNaN(key)) row.innerHTML = keyHtml;
+            // --- 妈妈的汉化魔法在这里 ---
+            // 键名，优先从 KEY_MAP 中查找汉化
+            const displayKey = this.KEY_MAP[key] || key;
+            let keyHtml = `<span style="color:var(--secondary-color); font-weight:bold; margin-right:5px;">${displayKey}:</span>`;
+            if(isNaN(key)) row.innerHTML = keyHtml;
 
-                    // 值容器
-                    const valSpan = document.createElement('span');
+            // 值容器
+            const valSpan = document.createElement('span');
 
-                    // 如果值依然是对象，就不在这里显示内容，而是让它在新的一行渲染
-                    if (typeof val[key] === 'object' && val[key] !== null) {
-                        // 递归调用，wrapper将再次产生缩进
-                        this.renderDeepObject(valSpan, val[key]);
-                        // 对象的话，我们让它另起一行
-                        valSpan.style.display = "block";
-                        // 一个小小的连接符或提示（可选）
-                        if(isNaN(key)) {
-                            // 只有当有Key显示的时候，才需要换行；如果是纯数组索引，直接渲染
-                        }
-                    } else {
-                        // 简单值
-                        this.renderDeepObject(valSpan, val[key]);
-                    }
-
-                    row.appendChild(valSpan);
-                    wrapper.appendChild(row);
-                });
-
-                if(!hasContent) container.innerHTML += '<span style="opacity:0.5;font-size:12px;"> [空]</span>';
-                else container.appendChild(wrapper);
-
+            // 如果值依然是对象，就不在这里显示内容，而是让它在新的一行渲染
+            if (typeof val[key] === 'object' && val[key] !== null) {
+                // 递归调用，wrapper将再次产生缩进
+                this.renderDeepObject(valSpan, val[key]);
+                // 对象的话，我们让它另起一行
+                valSpan.style.display = "block";
+                // 一个小小的连接符或提示（可选）
+                if(isNaN(key)) {
+                    // 只有当有Key显示的时候，才需要换行；如果是纯数组索引，直接渲染
+                }
             } else {
-                // 简单值直接渲染
-                container.innerText = String(val);
+                // 简单值
+                this.renderDeepObject(valSpan, val[key]);
             }
-        }
+
+            row.appendChild(valSpan);
+            wrapper.appendChild(row);
+        });
+
+        if(!hasContent) container.innerHTML += '<span style="opacity:0.5;font-size:12px;"> [空]</span>';
+        else container.appendChild(wrapper);
+
+    } else {
+        // 简单值直接渲染
+        container.innerText = String(val);
+    }
+}
+
   async loadCG(displayName) {
             console.log(`[Nova][CG-LOG] 尝试为 '${displayName}' 加载立绘...`);
 
