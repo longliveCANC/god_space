@@ -797,6 +797,11 @@
                             sourceEx.bound_worldbooks.forEach(wb => existingSet.add(wb));
                             targetEx.bound_worldbooks = Array.from(existingSet);
                         }
+                         if (sourceEx.excluded_worldbooks && Array.isArray(sourceEx.excluded_worldbooks)) {
+                            const existingSet = new Set(targetEx.excluded_worldbooks || []);
+                            sourceEx.excluded_worldbooks.forEach(wb => existingSet.add(wb));
+                            targetEx.excluded_worldbooks = Array.from(existingSet);
+                        }
                     }
                 });
             }
@@ -1195,11 +1200,15 @@
 
         return html;
     }
-    // 创建单个 ExBatch 卡片
+     // 创建单个 ExBatch 卡片
     function createExBatchCard(batch, batchIndex, exBatch, exIndex) {
         const card = document.createElement('div');
+
         // 判定是否为核心锁定流程 (禁止删除/禁用的流程)
         const isLocked = (batch.id === 1 && exBatch.id === 0) || (batch.id === 2 && exBatch.id === 0);
+
+        // 判定是否允许编辑世界书 (非锁定节点 OR Batch 2 核心节点)
+        const allowWbEdit = !isLocked || (batch.id === 2 && exBatch.id === 0);
 
         card.className = `modA1-card ${isLocked ? 'locked' : ''}`;
 
@@ -1227,12 +1236,10 @@
             </div>
         `;
 
-        // 绑定开关事件 (非锁定才绑定)
         if (!isLocked) {
             headerRow.querySelector('.modA1-input-enable').onchange = (e) => { exBatch.enabled = e.target.checked; };
             headerRow.querySelector('.modA1-input-render').onchange = (e) => { exBatch.render = e.target.checked; };
         }
-
         card.appendChild(headerRow);
 
         // 2. 名称 (Name) - 锁定时只读
@@ -1241,10 +1248,8 @@
         // 3. 处理消息 (Processing Msg) - 始终可编辑
         card.appendChild(createInputGroup('处理提示语 (Flavor Text)', exBatch.processing_msg || '', (val) => exBatch.processing_msg = val));
 
-        // --- 🆕 修改点：API 配置 (允许 Batch 2 核心节点修改，Batch 1 核心节点通常保持 Default) ---
-        // 逻辑：如果不是 Batch 1 的核心节点 (Main Chat)，则允许修改 API
+        // 4. API 配置
         const isMainChatCore = (batch.id === 1 && exBatch.id === 0);
-
         if (!isMainChatCore) {
             const apiGroup = document.createElement('div');
             apiGroup.className = 'modA1-form-group';
@@ -1258,95 +1263,103 @@
             card.appendChild(apiGroup);
         }
 
-        // === 仅在非锁定时显示以下内容 (绑定世界书、删除按钮) ===
-        if (!isLocked) {
-            // 5. 绑定世界书 (Tags Input + Quick Select)
-            const wbGroup = document.createElement('div');
-            wbGroup.className = 'modA1-form-group';
+        // === 5. 世界书配置区域 (绑定 & 排除) ===
+        // 只要 allowWbEdit 为 true，就显示这部分
+        if (allowWbEdit) {
+            // --- 辅助函数：创建标签输入区域 ---
+            const createTagInputSection = (labelText, dataArrayKey, placeholderColor = 'var(--primary-color)') => {
+                const group = document.createElement('div');
+                group.className = 'modA1-form-group';
 
-            // 标题行 + 快捷选择
-            const wbHeader = document.createElement('div');
-            wbHeader.style.cssText = "display:flex; justify-content:space-between; align-items:center;";
-            wbHeader.innerHTML = `<span class="modA1-label">绑定世界书 (前缀)</span>`;
+                // 确保数组存在
+                if (!exBatch[dataArrayKey]) exBatch[dataArrayKey] = [];
 
-            // 快捷选择下拉框
-            const quickSelect = document.createElement('select');
-            quickSelect.className = 'modA1-select';
-            quickSelect.style.cssText = "width:auto; padding:2px; font-size:12px; height:24px;";
-            quickSelect.innerHTML = `<option value="">+ 快速添加...</option>`;
+                // 标题行 + 快捷选择
+                const header = document.createElement('div');
+                header.style.cssText = "display:flex; justify-content:space-between; align-items:center;";
+                header.innerHTML = `<span class="modA1-label">${labelText}</span>`;
 
-            // 填充可用世界书
-            const availableBooks = getAvailableWorldbooks();
-            availableBooks.forEach(book => {
-                const opt = document.createElement('option');
-                opt.value = book;
-                opt.textContent = book;
-                quickSelect.appendChild(opt);
-            });
+                const quickSelect = document.createElement('select');
+                quickSelect.className = 'modA1-select';
+                quickSelect.style.cssText = "width:auto; padding:2px; font-size:12px; height:24px;";
+                quickSelect.innerHTML = `<option value="">+ 快速添加...</option>`;
 
-            wbHeader.appendChild(quickSelect);
-            wbGroup.appendChild(wbHeader);
-
-            const tagsContainer = document.createElement('div');
-            tagsContainer.className = 'modA1-tags-container';
-
-            // 渲染标签函数
-            const renderTags = () => {
-                // 清除除 input 外的所有元素
-                Array.from(tagsContainer.children).forEach(child => {
-                    if (!child.classList.contains('modA1-tag-input')) tagsContainer.removeChild(child);
+                getAvailableWorldbooks().forEach(book => {
+                    const opt = document.createElement('option');
+                    opt.value = book;
+                    opt.textContent = book;
+                    quickSelect.appendChild(opt);
                 });
+                header.appendChild(quickSelect);
+                group.appendChild(header);
 
-                const input = tagsContainer.querySelector('.modA1-tag-input');
+                // 标签容器
+                const tagsContainer = document.createElement('div');
+                tagsContainer.className = 'modA1-tags-container';
 
-                (exBatch.bound_worldbooks || []).forEach((wb, idx) => {
-                    const tag = document.createElement('span');
-                    tag.className = 'modA1-tag';
-                    tag.innerHTML = `${wb} <span class="modA1-tag-remove">×</span>`;
-                    tag.querySelector('.modA1-tag-remove').onclick = () => {
-                        exBatch.bound_worldbooks.splice(idx, 1);
-                        renderTags();
-                    };
-                    tagsContainer.insertBefore(tag, input);
-                });
-            };
+                const renderTags = () => {
+                    // 清理旧标签 (保留 input)
+                    Array.from(tagsContainer.children).forEach(child => {
+                        if (!child.classList.contains('modA1-tag-input')) tagsContainer.removeChild(child);
+                    });
+                    const input = tagsContainer.querySelector('.modA1-tag-input');
 
-            // 快捷选择事件
-            quickSelect.onchange = (e) => {
-                const val = e.target.value;
-                if (val) {
-                    if (!exBatch.bound_worldbooks) exBatch.bound_worldbooks = [];
-                    if (!exBatch.bound_worldbooks.includes(val)) {
-                        exBatch.bound_worldbooks.push(val);
+                    exBatch[dataArrayKey].forEach((wb, idx) => {
+                        const tag = document.createElement('span');
+                        tag.className = 'modA1-tag';
+                        // 排除列表用红色系，绑定列表用默认色
+                        if (dataArrayKey === 'excluded_worldbooks') {
+                            tag.style.background = 'rgba(255, 80, 80, 0.2)';
+                            tag.style.color = '#ff8080';
+                        }
+                        tag.innerHTML = `${wb} <span class="modA1-tag-remove">×</span>`;
+                        tag.querySelector('.modA1-tag-remove').onclick = () => {
+                            exBatch[dataArrayKey].splice(idx, 1);
+                            renderTags();
+                        };
+                        tagsContainer.insertBefore(tag, input);
+                    });
+                };
+
+                // 添加逻辑
+                const addTag = (val) => {
+                    if (val && !exBatch[dataArrayKey].includes(val)) {
+                        exBatch[dataArrayKey].push(val);
                         renderTags();
                     }
-                    e.target.value = ""; // 重置
-                }
-            };
+                };
 
-            const tagInput = document.createElement('input');
-            tagInput.className = 'modA1-tag-input';
-            tagInput.placeholder = '输入并回车...';
-            tagInput.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const val = tagInput.value.trim();
-                    if (val) {
-                        if (!exBatch.bound_worldbooks) exBatch.bound_worldbooks = [];
-                        if (!exBatch.bound_worldbooks.includes(val)) {
-                            exBatch.bound_worldbooks.push(val);
-                            renderTags();
-                        }
+                quickSelect.onchange = (e) => {
+                    addTag(e.target.value);
+                    e.target.value = "";
+                };
+
+                const tagInput = document.createElement('input');
+                tagInput.className = 'modA1-tag-input';
+                tagInput.placeholder = '输入前缀并回车...';
+                tagInput.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag(tagInput.value.trim());
                         tagInput.value = '';
                     }
-                }
-            };
-            tagsContainer.appendChild(tagInput);
-            renderTags(); // 初始渲染
-            wbGroup.appendChild(tagsContainer);
-            card.appendChild(wbGroup);
+                };
 
-            // 6. 删除按钮
+                tagsContainer.appendChild(tagInput);
+                renderTags(); // 初始渲染
+                group.appendChild(tagsContainer);
+                return group;
+            };
+
+            // 5.1 渲染绑定列表
+            card.appendChild(createTagInputSection('✅ 绑定世界书 (包含)', 'bound_worldbooks'));
+
+            // 5.2 渲染排除列表 (新增)
+            card.appendChild(createTagInputSection('⛔ 排除世界书 (屏蔽)', 'excluded_worldbooks'));
+        }
+
+        // === 6. 删除按钮 (仅非锁定节点显示) ===
+        if (!isLocked) {
             const delBtn = document.createElement('button');
             delBtn.className = 'modA1-btn modA1-btn-danger';
             delBtn.style.marginTop = '10px';
@@ -1355,7 +1368,7 @@
                 if(typeof showConfirmModal === 'function') {
                     showConfirmModal('删除确认', '确定要删除这个扩展流程吗？', () => {
                         currentPipelineConfig[batchIndex].ex_batches.splice(exIndex, 1);
-                        renderEditorContent(); // 重绘
+                        renderEditorContent();
                     });
                 }
             };
@@ -1364,12 +1377,17 @@
             // 锁定状态下的提示
             const lockedHint = document.createElement('div');
             lockedHint.style.cssText = "font-size:12px; color:var(--text-secondary-color); font-style:italic; margin-top:10px; text-align:center;";
-            lockedHint.textContent = "核心流程配置已锁定 (仅可修改名称/提示语/API)";
+            if (batch.id === 2 && exBatch.id === 0) {
+                lockedHint.textContent = "核心记忆节点：仅可修改世界书规则与API";
+            } else {
+                lockedHint.textContent = "核心流程配置已锁定";
+            }
             card.appendChild(lockedHint);
         }
 
         return card;
     }
+
 
 
     // 辅助：创建输入框组

@@ -15202,7 +15202,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.1';
+window.current_game_version = '3.7.2';
 
 
 
@@ -35679,23 +35679,28 @@ async function extractAndStoreBatchContent(batchNumber) {
  * @returns {Promise<RolePrompt[]>} - 返回一个包含多个角色的提示词数组。
  */
  const assembleComplexPrompt = async (params = {}) => {
-    const { continuationText, targetBookNames,ignoreGlobalInjects = false  } = params; // 解构参数
+     const { continuationText, targetBookNames, excludedBookNames = [], ignoreGlobalInjects = false } = params;
     console.log("[Nova's Prompt Assembler] 开始为你编织独特的灵感丝线...");
 
     try {
         // --- 1. 获取所有相关的世界书条目 ---
-        // 🆕 如果传入了 targetBookNames 则使用传入的，否则使用默认的兼容列表 (Batch 2)
         const targetPrefixes = targetBookNames && targetBookNames.length > 0
             ? targetBookNames
             : ['小蝌蚪找妈妈', 'x-mod', 'x-dlc'];
+
+        // 2. 确保排除列表是数组
+        const excludedPrefixes = excludedBookNames && Array.isArray(excludedBookNames) ? excludedBookNames : [];
 
         const globalBooks = getGlobalWorldbookNames();
         const charBooks = getCharWorldbookNames('current');
         const allBoundBookNames = new Set([...globalBooks, charBooks.primary, ...charBooks.additional].filter(Boolean));
 
-        const filteredBookNames = [...allBoundBookNames].filter(name =>
-            targetPrefixes.some(prefix => name.startsWith(prefix))
-        );
+        // 3. 修改筛选逻辑：包含 targetPrefixes 且 不包含 excludedPrefixes
+        const filteredBookNames = [...allBoundBookNames].filter(name => {
+            const isMatch = targetPrefixes.some(prefix => name.startsWith(prefix));
+            const isExcluded = excludedPrefixes.some(prefix => name.startsWith(prefix));
+            return isMatch && !isExcluded;
+        });
 
         if (filteredBookNames.length === 0) {
             console.log("[Nova's Prompt Assembler] 没有找到符合条件的世界书。");
@@ -36852,7 +36857,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                // 1. 准备提示词上下文
             let promptPayload;
 
-            if (currentBatchIndex === 2) {
+            if (currentBatchIndex === 2 && currentExBatchIndex===0) {
                 // Batch 2: 保留原有的 Memory Update 逻辑
                 continuationText = ``;
                 const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
@@ -37120,7 +37125,7 @@ const finalAiResponse = hookDataBeforeSave.response;
                // 1. 准备提示词上下文
             let promptPayload;
 
-            if (currentBatchIndex === 2) {
+              if (currentBatchIndex === 2 && currentExBatchIndex===0) {
                 // Batch 2: 保留原有的 Memory Update 逻辑
                 continuationText = ``;
                 const lastAiMessage = conversationHistory.filter(m => m.role === 'assistant').pop();
