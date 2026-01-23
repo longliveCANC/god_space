@@ -35678,8 +35678,9 @@ async function extractAndStoreBatchContent(batchNumber) {
  * @param {object} params - 参数对象，为未来扩展保留。
  * @returns {Promise<RolePrompt[]>} - 返回一个包含多个角色的提示词数组。
  */
- const assembleComplexPrompt = async (params = {}) => {
-     const { continuationText, targetBookNames, excludedBookNames = [], ignoreGlobalInjects = false } = params;
+  const assembleComplexPrompt = async (params = {}) => {
+    // 🆕 1. 修改参数解构，增加 excludedBookNames
+    const { continuationText, targetBookNames, excludedBookNames = [], ignoreGlobalInjects = false } = params;
     console.log("[Nova's Prompt Assembler] 开始为你编织独特的灵感丝线...");
 
     try {
@@ -35688,19 +35689,29 @@ async function extractAndStoreBatchContent(batchNumber) {
             ? targetBookNames
             : ['小蝌蚪找妈妈', 'x-mod', 'x-dlc'];
 
-        // 2. 确保排除列表是数组
-        const excludedPrefixes = excludedBookNames && Array.isArray(excludedBookNames) ? excludedBookNames : [];
+        // 确保排除列表是数组
+        const excludedPrefixes = Array.isArray(excludedBookNames) ? excludedBookNames : [];
 
         const globalBooks = getGlobalWorldbookNames();
         const charBooks = getCharWorldbookNames('current');
         const allBoundBookNames = new Set([...globalBooks, charBooks.primary, ...charBooks.additional].filter(Boolean));
 
-        // 3. 修改筛选逻辑：包含 targetPrefixes 且 不包含 excludedPrefixes
+        // 🆕 2. 修改筛选逻辑：排除优先级最高
         const filteredBookNames = [...allBoundBookNames].filter(name => {
-            const isMatch = targetPrefixes.some(prefix => name.startsWith(prefix));
+            // [Step 1] 排除检查 (优先级最高)
+            // 只要名字以任意一个排除前缀开头，直接剔除，不再看是否包含
             const isExcluded = excludedPrefixes.some(prefix => name.startsWith(prefix));
-            return isMatch && !isExcluded;
+            if (isExcluded) {
+                // console.log(`[Nova Filter] 排除世界书: ${name}`); // 调试用
+                return false;
+            }
+
+            // [Step 2] 包含检查
+            // 必须匹配任意一个目标前缀
+            const isMatch = targetPrefixes.some(prefix => name.startsWith(prefix));
+            return isMatch;
         });
+
 
         if (filteredBookNames.length === 0) {
             console.log("[Nova's Prompt Assembler] 没有找到符合条件的世界书。");
