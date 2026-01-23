@@ -806,9 +806,9 @@ memory.load('${pathPrefix}', {
     desc: "${desc || '数据描述'}",
     <%_  
     var double_api = String(getLocalVar("double_api") || "false");
-    var batches = Number(getLocalVar("batches") || 1);
+    var batch = Number(getLocalVar("batch") || 1);
     //更新规则
-    if (double_api === "false" || (double_api === "true" && batches === 2)) {
+    if (double_api === "false" || (double_api === "true" && batch === 2)) {
     _%> update_rule: '${updateRule || '实时追踪更新'}'<%_
     }
     _%>
