@@ -30362,6 +30362,7 @@ async function restoreFromLatestSnapshot() {
 
 const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们现在使用新的显示区域
     const userInput = document.getElementById('user-input');
+    window.userInput = userInput;
     const sendButton = document.getElementById('send-button');
     const thingsButton = document.getElementById('things-button');
         const rerollButton = document.getElementById('reroll-button'); // ☆ 新成员：重写按钮
@@ -36842,7 +36843,22 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
             const streamListener = (fullText) => {
                 partialAiResponse = fullText;
                 throttledRender(fullText);
-            };
+             // === 外部流式钩子：把每次过滤后的完整文本暴露出去（例如给 IIFE / 服务器） ===
+    try {
+        if (typeof window !== 'undefined' && typeof window.novaStreamHook === 'function') {
+            window.novaStreamHook({
+                text: fullText,
+                isBackgroundStep,
+                batchIndex: currentBatchIndex,
+                exBatchIndex: currentExBatchIndex,
+                isContinuation,
+                isReroll,
+            });
+        }
+    } catch (hookError) {
+        console.error('[Nova External Stream Hook] 调用外部流式钩子时出错:', hookError);
+    }
+};
 
             if (isContinuation && continuationText) {
                 eventOnce(tavern_events.GENERATE_AFTER_DATA, (generate_data, dry_run) => {
