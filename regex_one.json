@@ -40729,7 +40729,7 @@ function populateCharacterPage(playData, statData, assaData) {
 
             const legendaryValue = attr.传奇?.[0] || 0;
             const legendaryTooltip = attr.传奇?.[1] || '';
-            const legendaryBonusHtml = legendaryValue > 0 ? ` <span class="legendary-value" data-tooltip="${legendaryTooltip}">(传奇属性:${legendaryValue})</span>` : '';
+            const legendaryBonusHtml = legendaryValue > 0 ? ` <span class="legendary-value" data-tooltip="${legendaryTooltip}">(传奇属性:${Number(legendaryValue).toFixed(1)})</span>` : '';
 
             const upgradeCost = calculateXpCost(attr.基础[0], 'attribute');
             const canUpgrade = currentXp >= upgradeCost;
