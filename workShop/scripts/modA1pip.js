@@ -132,7 +132,7 @@
                     { type: 'chat' }
                 );
             }
-
+BATCH_PIPELINE_CONFIG = currentPipelineConfig;
             // await initDisplay(false);
 
             console.log("[Nova Pipeline Editor] Configuration persisted to Storage and Chat Variables.");
