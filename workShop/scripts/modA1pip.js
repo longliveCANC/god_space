@@ -107,21 +107,31 @@
             // 5. 【关键修改】直接引用全局对象，不再深拷贝
             // 这样编辑器内的修改会直接作用于 BATCH_PIPELINE_CONFIG
             currentPipelineConfig = BATCH_PIPELINE_CONFIG;
-
-            console.log(`[Nova Pipeline] Config initialized from: ${source}`);
-        } catch (e) {
-            console.error("[Nova Pipeline Editor] Init Error:", e);
-            // 出错兜底
-            BATCH_PIPELINE_CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
-            currentPipelineConfig = BATCH_PIPELINE_CONFIG;
+   // 5. 【关键】加载后立即同步回 Tavern Variables
+        if (typeof TavernHelper !== 'undefined' && TavernHelper.insertOrAssignVariables) {
+            try {
+                await TavernHelper.insertOrAssignVariables(
+                    { [TAVERN_VAR_KEY]: currentPipelineConfig },
+                    { type: 'chat' }
+                );
+            } catch (e) {
+                console.warn("[Nova Pipeline] Failed to sync to Chat Variables:", e);
+            }
         }
-    }
 
+        console.log(`[Nova Pipeline] Config initialized from: ${source}`);
+    } catch (e) {
+        console.error("[Nova Pipeline Editor] Init Error:", e);
+        // 出错兜底
+        BATCH_PIPELINE_CONFIG = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        currentPipelineConfig = BATCH_PIPELINE_CONFIG;
+    }
+}
 
     // 保存：持久化到 LocalStorage 和 Tavern 变量
     async function saveConfig() {
         try {
-        
+        BATCH_PIPELINE_CONFIG = currentPipelineConfig;
             // 2. LocalStorage (保存到浏览器缓存)
             localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPipelineConfig));
 
@@ -132,7 +142,7 @@
                     { type: 'chat' }
                 );
             }
-BATCH_PIPELINE_CONFIG = currentPipelineConfig;
+
             // await initDisplay(false);
 
             console.log("[Nova Pipeline Editor] Configuration persisted to Storage and Chat Variables.");
