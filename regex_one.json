@@ -40051,126 +40051,84 @@ attributeCategories['全基础技能'] = allSkills;
     return bonuses;
 }
 
-
-function getEquipmentBonuses(statData, assaData) {
+ function getEquipmentBonuses(statData, assaData) {
     const bonuses = {};
-    // 安全地访问当前装备，如果不存在则使用空对象
     const equipment = statData?.user?.当前装备 || {};
     const equipmentList = [];
-
-    // 定义一个包含所有合法的、我们关心的穿戴装备槽位的列表
     const validWearableSlots = ['头部', '身体', '手部', '脚部', '饰品'];
 
-   // 1. 处理"手持"装备 - 支持分号分割的多个装备
-if (equipment.手持 && Array.isArray(equipment.手持) && equipment.手持[0] && equipment.手持[0] !== "无") {
-    // 按分号分割手持装备，支持同时手持多个物品
-    const handItems = equipment.手持[0].split(/;|；/).map(item => item.trim()).filter(item => item !== "无" && item !== "");
-    equipmentList.push(...handItems);
-}
+    // 1. 处理"手持"装备
+    if (equipment.手持 && Array.isArray(equipment.手持) && equipment.手持[0] && equipment.手持[0] !== "无") {
+        const handItems = equipment.手持[0].split(/;|；/).map(item => item.trim()).filter(item => item !== "无" && item !== "");
+        equipmentList.push(...handItems);
+    }
 
-const wearableItems = equipment.穿戴;
-// 确保穿戴装备部分是一个有效的对象
-if (wearableItems && typeof wearableItems === 'object' && wearableItems !== null) {
-    // 遍历预先定义好的合法槽位列表
-    validWearableSlots.forEach(slotName => {
-        // 根据合法的槽位名，去数据中精确查找对应的装备信息
-        const slot = wearableItems[slotName];
+    // 2. 处理"穿戴"装备
+    const wearableItems = equipment.穿戴;
+    if (wearableItems && typeof wearableItems === 'object' && wearableItems !== null) {
+        validWearableSlots.forEach(slotName => {
+            const slot = wearableItems[slotName];
+            if (slot && Array.isArray(slot) && slot[0] && slot[0] !== "无") {
+                const slotItems = slot[0].split(/;|；/).map(item => item.trim()).filter(item => item !== "无" && item !== "");
+                equipmentList.push(...slotItems);
+            }
+        });
+    }
 
-        // 对找到的槽位信息进行有效性检查
-        if (slot && Array.isArray(slot) && slot[0] && slot[0] !== "无") {
-            // 按分号分割该部位的装备，支持同一部位穿戴多个物品
-            const slotItems = slot[0].split(/;|；/).map(item => item.trim()).filter(item => item !== "无" && item !== "");
-            equipmentList.push(...slotItems);
+    equipmentList.forEach(itemName => {
+        const itemData = assaData?.global_lore?.背包?.[itemName] || null;
+
+        if (itemData) {
+            let stringToParse = '';
+
+            if (typeof itemData === 'string') {
+                try {
+                    const itemObject = JSON.parse(itemData);
+                    if (typeof itemObject === 'object' && itemObject !== null) {
+                        stringToParse = itemObject.effect || itemObject.属性 || itemObject.效果 || '';
+                    }
+                } catch (e) {
+                    stringToParse = itemData;
+                }
+            } else if (typeof itemData === 'object' && itemData !== null) {
+                stringToParse = itemData.effect || itemData.属性 || itemData.效果 || '';
+            }
+
+            const matches = stringToParse.match(/【[^】]+】/g);
+
+            if (matches) {
+                matches.forEach(match => {
+                    const content = match.substring(1, match.length - 1);
+                    const attributes = content.split(/;|；/).map(attr => attr.trim()).filter(attr => attr !== "");
+
+                    attributes.forEach(attr => {
+                        const parts = attr.match(/^(.+?)\s*([+-]\d+)$/) || attr.match(/^(.+?)[:|：]\s*([+-]?\d+)$/);
+
+                        if (parts && parts.length === 3) {
+                            let attrName = parts[1].trim(); // 例如 "防御" 或 "力量"
+                            const value = parseInt(parts[2].trim().replace('+', ''), 10);
+
+                            // ⭐ 核心修改在这里！⭐
+                            // 我们不再使用复杂的路径作为键，而是始终使用简单的属性名。
+                            // 这样，无论属性是基础属性还是衍生属性，存储和读取时用的键都是一致的。
+                            // const mappedPath = derivedAttrMapping[attrName]; // <- 删除这行
+                            // const finalKey = mappedPath || attrName; // <- 删除这行
+
+                            // 直接使用属性名作为键
+                            const finalKey = attrName;
+
+                            if (!bonuses[finalKey]) {
+                                bonuses[finalKey] = 0;
+                            }
+                            bonuses[finalKey] += value;
+                        }
+                    });
+                });
+            }
         }
     });
-}
-
- equipmentList.forEach(itemName => {
-    // 首先，我们和以前一样，从背包中寻找装备数据
-    const itemData =
-        assaData?.global_lore?.背包?.[itemName] ||
-        null;
-
-    // 确保我们找到了数据才继续
-    if (itemData) {
-        let stringToParse = ''; // 我们准备一个篮子，并确保它始终是字符串
-
-        // 第一步：我们先检查拿到的 itemData 到底是什么类型
-        if (typeof itemData === 'string') {
-            // 如果它是一封“信”(string)，我们就尝试用JSON的方式去读它
-            try {
-                const itemObject = JSON.parse(itemData);
-                // 如果读出来是一个“礼盒”(object)，并且里面有我们想要的effect“清单”
-                if (typeof itemObject === 'object' && itemObject !== null ) {
-                   
-    if (typeof itemObject.effect === 'string') {
-        
-        stringToParse = itemObject.effect;
-    }
-    // 如果没有 effect，尝试中文属性
-    else if (typeof itemObject.属性 === 'string') {
-        stringToParse = itemObject.属性;
-    } else if (typeof itemObject.效果 === 'string') {
-        stringToParse = itemObject.效果;
-    }
-                }
-            } catch (e) {
-                // 如果用JSON的方式读信失败了，说明它就是一封普通的信，内容就是我们要的
-                // 比如 "【防御+5】" 这种
-                stringToParse = itemData;
-            }
-        } else if (typeof itemData === 'object' && itemData !== null) {
-   
-                if (typeof itemData.effect === 'string') {
-        stringToParse = itemData.effect;
-    }
-    // 如果没有 effect，尝试中文属性
-    else if (typeof itemData.属性 === 'string') {
-        stringToParse = itemData.属性;
-    } else if (typeof itemData.效果 === 'string') {
-        stringToParse = itemData.效果;
-    }
- 
-        }
-
-        // 现在，无论来源如何，我们的“篮子”(stringToParse)里都装好了要处理的属性字符串
-        // 正则匹配所有【属性+数值】或【属性-数值】格式的描述
-        const matches = stringToParse.match(/【[^】]+】/g);
-
-        // ---- 后续的加成计算逻辑完全保持不变，因为它非常棒 ----
-        if (matches) {
-            const derivedAttrMapping = {
-                '防御': '衍生属性.防御.基础防御',
-                '速度': '衍生属性.速度.基础速度'
-            };
-
-            matches.forEach(match => {
-                const content = match.substring(1, match.length - 1);
-                const attributes = content.split(/;|；/).map(attr => attr.trim()).filter(attr => attr !== "");
-
-                attributes.forEach(attr => {
-                    const parts = attr.match(/^(.+?)\s*([+-]\d+)$/) || attr.match(/^(.+?)[:|：]\s*([+-]?\d+)$/);
-
-                    if (parts && parts.length === 3) {
-                        let attrName = parts[1].trim();
-                        const value = parseInt(parts[2].trim().replace('+', ''), 10);
-
-                        const mappedPath = derivedAttrMapping[attrName];
-                        const finalKey = mappedPath || attrName;
-
-                        if (!bonuses[finalKey]) {
-                            bonuses[finalKey] = 0;
-                        }
-                        bonuses[finalKey] += value;
-                    }
-                });
-            });
-        }
-    }
-});
     return bonuses;
 }
-
 let allTitles = assaSettingsData?.global_lore?.称号|| {};
      const keyToLabelMap = {
         '达成条件': '达成条件',
