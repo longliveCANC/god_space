@@ -25247,10 +25247,12 @@ processedContent = limitConsecutiveNewlines(processedContent);
 <head>
     <meta charset="UTF-8">
     <style>
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: var(--base-font-family, sans-serif);
-            color: black;
+            color:var(--text-color, #e1f1ff);
+            white-space:pre-wrap;
             background-color: transparent;
             width: 100%;
             /* 允许内容溢出计算 */
@@ -29199,7 +29201,8 @@ iframeMarkers.forEach(marker => {
         }
         html, body {
             font-family: var(--base-font-family);
-            color: black;
+            color:var(--text-color, #e1f1ff);
+            white-space:pre-wrap;
             overflow: hidden;
            
             display: flex;
@@ -29348,10 +29351,12 @@ iframeMarkers.forEach(marker => {
     <style>
         body {
             font-family: var(--base-font-family);
-            color: black;
+            
             margin: 0;
             padding: 0px;
             box-sizing: border-box;
+           color:var(--text-color, #e1f1ff);
+            white-space:pre-wrap;
         }
         body::-webkit-scrollbar { width: 8px; }
         body::-webkit-scrollbar-track { background: transparent; }
