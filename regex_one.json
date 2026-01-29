@@ -13805,10 +13805,7 @@ pointer-events: auto;
                             <div class="char-info-box">
                                 <div class="info-line" data-tooltip-key="status"><span class="info-label">状态</span><span id="char-display-status" class="info-value">正常</span></div>
                                 <div class="info-line" data-tooltip-key="prestige"><span class="info-label">声望</span><span id="char-display-prestige" class="info-value">0</span></div>
-                            <div class="info-line" id="bloodline-info-line" style="display: none;"> 
-    <span class="info-label">血统</span>
-    <span id="char-display-bloodline" class="info-value clickable-text"></span>
-</div>    
+ 
                             </div>
                             <div class="resource-bar-container"><div class="resource-bar-label">生命值</div><div class="progress-bar-bg resource" data-tooltip-key="hp"><div id="char-hp-bar" class="progress-bar-fill hp"></div><span id="char-hp-text" class="progress-bar-text">50/50</span></div></div>
                             <div class="resource-bar-container"><div class="resource-bar-label">意志力</div><div class="progress-bar-bg resource" data-tooltip-key="willpower"><div id="char-will-bar" class="progress-bar-fill willpower"></div><span id="char-will-text" class="progress-bar-text">0/0</span></div></div>
@@ -15202,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.2';
+window.current_game_version = '3.7.3';
 
 
 
@@ -18571,14 +18568,7 @@ function checkAchievements(eventType, value) {
         reward: "称号「行走的魔力源」",
         flavor_text: "或许，你可以考虑给一个城市供电了。"
     },
-    first_ability: {
-        title: "【新的权能】",
-        description: "获得第一个能力。",
-        icon: "🧩",
-        unlocked: false, unlocked_at: null, reward_claimed: false,
-        reward: "称号「能力者」",
-        flavor_text: "一张新的底牌，一个崭新的可能。"
-    },
+ 
 
     // ========== 美德与恶德 ==========
     act_of_justice: {
@@ -19140,8 +19130,7 @@ legendary_presence: (val) =>
         energy_pool_100: (val) => (val.playCharacterData?.衍生属性?.能量池?.上限?.[0] ?? 0) >= 100,
         energy_pool_1000: (val) => (val.playCharacterData?.衍生属性?.能量池?.上限?.[0] ?? 0) >= 1000,
      
-        first_ability: (val) => val.playCharacterData.能力段.名称[0] && val.playCharacterData.能力段.名称[0] !== "" && val.playCharacterData.能力段.名称[0] !== "无",
-
+    
          // ========== 装备与物品 ==========
         first_weapon: (val) => val.currentGameData.user.当前装备.手持[0] !== "无",
         fully_equipped: (val) => {
@@ -31105,11 +31094,26 @@ const playerName = currentGameData.user.name || '用户';  // 添加这行
 
  
   // --- 辅助函数：生成一串投骰结果的HTML，这就是你想要的'1 1 5 6 8'格式 ---
-const generateDiceHTML = (rollsArray) => {
+ const generateDiceHTML = (rollsArray) => {
     if (!rollsArray || rollsArray.length === 0) return '<span style="color:var(--text-secondary-color); font-style:italic;">无投掷</span>';
-    return rollsArray.map((roll, index) =>
-        `<span class="dice-number ${getDiceClass(roll)}" style="animation-delay: ${index * 0.15}s">${roll}</span>`
-    ).join(' , ');
+
+    const limit = 25; // 定义投掷数量的显示上限
+
+    if (rollsArray.length > limit) {
+        // 如果投掷数量超过上限，则只显示前30个
+        const truncatedRolls = rollsArray.slice(0, limit);
+        const diceHTML = truncatedRolls.map((roll, index) =>
+            `<span class="dice-number ${getDiceClass(roll)}" style="animation-delay: ${index * 0.15}s">${roll}</span>`
+        ).join(' , ');
+
+        // 在末尾添加省略提示
+        return `${diceHTML} , <span class="dice-ellipsis" style="font-style:italic; color:var(--text-secondary-color);">...</span>`;
+    } else {
+        // 如果未超过上限，则正常显示所有投掷
+        return rollsArray.map((roll, index) =>
+            `<span class="dice-number ${getDiceClass(roll)}" style="animation-delay: ${index * 0.15}s">${roll}</span>`
+        ).join(' , ');
+    }
 };
 
     // --- 数据提取与处理 ---
@@ -33405,8 +33409,8 @@ if(hasSummaryUpdate){
 
 }, 200); // 200ms 内多次调用只会触发一次
 
-// window.processUpdateMemoryCommands = processUpdateMemoryCommands;
-async function processUpdateMemoryCommands(commandText, message_id) {
+window.processUpdateMemoryCommands = processUpdateMemoryCommands;
+async function processUpdateMemoryCommands(commandText, message_id=-1) {
     message_id = -1;
        updateDetails = {
         variable: false,
@@ -40134,6 +40138,8 @@ attributeCategories['全基础技能'] = allSkills;
     });
     return bonuses;
 }
+
+
 let allTitles = assaSettingsData?.global_lore?.称号|| {};
      const keyToLabelMap = {
         '达成条件': '达成条件',
@@ -40573,34 +40579,7 @@ function populateCharacterPage(playData, statData, assaData) {
 
 
 
-    const bloodlineInfoLine = document.getElementById('bloodline-info-line');
-    const bloodlineDisplay = document.getElementById('char-display-bloodline');
-
-    if (bloodlineInfoLine && bloodlineDisplay) {
-        // 从 playData 中获取血统信息
-        const bloodlineName = SafeGetValue(playData.能力段.名称);
-        const bloodlineEffect = SafeGetValue(playData.能力段.效果);
-
-        // 检查是否存在有效的血统信息
-        if (bloodlineName && bloodlineName !== "无" && bloodlineName.trim() !== "") {
-            bloodlineInfoLine.style.display = ''; // 显示血统这一行
-            bloodlineDisplay.textContent = bloodlineName;
-
-            bloodlineInfoLine.onclick = () => {
-    if (bloodlineEffect) {
-         // ⭐ 关键点在这里：使用 replace 方法将字符串 \n 替换为 HTML 换行标签 <br>
-        const formattedEffect = bloodlineEffect.replace(/\\n/g, '<br>');
-        showModal('shop-modal', `血统: ${bloodlineName}`, formattedEffect);
-    } else {
-        showModal('shop-modal', `血统: ${bloodlineName}`, '该血统效果描述缺失。');
-    }
  
-            };
-        } else {
-            bloodlineInfoLine.style.display = 'none'; // 如果没有血统，就隐藏这一行
-        }
-    }
-
       // --- 右侧面板: 渲染新的整合模块 (核心改动) ---
     const statsContainer = document.getElementById('main-stats-container');
     statsContainer.innerHTML = ''; // 清空容器
@@ -40634,9 +40613,14 @@ function populateCharacterPage(playData, statData, assaData) {
                (otherSkillBonuses[attrName] || 0);
     };
 
-    // --- 新增：单独渲染防御属性 (置顶显示) ---
-    const defenseData = playData.衍生属性?.防御?.基础防御;
-    if (defenseData) {
+ const derivedData = playData.衍生属性 || {};
+    // 定义已经在顶部通过进度条显示的属性，此处不再重复渲染
+    const excludedDerived = ['生命值', '意志力', '能量池'];
+
+    // 筛选出需要显示的分类键名 (例如 "防御", "我的自定义分类" 等)
+    const derivedKeysToShow = Object.keys(derivedData).filter(k => !excludedDerived.includes(k));
+
+    if (derivedKeysToShow.length > 0) {
         const defModuleDiv = document.createElement('div');
         defModuleDiv.className = 'stat-module';
 
@@ -40647,24 +40631,69 @@ function populateCharacterPage(playData, statData, assaData) {
         const defContentDiv = document.createElement('div');
         defContentDiv.className = 'stat-module-content';
 
-        const defBase = defenseData[0] || 0;
-        const defDesc = defenseData[1] || '基础防御值';
-        const defTotalBonus = getTotalBonus('防御');
-        const defBonusHtml = buildBonusHtml('防御');
+        let derivedHtml = '';
 
-        // 防御通常没有升级按钮，这里只做展示
-        defContentDiv.innerHTML = `
-        <div class="attr-item" data-tooltip="${defDesc}">
-            <span class="attr-name">基础防御</span>
-            <span class="attr-value">${defBase + defTotalBonus}${defBonusHtml}</span>
-        </div>`;
+        derivedKeysToShow.forEach(categoryName => {
+            const categoryData = derivedData[categoryName];
 
-        defModuleDiv.appendChild(defTitleDiv);
-        defModuleDiv.appendChild(defContentDiv);
-        statsContainer.appendChild(defModuleDiv);
+            // 情况1：嵌套对象结构 (这是编辑器生成的标准结构)
+            // 结构: { "新项目": [0, "desc"], "另一个项目": [0, "desc"] }
+            if (!Array.isArray(categoryData) && typeof categoryData === 'object') {
+                Object.keys(categoryData).forEach(itemName => {
+                    const itemData = categoryData[itemName];
+                    if (Array.isArray(itemData)) {
+                        const baseVal = Number(itemData[0]) || 0;
+                        const desc = itemData[1] || itemName;
+
+                        // --- 核心修复逻辑 ---
+                        // 1. 默认使用 "项目名" (itemName) 去查找加成 (例如: "新项目")
+                        let bonusKey = itemName;
+
+                        // 2. 特殊兼容 "防御":
+                        // 因为系统默认结构是 防御->基础防御，但装备通常写 "防御+3" 而不是 "基础防御+3"
+                        // 所以如果是防御分类，强制使用分类名作为加成查找键
+                        if (categoryName === '防御') {
+                            bonusKey = '防御';
+                        }
+
+                        const totalBonus = getTotalBonus(bonusKey);
+                        const bonusHtml = buildBonusHtml(bonusKey);
+
+                        derivedHtml += `
+                        <div class="attr-item" data-tooltip="${desc}">
+                            <span class="attr-name">${itemName}</span>
+                            <span class="attr-value">${baseVal + totalBonus}${bonusHtml}</span>
+                        </div>`;
+                    }
+                });
+            }
+            // 情况2：扁平数组结构 (防止手动修改数据导致的结构差异)
+            // 结构: [0, "desc"] (直接挂在分类名下)
+            else if (Array.isArray(categoryData)) {
+                const baseVal = Number(categoryData[0]) || 0;
+                const desc = categoryData[1] || categoryName;
+
+                // 扁平结构直接用分类名查加成
+                const totalBonus = getTotalBonus(categoryName);
+                const bonusHtml = buildBonusHtml(categoryName);
+
+                derivedHtml += `
+                <div class="attr-item" data-tooltip="${desc}">
+                    <span class="attr-name">${categoryName}</span>
+                    <span class="attr-value">${baseVal + totalBonus}${bonusHtml}</span>
+                </div>`;
+            }
+        });
+
+        // 只有当有内容时才添加到页面
+        if (derivedHtml) {
+            defContentDiv.innerHTML = derivedHtml;
+            defModuleDiv.appendChild(defTitleDiv);
+            defModuleDiv.appendChild(defContentDiv);
+            statsContainer.appendChild(defModuleDiv);
+        }
     }
-
-    // 2. 动态渲染基础属性模块
+  // 2. 动态渲染基础属性模块
     const attrCategories = playData.基础属性 || {};
     for (const categoryName in attrCategories) {
         const moduleDiv = document.createElement('div');

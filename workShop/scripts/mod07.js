@@ -16,7 +16,13 @@
         "stat_data": {}, // (省略其他字段，保持原有逻辑，只关注 play_character_data)
         "play_character_data": {
             "基础属性": {},
-            "基础技能": {}
+            "基础技能": {},
+             "衍生属性": {
+                "生命值": { "上限": [50, "最大生命"], "当前值": [50, "当前生命"] },
+                "意志力": { "意志值": [0, "意志上限"], "当前值": [0, "当前意志"] },
+                "防御": { "基础防御": [0, "闪避基准"] },
+                "能量池": { "上限": [0, "能量上限"], "当前值": [0, "当前能量"] }
+            }
         },
         "assa_data": {}
     };
@@ -1383,12 +1389,15 @@ container.querySelector('#m7-editor-area').onclick = () => {
         };
     }
     // 渲染左侧编辑区
-    function renderEditorContent() {
+function renderEditorContent() {
         const container = document.getElementById('m7-editor-area');
         if (!container) return;
         container.innerHTML = '';
 
         const data = currentFullData.play_character_data;
+
+        // 确保衍生属性对象存在
+        if (!data.衍生属性) data.衍生属性 = {};
 
         // 1. 属性部分
         const attrSection = createSection('基础属性 (Attributes)', data.基础属性, 'attr');
@@ -1397,12 +1406,21 @@ container.querySelector('#m7-editor-area').onclick = () => {
         // 2. 技能部分
         const skillSection = createSection('基础技能 (Skills)', data.基础技能, 'skill');
         container.appendChild(skillSection);
+
+        // --- 新增：3. 衍生属性部分 ---
+        // 使用 'derived' 类型来触发特殊保护逻辑
+        const derivedSection = createSection('衍生属性 (Derived)', data.衍生属性, 'derived');
+        container.appendChild(derivedSection);
     }
 
     // 创建大区块（属性/技能）
-    function createSection(title, dataObj, type) {
+  function createSection(title, dataObj, type) {
         const section = document.createElement('div');
         section.className = 'm7-section';
+
+        // 定义受保护的系统分类（不可改名、不可删除、不可新增子项）
+        const PROTECTED_CATS = ['生命值', '防御', '意志力', '能量池'];
+        const isDerived = (type === 'derived');
 
         const header = document.createElement('div');
         header.className = 'm7-section-header';
@@ -1428,57 +1446,70 @@ container.querySelector('#m7-editor-area').onclick = () => {
                 catDiv.classList.add('active');
             }
 
+            // 判断当前分类是否受保护
+            const isProtected = isDerived && PROTECTED_CATS.includes(catName);
+
             // 分类头
             const catHeader = document.createElement('div');
             catHeader.className = 'm7-cat-header';
+
+            // 如果受保护，输入框只读，隐藏删除按钮
+            const nameInputAttr = isProtected ? 'readonly style="opacity:0.7; cursor:not-allowed; border-bottom-style:solid;"' : '';
+            const delBtnStyle = isProtected ? 'display:none;' : '';
+            const addBtnStyle = isProtected ? 'display:none;' : ''; // 受保护分类也不建议随意加条目，防止污染结构
+
             catHeader.innerHTML = `
-                <input class="m7-input-clean" value="${catName}">
+                <input class="m7-input-clean" value="${catName}" ${nameInputAttr}>
                 <div style="display:flex; gap:5px">
-                    <button class="m7-btn m7-btn-sm add-item">➕ 条目</button>
-                    <button class="m7-btn m7-btn-sm danger del-cat">🗑️</button>
+                    <button class="m7-btn m7-btn-sm add-item" style="${addBtnStyle}">➕ 条目</button>
+                    <button class="m7-btn m7-btn-sm danger del-cat" style="${delBtnStyle}">🗑️</button>
                 </div>
             `;
 
-            // 修改分类名
-            const nameInput = catHeader.querySelector('input');
-            nameInput.onchange = (e) => {
-                const newName = e.target.value.trim();
-                if (newName && newName !== catName) {
-                    if (dataObj[newName]) {
-                        worldHelper.showNovaAlert('分类名已存在', 'warning');
-                        e.target.value = catName;
-                        return;
+            // 修改分类名 (仅非受保护时生效)
+            if (!isProtected) {
+                const nameInput = catHeader.querySelector('input');
+                nameInput.onchange = (e) => {
+                    const newName = e.target.value.trim();
+                    if (newName && newName !== catName) {
+                        if (dataObj[newName]) {
+                            worldHelper.showNovaAlert('分类名已存在', 'warning');
+                            e.target.value = catName;
+                            return;
+                        }
+                        dataObj[newName] = dataObj[catName];
+                        delete dataObj[catName];
+                        if (selectedCategory && selectedCategory.name === catName) selectedCategory.name = newName;
+                        renderEditorContent();
                     }
-                    dataObj[newName] = dataObj[catName];
-                    delete dataObj[catName];
-                    // 更新选中状态引用
-                    if (selectedCategory && selectedCategory.name === catName) selectedCategory.name = newName;
-                    renderEditorContent();
-                }
-            };
+                };
 
-           // 删除分类
-            catHeader.querySelector('.del-cat').onclick = async (e) => {
-                e.stopPropagation();
-                const confirmed = await showCustomConfirm('删除确认', `确定要永久删除分类【${catName}】及其所有内容吗？此操作无法撤销。`);
-                if (confirmed) {
-                    delete dataObj[catName];
-                    if (selectedCategory && selectedCategory.name === catName) selectedCategory = null;
-                    renderEditorContent();
-                }
-            };
+                // 删除分类
+                catHeader.querySelector('.del-cat').onclick = async (e) => {
+                    e.stopPropagation();
+                    const confirmed = await showCustomConfirm('删除确认', `确定要永久删除分类【${catName}】及其所有内容吗？`);
+                    if (confirmed) {
+                        delete dataObj[catName];
+                        if (selectedCategory && selectedCategory.name === catName) selectedCategory = null;
+                        renderEditorContent();
+                    }
+                };
+            }
 
             // 新增条目
-            catHeader.querySelector('.add-item').onclick = (e) => {
-                e.stopPropagation();
-                const newItemName = "新项目";
-                if (type === 'attr') {
-                    dataObj[catName][newItemName] = { "基础": [0, "描述"] };
-                } else {
-                    dataObj[catName][newItemName] = [0, "描述"];
-                }
-                renderEditorContent();
-            };
+            if (!isProtected) {
+                catHeader.querySelector('.add-item').onclick = (e) => {
+                    e.stopPropagation();
+                    const newItemName = "新项目";
+                    if (type === 'attr') {
+                        dataObj[catName][newItemName] = { "基础": [0, "描述"] };
+                    } else {
+                        // 技能和衍生属性使用简化格式
+                        dataObj[catName][newItemName] = [0, "描述"];
+                    }
+                    renderEditorContent();
+                };
+            }
 
             catDiv.appendChild(catHeader);
 
@@ -1492,68 +1523,84 @@ container.querySelector('#m7-editor-area').onclick = () => {
                 itemRow.className = 'm7-item';
 
                 if (type === 'attr') {
-                    // 属性渲染
+                    // --- 基础属性渲染 (保持不变) ---
                     const hasLegendary = !!itemData['传奇'];
- itemRow.innerHTML = `
-    <div class="m7-item-base" style="grid-template-columns: 150px 1fr auto;">
-        <input class="m7-input-box item-name" value="${itemName}" placeholder="名称">
-        <input class="m7-input-box" value="${itemData['基础'][1]}" data-key="baseDesc" placeholder="描述">
-        <div style="display:flex; gap:5px">
-            <button class="m7-btn m7-btn-sm ${hasLegendary ? 'primary' : ''} toggle-legend" title="切换传奇属性">
-                ${hasLegendary ? '★ 传奇' : '☆ 凡人'}
-            </button>
-            <button class="m7-btn m7-btn-sm danger del-item">×</button>
-        </div>
-    </div>
-`;
-
-                    // 绑定属性事件
-   itemRow.querySelector('.toggle-legend').onclick = () => {
-    if (hasLegendary) delete itemData['传奇'];
-    else itemData['传奇'] = [0, "提供加成"]; // <-- 修改点
-    renderEditorContent();
-};
-
-                    // 值绑定
-  itemRow.querySelectorAll('input[data-key]').forEach(inp => {
-    inp.onchange = (e) => {
-        const k = e.target.dataset.key;
-        const v = e.target.value;
-        if (k === 'baseDesc') itemData['基础'][1] = v;
- 
-    };
-});
+                    itemRow.innerHTML = `
+                        <div class="m7-item-base" style="grid-template-columns: 150px 1fr auto;">
+                            <input class="m7-input-box item-name" value="${itemName}" placeholder="名称">
+                            <input class="m7-input-box" value="${itemData['基础'][1]}" data-key="baseDesc" placeholder="描述">
+                            <div style="display:flex; gap:5px">
+                                <button class="m7-btn m7-btn-sm ${hasLegendary ? 'primary' : ''} toggle-legend" title="切换传奇属性">
+                                    ${hasLegendary ? '★ 传奇' : '☆ 凡人'}
+                                </button>
+                                <button class="m7-btn m7-btn-sm danger del-item">×</button>
+                            </div>
+                        </div>
+                    `;
+                    // (属性的事件绑定代码保持不变，此处省略以节省篇幅...)
+                    itemRow.querySelector('.toggle-legend').onclick = () => {
+                        if (hasLegendary) delete itemData['传奇'];
+                        else itemData['传奇'] = [0, "提供加成"];
+                        renderEditorContent();
+                    };
+                    itemRow.querySelectorAll('input[data-key]').forEach(inp => {
+                        inp.onchange = (e) => { itemData['基础'][1] = e.target.value; };
+                    });
 
                 } else {
-                    // 技能渲染
-       itemRow.innerHTML = `
-    <div class="m7-item-base">
-        <input class="m7-input-box item-name" value="${itemName}" placeholder="名称">
-        <input class="m7-input-box" value="${itemData[1]}" data-key="desc" placeholder="描述">
-        <button class="m7-btn m7-btn-sm danger del-item">×</button>
-    </div>
-`;
-                    // 技能值绑定
+                    // --- 技能 OR 衍生属性渲染 (简化格式) ---
+                    // 衍生属性如果是受保护分类，条目名也不可改，且不可删除
+                    const isItemProtected = isProtected;
+                    const itemNameAttr = isItemProtected ? 'readonly style="opacity:0.7; cursor:not-allowed;"' : '';
+                    const itemDelStyle = isItemProtected ? 'visibility:hidden;' : '';
+
+                    // 注意：衍生属性和技能的值在 index 0，描述在 index 1
+                    // 我们增加一个数字输入框来编辑 index 0 (数值)
+                    itemRow.innerHTML = `
+                        <div class="m7-item-base" style="grid-template-columns: 120px 80px 1fr auto;">
+                            <input class="m7-input-box item-name" value="${itemName}" placeholder="名称" ${itemNameAttr}>
+                            <input type="text" class="m7-input-box" value="${itemData[0]}" data-key="val" placeholder="数值">
+                            <input class="m7-input-box" value="${itemData[1]}" data-key="desc" placeholder="描述">
+                            <button class="m7-btn m7-btn-sm danger del-item" style="${itemDelStyle}">×</button>
+                        </div>
+                    `;
+
+                    // 绑定数值 (支持数字或字符串，如能量池名称)
+                    itemRow.querySelector('input[data-key="val"]').onchange = (e) => {
+                        const val = e.target.value;
+                        // 尝试转数字，如果是纯数字字符串
+                        const num = Number(val);
+                        itemData[0] = isNaN(num) ? val : num;
+                    };
+
+                    // 绑定描述
                     itemRow.querySelector('input[data-key="desc"]').onchange = (e) => {
                         itemData[1] = e.target.value;
                     };
                 }
 
-                // 通用：改名
-                itemRow.querySelector('.item-name').onchange = (e) => {
-                    const newN = e.target.value.trim();
-                    if (newN && newN !== itemName) {
-                        items[newN] = items[itemName];
-                        delete items[itemName];
-                        renderEditorContent();
+                // 通用：改名 (受保护时已通过 readonly 限制，这里加个判断更安全)
+                if (!isDerived || !PROTECTED_CATS.includes(catName)) {
+                    const nameInput = itemRow.querySelector('.item-name');
+                    if (nameInput) {
+                        nameInput.onchange = (e) => {
+                            const newN = e.target.value.trim();
+                            if (newN && newN !== itemName) {
+                                items[newN] = items[itemName];
+                                delete items[itemName];
+                                renderEditorContent();
+                            }
+                        };
                     }
-                };
-
-                // 通用：删除
-                itemRow.querySelector('.del-item').onclick = () => {
-                    delete items[itemName];
-                    itemRow.remove();
-                };
+                    // 通用：删除
+                    const delBtn = itemRow.querySelector('.del-item');
+                    if (delBtn) {
+                        delBtn.onclick = () => {
+                            delete items[itemName];
+                            itemRow.remove();
+                        };
+                    }
+                }
 
                 itemsDiv.appendChild(itemRow);
             });
@@ -1561,11 +1608,9 @@ container.querySelector('#m7-editor-area').onclick = () => {
             catDiv.appendChild(itemsDiv);
             section.appendChild(catDiv);
 
-            // 点击选中分类（用于商店添加）
+            // 点击选中分类
             catDiv.onclick = (e) => {
-                // 阻止冒泡防止点输入框也触发
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-
                 document.querySelectorAll('.m7-category').forEach(c => c.classList.remove('active'));
                 catDiv.classList.add('active');
                 selectedCategory = { obj: items, type: type, name: catName };
