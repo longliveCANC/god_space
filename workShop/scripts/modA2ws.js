@@ -3,17 +3,22 @@
 
   console.log('🎮 Nova Game API IIFE Initialized');
 
-  // TODO: 如果后面要改成从 localStorage / 设置里读 IP，就再封装一层
-  const API_IP = '192.168.10.6';
+  const API_IP = 'localhost';//192.168.10.6
   const API_PORT = '3001';
 
   console.log(`🔗 Attempting to connect to ws://${API_IP}:${API_PORT}`);
-
-  const ws = new WebSocket(`ws://${API_IP}:${API_PORT}`);
+   const ws = new WebSocket(`ws://${API_IP}:${API_PORT}`);
 
   ws.onopen = () => {
     console.log(`✅ WebSocket connected to ws://${API_IP}:${API_PORT}`);
     // 发送连接确认
+      ws.send(JSON.stringify({
+      action: 'register',
+      role: 'gameClient'
+    }));
+    console.log('📢 Sent registration as gameClient');
+
+    
     ws.send(JSON.stringify({ event: 'connected' }));
 
     // 在连接成功后，把一个“流式钩子”挂到全局，供 handleSend 内部调用
@@ -56,38 +61,70 @@
         return;
       }
 
-      // 2. GET：从 GameAPI 读取一次性状态并回传给服务器
-      if (msg.action === 'getGameState') {
-        const { correlationId } = msg.data || {};
+ // 2. GET：从 GameAPI 读取一次性状态并回传给服务器
+if (msg.action === 'getGameState') {
+  const { correlationId, key } = msg.data || {}; // ✅ 添加 key 参数
 
-        try {
-          const api = window.GameAPI || {};
+  console.log(`📤 getGameState request received - correlationId: ${correlationId}, key: ${key || 'all'}`);
 
-          const payload = {
-            userName: api.userName,
-            npcImageMap: api.npcImageMap,
-            assaData: api.assaData,
-            statData: api.statData,
-            playCharacterData: api.playCharacterData,
-            checkMemoryData: api.checkMemoryData,
-            worldAttitudeData: api.worldAttitudeData,
-            characterStatusData: api.characterStatusData,
-            conversationHistory: api.conversationHistory,
-          };
-
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-              action: 'gameStateResponse',
-              correlationId,
-              data: payload,
-            }));
-          }
-        } catch (e) {
-          console.error('❌ Failed to collect GameAPI state:', e);
-        }
-
-        return;
+  try {
+    const api = window.GameAPI || {};
+    
+    let payload;
+    
+    // 如果指定了 key，只返回该 key 的数据
+    if (key) {
+      console.log(`🔍 Fetching specific key: ${key}`);
+      payload = api[key];
+      
+      // 如果该 key 不存在，返回 null
+      if (payload === undefined) {
+        console.warn(`⚠️ Key "${key}" not found in GameAPI`);
+        payload = null;
       }
+    } else {
+      // 没有指定 key，返回所有数据
+      console.log('🔍 Fetching all GameAPI data');
+      payload = {
+        userName: api.userName,
+        npcImageMap: api.npcImageMap,
+        assaData: api.assaData,
+        statData: api.statData,
+        playCharacterData: api.playCharacterData,
+        checkMemoryData: api.checkMemoryData,
+        worldAttitudeData: api.worldAttitudeData,
+        characterStatusData: api.characterStatusData,
+        conversationHistory: api.conversationHistory,
+      };
+    }
+
+    console.log('📦 Payload prepared:', key ? `${key} data` : 'all data', payload);
+
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        action: 'gameStateResponse',
+        correlationId,
+        data: payload,
+      }));
+      console.log('✅ gameStateResponse sent');
+    } else {
+      console.error('❌ WebSocket not open, cannot send response');
+    }
+  } catch (e) {
+    console.error('❌ Failed to collect GameAPI state:', e);
+    
+    // 即使出错也要回复，避免服务器超时
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        action: 'gameStateResponse',
+        correlationId,
+        data: null,
+      }));
+    }
+  }
+
+  return;
+}
 
       // 3. 新增：来自 game-api-server 的 handleSend 调度
       if (msg.action === 'handleSend') {

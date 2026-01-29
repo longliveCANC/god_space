@@ -537,5 +537,17 @@
       "scriptUrl": "",
      "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-解析玩家.json",
     "previewImage": ""
+  },
+  {
+        "id": "modA2",
+    "name": "WS Bridge",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["测试用"],
+    "is_dowload_raw_name":true,
+       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/modA2ws.js",
+    "worldBookUrl": "",
+   
+   "description": " WS Bridge (IIFE): 自动连接 ws://localhost:3001。\n[服务端可用指令]:\n1. 获取状态: {\"action\": \"getGameState\", \"data\": {\"key\": \"(可选)GameAPI字段\", \"correlationId\": \"ID\"}} -> 客户端回传 {\"action\": \"gameStateResponse\"}。\n2. 模拟发送: {\"action\": \"handleSend\", \"data\": {\"userText\": \"输入内容\", \"options\": {}}} -> 自动写入 userInput 并调用 handleSend。\n3. 显示弹窗: {\"action\": \"showAlert\", \"data\": {\"message\": \"提示文本\"}}。\n[流式回调]: 脚本会挂载 window.novaStreamHook，游戏内部调用该钩子时，会自动向服务端发送 {\"action\": \"handleSendStream\", \"data\": ...}。"
   }
 ]
