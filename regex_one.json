@@ -15199,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.3';
+window.current_game_version = '3.7.4';
 
 
 
@@ -15349,24 +15349,8 @@ let userName = '用户';
                 processing_msg: "正在分析记忆变更..." // <--- 新增
             }
         ]
-    },
-    // Batch 3: 示例扩展
-    {
-        id: 3,
-        name: "Deep Summary",
-        ex_batches: [
-            {
-                id: 0,
-                name: "Chapter Summary",
-                enabled: false,
-                render: false,
-                type: 'extension',
-                bound_worldbooks: ['自动摘要-规则书', '剧情梳理-Mod'],
-                api_config: 'default',
-                processing_msg: "正在撰写章节摘要..." // <--- 新增
-            }
-        ]
-    }
+    } 
+  
 ];
 
 // 获取当前步骤配置的辅助函数
@@ -35936,8 +35920,9 @@ console.log(`[Nova's Prompt Assembler] 分组处理后剩下 ${finalEntriesToPro
     }
 };
 
-const sendCustomGenerationRequest = async (promptText, options = {}) => {
- const { buttonElement, signal } = options; // <-- 💖 接收 signal
+ const sendCustomGenerationRequest = async (promptText, options = {}) => {
+    // 1. 💖 接收 apiId (从 handleSend 传入) 和 signal
+    const { buttonElement, signal, apiId } = options;
 
     if (buttonElement) {
         buttonElement.textContent = '生成中…';
@@ -35945,42 +35930,53 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
     }
 
     try {
-        // 1. 检查是否启用第二 API
+        // 2. 获取全局开关状态
         const isSecondApiEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
 
-        if (!isSecondApiEnabled) {
-           
+        // 3. 💖【核心修复逻辑】💖
+        // 判定是否应该使用 Default API (generateRaw)
+        // 条件 A: 当前步骤配置明确指定 apiId 为 'default'
+        // 条件 B: 全局自定义 API 开关没开 (作为兜底，防止配置了 custom 但没开开关导致报错)
+        const shouldUseDefault = (apiId === 'default') || (!isSecondApiEnabled);
+
+        if (shouldUseDefault) {
+            console.log(`[Nova] 使用主API (generateRaw) | 原因: ${apiId === 'default' ? '配置指定为Default' : '自定义API总开关未开启'}`);
+
             /** @type {GenerateRawConfig} */
             const rawConfig = {
                 max_chat_history: 0, // 避免当前聊天记录干扰
                 ordered_prompts: []
             };
 
-            // 4. 处理 promptText (可能是字符串，也可能是符合格式的数组)
+            // 处理 promptText (可能是字符串，也可能是符合格式的数组)
             if (Array.isArray(promptText)) {
                 rawConfig.ordered_prompts = promptText;
             } else {
                 rawConfig.ordered_prompts = [{ role: 'user', content: String(promptText) }];
             }
 
-            // 5. 调用酒馆主 API (generateRaw)
-            console.log("[Nova] 使用主API (generateRaw) 发送请求:", rawConfig);
+            // 调用酒馆主 API (generateRaw)
             const generatedText = await generateRaw(rawConfig);
             return generatedText;
         }
 
-        // 6. 启用第二 API 时的处理 (原有逻辑)
-        console.log("[Nova] 使用第二API (sendApiRequest) 发送请求");
-            if (signal?.aborted) {
+        // 4. 启用第二 API 时的处理 (自定义 API 逻辑)
+        console.log(`[Nova] 使用自定义API (sendApiRequest) | ID: ${apiId}`);
+
+        if (signal?.aborted) {
             throw new Error('用户取消生成');
         }
 
         // 假设 sendApiRequest 可以接收一个 signal 并传递给底层的 fetch
+        // 注意：如果你的 sendApiRequest 支持传入 apiId 来动态切换配置，请确保在这里传入
+        // 目前代码看起来是依赖 DOM 或全局变量，如果需要动态切换 Profile，
+        // 你可能需要修改 sendApiRequest 让它接受 apiId，或者在 handleSend 里已经切换好了 DOM
         const result = await sendApiRequest(promptText, {
             max_tokens: 30000,
             temperature: 0.8,
-            top_p: 0.95
-        }, signal); // <-- 💖 将 signal 传递下去
+            top_p: 0.95,
+            // 如果 sendApiRequest 支持直接传配置对象，可以在这里传 activeCustomApi
+        }, signal);
 
         if (!result.success) {
             let errorMessage = `生成失败: ${result.error}`;
@@ -35992,20 +35988,15 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
 
         return result.data;
 
-       } catch (error) {
-        // --- 💖 修改开始 💖 ---
+    } catch (error) {
         // 检查是否是中断错误
         if (error.name === 'AbortError') {
-            console.log('[Nova] 自定义API请求被用户成功中断。');
-            // 直接将原始的 AbortError 向上抛出，让 handleSend 的主 catch 块来处理
+            console.log('[Nova] 请求被用户成功中断。');
             throw error;
         }
 
-        // 对于其他所有非中断的错误，记录日志并显示给用户
         console.error('[生成失败]', error);
-        // 向上抛出，让调用者知道发生了错误，但不一定是中断
         throw error;
-        // --- 💖 修改结束 💖 ---
     } finally {
         if (buttonElement) {
             buttonElement.textContent = '生成';
@@ -36013,7 +36004,6 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
         }
     }
 };
-
 
 
 async function handleSend(options = {}) {
@@ -36088,10 +36078,10 @@ async function handleSend(options = {}) {
     // 2. 更新变量传递给外界 (batch, exbatch)
     await TavernHelper.insertOrAssignVariables(
         {
-            batch: currentBatchIndex,
+            batch: String(currentBatchIndex),
             exbatch: currentExBatchIndex,
             // 兼容旧变量，Batch 2 视为 batches=2
-            batches: currentBatchIndex
+            batches: String(currentBatchIndex)
         },
         { type: 'chat' }
     );
@@ -36101,7 +36091,7 @@ async function handleSend(options = {}) {
     const isBackgroundStep = currentBatchIndex !== 1;
     // 映射到旧变量以便复用逻辑
     const isContinuationVar = isBackgroundStep;
-
+console.log("我们现在是不是在后台更新呢？",isContinuationVar);
 
     const worldBookName = '小蝌蚪找妈妈-同层版'; // 确保 worldBookName 在这里有定义
 
@@ -36130,14 +36120,7 @@ async function handleSend(options = {}) {
         return;  
     }
    const { isReroll = false, isContinuation = false } = options;
-if(isContinuationVar){
- await TavernHelper.insertOrAssignVariables({ batches: 2 }, { type: 'chat' });
-batches = 2;
  
-}else{
-     await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
-batches = 1;
-}
  
       await extractAndStoreBatchContent(batches);
  
@@ -36342,7 +36325,11 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
       
         }else{
   userText = playerinput;
+
         continuationText = `[续写：Continue the following message. Do not include ANY parts of the original message. DO NOT include ANY parts of thinking，立刻输出小说正文。Use capitalization and punctuation as if your reply is a part of the original message: ${lastAiMessage.content}]`;
+          if(options.isPre){
+     continuationText = '';
+  }
         console.log("[Nova's Whisper] 正在请求延续上一段故事...");
       
         }
@@ -36939,10 +36926,14 @@ AI回复: ${theAImessage}
             const storageKey = `last_captured_prompt_b${currentBatchIndex}_ex${currentExBatchIndex}`;
             localStorage.setItem(storageKey, prompts_be_sent);
             // 2. 调用我们的自定义请求函数，它现在接收的是 RolePrompt[]
-            aiFullResponse = await sendCustomGenerationRequest(
-                promptPayload,
-               { signal: abortSignal }
-            );
+     aiFullResponse = await sendCustomGenerationRequest(
+    promptPayload,
+    {
+        signal: abortSignal,
+        // 🆕 传入当前步骤配置的 api_config
+        apiId: currentStepConfig?.api_config || 'default'
+    }
+);
       
    
  
@@ -37207,11 +37198,14 @@ AI回复: ${theAImessage}
             // 同时也更新一下通用的 api 提示词记录，方便调试
             // localStorage.setItem('last_captured_prompt_api', prompts_be_sent);
             // 2. 调用我们的自定义请求函数，它现在接收的是 RolePrompt[]
-            aiFullResponse = await sendCustomGenerationRequest(
-                promptPayload,
-               { signal: abortSignal }
-            );
-      
+      aiFullResponse = await sendCustomGenerationRequest(
+    promptPayload,
+    {
+        signal: abortSignal,
+        // 🆕 传入当前步骤配置的 api_config
+        apiId: currentStepConfig?.api_config || 'default'
+    }
+);
    
  
         } catch (error) {
@@ -37536,17 +37530,18 @@ let backupData = {};
                 setTimeout(async () => {
                     await handleSend({
                         isContinuation: true, // 保持继续状态
+                        isPre:nextStep.batchIndex ===1,
                         // 传递新的索引
                         batchIndex: nextStep.batchIndex,
                         exBatchIndex: nextStep.exBatchIndex,
                         // 传递旧的标记以兼容
-                        isContinuationVar: nextStep.batchIndex >= 2
+                         
                     });
                 }, 500);
             } else {
                 console.log("[Nova Pipeline] 用户取消或流程结束。");
                 // 重置状态
-                await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
+                await TavernHelper.insertOrAssignVariables({ batch: "1", exbatch: 0, batches: "1" }, { type: 'chat' });
             }
         } else {
                  if(is_show_notifications === 'true'){
@@ -37563,7 +37558,7 @@ let backupData = {};
         }
             console.log("[Nova Pipeline] 流水线全部执行完毕。");
             // 全部结束，重置回初始状态
-            await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
+            await TavernHelper.insertOrAssignVariables({ batch: "1", exbatch: 0, batches: "1" }, { type: 'chat' });
 
         const lastStepConfig = getPipelineStep(currentBatchIndex, currentExBatchIndex);
 
@@ -37579,7 +37574,7 @@ let backupData = {};
     // --- 🆕 流水线逻辑结束 🆕 ---
     } catch (e) {
         if (double_api === 'true') {
-        await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
+        await TavernHelper.insertOrAssignVariables({ batch: "1",exbatch: 0,batches: "1" }, { type: 'chat' });
         batches = 1;
         console.log("[Nova's Error Handler] 检测到错误,已取消变量生成阶段");
     }
@@ -37747,8 +37742,7 @@ let backupData = {};
             // 使用 setTimeout 保持原来的后台恢复行为
             setTimeout(() => restoreWorldbookNow().catch(e => console.error("后台恢复世界书时出错:", e)), 500);
         } 
- await TavernHelper.insertOrAssignVariables({ batches: 1 }, { type: 'chat' });
-batches = 1;
+ 
    overlay.classList.remove('active');
         sendButton.disabled = false;
         sendButton.textContent = '→';
@@ -57944,27 +57938,26 @@ const tabContents = document.querySelectorAll('.tab-content');
         updateProfileButtonsState();
     }
 
-    function saveSettings() {
-        const config = buildCustomApiConfig();
+ function saveSettings() {
+    const config = buildCustomApiConfig();
 
-        if (currentProfileId === 'custom_v2') {
-            // 保存到旧位置，保持兼容
-            localStorage.setItem(LEGACY_KEY, JSON.stringify(config));
-        } else {
-            // 保存到统一池
-            const pool = getApiPool();
-            // 保留原有的 name 属性
-            const existingName = pool[currentProfileId]?.name || `API ${currentProfileId.replace('custom_v', '')}`;
-            pool[currentProfileId] = { ...config, name: existingName };
-            saveApiPool(pool);
-        }
-
-        const originalText = els.saveBtn.textContent;
-        els.saveBtn.textContent = "✅ 配置已保存";
-        setTimeout(() => els.saveBtn.textContent = originalText, 2000);
-        console.log(`[Nova API Manager] Saved profile ${currentProfileId}:`, config);
+    if (currentProfileId === 'custom_v2') {
+        // 保存到旧位置，保持兼容
+        localStorage.setItem(LEGACY_KEY, JSON.stringify(config));
+    } else {
+        // 保存到统一池
+        const pool = getApiPool();
+        // 保留原有的 name 属性
+        const existingName = pool[currentProfileId]?.name || `API ${currentProfileId.replace('custom_v', '')}`;
+        pool[currentProfileId] = { ...config, name: existingName };
+        saveApiPool(pool);
     }
 
+    const originalText = els.saveBtn.textContent;
+    els.saveBtn.textContent =  "✅ 配置已保存" ;
+    setTimeout(() => els.saveBtn.textContent = originalText, 2000);
+    console.log(`[Nova API Manager] Saved profile ${currentProfileId}:`, config);
+}
     function createNewProfile() {
         // 生成唯一ID: custom_v + 时间戳
         const newId = `custom_v${Date.now()}`;
@@ -58098,25 +58091,36 @@ const tabContents = document.querySelectorAll('.tab-content');
 })();
 
  
-function loadApiConfig() {
+ function loadApiConfig(apiId = 'custom_v2') {
     try {
+        // 1. 检查总开关
         const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
         if (!isEnabled) {
-            console.warn('[Nova API] 自定义 API 未启用');
+            console.warn('[Nova API] 自定义 API 总开关未启用');
             return null;
         }
 
-        const storedConfig = localStorage.getItem('nova_custom_api_settings');
-        if (!storedConfig) {
-            console.error('[Nova API] 未找到配置');
+        let config = null;
+
+        // 2. 根据 ID 决定从哪里读取
+        if (!apiId || apiId === 'custom_v2') {
+            // Legacy 模式：读取旧的独立键
+            const stored = localStorage.getItem('nova_custom_api_settings');
+            if (stored) config = JSON.parse(stored);
+        } else {
+            // Pool 模式：读取统一池
+            const pool = JSON.parse(localStorage.getItem('nova_multi_api_pool') || '{}');
+            config = pool[apiId];
+        }
+
+        if (!config) {
+            console.error(`[Nova API] 未找到 ID 为 ${apiId} 的配置`);
             return null;
         }
 
-        const config = JSON.parse(storedConfig);
-        
-        // 验证必需字段
+        // 3. 验证必需字段
         if (!config.api_url || !config.api_key || !config.model) {
-            console.error('[Nova API] 配置不完整，缺少必需字段');
+            console.error(`[Nova API] 配置 ${apiId} 不完整，缺少必需字段`);
             return null;
         }
 
@@ -58127,7 +58131,7 @@ function loadApiConfig() {
     }
 }
 
- 
+
 async function sendApiRequest(messages, options = {}, signal) {
     // 1. 加载配置
     const config = loadApiConfig();
