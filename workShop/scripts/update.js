@@ -83,6 +83,38 @@
     // =========================================================================
     // 2. 辅助函数
     // =========================================================================
+    async function downloadFile(url, filename) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                // 如果是404，说明该版本没有对应的历史文件
+                if (response.status === 404) {
+                    throw new Error("该版本未归档或文件不存在");
+                }
+                throw new Error(`网络响应错误: ${response.statusText}`);
+            }
+
+            const blob = await response.blob(); // 将文件内容转成二进制数据
+            const blobUrl = window.URL.createObjectURL(blob); // 创建一个临时的本地链接
+
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = filename;
+
+            document.body.appendChild(a);
+            a.click(); // 模拟点击这个隐藏的链接
+
+            document.body.removeChild(a); // 清理
+            window.URL.revokeObjectURL(blobUrl); // 释放内存
+
+            toastr.success(`已开始下载: ${filename}`);
+        } catch (error) {
+            console.error('Download failed:', error);
+            toastr.error(`下载失败: ${error.message}`);
+        }
+    }
+    
     function showModal(modalId, title = null, descriptionHTML = null) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -344,13 +376,14 @@
     const ITEMS_PER_PAGE = 10;
 
     // 加载并渲染历史记录
-    async function loadAndRenderHistory(page = 1) {
-        const container = document.getElementById('history-list-container');
+      const container = document.getElementById('history-list-container');
         const prevBtn = document.getElementById('hist-prev-btn');
         const nextBtn = document.getElementById('hist-next-btn');
         const pageInfo = document.getElementById('hist-page-info');
 
+        // 1. 如果没有缓存，先加载数据
         if (!cachedHistory) {
+            container.innerHTML = '<div style="text-align:center; padding: 20px;">正在获取版本列表...</div>';
             try {
                 // 并行加载新旧日志
                 const [recentLogs, oldLogs] = await Promise.all([
@@ -371,70 +404,85 @@
                 }).sort((a, b) => compareVersions(b.version, a.version)); // 降序
 
             } catch (e) {
-                container.innerHTML = `<div style="color: #faa;">加载历史记录失败: ${e.message}</div>`;
+                container.innerHTML = `<div style="color: #faa; text-align:center;">加载历史记录失败: ${e.message}</div>`;
                 return;
             }
         }
 
-        // 分页逻辑
+        // 2. 分页计算
         const totalPages = Math.ceil(cachedHistory.length / ITEMS_PER_PAGE);
         if (page < 1) page = 1;
-        if (page > totalPages) page = totalPages;
+        if (page > totalPages && totalPages > 0) page = totalPages;
 
         const start = (page - 1) * ITEMS_PER_PAGE;
         const end = start + ITEMS_PER_PAGE;
         const pageItems = cachedHistory.slice(start, end);
 
-        // 渲染列表
+        // 3. 渲染列表 HTML
         let html = '';
-        for (const log of pageItems) {
-            // 检查是否有下载链接 (这里我们假设有版本号就有可能存在文件，点击时再验证)
-            // 路径格式: \god_space\draft\历史版本\3.7.5.json
-            const downloadUrl = `https://longlivecanc.github.io/god_space/draft/历史版本/${log.version}.json`;
+        if (pageItems.length === 0) {
+            html = '<div style="text-align:center; padding:20px; color:#888;">暂无历史记录</div>';
+        } else {
+            for (const log of pageItems) {
+                // 构建下载链接和文件名
+                const downloadUrl = `https://longlivecanc.github.io/god_space/draft/历史版本/${log.version}.json`;
+                const fileName = `GodSpace_v${log.version}.json`;
 
-            html += `
-                <div class="update-log-entry" style="margin-bottom: 10px; padding-bottom: 10px;">
-                    <h3 style="font-size: 1.1em;">
-                        <span>v${log.version} <span style="font-size:0.8em; color:#888;">(${log.date})</span></span>
-                        <button class="history-download-btn" data-url="${downloadUrl}" data-ver="${log.version}">下载JSON</button>
-                    </h3>
-                    <ul style="margin-top: 5px; font-size: 0.9em; color: #ccc;">
-                        ${log.changes.map(c => `<li>${c}</li>`).join('')}
-                    </ul>
-                </div>
-            `;
+                html += `
+                    <div class="update-log-entry" style="margin-bottom: 10px; padding-bottom: 10px;">
+                        <h3 style="font-size: 1.1em;">
+                            <span>v${log.version} <span style="font-size:0.8em; color:#888;">(${log.date})</span></span>
+                            <button class="history-download-btn"
+                                    data-url="${downloadUrl}"
+                                    data-filename="${fileName}">
+                                下载JSON
+                            </button>
+                        </h3>
+                        <ul style="margin-top: 5px; font-size: 0.9em; color: #ccc;">
+                            ${log.changes.map(c => `<li>${c}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
         }
         container.innerHTML = html;
 
-        // 绑定下载按钮事件
+        // 4. 绑定下载按钮事件 (使用新的 downloadFile)
         container.querySelectorAll('.history-download-btn').forEach(btn => {
             btn.onclick = async (e) => {
-                const url = e.target.dataset.url;
-                const ver = e.target.dataset.ver;
-                e.target.textContent = '检查中...';
-                try {
-                    // 发送 HEAD 请求检查文件是否存在
-                    const response = await fetch(url, { method: 'HEAD' });
-                    if (response.ok) {
-                        // 存在，打开链接
-                        window.open(url, '_blank');
-                        e.target.textContent = '下载JSON';
-                    } else {
-                        toastr.warning(`版本 v${ver} 没有可用的独立下载文件。`);
-                        e.target.textContent = '无文件';
-                        e.target.style.opacity = '0.5';
-                    }
-                } catch (err) {
-                    toastr.error('网络请求失败');
-                    e.target.textContent = '错误';
-                }
+                const targetBtn = e.target;
+                const url = targetBtn.dataset.url;
+                const filename = targetBtn.dataset.filename;
+
+                // 防止重复点击
+                if (targetBtn.disabled) return;
+
+                const originalText = targetBtn.textContent;
+                targetBtn.textContent = '下载中...';
+                targetBtn.disabled = true;
+                targetBtn.style.opacity = '0.7';
+                targetBtn.style.cursor = 'wait';
+
+                await downloadFile(url, filename);
+
+                // 恢复按钮状态
+                targetBtn.textContent = originalText;
+                targetBtn.disabled = false;
+                targetBtn.style.opacity = '1';
+                targetBtn.style.cursor = 'pointer';
             };
         });
 
-        // 更新分页控件
+        // 5. 更新分页控件状态
         pageInfo.textContent = `${page} / ${totalPages || 1}`;
+
+        // 解绑旧事件防止内存泄漏 (虽然 innerHTML 重写会清除，但保持好习惯)
+        prevBtn.onclick = null;
+        nextBtn.onclick = null;
+
         prevBtn.onclick = () => loadAndRenderHistory(page - 1);
         nextBtn.onclick = () => loadAndRenderHistory(page + 1);
+
         prevBtn.disabled = page <= 1;
         nextBtn.disabled = page >= totalPages;
     }
