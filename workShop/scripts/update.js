@@ -494,7 +494,7 @@
                             <button class="history-download-btn"
                                     data-url="${downloadUrl}"
                                     data-filename="${fileName}">
-                                下载JSON
+                                下载JSON卡
                             </button>
                         </h3>
                         <ul style="margin-top: 5px; font-size: 0.9em; color: #ccc;">
