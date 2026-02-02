@@ -280,15 +280,31 @@
     // 2.5 UI 组件与面板逻辑
     // =========================================================================
 
-    // 创建悬浮按钮
-    function createFloatingButton() {
+  function createFloatingButton() {
         if (document.getElementById('updater-settings-trigger')) return;
         const btn = document.createElement('div');
         btn.id = 'updater-settings-trigger';
-        btn.innerHTML = '⚙️'; // 或者使用 SVG 图标
+        btn.innerHTML = '⚙️';
         btn.title = "更新设置与历史";
         btn.onclick = openSettingsPanel;
         document.body.appendChild(btn);
+    }
+
+    // 辅助：刷新面板上的版本显示
+    function updatePanelVersionUI() {
+        const el = document.getElementById('updater-current-ver');
+        if (!el) return;
+
+        const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
+        const currentVer = window.top[STABLE_VERSION_VAR];
+
+        if (currentVer) {
+            el.textContent = currentVer;
+            el.style.color = '#fff';
+        } else {
+            el.textContent = '未知 (或需刷新页面)';
+            el.style.color = '#888';
+        }
     }
 
     // 打开设置面板
@@ -297,12 +313,10 @@
             createSettingsModal();
         }
 
-        // 获取当前版本
-        const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
-        const currentVer = window.top[STABLE_VERSION_VAR] || '未知';
-        document.getElementById('updater-current-ver').textContent = currentVer;
+        // 1. 打开时先刷新一次版本显示
+        updatePanelVersionUI();
 
-        // 默认加载第一页历史记录
+        // 2. 默认加载第一页历史记录
         await loadAndRenderHistory(1);
 
         showModal('updater-settings-modal');
@@ -353,20 +367,64 @@
         modal.querySelector('.online-updater-modal-close').onclick = () => hideModal('updater-settings-modal');
 
         // 绑定操作按钮
+
+        // 1. 检查更新
         modal.querySelector('#btn-check-update').onclick = () => {
             hideModal('updater-settings-modal');
             checkForFutureEchoes(true);
         };
-        modal.querySelector('#btn-force-wb').onclick = async () => {
+
+        // 2. 强制更新世界书
+        modal.querySelector('#btn-force-wb').onclick = async (e) => {
             if(confirm('确定要强制覆盖世界书吗？请确保已备份重要修改。')) {
-                await performWorldbookUpdate();
-                toastr.success('世界书强制更新完成');
+                const btn = e.target;
+                const originalText = btn.textContent;
+                btn.textContent = "更新中...";
+                btn.disabled = true;
+                btn.style.opacity = "0.5";
+
+                try {
+                    await performWorldbookUpdate();
+
+                    // ✨ 关键：更新后重新抓取版本号并刷新UI
+                    await refreshVersionAfterUpdate();
+                    updatePanelVersionUI();
+
+                    toastr.success('世界书强制更新完成，版本已刷新');
+                } catch (err) {
+                    toastr.error('更新失败: ' + err.message);
+                } finally {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }
             }
         };
-        modal.querySelector('#btn-force-regex').onclick = async () => {
+
+        // 3. 强制更新正则
+        modal.querySelector('#btn-force-regex').onclick = async (e) => {
             if(confirm('确定要强制覆盖正则脚本吗？')) {
-                await performRegexUpdate();
-                toastr.success('正则强制更新完成');
+                const btn = e.target;
+                const originalText = btn.textContent;
+                btn.textContent = "更新中...";
+                btn.disabled = true;
+                btn.style.opacity = "0.5";
+
+                try {
+                    await performRegexUpdate();
+
+                    // ✨ 关键：更新后重新抓取版本号并刷新UI
+                    await refreshVersionAfterUpdate();
+                    updatePanelVersionUI();
+
+                    toastr.success('正则强制更新完成，版本已刷新');
+                } catch (err) {
+                    toastr.error('更新失败: ' + err.message);
+                } finally {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }
             }
         };
     }
@@ -376,7 +434,8 @@
     const ITEMS_PER_PAGE = 10;
 
     // 加载并渲染历史记录
-      const container = document.getElementById('history-list-container');
+  async function loadAndRenderHistory(page = 1) {
+        const container = document.getElementById('history-list-container');
         const prevBtn = document.getElementById('hist-prev-btn');
         const nextBtn = document.getElementById('hist-next-btn');
         const pageInfo = document.getElementById('hist-page-info');
