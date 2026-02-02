@@ -15199,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.4';
+window.current_game_version = '3.7.5';
 
 
 
@@ -36078,10 +36078,10 @@ async function handleSend(options = {}) {
     // 2. 更新变量传递给外界 (batch, exbatch)
     await TavernHelper.insertOrAssignVariables(
         {
-            batch: String(currentBatchIndex),
-            exbatch: currentExBatchIndex,
-            // 兼容旧变量，Batch 2 视为 batches=2
-            batches: String(currentBatchIndex)
+           batch: currentBatchIndex === 0 ? "0" : currentBatchIndex,
+    exbatch: currentExBatchIndex,
+    // 如果 batches 也有同样的读取逻辑（|| 1），也建议这样处理
+    batches: currentBatchIndex === 0 ? "0" : currentBatchIndex
         },
         { type: 'chat' }
     );
@@ -37541,7 +37541,7 @@ let backupData = {};
             } else {
                 console.log("[Nova Pipeline] 用户取消或流程结束。");
                 // 重置状态
-                await TavernHelper.insertOrAssignVariables({ batch: "1", exbatch: 0, batches: "1" }, { type: 'chat' });
+                await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
             }
         } else {
                  if(is_show_notifications === 'true'){
@@ -37558,7 +37558,7 @@ let backupData = {};
         }
             console.log("[Nova Pipeline] 流水线全部执行完毕。");
             // 全部结束，重置回初始状态
-            await TavernHelper.insertOrAssignVariables({ batch: "1", exbatch: 0, batches: "1" }, { type: 'chat' });
+            await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
 
         const lastStepConfig = getPipelineStep(currentBatchIndex, currentExBatchIndex);
 
@@ -37574,7 +37574,7 @@ let backupData = {};
     // --- 🆕 流水线逻辑结束 🆕 ---
     } catch (e) {
         if (double_api === 'true') {
-        await TavernHelper.insertOrAssignVariables({ batch: "1",exbatch: 0,batches: "1" }, { type: 'chat' });
+        await TavernHelper.insertOrAssignVariables({ batch: 1,exbatch: 0,batches: 1 }, { type: 'chat' });
         batches = 1;
         console.log("[Nova's Error Handler] 检测到错误,已取消变量生成阶段");
     }
