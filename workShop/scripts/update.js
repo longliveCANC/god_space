@@ -22,6 +22,58 @@
         .update-log-entry { margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 15px; }
         .update-log-entry h3 { color: #e0c080; margin-bottom: 8px; }
         .update-log-entry ul { list-style-type: disc; padding-left: 20px; }
+         #updater-settings-trigger {
+            position: fixed;
+            top: 10px;
+            left: -35px; /* 隐藏大部分 */
+            width: 50px;
+            height: 40px;
+            background-color: rgba(26, 26, 26, 0.8);
+            border: 1px solid #c0a060;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            z-index: 2000;
+            cursor: pointer;
+            transition: left 0.3s ease, background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            color: #c0a060;
+            font-size: 20px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        #updater-settings-trigger:hover {
+            left: 0; /* 悬浮显示 */
+            background-color: rgba(26, 26, 26, 1);
+        }
+
+        /* 设置面板内部布局 */
+        .updater-panel-section { margin-bottom: 20px; border: 1px solid #333; padding: 15px; border-radius: 5px; background: rgba(0,0,0,0.2); }
+        .updater-panel-title { font-weight: bold; color: #e0c080; margin-bottom: 10px; display: block; }
+        .updater-btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .updater-small-btn { padding: 5px 10px; font-size: 0.9em; }
+        .updater-danger-btn { border-color: #a33; color: #faa; background: rgba(50,0,0,0.3); }
+        .updater-danger-btn:hover { background: rgba(80,0,0,0.5); }
+
+        /* 历史记录列表 */
+        .history-list-container { max-height: 300px; overflow-y: auto; margin-top: 10px; }
+        .history-download-btn {
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #222;
+            color: #aaa;
+            text-decoration: none;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        .history-download-btn:hover { background: #444; color: #fff; }
+        .pagination-controls { margin-top: 10px; text-align: center; display: flex; justify-content: center; gap: 10px; align-items: center; }
+        .page-btn { background: #333; border: 1px solid #555; color: #ddd; padding: 2px 8px; cursor: pointer; border-radius: 3px; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+   
     `;
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
@@ -192,7 +244,200 @@
         return entry;
     }
 
+// =========================================================================
+    // 2.5 UI 组件与面板逻辑
+    // =========================================================================
 
+    // 创建悬浮按钮
+    function createFloatingButton() {
+        if (document.getElementById('updater-settings-trigger')) return;
+        const btn = document.createElement('div');
+        btn.id = 'updater-settings-trigger';
+        btn.innerHTML = '⚙️'; // 或者使用 SVG 图标
+        btn.title = "更新设置与历史";
+        btn.onclick = openSettingsPanel;
+        document.body.appendChild(btn);
+    }
+
+    // 打开设置面板
+    async function openSettingsPanel() {
+        if (!document.getElementById('updater-settings-modal')) {
+            createSettingsModal();
+        }
+
+        // 获取当前版本
+        const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
+        const currentVer = window.top[STABLE_VERSION_VAR] || '未知';
+        document.getElementById('updater-current-ver').textContent = currentVer;
+
+        // 默认加载第一页历史记录
+        await loadAndRenderHistory(1);
+
+        showModal('updater-settings-modal');
+    }
+
+    // 创建设置面板 HTML
+    function createSettingsModal() {
+        const html = `
+        <div id="updater-settings-modal" class="online-updater-modal">
+            <div class="online-updater-modal-content">
+                <button class="online-updater-modal-close">×</button>
+                <div class="online-updater-modal-title">更新管理器</div>
+
+                <!-- 状态与操作区 -->
+                <div class="updater-panel-section">
+                    <span class="updater-panel-title">当前状态</span>
+                    <p>当前版本: <span id="updater-current-ver" style="color: #fff;">检测中...</span></p>
+                    <div class="updater-btn-group" style="margin-top: 10px;">
+                        <button id="btn-check-update" class="online-updater-control-btn updater-small-btn">检查更新</button>
+                        <button id="btn-force-wb" class="online-updater-control-btn updater-small-btn updater-danger-btn">强制更新世界书</button>
+                        <button id="btn-force-regex" class="online-updater-control-btn updater-small-btn updater-danger-btn">强制更新正则</button>
+                    </div>
+                </div>
+
+                <!-- 历史记录区 -->
+                <div class="updater-panel-section">
+                    <span class="updater-panel-title">更新历史与下载</span>
+                    <div id="history-list-container" class="history-list-container">
+                        <div style="text-align:center; padding: 20px;">加载中...</div>
+                    </div>
+                    <div class="pagination-controls">
+                        <button id="hist-prev-btn" class="page-btn"><</button>
+                        <span id="hist-page-info">1 / 1</span>
+                        <button id="hist-next-btn" class="page-btn">></button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        document.body.appendChild(div.firstElementChild);
+
+        const modal = document.getElementById('updater-settings-modal');
+
+        // 绑定关闭事件
+        modal.addEventListener('click', e => { if(e.target === modal) hideModal('updater-settings-modal'); });
+        modal.querySelector('.online-updater-modal-close').onclick = () => hideModal('updater-settings-modal');
+
+        // 绑定操作按钮
+        modal.querySelector('#btn-check-update').onclick = () => {
+            hideModal('updater-settings-modal');
+            checkForFutureEchoes(true);
+        };
+        modal.querySelector('#btn-force-wb').onclick = async () => {
+            if(confirm('确定要强制覆盖世界书吗？请确保已备份重要修改。')) {
+                await performWorldbookUpdate();
+                toastr.success('世界书强制更新完成');
+            }
+        };
+        modal.querySelector('#btn-force-regex').onclick = async () => {
+            if(confirm('确定要强制覆盖正则脚本吗？')) {
+                await performRegexUpdate();
+                toastr.success('正则强制更新完成');
+            }
+        };
+    }
+
+    // 历史记录缓存
+    let cachedHistory = null;
+    const ITEMS_PER_PAGE = 10;
+
+    // 加载并渲染历史记录
+    async function loadAndRenderHistory(page = 1) {
+        const container = document.getElementById('history-list-container');
+        const prevBtn = document.getElementById('hist-prev-btn');
+        const nextBtn = document.getElementById('hist-next-btn');
+        const pageInfo = document.getElementById('hist-page-info');
+
+        if (!cachedHistory) {
+            try {
+                // 并行加载新旧日志
+                const [recentLogs, oldLogs] = await Promise.all([
+                    loadRemoteJson('https://longlivecanc.github.io/god_space/update_log.json'),
+                    loadRemoteJson('https://longlivecanc.github.io/god_space/draft/历史更新.json')
+                ]);
+
+                let allLogs = [];
+                if (Array.isArray(recentLogs)) allLogs = allLogs.concat(recentLogs);
+                if (Array.isArray(oldLogs)) allLogs = allLogs.concat(oldLogs);
+
+                // 去重 (根据版本号) 并排序 (新版本在前)
+                const seenVersions = new Set();
+                cachedHistory = allLogs.filter(item => {
+                    if (seenVersions.has(item.version)) return false;
+                    seenVersions.add(item.version);
+                    return true;
+                }).sort((a, b) => compareVersions(b.version, a.version)); // 降序
+
+            } catch (e) {
+                container.innerHTML = `<div style="color: #faa;">加载历史记录失败: ${e.message}</div>`;
+                return;
+            }
+        }
+
+        // 分页逻辑
+        const totalPages = Math.ceil(cachedHistory.length / ITEMS_PER_PAGE);
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        const start = (page - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const pageItems = cachedHistory.slice(start, end);
+
+        // 渲染列表
+        let html = '';
+        for (const log of pageItems) {
+            // 检查是否有下载链接 (这里我们假设有版本号就有可能存在文件，点击时再验证)
+            // 路径格式: \god_space\draft\历史版本\3.7.5.json
+            const downloadUrl = `https://longlivecanc.github.io/god_space/draft/历史版本/${log.version}.json`;
+
+            html += `
+                <div class="update-log-entry" style="margin-bottom: 10px; padding-bottom: 10px;">
+                    <h3 style="font-size: 1.1em;">
+                        <span>v${log.version} <span style="font-size:0.8em; color:#888;">(${log.date})</span></span>
+                        <button class="history-download-btn" data-url="${downloadUrl}" data-ver="${log.version}">下载JSON</button>
+                    </h3>
+                    <ul style="margin-top: 5px; font-size: 0.9em; color: #ccc;">
+                        ${log.changes.map(c => `<li>${c}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+
+        // 绑定下载按钮事件
+        container.querySelectorAll('.history-download-btn').forEach(btn => {
+            btn.onclick = async (e) => {
+                const url = e.target.dataset.url;
+                const ver = e.target.dataset.ver;
+                e.target.textContent = '检查中...';
+                try {
+                    // 发送 HEAD 请求检查文件是否存在
+                    const response = await fetch(url, { method: 'HEAD' });
+                    if (response.ok) {
+                        // 存在，打开链接
+                        window.open(url, '_blank');
+                        e.target.textContent = '下载JSON';
+                    } else {
+                        toastr.warning(`版本 v${ver} 没有可用的独立下载文件。`);
+                        e.target.textContent = '无文件';
+                        e.target.style.opacity = '0.5';
+                    }
+                } catch (err) {
+                    toastr.error('网络请求失败');
+                    e.target.textContent = '错误';
+                }
+            };
+        });
+
+        // 更新分页控件
+        pageInfo.textContent = `${page} / ${totalPages || 1}`;
+        prevBtn.onclick = () => loadAndRenderHistory(page - 1);
+        nextBtn.onclick = () => loadAndRenderHistory(page + 1);
+        prevBtn.disabled = page <= 1;
+        nextBtn.disabled = page >= totalPages;
+    }
     // =========================================================================
     // 3. 核心业务逻辑
     // =========================================================================
@@ -427,10 +672,13 @@
         showModal('backup-confirmation-modal');
     }
 
-    if (!window.top.TavernUpdaterAPI) window.top.TavernUpdaterAPI = {};
+     if (!window.top.TavernUpdaterAPI) window.top.TavernUpdaterAPI = {};
     window.top.TavernUpdaterAPI.checkForUpdates = checkForFutureEchoes;
 
     setTimeout(() => {
+        // ✨ 初始化悬浮按钮
+        createFloatingButton();
+
         console.log("[Tavern Updater] 自动检查更新...");
         checkForFutureEchoes(false);
     }, 2000);
