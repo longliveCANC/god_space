@@ -15199,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.5';
+window.current_game_version = '3.7.6';
 
 
 
@@ -36122,7 +36122,7 @@ console.log("我们现在是不是在后台更新呢？",isContinuationVar);
    const { isReroll = false, isContinuation = false } = options;
  
  
-      await extractAndStoreBatchContent(batches);
+      await extractAndStoreBatchContent(currentBatchIndex);
  
   
  
@@ -58519,8 +58519,7 @@ async function initBatch2TextareaOnContentLoad() {
 // 监听 DOMContentLoaded 事件
 document.addEventListener('DOMContentLoaded', function() {
  
-
-
+ 
     //任务模块
 (function () {
     // 1. 注入 CSS 样式
