@@ -40384,7 +40384,7 @@ charPage.addEventListener('click', newUpgradeHandler);
     // 显式调用 showModal，这样我们可以确保数据渲染完成后才显示窗口
     showModal('page-character-modal');
 }
-
+window.handleCharacterOrbClick = handleCharacterOrbClick;
 function populateCharacterPage(playData, statData, assaData) {
        if (!statData || !playData || !assaData) {
         toastr.error("核心角色数据缺失，无法填充页面哦。");
@@ -40799,11 +40799,7 @@ function populateCharacterPage(playData, statData, assaData) {
     setupTooltips();
     setupCharacterTabs();
 }
-
-
-// ========================================================
-// =========== 新增: 填充行囊与能力Tab的函数 ===========
-// ========================================================
+ 
 function populateInventoryAndSkillsTab(playData, assaData) {
 
     const currency = playData.货币;
@@ -47570,7 +47566,7 @@ console.log('数据检测前');
     if (charOrb) {
         
         // 绑定新的点击事件
-        charOrb.addEventListener('click', handleCharacterOrbClick);
+        charOrb.addEventListener('click', window.handleCharacterOrbClick);
     }
   
       const mapOrb = document.getElementById('map-view-orb');
