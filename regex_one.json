@@ -43939,7 +43939,7 @@ if (debugClearBtn) {
 
 await applyThemeAndData(); 
 }
-  
+window.initDisplay = initDisplay;
 
 // ==================== 自定义QR按钮管理系统 ====================
 
