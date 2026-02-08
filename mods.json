@@ -69,9 +69,9 @@
     "id": "x-mod-超复杂npc",
     "name": "超复杂npc档案",
     "author": "assa",
-    "version": "3.6",
+    "version": "3.7",
     "tags": ["npc档案","nsfw"],
-    "description": "<h3>需要配合脚本npc美化！点击了那个npc的关注按钮才能生成习惯、离线事件等哦！</h3>[0122增加了离线事件的时间计算，增加了npc的货币字段][增加了自动总结印象的可选项，默认关闭，15条总结，阈值都可以自己改][角色关系会自动删除带有user的条目;只对关注的角色生成意象等;nsfw现在可以都选了，根据性别实现定向爆破;更新规则改变，在场npc和离线npc彻底分开了]\n[0113要使用新功能的话建议开异步，不然哈基米脑子不够用了。更新了离线事件（关注了npc才行）、角色关系表、以及关键记忆自动浓缩，更新的东西你都是可以关的。然后丰富了一下外貌字段，事件增加了当前位置字段。]\n[1219拆分初始化规则和更新规则，减少了d0的token；增加了承诺，且会在d0再强调一次承诺内容]\n[1213世界书更新意象/声线/小习惯/批注，选开.美化已对应更新。可能会塑造人物更稳定，大概。去掉了恩怨和承诺]\n世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
+    "description": "[0208小修了一下，加了nsfw.性主动度字段和货币字段，以及在d0加了档案强调]<h3>需要配合脚本npc美化！点击了那个npc的关注按钮才能生成习惯、离线事件等哦！</h3>[0122增加了离线事件的时间计算，增加了npc的货币字段][增加了自动总结印象的可选项，默认关闭，15条总结，阈值都可以自己改][角色关系会自动删除带有user的条目;只对关注的角色生成意象等;nsfw现在可以都选了，根据性别实现定向爆破;更新规则改变，在场npc和离线npc彻底分开了]\n[0113要使用新功能的话建议开异步，不然哈基米脑子不够用了。更新了离线事件（关注了npc才行）、角色关系表、以及关键记忆自动浓缩，更新的东西你都是可以关的。然后丰富了一下外貌字段，事件增加了当前位置字段。]\n[1219拆分初始化规则和更新规则，减少了d0的token；增加了承诺，且会在d0再强调一次承诺内容]\n[1213世界书更新意象/声线/小习惯/批注，选开.美化已对应更新。可能会塑造人物更稳定，大概。去掉了恩怨和承诺]\n世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-超复杂npc.json",
     "previewImage": ""
@@ -80,9 +80,9 @@
       "is_dowload_raw_name":true,
     "name": "世界事件",
     "author": "assa",
-    "version": "1.4",
+    "version": "1.5",
     "tags": ["美化脚本","其他"],
-    "description": "[好像优化了点啥，以及将总结阈值砍半了][将默认间隔时间从6小时调整到了3小时。可以自己改。其实生成平行事件和新闻的数量也可以自己调，在那个条目的前几行]\n给世界增加了点平行事件，建议开异步，不然哈基米现在脑力会不够的。平行事件不是每轮对话都更新， 有时间间隔。通过代码比对的时间并对AI进行通知，更新频率有点慢的感人，有需要的可以去自定义。\n以及也可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
+    "description": "[0208小修了一下][将默认间隔时间从6小时调整到了3小时。可以自己改。其实生成平行事件和新闻的数量也可以自己调，在那个条目的前几行]\n给世界增加了点平行事件，建议开异步，不然哈基米现在脑力会不够的。平行事件不是每轮对话都更新， 有时间间隔。通过代码比对的时间并对AI进行通知，更新频率有点慢的感人，有需要的可以去自定义。\n以及也可以在基调设置里改你的基调，默认基调是日常感。鼠标悬浮识小球触发美化，手机是长按。额外的，对于settings和备忘录也单独拎出来美化了，方便看。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod16parallels01.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-世界事件.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 29.png"
@@ -457,9 +457,9 @@
     "id": "mod14gal01",
     "name": "将正文变成gal界面",
     "author": "assa",
-    "version": "2.1",
+    "version": "2.2",
     "tags": ["功能脚本"],
-    "description": "[0102支持差分/cg/html展示][需要版本是3.5.12及其以上]需要开脚本然后外挂这个世界书。其实不外挂也行，不挂世界书的话就看不到立绘了。电脑空格和右键可以继续，左键是回去上一轮\n是支持立绘差分的，而且操作算是比较自动化吧，就是找资源上传图片比较耗时。\n如何做差分？假如你有一个叫做炭治郎的npc。你在识小球给炭治郎设置了一个立绘，名字叫做炭治郎立绘。然后你在素材工坊那里上传一个叫做炭治郎立绘-喜悦的图片，就会自动支持对于这个差分的运用了，当AI输出炭治郎|喜悦|xxx的时候就会展示该差分立绘。对，也就是两步。1，给npc设置主立绘。2，上传${主立绘名称}-${差分名}的立绘图片到素材工坊。其他的代码和世界书都会自动化解决。\n同时也是支持cg展示的，可以在世界书选择是自动处理还是手动添加。假如你上传了一个叫cg-苹果的图片，那么AI输出 cg|苹果 的时候就会贴脸展示该图片。",
+    "description": "[0208支持TTS，用的GPT-Sovits，我自己是用的这个整合包：\n https://www.yuque.com/baicaigongchang1145haoyuangong/ib3g1e/gos50nrqrlipryqq \n 下载好后把端口改成9880或者啥的，不跟酒馆本身重复就行。\n世界书也更新了，可以自动设置音色。\n感谢@cnfh1746，这位佬开发的TTS插件是我玩酒馆用的第一个TTS插件，属于是引路人\n][0102支持差分/cg/html展示][需要版本是3.5.12及其以上]需要开脚本然后外挂这个世界书。其实不外挂也行，不挂世界书的话就看不到立绘了。电脑空格和右键可以继续，左键是回去上一轮\n是支持立绘差分的，而且操作算是比较自动化吧，就是找资源上传图片比较耗时。\n如何做差分？假如你有一个叫做炭治郎的npc。你在识小球给炭治郎设置了一个立绘，名字叫做炭治郎立绘。然后你在素材工坊那里上传一个叫做炭治郎立绘-喜悦的图片，就会自动支持对于这个差分的运用了，当AI输出炭治郎|喜悦|xxx的时候就会展示该差分立绘。对，也就是两步。1，给npc设置主立绘。2，上传${主立绘名称}-${差分名}的立绘图片到素材工坊。其他的代码和世界书都会自动化解决。\n同时也是支持cg展示的，可以在世界书选择是自动处理还是手动添加。假如你上传了一个叫cg-苹果的图片，那么AI输出 cg|苹果 的时候就会贴脸展示该图片。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod14gal.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-galgame格式.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 27.png",
@@ -549,5 +549,17 @@
     "worldBookUrl": "",
    
    "description": " WS Bridge (IIFE): 自动连接 ws://localhost:3001。\n[服务端可用指令]:\n1. 获取状态: {\"action\": \"getGameState\", \"data\": {\"key\": \"(可选)GameAPI字段\", \"correlationId\": \"ID\"}} -> 客户端回传 {\"action\": \"gameStateResponse\"}。\n2. 模拟发送: {\"action\": \"handleSend\", \"data\": {\"userText\": \"输入内容\", \"options\": {}}} -> 自动写入 userInput 并调用 handleSend。\n3. 显示弹窗: {\"action\": \"showAlert\", \"data\": {\"message\": \"提示文本\"}}。\n[流式回调]: 脚本会挂载 window.novaStreamHook，游戏内部调用该钩子时，会自动向服务端发送 {\"action\": \"handleSendStream\", \"data\": ...}。"
-  }
+  },
+  {
+        "id": "x-mod-plot",
+    "name": "故事线和伏笔记录",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["其他"],
+    "is_dowload_raw_name":true,
+       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod19plot.js",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-plot.json",
+   "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 33.png",
+ 
+   "description": "如图，会去记录剧情线，不过AI实在是太喜欢记流水账了，我就设置每条剧情线如果有10个事件就自动浓缩了。这个阈值你愿意的也可以进去改。" }
 ]

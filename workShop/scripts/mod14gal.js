@@ -69,7 +69,7 @@
                 padding: 20px;
                 overflow-y: auto;
 
-                /* --- 【修改】 --- */
+                /* ---  --- */
                 /* 默认隐藏，但允许动画播放 */
                 opacity: 0;
                 pointer-events: none; /* 隐藏时不可交互 */
@@ -93,9 +93,9 @@
 
             /* --- 选项卡片样式 (移植自你的代码) --- */
             .mod14-choice-card {
-                background: var(--mod14-container-bg-color, rgba(10, 25, 47, 0.9));
-                border: 1px solid var(--mod14-border-color, #00faff);
-                color: var(--mod14-text-color, #e6f1ff);
+                background: var(--container-bg-color, rgba(10, 25, 47, 0.9));
+                border: 1px solid var(--border-color, #00faff);
+                color: var(--text-color, #e6f1ff);
                 padding: 10px 15px;
                 width: 90%;
                 max-width: 600px;
@@ -108,10 +108,10 @@
                 flex-shrink: 0; /* 防止被压缩 */
             }
             .mod14-choice-card.focused, .mod14-choice-card:active {
-                background: var(--mod14-primary-color, #00faff);
+                background: var(--primary-color, #00faff);
                 color: #000;
                 transform: scale(1.02);
-                box-shadow: 0 0 15px var(--mod14-glow-color, rgba(0, 250, 255, 0.5));
+                box-shadow: 0 0 15px var(--glow-color, rgba(0, 250, 255, 0.5));
             }
             .mod14-choice-card .tags-container {
                 display: flex; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;
@@ -131,8 +131,8 @@
                 margin: 0 auto;
                 min-height: 180px;
                 max-height: 35%;
-                background: var(--mod14-container-bg-color, rgba(10, 25, 47, 0.85));
-                border: 1px solid var(--mod14-border-color, rgba(0, 250, 255, 0.3));
+                background: var(--container-bg-color, rgba(10, 25, 47, 0.85));
+                border: 1px solid var(--border-color, rgba(0, 250, 255, 0.3));
                 box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
                 border-radius: 8px;
                 padding: 25px 25px 20px 25px;
@@ -146,7 +146,7 @@
             .mod14-name-tag {
                 position: absolute;
                 top: -16px; left: 20px;
-                background: var(--mod14-primary-color, #00faff);
+                background: var(--primary-color, #00faff);
                 color: #000;
                 padding: 2px 15px;
                 font-weight: bold;
@@ -160,7 +160,7 @@
 
             /* 文本内容 */
             .mod14-text-content {
-                color: var(--mod14-text-color, #e6f1ff);
+                color: var(--text-color, #e6f1ff);
                 white-space: pre-wrap;
                 flex-grow: 1;
                 text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
@@ -181,12 +181,12 @@
                 top: -20px;
                 right: 20px; /* 放在右上角或者左上角 */
                 width: 40px; height: 40px;
-                background: var(--mod14-secondary-color, #7affff);
+                background: var(--secondary-color, #7affff);
                 border: 2px solid #fff;
                 border-radius: 50%;
                 display: flex; justify-content: center; align-items: center;
                 cursor: pointer;
-                box-shadow: 0 0 10px var(--mod14-glow-color);
+                box-shadow: 0 0 10px var(--glow-color);
                 animation: mod14-pulse 1.5s infinite;
                 z-index: 15;
                 display: none; /* 默认隐藏 */
@@ -217,11 +217,11 @@
     width: 0; height: 0;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-    border-bottom: 12px solid var(--mod14-text-secondary-color, #a8c0e1);
+    border-bottom: 12px solid var(--text-secondary-color, #a8c0e1);
     animation: mod14-bounce-reverse 1s infinite;
 }
 .mod14-back-btn:hover::after {
-    border-bottom-color: var(--mod14-primary-color, #00faff);
+    border-bottom-color: var(--primary-color, #00faff);
 }
      
             @keyframes mod14-bounce-reverse {
@@ -237,7 +237,7 @@
                 width: 0; height: 0;
                 border-left: 8px solid transparent;
                 border-right: 8px solid transparent;
-                border-top: 12px solid var(--mod14-primary-color, #00faff);
+                border-top: 12px solid var(--primary-color, #00faff);
                 animation: mod14-bounce 1s infinite;
                 opacity: 0;
             }
@@ -266,12 +266,13 @@
                 align-items: center;
                 padding: 20px;
                 backdrop-filter: blur(5px);
+                 background: rgba(0, 0, 0, 0.6);
                        animation: mod14-fade-in 0.3s ease-out forwards;
             }
                 .mod14-modal-content {
                 width: 95%; height: 90%;
 
-                /* 【修改】内容容器背景透明 */
+                /* 内容容器背景透明 */
                 background: transparent;
                 box-shadow: none; /* 去除阴影以适应透明背景 */
 
@@ -280,7 +281,7 @@
                 position: relative;
             }
     
-            /* 【修改】隐藏右上角的 X 关闭按钮 */
+            /* 隐藏右上角的 X 关闭按钮 */
             .mod14-modal-close {
                 display: none !important;
             }
@@ -299,7 +300,7 @@
                 opacity: 0;
                 transition: opacity 0.3s ease;
 
-                /* 【修改】允许面板自身接收鼠标事件，否则无法触发 hover */
+                /* 允许面板自身接收鼠标事件，否则无法触发 hover */
                 pointer-events: auto;
 
                 /* 【新增】增加透明内边距，扩大鼠标感应范围（即“附近”区域） */
@@ -307,7 +308,7 @@
                 margin: -20px;
             }
 
-            /* 【修改】仅保留面板自身的悬浮显示，移除 .mod14-stage-wrapper:hover 的触发 */
+            /* 仅保留面板自身的悬浮显示，移除 .mod14-stage-wrapper:hover 的触发 */
             .mod14-control-panel:hover {
                 opacity: 1;
             }
@@ -333,9 +334,9 @@
             }
        
             .mod14-ctrl-btn {
-                background: var(--mod14-container-bg-color); /* 纯变量 */
-                border: 1px solid var(--mod14-primary-color); /* 纯变量 */
-                color: var(--mod14-primary-color); /* 纯变量 */
+                background: var(--container-bg-color); /* 纯变量 */
+                border: 1px solid var(--primary-color); /* 纯变量 */
+                color: var(--primary-color); /* 纯变量 */
                 padding: 4px 10px;
                 font-size: 12px;
                 cursor: pointer;
@@ -344,12 +345,12 @@
                 user-select: none;
             }
             .mod14-ctrl-btn.active {
-                background: var(--mod14-primary-color);
-                color: var(--mod14-bg-color, #000);
-                box-shadow: 0 0 8px var(--mod14-primary-color);
+                background: var(--primary-color);
+                color: var(--bg-color, #000);
+                box-shadow: 0 0 8px var(--primary-color);
             }
             .mod14-ctrl-btn:hover {
-                background: var(--mod14-border-color);
+                background: var(--border-color);
             }
 .mod14-cg-container {
     display: flex;
@@ -376,7 +377,189 @@
     box-shadow: 0 0 20px rgba(0,0,0,0.8);
     border-radius: 4px;
 }
+.mod14-settings-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 3000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+ .mod14-settings-content {
+    background: var(--container-bg-color, #1a1a2e);
+    border: 1px solid var(--primary-color, #00faff);
+    color: var(--text-color, #fff);
+    min-width: 600px; /* 【保留】设定一个基准宽度以优化布局 */
+    max-width: 90%;
+    max-height: 80%;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
 
+    overflow-y: auto;
+}
+.mod14-settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+.mod14-settings-row label {
+    flex-shrink: 0;
+    font-weight: bold;
+}
+.mod14-settings-input, .mod14-settings-select {
+    flex-grow: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+}
+.mod14-settings-btn {
+    background: var(--primary-color);
+    color: #000;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+.mod14-settings-btn:hover {
+    filter: brightness(1.2);
+}
+.mod14-settings-btn.secondary {
+    background: transparent;
+    border: 1px solid var(--text-secondary-color);
+    color: var(--text-secondary-color);
+}
+
+/* --- 美化的开关样式 (Toggle Switch) --- */
+.mod14-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+.mod14-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.mod14-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #444; /* 关闭时的颜色 */
+    transition: .4s;
+    border-radius: 24px;
+    border: 1px solid #666;
+}
+.mod14-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+/* 选中状态 */
+.mod14-toggle-switch input:checked + .mod14-slider {
+    background-color: var(--primary-color, #00faff);
+    border-color: var(--primary-color, #00faff);
+}
+.mod14-toggle-switch input:checked + .mod14-slider:before {
+    transform: translateX(22px);
+    background-color: #000; /* 开关圆点的颜色 */
+}
+ .mod14-voicemap-header { /* 新增：折叠标题 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 5px;
+    border-top: 2px solid #555;
+    margin-top: 15px;
+    user-select: none;
+}
+.mod14-voicemap-header::after { /* 新增：折叠箭头 */
+    content: '▲';
+    transition: transform 0.3s ease;
+    font-size: 0.8em;
+}
+.mod14-voicemap-header.collapsed::after { /* 新增：折叠后的箭头状态 */
+    transform: rotate(180deg);
+}
+.mod14-voicemap-container {
+    /* max-height: 450px; */ /* 【移除】不再限制自身高度 */
+    /* overflow-y: auto; */   /* 【移除】不再自己处理滚动 */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.4s ease-in-out;
+    overflow: hidden;
+    flex-shrink: 0; /* 【关键新增】防止在flex布局中被压缩 */
+}
+.mod14-voicemap-container.collapsed { /* 新增：折叠后的容器状态 */
+    max-height: 0;
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+    opacity: 0;
+}
+.mod14-voicemap-pagination { /* 新增：分页容器样式 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+    user-select: none;
+}
+.mod14-page-btn { /* 新增：分页按钮样式 */
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+}
+.mod14-page-btn:hover {
+    background: var(--primary-color);
+    color: #000;
+}
+.mod14-page-info { /* 新增：页码信息样式 */
+    font-size: 0.9em;
+}
+.mod14-voicemap-item {
+    display: grid;
+    grid-template-columns: 120px 1fr; /* 简化为两列 */
+    gap: 10px;
+    align-items: center;
+    background: rgba(0,0,0,0.2);
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 3px solid #555;
+}
+.mod14-voicemap-item.is-custom {
+    border-left-color: var(--primary-color);
+}
+.mod14-voicemap-charname {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mod14-voicemap-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
         `;
         document.head.appendChild(style);
     }
@@ -398,12 +581,42 @@
         this.autoTimer = null;    // 自动播放倒计时
         this.isSkipping = false;  // 正在快进/跳过
             // 状态
+            this.voiceMapPagination = {
+    currentPage: 1,
+    itemsPerPage: 5,
+    allNpcs: []
+};
             this.currentChunk = null; // 当前正在显示的数据块
             this.pendingOptions = null; // 待显示的选项
+ // 在 constructor() 内部
+this.ttsConfig = {
+    enabled: localStorage.getItem('mod14_tts_enabled') === 'true',
+    apiEndpoint: localStorage.getItem('mod14_tts_endpoint') || 'http://127.0.0.1:9880',
+    version: localStorage.getItem('mod14_tts_version') || 'v2',
+    defaultModel: localStorage.getItem('mod14_tts_default_model') || '',
+    speed: parseFloat(localStorage.getItem('mod14_tts_speed')) || 1.0,
+    emotion: localStorage.getItem('mod14_tts_emotion') || '中立',
+    refLang: localStorage.getItem('mod14_tts_ref_lang') || '中文',     // 参考音频语言
+    textLang: localStorage.getItem('mod14_tts_text_lang') || '多语种混合', // <--- 新增：文本语言
+    captureMode: localStorage.getItem('mod14_tts_capture_mode') || 'quotes_bracket',
+    filterStart: localStorage.getItem('mod14_tts_filter_start') || '<answer>',
+    filterEnd: localStorage.getItem('mod14_tts_filter_end') || '</answer>',
+    
+};
+this.ttsConfig.useDefaultOnMissing = localStorage.getItem('mod14_tts_use_default') === 'true'; // 新增配置
+   
+
+this.audioCache = {}; // { textHash: AudioBlob }
+    this.activeDownloads = 0;
+    this.maxConcurrentDownloads = 2; // 允许同时下载的数量（并行）
+    this.currentAudio = new Audio();
+    this.currentAudio.onended = () => { console.log('[GalTTS] Playback ended'); };
+    this.currentAudio.onerror = (e) => { console.error('[GalTTS] Audio error', e); };
 
             this.initUI();
-            this.syncTheme();
-            window.addEventListener('resize', () => this.syncTheme());
+           
+            // this.syncTheme();
+            // window.addEventListener('resize', () => this.syncTheme());
 
          document.addEventListener('keydown', (e) => {
                 // 避免在输入框打字时触发
@@ -421,6 +634,451 @@ this.scanAndSyncExpressions();
       
         }
 
+ async populateVoiceMap() {
+    const listContainer = this.ui.settingsModal.querySelector('#mod14-voicemap-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '<p style="text-align:center; opacity:0.7;">正在加载声线列表...</p>';
+
+    const voiceMap = (window.assaSettingsData && window.assaSettingsData.voice_map) ||
+                     (window.GameAPI && window.GameAPI.assaData && window.GameAPI.assaData.voice_map) || {};
+
+    // 将 voiceMap 转换为数组以便分页
+    this.voiceMapPagination.allNpcs = Object.keys(voiceMap).sort();
+    this.voiceMapPagination.currentPage = 1; // 重置到第一页
+
+    // 预先获取一次模型列表
+    const baseModels = await this.fetchTTSModels();
+
+    // 渲染当前页
+    this.renderVoiceMapPage(baseModels);
+}
+ renderVoiceMapPage(baseModels) {
+    const { currentPage, itemsPerPage, allNpcs } = this.voiceMapPagination;
+    const listContainer = this.ui.settingsModal.querySelector('#mod14-voicemap-list');
+    const paginationContainer = this.ui.settingsModal.querySelector('#mod14-voicemap-pagination');
+    const voiceMap = (window.assaSettingsData && window.assaSettingsData.voice_map) ||
+                     (window.GameAPI && window.GameAPI.assaData && window.GameAPI.assaData.voice_map) || {};
+
+    listContainer.innerHTML = ''; // 清空当前列表
+
+    if (allNpcs.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; opacity:0.7;">声线映射(voice_map)为空。</p>';
+        paginationContainer.style.display = 'none';
+        return;
+    }
+
+    const totalPages = Math.ceil(allNpcs.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageNpcs = allNpcs.slice(startIndex, endIndex);
+
+    pageNpcs.forEach(charName => {
+        const config = voiceMap[charName];
+        // 【修改 1】新增 refLang 变量初始化
+        let model = '', version = '', textLang = '', refLang = '', emotion = '';
+        let isCustom = false;
+
+        if (typeof config === 'string') {
+            model = config;
+        } else if (typeof config === 'object' && config !== null) {
+            model = config.model || '';
+            version = config.version || '';
+            textLang = config.textLang || '';
+            // 【修改 2】提取 refLang
+            refLang = config.refLang || '';
+            emotion = config.emotion || '';
+            isCustom = true;
+        }
+
+        const item = document.createElement('div');
+        item.className = `mod14-voicemap-item ${isCustom ? 'is-custom' : ''}`;
+        item.dataset.charName = charName;
+
+        const modelOptions = [...new Set([model, ...baseModels])]
+            .filter(Boolean)
+            .map(m => `<option value="${m}" ${m === model ? 'selected' : ''}>${m}</option>`).join('');
+
+        // 【修改 3】在 innerHTML 中添加 参考音频(refLang) 的下拉框
+        item.innerHTML = `
+            <span class="mod14-voicemap-charname" title="${charName}">${charName}</span>
+            <div class="mod14-voicemap-details">
+                <select class="mod14-settings-select vm-model">
+                    <option value="">-- 选择模型 --</option>
+                    ${modelOptions}
+                </select>
+                <input type="text" class="mod14-settings-input vm-emotion" placeholder="情感(默认中立)" value="${emotion}">
+                <select class="mod14-settings-select vm-version">
+                    <option value="">默认版本</option>
+                    <option value="v2" ${version === 'v2' ? 'selected' : ''}>v2</option>
+                    <option value="v3" ${version === 'v3' ? 'selected' : ''}>v3</option>
+                    <option value="v4" ${version === 'v4' ? 'selected' : ''}>v4</option>
+                </select>
+                <select class="mod14-settings-select vm-textlang">
+                    <option value="">默认文本语言</option>
+                    <option value="多语种混合" ${textLang === '多语种混合' ? 'selected' : ''}>多语种混合</option>
+                    <option value="中文" ${textLang === '中文' ? 'selected' : ''}>中文</option>
+                    <option value="日语" ${textLang === '日语' ? 'selected' : ''}>日语</option>
+                    <option value="英语" ${textLang === '英语' ? 'selected' : ''}>英语</option>
+                </select>
+                <select class="mod14-settings-select vm-reflang">
+                    <option value="">默认参考语种</option>
+                    <option value="中文" ${refLang === '中文' ? 'selected' : ''}>中文</option>
+                    <option value="日语" ${refLang === '日语' ? 'selected' : ''}>日语</option>
+                    <option value="英语" ${refLang === '英语' ? 'selected' : ''}>英语</option>
+                </select>
+            </div>
+        `;
+        listContainer.appendChild(item);
+
+        const modelSelect = item.querySelector('.vm-model');
+        modelSelect.addEventListener('mousedown', async (e) => {
+            if (e.button !== 0) return;
+            const currentValue = modelSelect.value;
+            modelSelect.innerHTML = '<option>刷新中...</option>';
+            const latestModels = await this.fetchTTSModels();
+            const newOptions = [...new Set([currentValue, ...latestModels])]
+                .filter(Boolean)
+                .map(m => `<option value="${m}" ${m === currentValue ? 'selected' : ''}>${m}</option>`).join('');
+            modelSelect.innerHTML = `<option value="">-- 选择模型 --</option>${newOptions}`;
+            modelSelect.value = currentValue;
+        });
+    });
+
+    // 渲染分页控件 (保持不变)
+    if (totalPages > 1) {
+        paginationContainer.style.display = 'flex';
+        paginationContainer.innerHTML = `
+            <span class="mod14-page-btn" id="mod14-prev-page">上一页</span>
+            <span class="mod14-page-info">第 ${currentPage} / ${totalPages} 页</span>
+            <span class="mod14-page-btn" id="mod14-next-page">下一页</span>
+        `;
+
+        paginationContainer.querySelector('#mod14-prev-page').onclick = () => {
+            if (this.voiceMapPagination.currentPage > 1) {
+                this.voiceMapPagination.currentPage--;
+                this.renderVoiceMapPage(baseModels);
+            }
+        };
+        paginationContainer.querySelector('#mod14-next-page').onclick = () => {
+            if (this.voiceMapPagination.currentPage < totalPages) {
+                this.voiceMapPagination.currentPage++;
+                this.renderVoiceMapPage(baseModels);
+            }
+        };
+    } else {
+        paginationContainer.style.display = 'none';
+    }
+}
+saveVoiceMap() {
+    const items = this.ui.voiceMapModal.querySelectorAll('.mod14-voicemap-item');
+    const newVoiceMap = {};
+
+    items.forEach(item => {
+        const charName = item.dataset.charName;
+        const model = item.querySelector('.vm-model').value;
+        const version = item.querySelector('.vm-version').value;
+        const textLang = item.querySelector('.vm-textlang').value;
+        const emotion = item.querySelector('.vm-emotion').value;
+
+        // 如果所有自定义项都为空，且模型也为空，则跳过此条目
+        if (!model && !version && !textLang && !emotion) {
+            return;
+        }
+
+        // 如果只有模型，没有其他自定义项，则存为简单字符串
+        if (model && !version && !textLang && !emotion) {
+            newVoiceMap[charName] = model;
+        } else { // 否则存为对象
+            newVoiceMap[charName] = {
+                model: model,
+                version: version,
+                textLang: textLang,
+                emotion: emotion
+            };
+        }
+    });
+
+    const command = `memory("voice_map", ${JSON.stringify(newVoiceMap)});`;
+    const fullCommand = `/setinput <updateMemory>${command}</updateMemory>`;
+
+    if (window.GameAPI && window.GameAPI.triggerassa) {
+        window.GameAPI.triggerassa(fullCommand);
+        showNovaAlert("声线映射已发送更新指令！");
+        this.closeVoiceMap();
+    } else {
+        console.error("无法发送指令: GameAPI.triggerassa 未定义");
+        alert("发送指令失败，请检查控制台。");
+    }
+}
+ saveTTSConfig() {
+    // 1. 保存全局配置到 localStorage (保持不变)
+    localStorage.setItem('mod14_tts_enabled', this.ttsConfig.enabled);
+    localStorage.setItem('mod14_tts_endpoint', this.ttsConfig.apiEndpoint);
+    localStorage.setItem('mod14_tts_version', this.ttsConfig.version);
+    localStorage.setItem('mod14_tts_default_model', this.ttsConfig.defaultModel);
+    localStorage.setItem('mod14_tts_speed', this.ttsConfig.speed);
+    localStorage.setItem('mod14_tts_emotion', this.ttsConfig.emotion);
+    localStorage.setItem('mod14_tts_ref_lang', this.ttsConfig.refLang);
+    localStorage.setItem('mod14_tts_text_lang', this.ttsConfig.textLang);
+    localStorage.setItem('mod14_tts_capture_mode', this.ttsConfig.captureMode);
+    localStorage.setItem('mod14_tts_filter_start', this.ttsConfig.filterStart);
+    localStorage.setItem('mod14_tts_filter_end', this.ttsConfig.filterEnd);
+    localStorage.setItem('mod14_tts_use_default', this.ttsConfig.useDefaultOnMissing);
+
+    // 2. 从当前显示的 DOM 中获取修改过的数据
+    const items = this.ui.settingsModal.querySelectorAll('.mod14-voicemap-item');
+    const currentUpdates = {};
+    items.forEach(item => {
+        const charName = item.dataset.charName;
+        currentUpdates[charName] = {
+            model: item.querySelector('.vm-model').value,
+            version: item.querySelector('.vm-version').value,
+            textLang: item.querySelector('.vm-textlang').value,
+            // 【修改 4】获取 refLang 的值
+            refLang: item.querySelector('.vm-reflang').value,
+            emotion: item.querySelector('.vm-emotion').value,
+        };
+    });
+
+    // 3. 合并修改到完整的 voice_map
+    const originalVoiceMap = (window.assaSettingsData && window.assaSettingsData.voice_map) ||
+                             (window.GameAPI && window.GameAPI.assaData && window.GameAPI.assaData.voice_map) || {};
+    const newVoiceMap = { ...originalVoiceMap };
+    let hasChanges = false;
+
+    for (const charName in currentUpdates) {
+        const update = currentUpdates[charName];
+        // 只有在模型被选中的情况下才记录
+        if (update.model) {
+            hasChanges = true;
+            // 【修改 5】判断条件加入 refLang，如果只有模型，存为字符串；否则存为对象
+            if (!update.version && !update.textLang && !update.refLang && !update.emotion) {
+                newVoiceMap[charName] = update.model;
+            } else { // 否则存为对象
+                newVoiceMap[charName] = {
+                    model: update.model,
+                    version: update.version,
+                    textLang: update.textLang,
+                  
+                    refLang: update.refLang,
+                    emotion: update.emotion
+                };
+            }
+        } else {
+            // 如果模型被清空，则从 voice_map 中移除该角色
+            if (newVoiceMap.hasOwnProperty(charName)) {
+                delete newVoiceMap[charName];
+                hasChanges = true;
+            }
+        }
+    }
+
+    // 4. 如果 voice_map 有内容或有变动，则发送更新指令 (保持不变)
+    if (hasChanges) {
+        const command = `memory("voice_map", ${JSON.stringify(newVoiceMap)});`;
+        const fullCommand = `/setinput <updateMemory>${command}</updateMemory>`;
+
+        if (window.GameAPI && window.GameAPI.triggerassa) {
+            window.GameAPI.triggerassa(fullCommand);
+            showNovaAlert("声线映射已发送更新指令！");
+        } else {
+            console.error("无法发送指令: GameAPI.triggerassa 未定义");
+            alert("发送指令失败，请检查控制台。");
+        }
+    }
+}
+
+
+    async fetchTTSModels() {
+        try {
+            const url = `${this.ttsConfig.apiEndpoint.replace(/\/$/, '')}/models`;
+            console.log('[GalTTS] Fetching models from:', url);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ version: this.ttsConfig.version })
+            });
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            const models = Object.keys(data.models || {});
+
+            // 更新变量系统
+            if (window.TavernHelper && window.TavernHelper.insertOrAssignVariables) {
+                await window.TavernHelper.insertOrAssignVariables({
+                    'available_models': JSON.stringify(models)
+                }, { type: 'chat' });
+                console.log('[GalTTS] Models synced to variable [available_models]');
+            }
+
+            return models;
+        } catch (e) {
+            console.error('[GalTTS] Failed to fetch models:', e);
+            alert('获取模型失败，请检查API地址和版本');
+            return [];
+        }
+    }
+
+    cleanTextForTTS(text) {
+        if (!text) return "";
+
+        // 1. 标签过滤
+        let clean = text;
+        if (this.ttsConfig.filterStart && this.ttsConfig.filterEnd) {
+            const s = this.ttsConfig.filterStart;
+            const e = this.ttsConfig.filterEnd;
+            const sIdx = clean.indexOf(s);
+            const eIdx = clean.indexOf(e);
+            if (sIdx !== -1 && eIdx !== -1 && eIdx > sIdx) {
+                clean = clean.substring(sIdx + s.length, eIdx);
+            }
+        }
+
+        // 2. 括号过滤 (英文和中文)
+        clean = clean.replace(/\（.*?\）/g, '').replace(/\(.*?\)/g, '');
+
+        if (this.ttsConfig.captureMode.startsWith('quotes')) {
+    const quotes = [];
+    let regex;
+
+    // 根据模式选择不同的正则表达式
+    switch (this.ttsConfig.captureMode) {
+        case 'quotes_double':
+            regex = /“([^”]+?)”/g;
+            break;
+        case 'quotes_bracket':
+            regex = /「([^」]+?)」/g;
+            break;
+        case 'quotes_any':
+        default: // 默认为两者都识别
+            regex = /「([^」]+?)」|“([^”]+?)”/g;
+            break;
+    }
+
+    let match;
+    while ((match = regex.exec(clean)) !== null) {
+        // match[1] 对应 「」，match[2] 对应 “”，取其中有值的一个
+        quotes.push(match[1] || match[2]);
+    }
+    clean = quotes.join('，'); // 用逗号连接多段对话
+}
+
+return clean.trim();
+}
+getCharacterModel(charName) {
+    const voiceMap = (window.assaSettingsData && window.assaSettingsData.voice_map) ||
+                     (window.GameAPI && window.GameAPI.assaData && window.GameAPI.assaData.voice_map) || {};
+
+    let modelConfig = null;
+
+    if (charName && voiceMap[charName]) {
+        const config = voiceMap[charName];
+        if (typeof config === 'string') {
+            // 兼容旧版： "角色名": "模型名"
+            modelConfig = { model: config };
+        } else if (typeof config === 'object' && config.model) {
+            // 新版： "角色名": { model: "模型名", ... }
+            modelConfig = config;
+        }
+    }
+
+    // 如果找到了角色特定配置，则使用它
+    if (modelConfig) {
+        return {
+            model: modelConfig.model,
+            version: modelConfig.version || this.ttsConfig.version,
+            textLang: modelConfig.textLang || this.ttsConfig.textLang,
+            refLang: modelConfig.refLang || this.ttsConfig.refLang,
+            emotion: modelConfig.emotion || this.ttsConfig.emotion,
+        };
+    }
+
+    // 如果没找到，根据开关决定是否使用默认模型
+    if (this.ttsConfig.useDefaultOnMissing) {
+        return {
+            model: this.ttsConfig.defaultModel,
+            version: this.ttsConfig.version,
+            textLang: this.ttsConfig.textLang,
+            refLang: this.ttsConfig.refLang,
+            emotion: this.ttsConfig.emotion,
+        };
+    }
+
+    // 既没找到，又不让用默认的，则返回 null
+    return null;
+}
+
+ async preloadAudio(chunk) {
+    // 如果设置为仅捕获对话，但当前块是旁白（没有名字），则直接跳过
+    if (this.ttsConfig.captureMode.startsWith('quotes') && !chunk.name) {
+        return;
+    }
+
+    const textToRead = this.cleanTextForTTS(chunk.text);
+    if (!textToRead) return;
+
+    const cacheKey = `${chunk.name || 'Default'}_${textToRead}`; // 使用 chunk.name
+
+    if (this.audioCache[cacheKey]) {
+        chunk.audioBlob = this.audioCache[cacheKey];
+        return;
+    }
+
+ 
+
+    const modelConfig = this.getCharacterModel(chunk.name);
+
+// 如果返回 null，说明此角色不应发声
+if (!modelConfig || !modelConfig.model) {
+    return;
+}
+
+try {
+    const baseUrl = this.ttsConfig.apiEndpoint.replace(/\/$/, '');
+    const response = await fetch(`${baseUrl}/infer_single`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            text: textToRead,
+            model_name: modelConfig.model, // 使用配置中的模型
+            text_lang: modelConfig.textLang, // 使用配置中的文本语言
+            prompt_text_lang: modelConfig.refLang, // 使用配置中的参考语言
+            version: modelConfig.version, // 使用配置中的版本
+            dl_url: baseUrl,
+            emotion: modelConfig.emotion, // 使用配置中的情感
+            speed_facter: this.ttsConfig.speed, // 语速保持全局
+            batch_size: 1,
+            media_type: "wav",
+            parallel_infer: true,
+            text_split_method: "按标点符号切"
+        })
+    });
+
+        if (!response.ok) throw new Error('TTS Gen Error');
+        const data = await response.json();
+
+        if (data.audio_url) {
+            const audioRes = await fetch(data.audio_url);
+            const blob = await audioRes.blob();
+            this.audioCache[cacheKey] = blob;
+            chunk.audioBlob = blob;
+        }
+    } catch (e) {
+        console.error('[GalTTS] Download failed:', e);
+    }
+}
+
+    playAudioForChunk(chunk) {
+        if (!this.ttsConfig.enabled || !chunk.audioBlob) return;
+
+        try {
+            const url = URL.createObjectURL(chunk.audioBlob);
+            this.currentAudio.src = url;
+            this.currentAudio.play();
+        } catch (e) {
+            console.error('[GalTTS] Play failed:', e);
+        }
+    }
  async handleCGEvent(cgName) {
     console.log(`[Galgame] 触发 CG: ${cgName}`);
     const searchKey = `cg-${cgName}`;
@@ -473,7 +1131,7 @@ this.scanAndSyncExpressions();
            buildFullCommand(descriptionText, tags) {
             let fullCommand = `/send ${descriptionText}`;
 
-            // 如果没有标签，直接返回 /send 指令
+         
             if (!tags || tags.length === 0) {
                 return fullCommand;
             }
@@ -615,7 +1273,7 @@ this.scanAndSyncExpressions();
 
          initUI() {
             
-            // 【修改】如果舞台已存在，则不再重新创建，直接返回
+            // 如果舞台已存在，则不再重新创建，直接返回
             if (document.querySelector('.mod14-stage-wrapper')) {
                 console.log('[Galgame] UI already initialized.');
                 return;
@@ -696,14 +1354,10 @@ this.scanAndSyncExpressions();
                     this.ui.modal.classList.remove('closing');
                     this.isShowingModal = false;
 
-                    // ============================================================
-                    // 【修改】移除 queue.length === 0 的限制
-                    // ============================================================
-                    // 只要有挂起的选项(pendingOptions) 或者 选项层里已经有渲染好的按钮(children.length > 0)
-                    // 关闭模态框时都应该尝试显示选项层
-                    const hasRenderedOptions = this.ui.optionsLayer && this.ui.optionsLayer.children.length > 0;
+   
+        const hasRenderedOptions = this.ui.optionsLayer && this.ui.optionsLayer.children.length > 0;
 
-                    if (this.pendingOptions || hasRenderedOptions) {
+                    if (this.queue.length === 0 && (this.pendingOptions || hasRenderedOptions)) {
                         this.toggleOptionsLayer(true);
                     }
                     // ============================================================
@@ -723,12 +1377,17 @@ modal.onclick = (e) => {
 modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentModal();
 
 
-       // --- 修改：控制面板 ---
-            const controlPanel = document.createElement('div');
-            controlPanel.className = 'mod14-control-panel';
+      const controlPanel = document.createElement('div');
+    controlPanel.className = 'mod14-control-panel';
 
-            // 新增：上一章按钮
-            const prevChapBtn = document.createElement('div');
+    // 1. 设置按钮 (新增)
+    const settingsBtn = document.createElement('div');
+    settingsBtn.className = 'mod14-ctrl-btn';
+    settingsBtn.textContent = 'TTS设置';
+    settingsBtn.onclick = (e) => { e.stopPropagation(); this.openTTSSettings(); };
+
+    // 2. 上一章按钮
+    const prevChapBtn = document.createElement('div');
             prevChapBtn.className = 'mod14-ctrl-btn';
             prevChapBtn.textContent = '上一章';
             prevChapBtn.title = '上一章';
@@ -752,7 +1411,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
             nextChapBtn.textContent = '下一章';
             nextChapBtn.title = '下一章';
             nextChapBtn.onclick = (e) => { e.stopPropagation(); this.navigateChapter(1); };
-
+controlPanel.appendChild(settingsBtn);
             controlPanel.appendChild(prevChapBtn);
             controlPanel.appendChild(autoBtn);
             controlPanel.appendChild(skipBtn);
@@ -774,7 +1433,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
 
             
 
-           // 【修改】将事件绑定移到这里，确保只绑定一次
+           // 将事件绑定移到这里，确保只绑定一次
             this.ui = {
                 stage, cgLayer, cgImg: cgLayer.querySelector('.mod14-cg-image'),
                 optionsLayer, dialogueBox, nameTag, nameText: nameTag.querySelector('.mod14-name-text'),
@@ -807,19 +1466,173 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
             this.ui.modal.onclick = (e) => {
                 if (e.target === this.ui.modal) closeModal();
             };
+
+            const settingsModal = document.createElement('div');
+    settingsModal.className = 'mod14-settings-modal';
+ 
+ 
+ settingsModal.innerHTML = `
+    <div class="mod14-settings-content">
+        <h3 style="margin:0; border-bottom:1px solid #444; padding-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+            TTS 配置
+            <label class="mod14-toggle-switch" title="启用/禁用 TTS">
+                <input type="checkbox" id="mod14-tts-enable" ${this.ttsConfig.enabled ? 'checked' : ''}>
+                <span class="mod14-slider"></span>
+            </label>
+        </h3>
+
+        <!-- 全局设置部分 -->
+        <div class="mod14-settings-row">
+            <label>API 地址</label>
+            <input type="text" class="mod14-settings-input" id="mod14-tts-api" value="${this.ttsConfig.apiEndpoint}">
+        </div>
+        <div class="mod14-settings-row">
+            <label>API 版本</label>
+            <select class="mod14-settings-select" id="mod14-tts-version">
+                <option value="v2" ${this.ttsConfig.version==='v2'?'selected':''}>v2</option>
+                <option value="v3" ${this.ttsConfig.version==='v3'?'selected':''}>v3</option>
+                <option value="v4" ${this.ttsConfig.version==='v4'?'selected':''}>v4</option>
+            </select>
+        </div>
+        <div class="mod14-settings-row">
+            <button class="mod14-settings-btn" id="mod14-tts-fetch" style="width:100%">刷新/获取可用模型</button>
+        </div>
+        <div class="mod14-settings-row">
+            <label>默认模型</label>
+            <select class="mod14-settings-select" id="mod14-tts-model">
+                <option value="${this.ttsConfig.defaultModel}">${this.ttsConfig.defaultModel || '未选择'}</option>
+            </select>
+        </div>
+        <div class="mod14-settings-row">
+            <label>文本语言</label>
+            <select class="mod14-settings-select" id="mod14-tts-textlang">
+                <option value="多语种混合" ${this.ttsConfig.textLang==='多语种混合'?'selected':''}>多语种混合</option>
+                <option value="中文" ${this.ttsConfig.textLang==='中文'?'selected':''}>中文</option>
+                <option value="日语" ${this.ttsConfig.textLang==='日语'?'selected':''}>日语</option>
+                <option value="英语" ${this.ttsConfig.textLang==='英语'?'selected':''}>英语</option>
+            </select>
+        </div>
+        <div class="mod14-settings-row">
+            <label>参考音频语言</label>
+            <select class="mod14-settings-select" id="mod14-tts-reflang">
+                <option value="中文" ${this.ttsConfig.refLang==='中文'?'selected':''}>中文</option>
+                <option value="日语" ${this.ttsConfig.refLang==='日语'?'selected':''}>日语</option>
+                <option value="英语" ${this.ttsConfig.refLang==='英语'?'selected':''}>英语</option>
+            </select>
+        </div>
+        <div class="mod14-settings-row">
+            <label>语速</label>
+            <input type="number" class="mod14-settings-input" id="mod14-tts-speed" step="0.1" value="${this.ttsConfig.speed}">
+        </div>
+        <div class="mod14-settings-row">
+            <label title="当角色没有配置专属声线时，是否使用上方设置的默认模型。">未配置角色使用默认</label>
+            <label class="mod14-toggle-switch">
+                <input type="checkbox" id="mod14-tts-use-default" ${this.ttsConfig.useDefaultOnMissing ? 'checked' : ''}>
+                <span class="mod14-slider"></span>
+            </label>
+        </div>
+        <div class="mod14-settings-row">
+            <label>捕获模式</label>
+            <select class="mod14-settings-select" id="mod14-tts-capture">
+                <option value="all" ${this.ttsConfig.captureMode==='all'?'selected':''}>全部文本</option>
+                <option value="quotes_double" ${this.ttsConfig.captureMode==='quotes_double'?'selected':''}>仅对话 (“”)</option>
+                <option value="quotes_bracket" ${this.ttsConfig.captureMode==='quotes_bracket'?'selected':''}>仅对话 (「」)</option>
+                <option value="quotes_any" ${this.ttsConfig.captureMode==='quotes_any'?'selected':''}>仅对话 (两者)</option>
+            </select>
+        </div>
+
+           <!-- 声线管理部分 -->
+        <div class="mod14-voicemap-header collapsed" id="mod14-voicemap-toggle">
+            <h4 style="margin:0;">NPC 音色设置 (点击展开/收起)</h4>
+        </div>
+        <div class="mod14-voicemap-container collapsed" id="mod14-voicemap-list-wrapper">
+             <div id="mod14-voicemap-list">
+                <!-- 角色条目将动态生成在这里 -->
+             </div>
+             <div class="mod14-voicemap-pagination" id="mod14-voicemap-pagination" style="display: none;">
+                <!-- 分页按钮将动态生成在这里 -->
+             </div>
+        </div>
+
+        <!-- 底部按钮 -->
+        <div style="margin-top:auto; display:flex; justify-content:flex-end; gap:10px; padding-top:10px; border-top:1px solid #444;">
+            <button class="mod14-settings-btn secondary" id="mod14-tts-cancel">取消</button>
+            <button class="mod14-settings-btn" id="mod14-tts-save">保存配置</button>
+        </div>
+    </div>
+`;
+    document.body.appendChild(settingsModal);
+    this.ui.settingsModal = settingsModal;
+     // 新增：绑定折叠事件
+    const voiceMapToggle = settingsModal.querySelector('#mod14-voicemap-toggle');
+    const voiceMapContainer = settingsModal.querySelector('#mod14-voicemap-list-wrapper');
+    voiceMapToggle.addEventListener('click', () => {
+        voiceMapToggle.classList.toggle('collapsed');
+        voiceMapContainer.classList.toggle('collapsed');
+    });
+ settingsModal.addEventListener('click', (event) => {
+        // 检查点击事件的目标是否是模态框背景本身
+        if (event.target === settingsModal) {
+            settingsModal.style.display = 'none';
         }
+    });
+    // 绑定设置事件
+    settingsModal.querySelector('#mod14-tts-cancel').onclick = () => { settingsModal.style.display = 'none'; };
+ settingsModal.querySelector('#mod14-tts-save').onclick = () => {
+    // 更新内存中的 ttsConfig 对象
+    this.ttsConfig.enabled = settingsModal.querySelector('#mod14-tts-enable').checked;
+    this.ttsConfig.apiEndpoint = settingsModal.querySelector('#mod14-tts-api').value;
+    this.ttsConfig.version = settingsModal.querySelector('#mod14-tts-version').value;
+    this.ttsConfig.defaultModel = settingsModal.querySelector('#mod14-tts-model').value;
+    this.ttsConfig.textLang = settingsModal.querySelector('#mod14-tts-textlang').value;
+    this.ttsConfig.refLang = settingsModal.querySelector('#mod14-tts-reflang').value;
+    this.ttsConfig.speed = parseFloat(settingsModal.querySelector('#mod14-tts-speed').value);
+    this.ttsConfig.useDefaultOnMissing = settingsModal.querySelector('#mod14-tts-use-default').checked;
+    this.ttsConfig.captureMode = settingsModal.querySelector('#mod14-tts-capture').value;
+
+    // 调用统一的保存方法
+    this.saveTTSConfig();
+
+    settingsModal.style.display = 'none';
+    showNovaAlert("TTS配置已保存");
+};
+    settingsModal.querySelector('#mod14-tts-fetch').onclick = async (e) => {
+        const btn = e.target;
+        btn.textContent = '获取中...';
+        // 临时更新 version 以便 fetch 使用
+        this.ttsConfig.version = settingsModal.querySelector('#mod14-tts-version').value;
+        this.ttsConfig.apiEndpoint = settingsModal.querySelector('#mod14-tts-api').value;
+
+        const models = await this.fetchTTSModels();
+        const select = settingsModal.querySelector('#mod14-tts-model');
+        select.innerHTML = '';
+        models.forEach(m => {
+            select.add(new Option(m, m, false, m === this.ttsConfig.defaultModel));
+        });
+        btn.textContent = '刷新/获取模型列表';
+    };
+}
+
+// 辅助方法：打开设置
+openTTSSettings() {
+    if (this.ui.settingsModal) {
+        this.ui.settingsModal.style.display = 'flex';
+        this.populateVoiceMap(); // 打开时自动加载声线列表
+    }
+}
+       
 
         syncTheme() {
             if (!this.ui || !window.GameAPI) return;
             const getVar = window.GameAPI.getThemeVar;
             const theme = {
-                '--mod14-primary-color': getVar('--primary-color') || '#00faff',
-                '--mod14-secondary-color': getVar('--secondary-color') || '#7affff',
-                '--mod14-text-color': getVar('--text-color') || '#e6f1ff',
-                '--mod14-text-secondary-color': getVar('--text-secondary-color') || '#a8c0e1',
-                '--mod14-container-bg-color': getVar('--container-bg-color') || 'rgba(10, 25, 47, 0.85)',
-                '--mod14-border-color': getVar('--border-color') || 'rgba(0, 250, 255, 0.3)',
-                '--mod14-glow-color': getVar('--glow-color') || 'rgba(0, 250, 255, 0.5)',
+                '--primary-color': getVar('--primary-color') || '#00faff',
+                '--secondary-color': getVar('--secondary-color') || '#7affff',
+                '--text-color': getVar('--text-color') || '#e6f1ff',
+                '--text-secondary-color': getVar('--text-secondary-color') || '#a8c0e1',
+                '--container-bg-color': getVar('--container-bg-color') || 'rgba(10, 25, 47, 0.85)',
+                '--border-color': getVar('--border-color') || 'rgba(0, 250, 255, 0.3)',
+                '--glow-color': getVar('--glow-color') || 'rgba(0, 250, 255, 0.5)',
                 '--base-font-family': getVar('--base-font-family') || '"Microsoft YaHei", sans-serif',
                 '--base-font-size': getVar('--base-font-size') || '16px',
                 '--base-line-height': getVar('--base-line-height') || '1.5'
@@ -889,7 +1702,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
         placeholderIndex++;
         return placeholder;
     });
-    // 1.2 解析 <msg> -> 【修改】转换为 HTML 后立即用占位符保护
+    // 1.2 解析 <msg> -> 转换为 HTML 后立即用占位符保护
   processedContent = processedContent.replace(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs, (match, sender, receiver, msgContent) => {
         // 【修改点】将最后一个参数由 true 改为 false
         // 这样 renderPrivateMsgToHtml 才会生成包含 BGM 信息的隐藏 div (js-music-autoplay-trigger)
@@ -898,7 +1711,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
         return protectRichUi(html);
     });
 
-    // 1.3 解析 <group_chat> -> 【修改】转换为 HTML 后立即用占位符保护
+    // 1.3 解析 <group_chat> -> 转换为 HTML 后立即用占位符保护
     processedContent = processedContent.replace(/<group_chat\s+name="([^"]*)">([\s\S]*?)<\/group_chat>/gs, (match, groupName, chatContent) => {
         let groupChatHtml = `<div class="group-chat-separator">群聊: ${groupName.trim()}</div>`;
         if (typeof chatContent === 'string') {
@@ -1007,8 +1820,8 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
                     name = (msg.name || '').replace(/-/g, '');
                 }
             }
-
-            this.queue.push({
+ 
+ const chunk = {
                 name,
                 text,
                 expression, // 【新增】存入队列
@@ -1019,10 +1832,15 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
                 options: [],
                 isRealLastMsg: isRealLastMsg,
                 originalMsg: msg
-            });
+            };
+            this.queue.push(chunk);
+
+          
+ if (!this.currentChunk && this.queue.length === 1) {
+    this.preloadAudio(chunk);
+}
         });
     };
-
      const splitRegex = /(<html>[\s\S]*?<\/html>|<details>[\s\S]*?<\/details>)/gi;
     const parts = processedContent.split(splitRegex);
 
@@ -1032,22 +1850,24 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
 
         // 检查这一部分是否是 HTML/附件
         if (/^(<html>[\s\S]*?<\/html>|<details>[\s\S]*?<\/details>)$/i.test(part)) {
-            this.queue.push({
+              const chunk = {
                 name: msg.name || '系统',
-                text: '',
-                attachments: [part], // 将当前这个块作为附件放入
+                text: '', // 附件块没有文本，不发TTS
+                attachments: [part],
                 isAttachmentDisplay: true,
                 isLast: false,
                 options: [],
                 isRealLastMsg: isRealLastMsg,
                 originalMsg: msg
-            });
+            };
+            this.queue.push(chunk);
+            // 附件块不需要TTS
         } else {
-            // 如果不是附件，则是普通文本（包含 cg| 指令），交给 processTextLines 处理
-            // processTextLines 内部会处理空行过滤和 cg 指令解析
-            processTextLines(part);
+            processTextLines(part); // processTextLines 内部已经修改好了
         }
     });
+
+        
 
     // --- 步骤3: 后处理 (设置最后一个块的属性) ---
     if (this.queue.length > 0) {
@@ -1116,8 +1936,36 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
     if (!this.isTyping && this.ui.optionsLayer.classList.contains('show') && !this.isShowingModal && !this.isBulkRendering) {
         this.playNextChunk();
     }
+    this.processAudioQueue();
 }
+ processAudioQueue() {
+        if (!this.ttsConfig.enabled) return;
 
+        // 循环填满并发槽位
+        while (this.activeDownloads < this.maxConcurrentDownloads) {
+            // 1. 在队列中找到第一个：有文本 + 没音频 + 没在下载 的块
+            const target = this.queue.find(c =>
+                c.text &&
+                !c.audioBlob &&
+                !c.isPreloading &&
+                !c.isAttachmentDisplay
+            );
+
+            // 2. 如果没有待下载的任务，停止调度
+            if (!target) break;
+
+            // 3. 启动下载任务
+            this.activeDownloads++;
+            target.isPreloading = true; // 抢占标记，防止被重复选中
+
+            // 异步调用，不等待结果，直接进入下一次循环填补下一个槽位
+            this.preloadAudio(target).finally(() => {
+                this.activeDownloads--;
+                // 任务结束（无论成功失败），立刻触发下一次调度，形成闭环
+                this.processAudioQueue();
+            });
+        }
+    }
         parseRawOptions(text) {
             // 兼容你的 generateChoices 逻辑：非空行，或数字开头
             return text.split('\n').filter(line => line.trim() && (/^\d+\.\s*/.test(line.trim()) || !/^\s*$/.test(line.trim())));
@@ -1132,7 +1980,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
             return;
         }
 
-        // 【修改】更安全的选项层检查
+        // 更安全的选项层检查
         // 只有当选项层显示，且队列为空（意味着真的到了该选的时候）才拦截
         // 如果队列里还有剧情（this.queue.length > 0），说明是“跳过”后的残留状态，允许点击继续
         const isOptionsVisible = this.ui.optionsLayer.classList.contains('show');
@@ -1185,7 +2033,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
         this.isSkipping = true;
         this.isTyping = true; // 加锁
         this.queue = [];
-
+ 
         // 2. 【核心修复】从后往前找，找到第一条非 User 的消息
         // 这样即使最后一条是你发的，它也会跳到 AI 回复的上一条
         let targetIndex = history.length - 1;
@@ -1202,6 +2050,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
             console.warn('[Galgame] 未找到任何 AI 消息');
             this.isTyping = false;
             this.isSkipping = false;
+
             return;
         }
 
@@ -1241,7 +2090,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
             // 将最后一块放回队列头部，准备播放
             this.queue.push(finalChunk);
             this.playNextChunk();
-            // --- 【修改结束】 ---
+            
         } else {
             // 如果这条 AI 消息解析出来也是空的（比如纯指令），尝试递归找上一条？
             // 这里简单处理：提示无法跳过
@@ -1363,7 +2212,7 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
 
         clearTimeout(this.autoTimer);
 
-        // 【修改】传入 expression 参数
+        // 传入 expression 参数
         this.updateSpeaker(chunk.name, chunk.expression);
 
     this.isTyping = true;
@@ -1419,10 +2268,40 @@ modal.querySelector('.mod14-modal-close').onclick = () => this.closeAttachmentMo
 
  
 playNextChunk() {
-    if (this.queue.length === 0) return;
+  if (this.queue.length === 0) return;
 
-    const chunk = this.queue.shift();
-    this.currentChunk = chunk;
+        const chunk = this.queue.shift();
+        this.currentChunk = chunk;
+
+        // 播放时再次触发一下下载队列，确保如果之前卡住了能重新激活
+        this.processAudioQueue();
+
+        // 渲染文本
+        if (chunk.isAttachmentDisplay) {
+            this.currentAttachmentsContent = chunk.attachments.join('<br><hr><br>');
+            this.showAttachmentModal(true);
+        } else {
+            this.renderChunkState(chunk);
+        }
+
+        // 【核心】音频播放逻辑
+        if (this.ttsConfig.enabled) {
+            if (chunk.audioBlob) {
+                // 情况A：有音频 -> 打断上一句，播放新的
+                try {
+                    const url = URL.createObjectURL(chunk.audioBlob);
+                    this.currentAudio.pause();
+                    this.currentAudio.src = url;
+                    this.currentAudio.currentTime = 0;
+                    this.currentAudio.play().catch(e => {});
+                } catch (e) { console.error(e); }
+            } else {
+                // 情况B：无音频 (没下载完 或 旁白) -> 【什么都不做】
+                // 保持上一句的音频继续播放，直到它自然结束，或者遇到下一句有音频的块
+                // console.log('[GalTTS] 保持背景/留白');
+            }
+        }
+
     this.historyStack.push(chunk);
  if (chunk.type === 'cg_event') {
         this.handleCGEvent(chunk.cgName);
@@ -1469,7 +2348,7 @@ playNextChunk() {
             if (name && name !== '旁白' && name !== '系统') {
                 this.ui.nameText.textContent = name;
                 this.ui.nameTag.style.display = 'block';
-                // 【修改】传递 expression 给 loadCG
+                // 传递 expression 给 loadCG
                 this.loadCG(name, expression);
             } else {
                 this.ui.nameTag.style.display = 'none';
@@ -1591,7 +2470,7 @@ playNextChunk() {
                                 ? await window.createPixelatedCharaImage(stableImageUrl, targetH, 1, false)
                                 : stableImageUrl;
 
-                            // 【关键】处理完成后，存入内存缓存
+                            // 处理完成后，存入内存缓存
                             if (imageNameStr) {
                                 this.processedImageCache[imageNameStr] = finalUrl;
                             }
@@ -1708,13 +2587,13 @@ playNextChunk() {
         this.toggleOptionsLayer(false);
             }
         }
- // 【修改】showAttachmentModal
+ // showAttachmentModal
           showAttachmentModal(isAutoPlayFlow = false) {
             if (!this.currentAttachmentsContent || !this.ui || !this.ui.modal) return;
 
             this.isShowingModal = true;
-
-            // 【修改】使用 dataset 传递状态，而不是在闭包里
+ this.toggleOptionsLayer(false);
+            // 使用 dataset 传递状态，而不是在闭包里
             this.ui.modal.dataset.isAutoPlayFlow = isAutoPlayFlow;
 
             const container = this.ui.iframeContainer;
@@ -1768,7 +2647,7 @@ playNextChunk() {
         body > *:not(div) { padding: 20px; color: #fff; }
       </style>
     </head>
-    <!-- 【关键】点击 body 调用父级关闭方法 -->
+    <!-- 点击 body 调用父级关闭方法 -->
     <body onclick="window.parent.galManager.closeAttachmentModal()">
         ${this.currentAttachmentsContent}
     </body>
@@ -1801,7 +2680,7 @@ window.GameAPI.displayEventTag =  function(){
     
     if (!galManager.ui && !document.querySelector('.mod14-stage-wrapper')) {
         galManager.initUI();
-        galManager.syncTheme();
+        // galManager.syncTheme();
     }
 
     let hookData = { message: msg };
@@ -1937,7 +2816,7 @@ window.GameAPI.displayEventTag =  function(){
                 chatArea.appendChild(stage);
             } else if (galManager) {
                 galManager.initUI();
-                galManager.syncTheme();
+                // galManager.syncTheme();
             }
         }
 
@@ -2033,3 +2912,4 @@ window.GameAPI.displayEventTag =  function(){
     };
  
 })();
+ 

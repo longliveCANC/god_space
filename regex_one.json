@@ -4222,7 +4222,7 @@ opacity: 0.6;
         .subtitle { font-size: 0.9em; color: var(--text-secondary-color); letter-spacing: 3px; margin-top: 0.7rem; text-transform: uppercase; }
         .form-section { margin-bottom: 2rem; }
         .form-section h2 { font-size: 1.1em; color: var(--secondary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
-        h3 { font-size: 1em; color: var(--info-color, #4db6ac); margin-top: 2rem; margin-bottom: 1rem; letter-spacing: 1px; }
+        h3 { font-size: 1em;   margin-top: 2rem; margin-bottom: 1rem; letter-spacing: 1px; }
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
         .form-group { display: flex; flex-direction: column; }
@@ -15199,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.6';
+window.current_game_version = '3.7.7';
 
 
 
