@@ -168,23 +168,52 @@
         return 0;
     }
 
-    async function refreshVersionAfterUpdate() {
-        const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
-        const findVersion = (win) => {
-            try { return win.current_game_version; } catch(e) { return null; }
-        };
+  async function refreshVersionAfterUpdate() {
+    const STABLE_VERSION_VAR = '__TAVERN_UPDATER_STABLE_VERSION__';
+    const MAX_ATTEMPTS = 15; // 最多尝试15次
+    const RETRY_INTERVAL = 1000; // 每次间隔1秒
+    
+    const oldVersion = window.top[STABLE_VERSION_VAR];
+    console.log(`[Updater] 开始轮询版本更新，当前版本: ${oldVersion}`);
+
+    const findVersion = (win) => {
+        try { return win.current_game_version; } catch(e) { return null; }
+    };
+
+    // 轮询逻辑
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         let ver = findVersion(window.top);
+        
+        // 如果顶层窗口没找到，遍历所有 iframe
         if (!ver && window.top.frames) {
             for (let i = 0; i < window.top.frames.length; i++) {
                 ver = findVersion(window.top.frames[i]);
                 if (ver) break;
             }
         }
-        if (ver) {
+
+        // 找到版本且版本已变化
+        if (ver && ver !== oldVersion) {
             window.top[STABLE_VERSION_VAR] = ver;
-            console.log(`[Updater] 版本已刷新: ${ver}`);
+            console.log(`[Updater] 版本已刷新: ${oldVersion} → ${ver} (第 ${attempt} 次尝试)`);
+            
+            // ✨ 同步更新UI显示
+            updatePanelVersionUI();
+            return ver;
+        }
+
+        // 未找到或版本未变化，等待后重试
+        if (attempt < MAX_ATTEMPTS) {
+            console.log(`[Updater] 版本尚未更新，${RETRY_INTERVAL/1000}秒后重试... (${attempt}/${MAX_ATTEMPTS})`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_INTERVAL));
         }
     }
+
+    // 超时仍未检测到变化
+    console.warn(`[Updater] 轮询超时，版本可能未变化或需手动刷新页面`);
+    toastr.warning('版本号未自动更新，请手动刷新页面查看最新版本');
+    return null;
+}
 
     // =========================================================================
     // 🛠️ 关键修复：数据格式转换器 (Storage Format -> Runtime Format)
