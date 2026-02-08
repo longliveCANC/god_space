@@ -109,10 +109,81 @@
      * @param {object} hookData - 从 NovaHooks 传入的数据对象
      * @returns {object} - 处理后的数据对象
      */
+ /**
+     * 钩子处理函数:在保存前处理 AI 响应
+     * 兼容模式 + 优化版：只匹配最后一个 <refine> 标签对，防止贪婪匹配。
+     * @param {object} hookData - 从 NovaHooks 传入的数据对象
+     * @returns {object} - 处理后的数据对象
+     */
     async function processRefinementBeforeSave(hookData) {
-        if (hookData.response) {
-            hookData.response = applyRefinement(hookData.response);
+        let currentResponse = hookData.response;
+
+        // 1. 优化后的正则表达式：
+        //    - [\s\S]*   : 匹配任意字符，包括换行符。
+        //    - <refine>   : 匹配最后一个 <refine> 开头。
+        //    - ([\s\S]*?): 非贪婪地捕获标签内的所有内容（这是我们的JSON）。
+        //    - <\/refine>: 匹配紧随其后的 </refine> 结尾。
+        //    - $          : 确保匹配发生在字符串的末尾（或末尾的空白之前，通过 \s* 兼容）。
+        const refineTagRegex = /<refine>([\s\S]*?)<\/refine>\s*$/;
+        const match = currentResponse.match(refineTagRegex);
+
+        if (match && match[1]) {
+            const refineInstructions = parseRefineJson(match[1]);
+
+            if (refineInstructions) {
+                console.log('[Refiner Plugin] Last refinement instruction block found.');
+
+                // 2. 先把 <refine> 标签从当前响应中移除
+                let processedCurrentResponse = currentResponse.replace(refineTagRegex, '').trim();
+
+                // 3. 获取历史记录引用（为异步二步做准备）
+                const history = conversationHistory;
+                const lastAiMessage = history.slice().reverse().find(m => m.role === 'assistant');
+
+                let modificationCount = 0;
+
+                // 4. 遍历指令，智能判断应用位置
+                for (const originalText in refineInstructions) {
+                    if (Object.hasOwnProperty.call(refineInstructions, originalText)) {
+                        const replacementText = refineInstructions[originalText];
+
+                        try {
+                            const searchRegex = new RegExp(originalText, 'g');
+
+                            // === 判定逻辑 A: 检查当前响应 ===
+                            if (searchRegex.test(processedCurrentResponse)) {
+                                processedCurrentResponse = processedCurrentResponse.replace(searchRegex, replacementText);
+                                modificationCount++;
+                            }
+                            // === 判定逻辑 B: 检查历史记录 (异步二步) ===
+                            else if (lastAiMessage && searchRegex.test(lastAiMessage.content)) {
+                                lastAiMessage.content = lastAiMessage.content.replace(searchRegex, replacementText);
+
+                                // 同步更新 Swipes
+                                if (lastAiMessage.swipes && lastAiMessage.swipes.length > 0) {
+                                    const swipeIndex = lastAiMessage.currentSwipeIndex !== undefined ? lastAiMessage.currentSwipeIndex : (lastAiMessage.swipes.length - 1);
+                                    lastAiMessage.swipes[swipeIndex] = lastAiMessage.content;
+                                }
+                                modificationCount++;
+                            }
+                        } catch (e) {
+                            console.warn('[Refiner Plugin] Regex error or replace failed for:', originalText, e);
+                        }
+                    }
+                }
+
+                // 5. 显示通知
+                if (modificationCount > 0 && window.GameAPI && typeof window.GameAPI.showUpdateNotification === 'function') {
+                    const notificationMessage = formatInstructionsForNotification(refineInstructions);
+                    window.GameAPI.showUpdateNotification(notificationMessage);
+                    console.log(`[Refiner Plugin] Applied ${modificationCount} corrections.`);
+                }
+
+                // 6. 将处理后的文本赋值回 hookData
+                hookData.response = processedCurrentResponse;
+            }
         }
+
         return hookData;
     }
      async function processRefinementBeforeRender(hookData) {
