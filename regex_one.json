@@ -15048,7 +15048,7 @@ pointer-events: auto;
         background: var(--container-bg-color);
         border: 2px solid var(--border-color);
         border-radius: 12px;
-        box-shadow: 0 0 40px var(--glow-color), 0 0 80px rgba(0, 250, 255, 0.3);
+        
         display: flex;
         flex-direction: column;
         padding: 24px;
@@ -15122,7 +15122,7 @@ pointer-events: auto;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 16px;
-            box-shadow: inset 0 0 20px rgba(0, 250, 255, 0.2);
+          
             display: block;
         ">
             <pre id="prompt-content-display-main" style="
@@ -15144,7 +15144,7 @@ pointer-events: auto;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 16px;
-            box-shadow: inset 0 0 20px rgba(0, 250, 255, 0.2);
+            
             display: none;
         ">
             <pre id="prompt-content-display-api" style="
@@ -57301,7 +57301,7 @@ function processPromptData(promptData, layerName) {
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
                 padding: 16px;
-                box-shadow: inset 0 0 20px rgba(0, 250, 255, 0.2);
+                
                 display: ${isFirst ? 'block' : 'none'};
             `;
 
