@@ -34504,24 +34504,38 @@ if (lastPathSegment === key) {
                     continue;
                 }
                 // 世界设定 delete 命令
- if (line.includes('delete') && !line.includes('deleteMapMemo')) {
-    // 注意：稍微防一下 deleteMapMemo，虽然通常它们拼写不同，但多一层保险更好
-
+  // 世界设定 delete 命令 (已兼容单参数模式)
+if (line.includes('delete') && !line.includes('deleteMapMemo')) {
     const deleteParamsStr = extractBalancedArgs(line, 'delete');
 
-    // 再加一层保险，确保不是误匹配到了 deleteMapMemo (虽然上面已经防了)
-    // 检查当前的 commandName 是否真的是独立的 'delete'，或者用正则简单辅助确认前缀
     if (deleteParamsStr && /\bdelete\s*\(/.test(line)) {
-
         const args = parseGenericArgs(deleteParamsStr);
+        let path, key;
 
-        if (args.length >= 2) {
-            const path = cleanPath(unquote(args[0]));
-            const key = unquote(args[1]);
+        if (args.length === 1) {
+            // 💖 单参数模式: delete('path.key')
+            console.log(`[Core] 💖 delete-op(单参数模式): 检测到 delete('path.key') 写法。`);
+            const fullPath = cleanPath(unquote(args[0]));
+            const lastDotIndex = fullPath.lastIndexOf('.');
 
-            // --- 这里直接放入你原来那段完美的“世界重置保护逻辑” ---
+            if (lastDotIndex !== -1) {
+                path = fullPath.substring(0, lastDotIndex);
+                key = fullPath.substring(lastDotIndex + 1);
+                console.log(`[Core] ✨ 解析结果 -> Path: '${path}', Key: '${key}'`);
+            } else {
+                console.warn(`[Core] ⚠️ delete-op: 单参数模式下，参数 '${fullPath}' 中不包含 '.'，无法确定路径和键，操作中止。`);
+                continue; // 跳过此无效指令
+            }
 
-            // 💖 世界重置检查逻辑 (完全保留你的原逻辑)
+        } else if (args.length >= 2) {
+            // 💖 双参数模式: delete('path', 'key')
+            path = cleanPath(unquote(args[0]));
+            key = unquote(args[1]);
+        }
+
+        // 如果成功解析出 path 和 key，则执行删除逻辑
+        if (path !== undefined && key !== undefined) {
+            // --- 世界重置保护逻辑 (完全保留您的原逻辑) ---
             if (key === 'all' && (path === 'world_lore.npc' || path === 'world_lore.settings')) {
                 const categoryToClear = path.split('.')[1];
                 const hasContent = assaDataToUpdate && assaDataToUpdate.world_lore
@@ -34529,8 +34543,8 @@ if (lastPathSegment === key) {
                                 && Object.keys(assaDataToUpdate.world_lore[categoryToClear]).length > 0;
 
                 if (hasContent) {
-                     console.log(`[Core] [Updater] 🚩 检测到世界重置指令...`); // (保留原有的log)
-                     worldResetTriggered = false;
+                     console.log(`[Core] [Updater] 🚩 检测到世界重置指令...`);
+                     worldResetTriggered = false; // 注意：您代码中这里是 false，我予以保留
                      // 同步清理主要地点表
                      assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, 'map.主要地点表', 'all', statDataToUpdate);
                 }
@@ -34538,13 +34552,16 @@ if (lastPathSegment === key) {
 
             // 执行核心删除操作
             assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, path, key, statDataToUpdate);
-          
-                   collectedBatchOps.push({
-                            type: 'delete',
-                            path: path,
-                            key: key
-                        });
+
+            collectedBatchOps.push({
+                type: 'delete',
+                path: path,
+                key: key
+            });
             continue;
+        } else if (args.length > 0) {
+            // 如果有参数但未能解析，记录警告
+            console.warn(`[Core] ⚠️ delete-op: delete 指令参数格式无法识别: ${line}`);
         }
     }
 }
