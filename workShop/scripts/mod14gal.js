@@ -1970,36 +1970,58 @@ openTTSSettings() {
             // 兼容你的 generateChoices 逻辑：非空行，或数字开头
             return text.split('\n').filter(line => line.trim() && (/^\d+\.\s*/.test(line.trim()) || !/^\s*$/.test(line.trim())));
         }
-    handleInteraction() {
-        // 防止回溯时点击
-        if (this.isBacktracking) return;
 
-        // 如果正在打字，瞬间完成
-        if (this.isTyping) {
-            this.finishTyping();
-            return;
-        }
-
-        // 更安全的选项层检查
-        // 只有当选项层显示，且队列为空（意味着真的到了该选的时候）才拦截
-        // 如果队列里还有剧情（this.queue.length > 0），说明是“跳过”后的残留状态，允许点击继续
-        const isOptionsVisible = this.ui.optionsLayer.classList.contains('show');
-
-        if (isOptionsVisible && this.queue.length === 0) {
-            return; // 真的卡在选项了，必须选，不能点背景
-        }
-
-        // 如果选项层显示但队列里还有东西，强制隐藏选项层继续播放
-        if (isOptionsVisible && this.queue.length > 0) {
-            this.toggleOptionsLayer(false);
-        }
-
-        if (this.queue.length > 0) {
-            this.playNextChunk();
-        } else {
-            // 队列空了，等待用户操作或自动播放结束
+        isCurrentlyLastMessage(msg) {
+    if (!msg) return false;
+    const history = window.GameAPI.conversationHistory;
+    if (!history || history.length === 0) return false;
+    
+    // 从当前消息往后查找，看是否还有AI消息
+    const currentIndex = history.indexOf(msg);
+    if (currentIndex === -1) return false;
+    
+    for (let i = currentIndex + 1; i < history.length; i++) {
+        if (history[i].role !== 'user') {
+            return false; // 找到后续AI消息，说明不是最后一条
         }
     }
+    return true; // 后面只有user消息或没有消息
+}
+
+handleInteraction() {
+    // 防止回溯时点击
+    if (this.isBacktracking) return;
+
+    // 如果正在打字，瞬间完成
+    if (this.isTyping) {
+        this.finishTyping();
+        return;
+    }
+
+    // 更安全的选项层检查
+    const isOptionsVisible = this.ui.optionsLayer.classList.contains('show');
+
+    if (isOptionsVisible && this.queue.length === 0) {
+        // 【关键修改】实时检查是否真的是最后一条消息
+        if (this.currentChunk && !this.isCurrentlyLastMessage(this.currentChunk.originalMsg)) {
+            console.log('[Galgame] 检测到后续消息，跳过选项继续播放');
+            this.toggleOptionsLayer(false);
+            // 尝试加载下一条消息
+            this.navigateChapter(1); // 跳到下一章
+            return;
+        }
+        return; // 确实是最后一条，必须选
+    }
+
+    // 如果选项层显示但队列里还有东西，强制隐藏选项层继续播放
+    if (isOptionsVisible && this.queue.length > 0) {
+        this.toggleOptionsLayer(false);
+    }
+
+    if (this.queue.length > 0) {
+        this.playNextChunk();
+    }
+}
 
   toggleAuto(btn) {
         this.isAuto = !this.isAuto;

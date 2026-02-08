@@ -34480,9 +34480,42 @@ if (lastPathSegment === key) {
 }
 
  
-       const finalValue = tryParseJson(path2Str);
+      let valueToProcess = path2Str;
+if (typeof valueToProcess === 'string') {
+    const trimmedValue = valueToProcess.trim().replace(/^["']|["']$/g, '');
+    if (/^[+\-]\d+(\.\d+)?$/.test(trimmedValue)) {
+        console.log(`[Core] 💖 memory-op(相对值-两参数): 检测到相对值 '${trimmedValue}'，正在计算...`);
+        
+        // 导航到目标对象获取当前值
+        const pathParts = path.split('.');
+        let targetObj = assaDataToUpdate;
+        for (const part of pathParts) {
+            if (targetObj && targetObj.hasOwnProperty(part)) {
+                targetObj = targetObj[part];
+            } else {
+                targetObj = null;
+                break;
+            }
+        }
+        
+        if (targetObj && typeof targetObj === 'object' && targetObj.hasOwnProperty(key)) {
+            const currentValue = parseFloat(targetObj[key]);
+            const relativeValue = parseFloat(trimmedValue);
+            
+            if (!isNaN(currentValue) && !isNaN(relativeValue)) {
+                const newValue = currentValue + relativeValue;
+                console.log(`[Core] ✨ 相对值计算: ${currentValue} ${trimmedValue} = ${newValue}`);
+                valueToProcess = String(newValue);
+            } else {
+                console.warn(`[Core] ⚠️ 相对值计算失败: 当前值或相对值不是有效数字`);
+            }
+        } else {
+            console.warn(`[Core] ⚠️ 相对值计算失败: 未找到目标路径 '${path}.${key}'`);
+        }
+    }
+}
 
- 
+const finalValue = tryParseJson(valueToProcess); 
 
 
      assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, key, finalValue);
