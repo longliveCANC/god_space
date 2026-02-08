@@ -491,7 +491,7 @@
     "author": "assa",
     "version": "1.0",
     "tags": ["功能脚本"],
-    "description": "该脚本必须配备此插件并设置好你的生图模型，才能继续生图。以及一定要关掉原本的npc立绘功能啊。 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1215675312721887272\" target=\"_blank\">→插件的Discord频道←</a> \n你可以外挂此插件的官方世界书，也可以不外挂。外挂了官方世界书就会在正文看到cg，不外挂官方世界书，只外挂这个mod的世界书的话，就只会生成立绘。当所有带事件字段的npc都有立绘了之后，不会再占据任何额外的token。里面的绘图提示词你可以自己改。额外的，外挂了此世界书后可以在识小球对立绘映射进行可视化管理。\n机制是，当你删除了某个角色的映射后，下一回合会给你重新生成该角色的立绘。需要注意的是，生成之后，之前的图片会直接被覆盖。",
+    "description": "[先别用，有点问题，别开别开]该脚本必须配备此插件并设置好你的生图模型，才能继续生图。以及一定要关掉原本的npc立绘功能啊。 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1215675312721887272\" target=\"_blank\">→插件的Discord频道←</a> \n你可以外挂此插件的官方世界书，也可以不外挂。外挂了官方世界书就会在正文看到cg，不外挂官方世界书，只外挂这个mod的世界书的话，就只会生成立绘。当所有带事件字段的npc都有立绘了之后，不会再占据任何额外的token。里面的绘图提示词你可以自己改。额外的，外挂了此世界书后可以在识小球对立绘映射进行可视化管理。\n机制是，当你删除了某个角色的映射后，下一回合会给你重新生成该角色的立绘。需要注意的是，生成之后，之前的图片会直接被覆盖。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod15tachie.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-生成立绘.json",
     "previewImage": ""
