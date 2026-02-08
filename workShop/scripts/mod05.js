@@ -650,47 +650,46 @@
             });
         });
 
-        // ==================== 生成配置函数 ====================
-        function generateConfig(text, type, subCategory, position, desc, updateRule, customCategory) {
-            const uniqueId = Math.random().toString(36).substring(2, 8);
-            
-            let fullCategory, dataTab, pathPrefix;
-            
-            if (type === 'global') {
-                const sub = subCategory || toPinyin(text);
-                fullCategory = `global_${sub}`;
-                dataTab = fullCategory;
-                pathPrefix = `global_lore.${sub}`;
-            } else if (type === 'world') {
-                const sub = subCategory || toPinyin(text);
-                fullCategory = `world_${sub}`;
-                dataTab = fullCategory;
-                pathPrefix = `global_lore.${sub}`;
-            } else {
-                fullCategory = customCategory;
-                dataTab = customCategory;
-                pathPrefix = customCategory;
-            }
+ function generateConfig(text, type, subCategory, position, desc, updateRule, customCategory) {
+    const uniqueId = Math.random().toString(36).substring(2, 8);
 
-            const varName = `${fullCategory.replace(/-/g, '_')}_${uniqueId}`;
+    let fullCategory, dataTab, pathPrefix;
 
-            const configObj = {
-                "data-tab": dataTab,
-                "text": text,
-                "position": position ? parseInt(position) : 0
-            };
-            const configJson = JSON.stringify(configObj, null, 2);
+    if (type === 'global') {
+        const sub = subCategory || toPinyin(text);
+        fullCategory = `global_${sub}`;
+        dataTab = fullCategory;
+        pathPrefix = `global_lore.${sub}`;
+    } else if (type === 'world') {
+        const sub = subCategory || toPinyin(text);
+        fullCategory = `world_${sub}`;
+        dataTab = fullCategory;
+        pathPrefix = `global_lore.${sub}`;
+    } else {
+        fullCategory = customCategory;
+        dataTab = customCategory;
+        pathPrefix = customCategory;
+    }
 
-            const promptTemplate = `<%_
+    const varName = `${fullCategory.replace(/-/g, '_')}_${uniqueId}`;
+
+    const configObj = {
+        "data-tab": dataTab,
+        "text": text,
+        "position": position ? parseInt(position) : 0
+    };
+    const configJson = JSON.stringify(configObj, null, 2);
+
+    // 修正了 EJS 模板字符串中的语法错误
+    const promptTemplate = `<%_
 //工具函数
-function getDataWithFallback(varName) {   
+function getDataWithFallback(varName) {
     let data = getLocalVar(varName);
     const isValid = (data) => {
         if (data === null || data === undefined) {
             return false;
         }
         if (typeof data === 'object' && data !== null) {
-            // 如果是数组，检查长度
             if (Array.isArray(data)) {
                 return data.length > 0;
             }
@@ -704,63 +703,97 @@ function getDataWithFallback(varName) {
     return data;
 }
 
-function formatObjectGraceSimple(data, indent = 0, isTopLevel = true, is_huanhang = true) {
+/**
+ * 格式化对象为带缩进和换行的字符串，支持递归换行。
+ * @param {object} data - 需要格式化的对象。
+ * @param {number} [indent=0] - 初始缩进级别。
+ * @param {boolean} [is_huanhang=true] - 是否对所有层级的子键都进行换行和缩进。
+ */
+function formatObjectGraceSimple(data, indent = 0, is_huanhang = true) {
+    // 如果不是对象，直接返回JSON字符串
     if (typeof data !== 'object' || data === null) {
         return JSON.stringify(data);
     }
+
+    // 定义缩进字符串
+    const indentString = ' '.repeat(indent);
+    const nextIndentString = ' '.repeat(indent);
+    // --- 处理数组 ---
     if (Array.isArray(data)) {
-        if (data.length === 0) return '[]'; 
-        const items = data.map(item => formatObjectGraceSimple(item, indent + 1, false, is_huanhang));
-        return isTopLevel ? '[\\n' + items.join(',\\n') + '\\n]' : '[' + items.join(',') + ']';
+        if (data.length === 0) return '[]';
+
+        // 如果不需要递归换行，则将数组元素在一行内显示
+        if (!is_huanhang) {
+            const items = data.map(item => formatObjectGraceSimple(item, 0, false));
+            return '[' + items.join(', ') + ']';
+        }
+
+        // 递归格式化数组的每一项
+        const items = data.map(item =>
+            nextIndentString + formatObjectGraceSimple(item, indent + 1, is_huanhang)
+        );
+        
+        return '[\\n' + items.join(',\\n') + '\\n' + indentString + ']';
     }
+
+    // --- 处理对象 ---
+    // 根据_filter和_showInEJS属性判断是否隐藏
     const shouldFilter = data._filter === true || data._filter === 'true';
     const showInEJS = data._showInEJS === false || data._showInEJS === 'false';
     if (shouldFilter && showInEJS) {
         return '"[已隐藏]"';
     }
-    
-    const keys = Object.keys(data);
-    if (keys.length === 0) {
-        return '{}';
-    }
-    const visibleKeys = keys.filter(key => {
-        if (key.startsWith('_')) {
-            return false;
-        }
-        return true;
-    });
-    
-    if (visibleKeys.length === 0) {
-        return '{}';
-    }
-    const formattedLines = visibleKeys.map(key => {
+
+    // 过滤掉以下划线开头的键
+    const keys = Object.keys(data).filter(key => !key.startsWith('_'));
+    if (keys.length === 0) return '{}';
+
+    // 格式化对象的每个键值对
+    const formattedLines = keys.map(key => {
         let value = data[key];
-        
+        let valueString;
+
+        // 特殊处理需要隐藏的子对象
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
             if (value._showInEJS === false || value._showInEJS === 'false') {
-                const shouldFilter = value._filter === true || value._filter === 'true';
-                if (!shouldFilter) {
-                    const valueString = formatObjectGraceSimple(value, indent + 1, false, is_huanhang);
-                    return \`"\${key}": \${valueString}\`;
-                } else {
+                if (value._filter === true || value._filter === 'true') {
                     const isProtected = value._is_protected === true || value._is_protected === 'true';
                     const protectionMark = isProtected ? ' //此字段禁止删除！' : '';
-                    return \`"\${key}": "[已隐藏]"\${protectionMark}\`;
+                    valueString = '"[已隐藏]"' + protectionMark;
+                } else {
+                    valueString = formatObjectGraceSimple(value, indent + 1, is_huanhang);
                 }
+            } else {
+                valueString = formatObjectGraceSimple(value, indent + 1, is_huanhang);
             }
-            const valueString = formatObjectGraceSimple(value, indent + 1, false, is_huanhang);
+        } else {
+            valueString = formatObjectGraceSimple(value, indent + 1, is_huanhang);
+        }
+
+        // 如果不需要递归换行，则键和值在一行
+        if (!is_huanhang) {
             return \`"\${key}": \${valueString}\`;
         }
-        
-        const valueString = formatObjectGraceSimple(value, indent + 1, false, is_huanhang);
-        return \`"\${key}": \${valueString}\`;
+
+        // 否则，键和值在新行并带缩进
+        return \`\${nextIndentString}"\${key}": \${valueString}\`;
     });
-    
+
+    // 获取当前对象的保护标记
     const isCurrentProtected = data._is_protected === true || data._is_protected === 'true';
     const protectionMark = isCurrentProtected ? ' //此字段禁止删除！' : '';
-    return isTopLevel 
-        ? '{\\n' + formattedLines.join(',\\n') + '\\n}' + protectionMark
-        : '{' + formattedLines.join(',') + '}' + protectionMark;
+
+    // 如果不需要递归换行，则将所有键值对拼接在一行
+    if (!is_huanhang) {
+        // 对于顶层调用，还是需要换行
+        if (indent === 0) {
+              
+             return '{\\n' + formattedLines.map(line => nextIndentString + line).join(',\\n') + '\\n}' + protectionMark;
+        }
+        return '{' + formattedLines.join(', ') + '}' + protectionMark;
+    }
+ 
+    return '{\\n' + formattedLines.join(',\\n') + '\\n' + indentString + '}' + protectionMark;
 }
 
 function cleanObjectRecursively(obj) {
@@ -769,7 +802,7 @@ function cleanObjectRecursively(obj) {
     }
     const cleaned = {};
     const allKeys = Object.keys(obj);
-    
+
     for (let key of allKeys) {
         if (key.startsWith('_')) {
             continue;
@@ -799,12 +832,12 @@ if (typeof assaData === 'undefined') {
 }
 
 // 获取数据
-var ${varName} = formatObjectGraceSimple(_.get(assaData, '${pathPrefix}', {}), 0, true, false);
+var ${varName} = formatObjectGraceSimple(_.get(assaData, '${pathPrefix}', {}), 0, false);
 _%>
 
 memory.load('${pathPrefix}', {
     desc: "${desc || '数据描述'}",
-    <%_  
+    <%_
     var double_api = String(getLocalVar("double_api") || "false");
     var batch = Number(getLocalVar("batch") || 1);
     //更新规则
@@ -815,14 +848,15 @@ memory.load('${pathPrefix}', {
     path: '${pathPrefix} <%=${varName}%>'
 });`;
 
-            return {
-                config: configJson,
-                prompt: promptTemplate,
-                configJson: configJson,
-                promptTemplate: promptTemplate,
-                dataTab: dataTab
-            };
-        }
+    return {
+        config: configJson,
+        prompt: promptTemplate,
+        configJson: configJson,
+        promptTemplate: promptTemplate,
+        dataTab: dataTab
+    };
+}
+
 
         function toPinyin(text) {
             return text.toLowerCase()
