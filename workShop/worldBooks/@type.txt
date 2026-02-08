@@ -287,14 +287,7 @@ memory('global_lore.npc.阴沉男人', 'global_lore.npc.张三'); //rename NPC�
  delete('global_lore.npc', '张三');// delete NPC,
 set_attribute('衍生属性.能量池.当前值','0','50');
 
-window.GameAPI = {
-    // 定义一个属性 'settings'
-    get assaData() {
-        // GameAPI.assaData 
-        return assaSettingsData;
-    },
-         getThemeVar: function(varName) {
-//    --modal-content-bg: none; /* 默认透明 */
+以下css变量颜色可以在你的IIFE函数中直接使用：
 //             --primary-color: #00faff;
 //             --secondary-color: #7affff;
 //    --base-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* 默认字体 */
@@ -308,8 +301,14 @@ window.GameAPI = {
 //             --danger-glow-color: rgba(255, 77, 77, 0.5);
 //              --success-color: #4dff88;
 //             --success-glow-color: rgba(77, 255, 136, 0.5);
-        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+
+window.GameAPI = {
+    // 定义一个属性 'settings'
+    get assaData() {
+        // GameAPI.assaData 
+        return assaSettingsData;
     },
+ 
     get statData() {
  
         return currentGameData;//stat_data
@@ -352,12 +351,10 @@ window.GameAPI = {
     } 
 }
 
-    window.worldHelper = {
-        init: initializeCurrentGameData,//从世界书初始化数据
-         renderHistory:renderHistory,//直接这么用renderHistory();，渲染全部界面。这样用的意思是渲染结束后回到底部renderHistory(true);
-        showNovaAlert:showNovaAlert,//例：showNovaAlert("已处理");
-        processUpdateMemoryCommands:processUpdateMemoryCommands,//直接从酒馆修改变量。例：await processUpdateMemoryCommands("一长串string，有指令就行", -1)
-  }
+    window.renderHistory();渲染全部界面。这样用的意思是渲染结束后回到底部renderHistory(true);
+        window.worldHelper.showNovaAlert,//例：showNovaAlert("已处理");
+        window.processUpdateMemoryCommand,//直接从酒馆修改变量。例：await processUpdateMemoryCommands("一长串string，有指令就行")
+ 
  //埋下的钩子：
      let hookDataBeforeSave = {
     response: aiFullResponse || partialAiResponse, // 原始AI回复文本
@@ -367,12 +364,12 @@ window.GameAPI = {
         history: conversationHistory // 注意：传递的是引用
     }
 };
-hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);
+hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookDataBeforeSave);//在保存AI消息前处理
 
     let hookData = {
         message: msg
     };
-    hookData = await NovaHooks.trigger('before_message_render', hookData);
+    hookData = await NovaHooks.trigger('before_message_render', hookData);//在渲染AI消息到楼层前处理 
 
     // 使用经过钩子处理后的内容
     let content = hookData.message.content;
