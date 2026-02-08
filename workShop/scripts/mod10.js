@@ -115,15 +115,8 @@
      * @param {object} hookData - 从 NovaHooks 传入的数据对象
      * @returns {object} - 处理后的数据对象
      */
-    async function processRefinementBeforeSave(hookData) {
+   async function processRefinementBeforeSave(hookData) {
         let currentResponse = hookData.response;
-
-        // 1. 优化后的正则表达式：
-        //    - [\s\S]*   : 匹配任意字符，包括换行符。
-        //    - <refine>   : 匹配最后一个 <refine> 开头。
-        //    - ([\s\S]*?): 非贪婪地捕获标签内的所有内容（这是我们的JSON）。
-        //    - <\/refine>: 匹配紧随其后的 </refine> 结尾。
-        //    - $          : 确保匹配发生在字符串的末尾（或末尾的空白之前，通过 \s* 兼容）。
         const refineTagRegex = /<refine>([\s\S]*?)<\/refine>\s*$/;
         const match = currentResponse.match(refineTagRegex);
 
@@ -133,44 +126,57 @@
             if (refineInstructions) {
                 console.log('[Refiner Plugin] Last refinement instruction block found.');
 
-                // 2. 先把 <refine> 标签从当前响应中移除
                 let processedCurrentResponse = currentResponse.replace(refineTagRegex, '').trim();
-
-                // 3. 获取历史记录引用（为异步二步做准备）
-                const history = conversationHistory;
+                const history = hookData.context.history;
                 const lastAiMessage = history.slice().reverse().find(m => m.role === 'assistant');
-
                 let modificationCount = 0;
 
-                // 4. 遍历指令，智能判断应用位置
-                for (const originalText in refineInstructions) {
-                    if (Object.hasOwnProperty.call(refineInstructions, originalText)) {
-                        const replacementText = refineInstructions[originalText];
+                // --- 核心修复逻辑 ---
+                // 1. 创建一个临时的、可修改的文本变量
+                let tempContent = "";
+                let target = null; // 'current' 或 'history'
 
-                        try {
-                            const searchRegex = new RegExp(originalText, 'g');
+                // 2. 判断我们的目标文本是当前响应还是一步历史
+                if (Object.keys(refineInstructions).some(key => new RegExp(key, 'g').test(processedCurrentResponse))) {
+                    tempContent = processedCurrentResponse;
+                    target = 'current';
+                } else if (lastAiMessage && Object.keys(refineInstructions).some(key => new RegExp(key, 'g').test(lastAiMessage.content))) {
+                    tempContent = lastAiMessage.content;
+                    target = 'history';
+                }
 
-                            // === 判定逻辑 A: 检查当前响应 ===
-                            if (searchRegex.test(processedCurrentResponse)) {
-                                processedCurrentResponse = processedCurrentResponse.replace(searchRegex, replacementText);
-                                modificationCount++;
-                            }
-                            // === 判定逻辑 B: 检查历史记录 (异步二步) ===
-                            else if (lastAiMessage && searchRegex.test(lastAiMessage.content)) {
-                                lastAiMessage.content = lastAiMessage.content.replace(searchRegex, replacementText);
-
-                                // 同步更新 Swipes
-                                if (lastAiMessage.swipes && lastAiMessage.swipes.length > 0) {
-                                    const swipeIndex = lastAiMessage.currentSwipeIndex !== undefined ? lastAiMessage.currentSwipeIndex : (lastAiMessage.swipes.length - 1);
-                                    lastAiMessage.swipes[swipeIndex] = lastAiMessage.content;
+                // 3. 如果找到了目标，就在临时变量上执行所有替换
+                if (target) {
+                    for (const originalText in refineInstructions) {
+                        if (Object.hasOwnProperty.call(refineInstructions, originalText)) {
+                            const replacementText = refineInstructions[originalText];
+                            try {
+                                const searchRegex = new RegExp(originalText, 'g');
+                                // 始终在 tempContent 上操作，避免链式替换问题
+                                if (searchRegex.test(tempContent)) {
+                                    tempContent = tempContent.replace(searchRegex, replacementText);
+                                    modificationCount++;
                                 }
-                                modificationCount++;
+                            } catch (e) {
+                                console.warn('[Refiner Plugin] Regex error or replace failed for:', originalText, e);
                             }
-                        } catch (e) {
-                            console.warn('[Refiner Plugin] Regex error or replace failed for:', originalText, e);
+                        }
+                    }
+
+                    // 4. 循环结束后，一次性将结果写回
+                    if (target === 'current') {
+                        processedCurrentResponse = tempContent;
+                    } else if (target === 'history') {
+                        lastAiMessage.content = tempContent;
+                        // 同步更新 Swipes
+                        if (lastAiMessage.swipes && lastAiMessage.swipes.length > 0) {
+                            const swipeIndex = lastAiMessage.currentSwipeIndex !== undefined ? lastAiMessage.currentSwipeIndex : (lastAiMessage.swipes.length - 1);
+                            lastAiMessage.swipes[swipeIndex] = tempContent;
                         }
                     }
                 }
+                // --- 修复逻辑结束 ---
+
 
                 // 5. 显示通知
                 if (modificationCount > 0 && window.GameAPI && typeof window.GameAPI.showUpdateNotification === 'function') {
