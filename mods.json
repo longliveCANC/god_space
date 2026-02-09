@@ -49,7 +49,7 @@
     "author": "assa",
     "version": "1.0",
     "is_dowload_raw_name":true,
-    "tags": ["功能脚本","模块拓展"],
+    "tags": ["功能脚本"],
     "description":"[必看！警告！这是给第二次异步甚至第三次第四次异步使用的，如果你只是想要用简单的异步变量，就不需要开这个，这个是进阶模块！\n游戏默认的异步是直接在设置-调整模组-系统设置-异步变量，把那个打开就完事了，如果你要异步使用不同的api，就在设置界面的下面开启多api那个按钮然后配置即可]\n使用此mod，在设置界面的第一页的上面会出现多异步管线的配置。配合多api，可以实现无限异步的pip流。世界书是一个示例用例，配置好多异步并应用后，就可以接替原本的弹幕功能，将弹幕任务交给第三个AI。",
     
   "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/modA1pip.js",

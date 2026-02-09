@@ -36103,9 +36103,10 @@ console.log(`[Nova's Prompt Assembler] 分组处理后剩下 ${finalEntriesToPro
     }
 };
 
- const sendCustomGenerationRequest = async (promptText, options = {}) => {
-    // 1. 💖 接收 apiId (从 handleSend 传入) 和 signal
-    const { buttonElement, signal, apiId } = options;
+ 
+const sendCustomGenerationRequest = async (promptText, options = {}) => {
+    // 1. 接收 apiSettings 对象和 signal
+    const { buttonElement, signal, apiSettings } = options;
 
     if (buttonElement) {
         buttonElement.textContent = '生成中…';
@@ -36113,72 +36114,46 @@ console.log(`[Nova's Prompt Assembler] 分组处理后剩下 ${finalEntriesToPro
     }
 
     try {
-        // 2. 获取全局开关状态
+        // 2. 判定使用哪个API
+        // 如果没有传入 apiSettings，或者全局开关关闭，则使用主API (generateRaw)
         const isSecondApiEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
-
-        // 3. 💖【核心修复逻辑】💖
-        // 判定是否应该使用 Default API (generateRaw)
-        // 条件 A: 当前步骤配置明确指定 apiId 为 'default'
-        // 条件 B: 全局自定义 API 开关没开 (作为兜底，防止配置了 custom 但没开开关导致报错)
-        const shouldUseDefault = (apiId === 'default') || (!isSecondApiEnabled);
+        const shouldUseDefault = !apiSettings || !isSecondApiEnabled;
 
         if (shouldUseDefault) {
-            console.log(`[Nova] 使用主API (generateRaw) | 原因: ${apiId === 'default' ? '配置指定为Default' : '自定义API总开关未开启'}`);
+            const reason = !apiSettings ? '未提供API配置' : '自定义API总开关未开启';
+            console.log(`[Nova] 使用主API (generateRaw) | 原因: ${reason}`);
 
             /** @type {GenerateRawConfig} */
             const rawConfig = {
-                max_chat_history: 0, // 避免当前聊天记录干扰
-                ordered_prompts: []
+                max_chat_history: 0,
+                ordered_prompts: Array.isArray(promptText) ? promptText : [{ role: 'user', content: String(promptText) }]
             };
 
-            // 处理 promptText (可能是字符串，也可能是符合格式的数组)
-            if (Array.isArray(promptText)) {
-                rawConfig.ordered_prompts = promptText;
-            } else {
-                rawConfig.ordered_prompts = [{ role: 'user', content: String(promptText) }];
-            }
-
-            // 调用酒馆主 API (generateRaw)
-            const generatedText = await generateRaw(rawConfig);
-            return generatedText;
+            return await generateRaw(rawConfig);
         }
 
-        // 4. 启用第二 API 时的处理 (自定义 API 逻辑)
-        console.log(`[Nova] 使用自定义API (sendApiRequest) | ID: ${apiId}`);
+        // 3. 使用自定义API (sendRequest)
+        console.log(`[Nova] 使用自定义API | 配置名: ${apiSettings.name || 'Unnamed'}`);
 
         if (signal?.aborted) {
             throw new Error('用户取消生成');
         }
 
-        // 假设 sendApiRequest 可以接收一个 signal 并传递给底层的 fetch
-        // 注意：如果你的 sendApiRequest 支持传入 apiId 来动态切换配置，请确保在这里传入
-        // 目前代码看起来是依赖 DOM 或全局变量，如果需要动态切换 Profile，
-        // 你可能需要修改 sendApiRequest 让它接受 apiId，或者在 handleSend 里已经切换好了 DOM
-        const result = await sendApiRequest(promptText, {
-            max_tokens: 30000,
-            temperature: 0.8,
-            top_p: 0.95,
-            // 如果 sendApiRequest 支持直接传配置对象，可以在这里传 activeCustomApi
-        }, signal);
+        // 准备消息格式
+        const messages = Array.isArray(promptText) ? promptText : [{ role: 'user', content: String(promptText) }];
 
-        if (!result.success) {
-            let errorMessage = `生成失败: ${result.error}`;
-            if (String(result.error).includes('配置未找到') || String(result.error).includes('未启用')) {
-                errorMessage = '第二API 配置未找到或未启用。\n\n请前往设置页面检查配置。';
-            }
-            throw new Error(errorMessage);
-        }
+        // 直接调用最底层的 sendRequest，传入配置和消息
+        const result = await sendRequest(apiSettings, messages, signal);
 
-        return result.data;
+        return result; // sendRequest 成功时直接返回文本，失败时会抛出错误
 
     } catch (error) {
-        // 检查是否是中断错误
         if (error.name === 'AbortError') {
             console.log('[Nova] 请求被用户成功中断。');
-            throw error;
+        } else {
+            console.error('[生成失败]', error);
         }
-
-        console.error('[生成失败]', error);
+        // 将错误继续向上抛出，由 handleSend 的 try...catch 块统一处理
         throw error;
     } finally {
         if (buttonElement) {
@@ -36187,7 +36162,6 @@ console.log(`[Nova's Prompt Assembler] 分组处理后剩下 ${finalEntriesToPro
         }
     }
 };
-
 
 async function handleSend(options = {}) {
     const abortSignal = NovaAbortController.start();
@@ -36316,7 +36290,7 @@ console.log("我们现在是不是在后台更新呢？",isContinuationVar);
 
     if (apiConfigKey && apiConfigKey !== 'default') {
         try {
-            // 1. 检查是否启用第二 API (总开关)
+             
             const isV2Enabled = localStorage.getItem('enable_custom_api_v2') === 'true';
 
             if (!isV2Enabled) {
@@ -36338,7 +36312,7 @@ console.log("我们现在是不是在后台更新呢？",isContinuationVar);
                 }
 
                 if (customApiSettings) {
-                    console.log(`[Nova API] 已加载 API 配置: ${apiConfigKey} (${customApiSettings.name || 'Unnamed'})`);
+                    toastr.info(`[Nova API] 已加载 API 配置: ${apiConfigKey} (${customApiSettings.name || 'Unnamed'})`);
                 }
             }
         } catch (e) {
@@ -36348,7 +36322,7 @@ console.log("我们现在是不是在后台更新呢？",isContinuationVar);
 
     // 只有在非默认 API 且配置存在时才应用
     const activeCustomApi = customApiSettings;
-    // --- 🆕 API 配置加载结束 🆕 ---
+ 
 
 
    await TavernHelper.insertOrAssignVariables(
@@ -36902,11 +36876,7 @@ if (typeof is_chat_mode !== 'undefined' && is_chat_mode === 'true') {
             promptsForAI = [];
   
             promptsForAI.push(...recentMessagesForPrompt);
-    //          const recentAiAsUser = recentAiMessages.map(msg => ({
-    //     ...msg,
-    //     role: 'model'
-    // }));
-    // promptsForAI.push(...recentAiAsUser);
+    
             promptsForAI.push({
                 role: 'user',
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
@@ -37113,8 +37083,7 @@ AI回复: ${theAImessage}
     promptPayload,
     {
         signal: abortSignal,
-        // 🆕 传入当前步骤配置的 api_config
-        apiId: currentStepConfig?.api_config || 'default'
+        apiSettings: activeCustomApi
     }
 );
       
@@ -37386,7 +37355,7 @@ AI回复: ${theAImessage}
     {
         signal: abortSignal,
         // 🆕 传入当前步骤配置的 api_config
-        apiId: currentStepConfig?.api_config || 'default'
+        apiSettings: activeCustomApi
     }
 );
    
