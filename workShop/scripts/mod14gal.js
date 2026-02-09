@@ -1870,16 +1870,25 @@ openTTSSettings() {
         
 
     // --- 步骤3: 后处理 (设置最后一个块的属性) ---
+     let optionsAssigned = false;
+
     if (this.queue.length > 0) {
         const lastChunk = this.queue[this.queue.length - 1];
-        if (lastChunk.originalMsg === msg) {
+
+        // 只有当最后一个块属于当前消息，且【不是】附件展示块时，才把选项挂上去
+        // 因为附件块(isAttachmentDisplay)不走打字机，无法触发 finishTyping 里的 renderOptions
+        if (lastChunk.originalMsg === msg && !lastChunk.isAttachmentDisplay) {
             lastChunk.isLast = true;
             lastChunk.options = extractedOptions;
+            optionsAssigned = true;
         }
-    } else if (extractedOptions.length > 0) {
+    }
+
+    // 如果选项还没被分配（队列为空，或者最后一个块是附件），且确实有选项需要显示
+    if (!optionsAssigned && extractedOptions.length > 0) {
         this.queue.push({
             name: '系统',
-            text: '请做出选择...',
+            text: '请做出选择...', // 追加一个文本块来承载选项
             attachments: [],
             isAttachmentDisplay: false,
             isLast: true,
