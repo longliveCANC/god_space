@@ -15199,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.7';
+window.current_game_version = '3.7.8';
 
 
 
@@ -25225,7 +25225,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
         html, body {
             font-family: var(--base-font-family, sans-serif);
             color:var(--text-color, #e1f1ff);
-            white-space:pre-wrap;
+            
             background-color: transparent;
             width: 100%;
             /* 允许内容溢出计算 */
@@ -29185,7 +29185,7 @@ iframeMarkers.forEach(marker => {
         html, body {
             font-family: var(--base-font-family);
             color:var(--text-color, #e1f1ff);
-            white-space:pre-wrap;
+             
             overflow: hidden;
            
             display: flex;
@@ -29339,7 +29339,7 @@ iframeMarkers.forEach(marker => {
             padding: 0px;
             box-sizing: border-box;
            color:var(--text-color, #e1f1ff);
-            white-space:pre-wrap;
+            
         }
         body::-webkit-scrollbar { width: 8px; }
         body::-webkit-scrollbar-track { background: transparent; }
@@ -29461,7 +29461,9 @@ iframeMarkers.forEach(marker => {
 
     return bubble;
 }
- async function processSpecialModulesInMessage(content) {
+ 
+
+async function processSpecialModulesInMessage(content) {
     
     try {
         if (typeof conversationHistory === 'undefined' || conversationHistory.length === 0) {

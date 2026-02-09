@@ -406,6 +406,15 @@
 "mod更新的比较多，记得订阅自己心悦的mod啊"
 
     ]
+  },{
+    "version": "3.7.8",
+    "date": "2026-2-8",
+    "changes": [
+"修复了对于iframe的换行错误，去除了white-space: pre-wrap",
+"在最终渲染前增加了一个钩子\nlet renderHookData = {\ncontent: processedContent,\nmessage: msg,\nmode: mode\n};\nrenderHookData = await NovaHooks.trigger('before_final_render', renderHookData);",
+"对于hookdata.content，能只显示在消息中而不影响历史记录，也就是正则的仅格式显示效果。"
+
+    ]
   }
   
 ]
