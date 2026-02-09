@@ -15199,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.10';
+window.current_game_version = '3.7.11';
 
 
 
@@ -37044,7 +37044,7 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
 AI回复: ${theAImessage}
 
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
-在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，使用<!-- -->标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
+在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，再使用一次<build/>标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
      
 
    await TavernHelper.insertOrAssignVariables({ AI回复:theAImessage }, { type: 'chat' });

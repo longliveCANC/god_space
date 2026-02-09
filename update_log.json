@@ -407,14 +407,16 @@
 
     ]
   },{
-    "version": "3.7.10",
+    "version": "3.7.11",
     "date": "2026-2-9",
     "changes": [
 "修复了对于iframe的换行错误，去除了white-space: pre-wrap",
 "在最终渲染前增加了一个钩子\nlet renderHookData = {\ncontent: processedContent,\nmessage: msg,\nmode: mode\n};\nrenderHookData = await NovaHooks.trigger('before_final_render', renderHookData);",
 "对于hookdata.content，能只显示在消息中而不影响历史记录，也就是正则的仅格式显示效果。",
 "正则内置的强制更新世界书更新成了更丝滑的版本，同时似乎修复了异步api不能设置成deepseek等模型的bug",
-"现在玩家的属性数值，无论哈基米怎么抽风，只要关键词匹配上了，就能正确更新，迎来史诗级加强。同时，世界书修复了异步时冒出选项区提醒的Bug。"
+"现在玩家的属性数值，无论哈基米怎么抽风，只要关键词匹配上了，就能正确更新，迎来史诗级加强。同时，世界书修复了异步时冒出选项区提醒的Bug。",
+"修复了后处理的<!-- 嵌套而导致露出部分思考的bug，解决方式是更改列出addition task list的标签为<build>。",
+"修复了对于多异步的多api，无法正确的使用主api和第二api以外的api的bug。"
 
     ]
   }
