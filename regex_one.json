@@ -14426,7 +14426,7 @@ pointer-events: auto;
 
                 <div class="setting-item-column" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
     <div class="setting-item" style="margin-bottom: 10px;">
-        <label>启用多API (若不启用，则默认全都使用酒馆的主api。用于多异步)</label>
+        <label>启用多API (若不启用，则默认全都使用酒馆的主api。若启用，则默认将api 2 用于变量层和生成随机商品)</label>
         <div class="switch-container">
             <button id="enable-custom-api-toggle" class="switch-btn" data-state="off"></button>
         </div>
