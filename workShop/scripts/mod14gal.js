@@ -2652,7 +2652,7 @@ playNextChunk() {
 
                     /* --- 新增：右上角关闭按钮样式 --- */
                     .mod14-internal-close {
-                        position: absolute;
+                        position: fixed;
                         top: 20px;
                         right: 20px;
                         width: 40px;
@@ -2969,5 +2969,8 @@ window.GameAPI.displayEventTag =  function(){
         }
     };
  
+
+  
+    
 })();
  
