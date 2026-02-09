@@ -28939,8 +28939,8 @@ function renderGroupChatToHtml(sender, content, userNickname) {
 }
    async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
- 
-    const bubble = document.createElement('div');
+ console.log("要创建气泡了哦");
+     const bubble = document.createElement('div');
     bubble.classList.add('message-bubble');
     bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
 
@@ -29002,7 +29002,17 @@ function renderGroupChatToHtml(sender, content, userNickname) {
         'display',
         { depth: depth }
     );
+ 
+//  新增钩子：用于最终渲染前的内容转换
+let renderHookData = {
+    content: processedContent,
+    message: msg,
+    mode: mode
+};
+renderHookData = await NovaHooks.trigger('before_final_render', renderHookData);
+processedContent = renderHookData.content;
 
+ 
 
 processedContent = limitConsecutiveNewlines(processedContent);
     // 步骤1：保护 HTML 和代码块
@@ -29745,7 +29755,7 @@ function manageBattleLifecycle(initialCombatDataFromPrompt) {
 
 
  async function renderHistory(is_entry = false, maintainScroll = false) {
-    console.log("我将全部重新渲染。is_entry:", is_entry, "maintainScroll:", maintainScroll);
+    console.log("我将全部重新渲染。我是新的。is_entry:", is_entry, "maintainScroll:", maintainScroll);
     // console.log("我将全部重新渲染。is_entry:",is_entry);
          cleanupGlobalUIState();
     const oldControls = document.getElementById('active-editing-controls');

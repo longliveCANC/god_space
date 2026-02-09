@@ -77,7 +77,7 @@
                 /* 隐藏滚动条但允许滚动 */
                 scrollbar-width: none;
             }
-            /* --- 【新增】用于控制显示/隐藏和动画的类 --- */
+            /* --- 用于控制显示/隐藏和动画的类 --- */
             .mod14-options-layer.show {
                 opacity: 1;
                 pointer-events: auto; /* 显示时可交互 */
@@ -303,7 +303,7 @@
                 /* 允许面板自身接收鼠标事件，否则无法触发 hover */
                 pointer-events: auto;
 
-                /* 【新增】增加透明内边距，扩大鼠标感应范围（即“附近”区域） */
+                /* 增加透明内边距，扩大鼠标感应范围（即“附近”区域） */
                 padding: 20px;
                 margin: -20px;
             }
@@ -1205,7 +1205,7 @@ try {
 
     // 初始化空数据
     let expressionMap = {};
-    let cgList = []; // 【新增】用于存储 CG 列表
+    let cgList = []; // 用于存储 CG 列表
 
     // 即使缺少数据源，我们也尝试存一个空对象，防止 EJS 报错
     if (!window.imageDB || !window.TavernHelper) {
@@ -1213,7 +1213,7 @@ try {
         await window.TavernHelper.insertOrAssignVariables(
             {
                 'available_expressions_json': '{}',
-                'available_cgs_json': '[]' // 【新增】
+                'available_cgs_json': '[]' // 
             },
             { type: 'chat' }
         );
@@ -1246,7 +1246,7 @@ try {
             }
 
             // ============================================================
-            // 2. 【新增】扫描 CG
+            // 2. 扫描 CG
             // ============================================================
             // 筛选出以 "cg-" 开头的图片，并去掉前缀
             cgList = allKeys
@@ -1261,7 +1261,7 @@ try {
         await window.TavernHelper.insertOrAssignVariables(
             {
                 'available_expressions_json': JSON.stringify(expressionMap),
-                'available_cgs_json': JSON.stringify(cgList) // 【新增】存入 CG 列表
+                'available_cgs_json': JSON.stringify(cgList) // 存入 CG 列表
             },
             { type: 'chat' }
         );
@@ -1643,7 +1643,7 @@ openTTSSettings() {
         // --- 核心流程 ---
 
      enqueueMessage(msg, rawContent, extractedOptions = []) {
-    // 【新增】重绘时的智能过滤：
+    // 重绘时的智能过滤：
     // 如果正在重绘(isBulkRendering)，且还没遇到刚才正在读的那条消息，
     // 那么这条消息肯定是旧历史，直接丢弃，不加入队列。
     if (this.isBulkRendering) {
@@ -1770,9 +1770,9 @@ openTTSSettings() {
         }
             let name = '';
             let text = trimmed;
-            let expression = null; // 【新增】用于存储差分/表情
+            let expression = null; // 用于存储差分/表情
 
-            // 【新增】检查是否包含富文本占位符
+            // 检查是否包含富文本占位符
             let isRichContent = false;
             // 简单的检查：如果这一行包含我们生成的占位符 key
             for (const key in richUiPlaceholders) {
@@ -1824,7 +1824,7 @@ openTTSSettings() {
  const chunk = {
                 name,
                 text,
-                expression, // 【新增】存入队列
+                expression, // 存入队列
                 attachments: [],
                 isAttachmentDisplay: false,
                 isRichContent: isRichContent,
@@ -2246,7 +2246,7 @@ handleInteraction() {
         return;
     }
 
-    // 【新增】如果是富文本内容（如短信、群聊界面），直接渲染，不使用打字机
+    // 如果是富文本内容（如短信、群聊界面），直接渲染，不使用打字机
     if (chunk.isRichContent) {
         this.ui.textContent.innerHTML = this.currentText;
         // 稍微延迟一点结束，让 DOM 有时间渲染，避免闪烁
@@ -2409,7 +2409,7 @@ playNextChunk() {
             }
             const imageNameStr = finalImageId ? String(finalImageId) : null;
 
-            // 4. 【新增】检查内存缓存
+            // 4. 检查内存缓存
             // 确保缓存容器已初始化
             if (!this.processedImageCache) this.processedImageCache = {};
 
@@ -2627,53 +2627,83 @@ playNextChunk() {
             iframe.style.border = 'none';
             iframe.style.background = 'transparent';
 
-            // 注入HTML内容
-            iframe.srcdoc = `
+           iframe.srcdoc = `
                 <!DOCTYPE html>
                 <html>
                 <head>
                   <style>
-                    /* 滚动条样式优化 (可选) */
+                    /* 滚动条样式优化 */
                     ::-webkit-scrollbar { width: 6px; }
                     ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
                     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
 
-                           body {
-            margin: 0;
-            padding: 0; /* CG 模式下清除内边距 */
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background: transparent;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer; /* 提示可点击关闭 */
-        }
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        width: 100vw;
+                        height: 100vh;
+                        overflow: hidden;
+                        background: transparent;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        position: relative; /* 确保关闭按钮绝对定位相对于 body */
+                    }
 
-        /* 【新增】CG 图片样式注入 */
-        .mod14-cg-display-img {
-            display: block;
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            min-width: 200px; /* 防止太窄 */
-            min-height: 200px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            border-radius: 4px;
-        }
+                    /* --- 新增：右上角关闭按钮样式 --- */
+                    .mod14-internal-close {
+                        position: absolute;
+                        top: 20px;
+                        right: 20px;
+                        width: 40px;
+                        height: 40px;
+                        background: rgba(0, 0, 0, 0.5);
+                        border: 2px solid rgba(255, 255, 255, 0.6);
+                        border-radius: 50%;
+                        color: #fff;
+                        font-family: sans-serif;
+                        font-size: 24px;
+                        line-height: 36px; /* 垂直居中微调 */
+                        text-align: center;
+                        cursor: pointer;
+                        z-index: 10000;
+                        transition: all 0.2s ease;
+                        user-select: none;
+                        backdrop-filter: blur(4px);
+                    }
+                    .mod14-internal-close:hover {
+                        background: rgba(200, 50, 50, 0.8);
+                        border-color: #fff;
+                        transform: scale(1.1);
+                        box-shadow: 0 0 10px rgba(255,0,0,0.5);
+                    }
 
-        /* 非 CG 内容的样式兼容 */
-        body > *:not(div) { padding: 20px; color: #fff; }
-      </style>
-    </head>
-    <!-- 点击 body 调用父级关闭方法 -->
-    <body onclick="window.parent.galManager.closeAttachmentModal()">
-        ${this.currentAttachmentsContent}
-    </body>
-    </html>
+                    /* CG 图片样式注入 */
+                    .mod14-cg-display-img {
+                        display: block;
+                        max-width: 100%;
+                        max-height: 100%;
+                        width: auto;
+                        height: auto;
+                        object-fit: contain;
+                        min-width: 200px;
+                        min-height: 200px;
+                        box-shadow: 0 0 20px rgba(0,0,0,0.8);
+                        border-radius: 4px;
+                    }
+
+                    /* 非 CG 内容的样式兼容 */
+                    body > *:not(div) { padding: 20px; color: #fff; }
+                  </style>
+                </head>
+                <body>
+                    <!-- 新增：关闭按钮 -->
+                    <div class="mod14-internal-close" onclick="window.parent.galManager.closeAttachmentModal()">×</div>
+
+                    <!-- 内容区域 -->
+                    ${this.currentAttachmentsContent}
+                </body>
+                </html>
             `;
             container.appendChild(iframe);
 
@@ -2773,6 +2803,12 @@ window.GameAPI.displayEventTag =  function(){
         'display',
         { depth: -1 } // 阅读模式固定深度为 -1
     );
+        let renderHookData = {
+        content: rawContent,
+        
+    };
+    renderHookData = await NovaHooks.trigger('before_final_render', renderHookData);
+    rawContent = renderHookData.content;
     for (const key in htmlProtectionMap) {
         rawContent = rawContent.replace(key, htmlProtectionMap[key]);
     }
@@ -2907,7 +2943,7 @@ window.GameAPI.displayEventTag =  function(){
         }
 
         const chatArea = document.getElementById('chat-display-area');
-        // 【关键修改 1】在原函数执行前，先获取舞台引用
+        //  在原函数执行前，先获取舞台引用
         // 如果这时候去取，它还在 DOM 里，或者是 galManager.ui.stage
         let stage = document.querySelector('.mod14-stage-wrapper');
 
@@ -2916,18 +2952,18 @@ window.GameAPI.displayEventTag =  function(){
             stage = galManager.ui.stage;
         }
 
-        // 【关键修改 2】保护现场：先把舞台从 DOM 拿出来
+        //  保护现场：先把舞台从 DOM 拿出来
         // 这样原函数操作 DOM 时（比如清空或重排）就不会伤害到舞台元素
         if (stage && chatArea && chatArea.contains(stage)) {
             stage.remove();
         }
 
-        // 执行原逻辑 (添加用户气泡、清理旧气泡等)
+        
         if (originalRenderNewMessages) {
             await originalRenderNewMessages.apply(this, arguments);
         }
 
-        // 【关键修改 3】恢复现场：把舞台放回去 (放在最上面)
+        //  恢复现场：把舞台放回去 (放在最上面)
         if (chatArea && stage) {
             chatArea.appendChild(stage);
         }

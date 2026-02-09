@@ -370,9 +370,19 @@ hookDataBeforeSave = await NovaHooks.trigger('before_ai_response_save', hookData
         message: msg
     };
     hookData = await NovaHooks.trigger('before_message_render', hookData);//在渲染AI消息到楼层前处理 
-
+//这里对msg.content的修改会影响实际历史记录
     // 使用经过钩子处理后的内容
     let content = hookData.message.content;
+
+
+ let renderHookData = {
+        content: processedContent,
+        message: msg,
+        mode: mode
+    };
+    renderHookData = await NovaHooks.trigger('before_final_render', renderHookData);
+    //这里对content的修改只改变渲染时的内容，不影响实际历史内容
+//
 
     const NovaHooks = {
     // 存储所有钩子和它们对应的处理函数
