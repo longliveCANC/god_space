@@ -15199,7 +15199,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.9';
+window.current_game_version = '3.7.10';
 
 
 
@@ -31986,16 +31986,77 @@ if (pathParts.length > 1 && pathParts[0] === '货币') {
     };
     // === 路径导航与施法 ===
 
-    // 1. 寻找施法目标
-  // === 路径导航与施法 ===
-
+ 
     // 1. 寻找施法目标
     let parentLevel = data;
+
+    // --- 新增：妈妈的直觉（模糊搜索兜底机制） ---
+    // 如果我们在路径中迷路了，妈妈会尝试通过关键词直接找到回家的路
+    const _fuzzyFindPath = (rootData, messyPathStr) => {
+        const keywords = messyPathStr.split(/[\.，,]+/).map(k => k.trim()).filter(k => k);
+        const hasKw = (k) => keywords.includes(k);
+
+        // A. 搜索基础属性和基础技能 (优先匹配末端具体的属性名，如"神魂"、"体术")
+        const primaryRoots = ['基础属性', '基础技能'];
+        for (const root of primaryRoots) {
+            if (!rootData[root]) continue;
+            for (const category in rootData[root]) {
+                for (const attrName in rootData[root][category]) {
+                    // 如果路径里包含这个属性名 (例如 "神魂")
+                    if (hasKw(attrName)) {
+                        return [root, category, attrName];
+                    }
+                }
+            }
+        }
+
+        // B. 搜索衍生属性 (需要匹配 属性名+子项，如 "能量池" 和 "上限")
+        if (rootData['衍生属性']) {
+            for (const derivedName in rootData['衍生属性']) {
+                if (hasKw(derivedName)) {
+                    // 找到了主项（如能量池），现在找子项（如上限、当前值）
+                    const subObj = rootData['衍生属性'][derivedName];
+                    for (const subKey in subObj) {
+                        if (hasKw(subKey)) {
+                            return ['衍生属性', derivedName, subKey];
+                        }
+                    }
+                }
+            }
+        }
+
+        // C. 搜索货币 (如果有的话)
+        if (rootData['货币']) {
+             for (const currency in rootData['货币']) {
+                 if (hasKw(currency)) return ['货币', currency];
+             }
+        }
+
+        return null; // 实在找不到了
+    };
+    // ---------------------------------------
+
     // 我们一步步沿着你指引的路径去寻找目的地
     for (let i = 0; i < pathParts.length - 1; i++) {
         const part = pathParts[i];
+
+        // 修改点：增加了兜底检测
         if (parentLevel === null || typeof parentLevel !== 'object' || !parentLevel.hasOwnProperty(part)) {
-             throw new Error(`[Player] 亲爱的，路径在这里中断了，我们找不到 '${part}' 这个地方。`);
+             // ！！！ 路径中断，启动兜底机制 ！！！
+             console.log(`[Player] 路径 '${part}' 未找到，尝试关键词匹配...`);
+             const rescuedPath = _fuzzyFindPath(data, cleanedPath);
+
+             if (rescuedPath) {
+                 console.log(`[Player] 妈妈通过直觉找到了正确的路径: ${rescuedPath.join('.')}`);
+                 // 重置路径和遍历状态
+                 pathParts = rescuedPath;
+                 parentLevel = data; // 回到根节点
+                 i = -1; // 重置循环索引 (i++后会变成0，从头开始遍历新路径)
+                 continue;
+             }
+
+             // 如果兜底也失败了，才抛出错误
+             throw new Error(`[Player] 亲爱的，路径在这里中断了，我们找不到 '${part}' 这个地方，也猜不出你想去哪。`);
         }
         parentLevel = parentLevel[part];
     }
@@ -45743,7 +45804,7 @@ function showItemDetails(section, item) {
             const [, price] = item;
             const currentCartTotal = shoppingCart.reduce((sum, cartItem) => sum + cartItem[1], 0);
 
-     // 修改为（注意参数顺序和 modal ID）：
+ 
 if ((currentCartTotal + price) > userPoints) {
     showModal('shop-modal', "货币不足", `购物车总价将超过您的货币，无法添加 “${item[0]}”。`);
     return;
@@ -46022,8 +46083,7 @@ function updatePlotSynthesisModalViews() {
     const currentDisplay = document.getElementById('current-plots-display');
     const simulatedDisplay = document.getElementById('simulated-plots-display');
 
-    // ========== 妈妈为你修改的核心部分在这里 ==========
-
+   
     // 准备两个空数组，用来存放格式化好的文本片段
     let currentParts = [];
     let simulatedParts = [];
@@ -46046,7 +46106,7 @@ function updatePlotSynthesisModalViews() {
     currentDisplay.innerHTML = `<h4>当前持有</h4><div class="horizontal-plots">${currentParts.join(' ')}</div>`;
     simulatedDisplay.innerHTML = `<h4>操作预览</h4><div class="horizontal-plots">${simulatedParts.join(' ')}</div>`;
 
-    // ========== 修改结束 ==========
+    
 }
 /**
  * 【V3】处理分解的模拟操作（仅在内存中）
@@ -46619,11 +46679,11 @@ function setupReconfigModal() {
             }
             if (!worldFound) currentWorldviewDisplay.textContent = '未知';
 
-            // --- 更新模组显示 (修复了这里) ---
+           
             document.querySelectorAll('.reconfig-option-card:not(#grid-world .reconfig-option-card)').forEach(card => {
                 const input = card.querySelector('input');
 
-                // [关键修改] 分流处理：如果是本地设置，走本地逻辑；否则走世界书逻辑
+               
                 if (input.dataset.isLocal === 'true') {
                     // --- 本地设置逻辑 ---
                     const key = input.dataset.uid;
@@ -46713,7 +46773,7 @@ function setupReconfigModal() {
             }
 
             // --- 获取新的模组UID (这里加了过滤) ---
-            // [关键修改] 增加 :not([data-is-local="true"]) 排除本地设置
+        
             document.querySelectorAll('.reconfig-option-card:not(#grid-world .reconfig-option-card) input:checked:not([data-is-local="true"])').forEach(checkbox => {
                 const uidValue = checkbox.dataset.uid;
                 if (uidValue !== 'map-none-sentinel' && uidValue !== 'distance-off-sentinel' && uidValue !== 'npccg-off-sentinel') {
@@ -47145,7 +47205,7 @@ document.addEventListener('click', (event) => {
         }
     });
 
-// 修改后的关闭函数
+ 
 const closeTaskSummaryModal = () => {
     const summaryRoot = document.getElementById('summary-root');
 
@@ -48524,8 +48584,7 @@ return;
                 const cardDiv = document.createElement('div');
                 cardDiv.className = 'book-card';
                 cardDiv.dataset.key = key;
-
-                // --- 妈妈的修改从这里开始 ---
+ 
                 const cardHeader = document.createElement('div');
                 cardHeader.className = 'book-card-header';
 
@@ -48534,7 +48593,7 @@ return;
                 titleDiv.textContent = key;
                 cardHeader.appendChild(titleDiv);
 
-                // --- ✨ 这是我们新的好感度魔法 ✨ ---
+             
                 // 检查这个角色是否有好感度
                 if (value && typeof value.好感度 !== 'undefined') {
                     const favorValue = parseInt(value.好感度, 10);
@@ -49217,7 +49276,7 @@ function showCGPreview(imageBlob, onConfirm = null) {
     // 4. 组装元素
     overlay.appendChild(img);
 
-    // === 关键修改：只有传入了回调函数，才显示按钮 ===
+    
     if (onConfirm && typeof onConfirm === 'function') {
         const confirmBtn = document.createElement('button');
         confirmBtn.innerText = '确认应用此图片';
@@ -49485,7 +49544,7 @@ async function handleAddCG(fullPath) {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'asset-item';
                 itemEl.dataset.key = item.key;
-                itemEl.title = `点击预览 [${item.key}]`; // 修改提示文字
+                itemEl.title = `点击预览 [${item.key}]`;  
                 itemEl.innerHTML = `
                     <img src="${objectURL}" class="asset-item-thumb">
                     <span class="asset-item-name">${item.key}</span>
@@ -49493,7 +49552,7 @@ async function handleAddCG(fullPath) {
                 itemEl.querySelector('img').onload = () => URL.revokeObjectURL(objectURL);
                 itemEl.querySelector('img').onerror = () => URL.revokeObjectURL(objectURL);
 
-                // --- 修改开始：点击不再直接应用，而是打开预览 ---
+                // --- 点击不再直接应用，而是打开预览 ---
                 itemEl.onclick = () => {
                     // 调用上面新增的 showCGPreview 函数
                     // 参数1: 图片的 Blob 数据 (item.value)
@@ -49505,7 +49564,7 @@ async function handleAddCG(fullPath) {
                         closeModal();
                     });
                 };
-                // --- 修改结束 ---
+               
 
                 cgListElement.appendChild(itemEl);
             });
@@ -49588,7 +49647,7 @@ function handleRefactor(fullPath) {
         closeModal();
     };
 
-    // 【浓缩内容】按钮 - 妈妈先为你准备好啦，我的宝贝可以随时来修改它
+     
     document.getElementById('refactor-summarize-btn').onclick = () => {
         // 这是妈妈为你准备的浓缩内容的命令，你可以根据需要调整哦
         const command = `<request:请将路径（${fullPath}）的冗余内容进行浓缩，提炼其核心内容。在完成正文输出后，在updatememory块中先delete'${fullPath}'，再memory('${parentPath}', '${selfKey}'...的浓缩后内容>`;
@@ -49747,9 +49806,7 @@ function setupSkillChoicePanel() {
 
 }
 
-/**
- * 修改：填充术法选择面板的内容，并增加意志力校验 - by Nova
- */
+ 
  function populateSkillChoicePanel() {
     if (!playCharacterData) return;
 
@@ -50678,7 +50735,7 @@ const executeGeneration = async (keywords = "") => {
     mainGenerateBtn.disabled = true;
 
     try {
-        // ==================== 新增/修改部分开始 ====================
+       
 
         // 1. 检查是否启用第二 API
         const isEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
@@ -50720,7 +50777,7 @@ const executeGeneration = async (keywords = "") => {
             return generatedText;
         }
 
-        // ==================== 新增/修改部分结束 ====================
+      
 
         // 下面是原有的逻辑（当启用第二 API 时执行）
 
@@ -51615,8 +51672,8 @@ function generateChoices(options) {
                 }, { passive: false });
 
                 let touchStartY = 0;
-                containerElement.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true }); // <-- 修改 document.body 为 containerElement
-                   containerElement.addEventListener('touchend', e => { // <-- 修改 document.body 为 containerElement
+                containerElement.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true }); 
+                   containerElement.addEventListener('touchend', e => { 
                     if (Math.abs(e.changedTouches[0].clientY - touchStartY) > 50) {
                         focusedIndex = Math.min(cards.length - 1, Math.max(0, focusedIndex + (e.changedTouches[0].clientY < touchStartY ? 1 : -1)));
                         updateCardsLayout();
@@ -51720,7 +51777,7 @@ let forumData = {};
 
 const autoLikeIntervals = new Map();
 
-// 位置：修改 state 对象
+ 
 const state = {
     sections: [],
     currentSection: null,
@@ -51855,7 +51912,7 @@ function renderThreadList() {
     }
 
     pageThreads.forEach(([key, data]) => {
-        // ♥♥♥ 妈妈在这里为你做了关键的修改 ♥♥♥
+       
         // 现在回复数直接从 post 数组的第4个元素（索引3）获取，而不是计算 replies 数组的长度
         const [title, author, , replyCount, , , isElite, isTop] = data.post;
         const item = document.createElement('div');
@@ -52583,7 +52640,7 @@ const resourceReadyGuard = async () => {
     let currentPrivateChatPage = {};// 缓存每个私聊的加载页码: { "联系人ID": 1 }
     let activeChat = { type: null, id: null }; // 当前激活的聊天: {type: 'group'/'private', id: 'group_chat'/'联系人ID'}
       let friendsList = [];           // 可私聊的好友列表
-    let availableGroups = [];       // 【修改】妈妈用来存所有探测到的群聊信息列表
+    let availableGroups = [];       //  用来存所有探测到的群聊信息列表
     let groupChatHistoryIndices = [];// 群聊在 history 中的索引
     let currentGroupHistoryIndex = -1; // 当前加载到的群聊 history 索引
     let isLoading = false;          // 加载锁，防止重复加载
@@ -52738,7 +52795,7 @@ const initializePrivateChatStore = () => {
     const userNickname = currentGameData?.user?.nick_name || '你';
 
     conversationHistory.forEach(historyItem => {
-      // 修改正则表达式以匹配新的 <msg> 格式
+     
       const privateChatMatches = [...historyItem.content.matchAll(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/gs)];
 
       for (const match of privateChatMatches) {
@@ -53773,7 +53830,7 @@ const handleSendMessage = () => {
     if (lastHistoryItem && lastHistoryItem.content) {
       const userNickname = currentGameData?.user?.nick_name || '你';
 
-      // 我们只关心新私信的发信人。修改正则表达式以匹配 <msg>
+    
       const privateChatMatches = [...lastHistoryItem.content.matchAll(/<msg>([^|]+)\|([^|]+)\|([\s\S]*?)<\/msg>/g)];
 
       const newSenders = new Set();
@@ -54449,7 +54506,7 @@ getDelay(key) {
                     const winners = initiativeResults.filter(r => r.successes === maxSuccesses);
                     // 必须只有一个唯一的赢家，并且这个赢家就是当前行动者
     if (winners.length === 1 && winners[0].id === currentActor.id) {
-            // --- 妈妈的修改在这里，宝贝！ ---
+             
 
             // 检查连续行动次数是否已达上限
             const currentConsecutiveTurns = this.consecutiveTurnCounter[currentActor.id] || 0;
@@ -56612,10 +56669,10 @@ let currentDanmuSettings = {
   // 保留的设置项
   height: 30, 
   speed: 3, 
-  // 核心修改：从 countMultiplier 更改为 maxDensityValue
+  
   maxDensityValue: 1 // 新设置：最大同屏数量 (密度控制，范围 3-10)
 };
-// --- 弹幕设置函数 (修改) ---
+ 
 function saveDanmuSettings() {
   localStorage.setItem(DANMU_SETTINGS_KEY, JSON.stringify(currentDanmuSettings));
   applyDanmuSettings();
@@ -56726,7 +56783,7 @@ function applyDanmuSettings() {
     });
   }
 }
-// --- 弹幕渲染函数 (修改轨道位置计算和密度控制) ---
+ 
  
 function renderDanmu(danmuContent) {
     const targetContainer = document.getElementById('danmu-overlay-container');
@@ -56907,7 +56964,7 @@ function initializeDanmuSettings() {
     });
   }
 
-  // 弹幕数量 (修改)
+   
   const countSlider = document.getElementById('danmu-count-slider'); // ID保持不变
   const countValue = document.getElementById('danmu-count-value');
   if (countSlider && countValue) {
@@ -57135,7 +57192,7 @@ const viewPromptBtn = document.getElementById('view-captured-prompt-btn');
             const modal = document.getElementById('prompt-viewer-modal');
             if (!modal) return;
 
-            // 核心修改：打开前动态刷新所有 Tab 和内容
+         
             refreshPromptTabs();
 
             // 显示弹窗
@@ -57975,10 +58032,10 @@ async function sendApiRequest(messages, options = {}, signal) {
 
      // 4. 发送请求
     try {
-        // --- 💖 修改开始 💖 ---
+       
         // 将 signal 传递给 sendRequest
         const response = await sendRequest(settings, formattedMessages, signal);
-        // --- 💖 修改结束 💖 ---
+ 
         return {
             success: true,
             data: response,
@@ -57986,12 +58043,12 @@ async function sendApiRequest(messages, options = {}, signal) {
         };
     } catch (e) {
         console.error('[Nova API] 请求失败:', e);
-        // --- 💖 修改开始 💖 ---
+         
         // 检查是否是中断错误，如果是，就原样抛出，让上层函数捕获
         if (e.name === 'AbortError') {
             throw e;
         }
-        // --- 💖 修改结束 💖 ---
+        
         return {
             success: false,
             error: e.message,
@@ -57999,10 +58056,10 @@ async function sendApiRequest(messages, options = {}, signal) {
         };
     }
 }
- // --- 💖 修改开始 💖 ---
+ 
 // 接收第三个参数 `signal`，这是我们从上层函数一路传递下来的中断信号
 async function sendRequest(settings, messages, signal) {
-// --- 💖 修改结束 💖 ---
+ 
     const { api_url, api_key, model, source } = settings;
 
     // 确保 URL 没有尾部斜杠
@@ -58044,11 +58101,11 @@ async function sendRequest(settings, messages, signal) {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(body),
-        // --- 💖 修改开始 💖 ---
+        
         // 这是最关键的一步：将中断信号附加到 fetch 请求上。
         // 当 signal 被触发时，fetch 会立即中止并抛出一个 AbortError。
         signal: signal
-        // --- 💖 修改结束 💖 ---
+        
     });
 
     // 当 fetch 因为 signal 中断时，它会直接抛出 AbortError，
@@ -59420,7 +59477,7 @@ const GuideEngine = (function(window, document) {
             setTimeout(() => { $container.style.display = 'none'; }, 300);
         }
     }
-      // --- 新增：自定义确认弹窗 (需求1) ---
+      
     function _showConfirmModal(title, text, onConfirm) {
         const modalId = 'guide-confirm-modal';
         if (document.getElementById(modalId)) return;
@@ -59429,7 +59486,7 @@ const GuideEngine = (function(window, document) {
         modal.id = modalId;
         modal.className = 'guide-selector-modal';
 
-        // --- 核心修改在这里 ---
+     
         // 强制设置 position 为 absolute，避免挤压主界面布局
         modal.style.position = 'absolute';
 
@@ -59451,7 +59508,7 @@ const GuideEngine = (function(window, document) {
     }
 
     
-    // --- 修改：教程选择面板 (需求2 & 3) ---
+     
     function _showSelector(modulesMap) {
         const modal = document.createElement('div');
         modal.id = 'guide-selector-modal';
@@ -60142,7 +60199,7 @@ window.GameAPI = {
  
 
     performGacha: function(...args) {
-        // 修改：优先查找 window.performGacha
+ 
         if (typeof window.performGacha === 'function') {
             return window.performGacha(...args);
         } else if (typeof performGacha === 'function') {
@@ -60153,7 +60210,7 @@ window.GameAPI = {
         }
     },
     processGachaRewards: function(...args) {
-        // 修改：优先查找 window.processGachaRewards
+       
         if (typeof window.processGachaRewards === 'function') {
             return window.processGachaRewards(...args);
         } else if (typeof processGachaRewards === 'function') {
@@ -60163,7 +60220,7 @@ window.GameAPI = {
         }
     },
         triggerassa: function(...args) {
-        // 修改：优先查找 window.processGachaRewards
+        
         if (typeof window.triggerassa === 'function') {
             return window.triggerassa(...args);
         } else if (typeof triggerassa === 'function') {
