@@ -67,7 +67,7 @@
     async function processRefinementBeforeSave(hookData) {
         console.log('[Refiner DEBUG] Hook triggered. Initial response length:', hookData.response?.length);
         let currentResponse = hookData.response;
-        const refineTagRegex = /<refine>([\s\S]*?)<\/refine>(?![\s\S]*<refine>)/;
+       const refineTagRegex = /<refine>([\s\S]*?)<\/refine>(?![\s\S]*<refine>[\s\S]*?<\/refine>)/;
         const match = currentResponse.match(refineTagRegex);
 
         if (match && match[1]) {
