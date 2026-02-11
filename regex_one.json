@@ -11872,6 +11872,337 @@ pointer-events: auto;
 }
 
 
+.music-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px; /* 与上方元素的间距 */
+    color: var(--text-secondary-color, #aaa); /* 图标颜色 */
+}
+
+/* 音量滑块样式 */
+.volume-slider {
+    -webkit-appearance: none; /* 移除默认样式 */
+    appearance: none;
+    width: 100%; /* 占满剩余空间 */
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* 滑块的滑轨（Chrome, Safari） */
+.volume-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+}
+
+/* 滑块的拖动按钮（Chrome, Safari） */
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color, #00faff);
+    border-radius: 50%;
+    margin-top: -4px; /* 垂直居中 */
+    box-shadow: 0 0 4px rgba(0, 250, 255, 0.5);
+}
+
+/* 滑块的拖动按钮（Firefox） */
+.volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color, #00faff);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+.private-chat-wrapper,
+.group-chat-wrapper {
+    white-space: normal; /* 关键：忽略代码中的换行符和缩进 */
+    display: block;
+    width: 100%;
+}
+/* --- 新增样式 --- */
+.ws-tab-header {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+.ws-tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary-color);
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 2px solid transparent;
+}
+.ws-tab-btn:hover { color: var(--text-color); background: rgba(255,255,255,0.05); }
+.ws-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    font-weight: bold;
+}
+.ws-tab-content { display: none; animation: fadeIn 0.3s; }
+.ws-tab-content.active { display: block; }
+
+.ws-form-group { margin-bottom: 12px; }
+.ws-form-label { display: block; color: var(--secondary-color); font-size: 0.9em; margin-bottom: 5px; }
+.ws-input {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 4px;
+}
+.ws-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--glow-color); }
+.ws-file-input {
+    border: 1px dashed var(--border-color);
+    padding: 10px;
+    width: 100%;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+}
+.ws-tip { font-size: 0.8em; color: #888; margin-top: 4px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.ws-tag-select-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 5px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+.ws-selectable-tag {
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+    cursor: pointer;
+    color: var(--text-secondary-color);
+    transition: all 0.2s;
+    user-select: none;
+}
+.ws-selectable-tag:hover {
+    border-color: var(--primary-color);
+    color: var(--text-color);
+}
+.ws-selectable-tag.selected {
+    background: var(--primary-color);
+    color: black;
+    border-color: var(--primary-color);
+    font-weight: bold;
+}
+/* 自定义标签输入框微调 */
+.ws-tag-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+#custom-prompt-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+
+#keyword-modal textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+/* 数据注入标签容器 */
+.data-injection-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* 数据注入标签样式 */
+.data-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    color: var(--text-color);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.data-tag:hover {
+    background: rgba(0, 250, 255, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px var(--glow-color);
+}
+
+.data-tag.selected {
+    background: linear-gradient(135deg, rgba(0, 250, 255, 0.2), rgba(122, 255, 255, 0.2));
+    border-color: var(--primary-color);
+    box-shadow: 0 0 12px var(--glow-color);
+}
+
+.data-tag input[type="checkbox"] {
+    margin-right: 6px;
+    cursor: pointer;
+}
+
+/* 自定义复选框样式 */
+.data-tag input[type="checkbox"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+    background: transparent;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.data-tag input[type="checkbox"]:checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 6px var(--glow-color);
+}
+
+.data-tag input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    color: var(--background-color);
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#swipe-handle {
+    position: fixed; /* 固定在视口上 */
+    left: 0;
+    bottom: 0;
+    width: 100%; /* 触发区域的宽度，可以根据需要调整 */
+    height: 35vh; /* 占据整个屏幕高度 */
+    z-index: 998; /* 比选项区低一点，但要高于大部分背景内容 */
+    /* background-color: rgba(255, 0, 0, 0.2); */ /* 调试时可以打开，看看区域在哪 */
+}
+/* 引导层 */
+/* --- 引导层容器 --- */
+#guide-overlay-container {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 9999999;
+    pointer-events: auto; /* 拦截点击 */
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* 模式A：有目标时，容器透明，靠聚光灯阴影遮罩 */
+#guide-overlay-container.spotlight-mode {
+    background-color: transparent;
+}
+
+/* 模式B：无目标时，容器全屏变暗 (需求1) */
+#guide-overlay-container.dim-mode {
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+/* --- 聚光灯 --- */
+#guide-spotlight {
+    position: absolute;
+    border-radius: 8px;
+    /* 巨大的阴影构成遮罩 */
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none;
+    z-index: 1000;
+    border: 2px solid rgba(255, 215, 0, 0.7);
+    display: none; /* 默认隐藏，有目标才显示 */
+}
+
+/* --- 提示文字框 --- */
+#guide-tooltip {
+    position: absolute;
+    width: 320px;
+    background: rgba(20, 20, 30, 0.98);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+#guide-tooltip h3 { margin: 0 0 10px 0; font-size: 18px; color: #ffd700; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+#guide-tooltip .content { margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #ddd; }
+#guide-tooltip .guide-footer { display: flex; justify-content: space-between; align-items: center; }
+#guide-tooltip .step-counter { font-size: 12px; color: #666; }
+
+#guide-tooltip button {
+    padding: 6px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; transition: all 0.2s;
+}
+#guide-tooltip .btn-skip { background: transparent; border: 1px solid #444; color: #aaa; }
+#guide-tooltip .btn-skip:hover { border-color: #666; color: #fff; }
+#guide-tooltip .btn-next { background: #ffd700; border: 1px solid #ffd700; color: #000; font-weight: bold; margin-left: 10px; }
+#guide-tooltip .btn-next:hover { background: #ffed4a; }
+
+/* --- 教程选择面板 (需求3) --- */
+ #guide-selector-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw; /* <-- 修改在这里 */
+    height: 100vh; /* 同样建议使用 vh 保持一致 */
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.guide-selector-content {
+    background: #1a1a1a; width: 400px; padding: 25px; border-radius: 12px;
+    border: 1px solid #444; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+.guide-selector-content h2 { color: #ffd700; margin-top: 0; text-align: center; }
+.guide-list {   max-height: 60vh; /* 最大高度为视口高度的60% */
+    overflow-y: auto; /* 内容超出时显示滚动条 */display: flex; flex-direction: column; gap: 10px; margin: 20px 0; max-height: 60vh; overflow-y: auto; }
+.guide-item-btn {
+    padding: 15px; background: #2a2a2a; border: 1px solid #333; color: white;
+    text-align: left; cursor: pointer; border-radius: 6px; display: flex; justify-content: space-between;
+}
+.guide-item-btn:hover { background: #333; border-color: #ffd700; }
+.guide-item-btn .status { font-size: 12px; padding: 2px 6px; border-radius: 4px; background: #444; color: #aaa; }
+.guide-item-btn .status.done { background: #2e7d32; color: #fff; }
+.guide-close-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid #444; color: #aaa; cursor: pointer; }
+
+ 
+
+
+
+ 
 /* 创意工坊样式模块 */
 .workshop-container {
     display: flex;
@@ -12335,333 +12666,6 @@ pointer-events: auto;
     gap: 8px;
 }
 
-.music-volume-control {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px; /* 与上方元素的间距 */
-    color: var(--text-secondary-color, #aaa); /* 图标颜色 */
-}
-
-/* 音量滑块样式 */
-.volume-slider {
-    -webkit-appearance: none; /* 移除默认样式 */
-    appearance: none;
-    width: 100%; /* 占满剩余空间 */
-    height: 4px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 2px;
-    outline: none;
-    cursor: pointer;
-}
-
-/* 滑块的滑轨（Chrome, Safari） */
-.volume-slider::-webkit-slider-runnable-track {
-    height: 4px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 2px;
-}
-
-/* 滑块的拖动按钮（Chrome, Safari） */
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    background: var(--primary-color, #00faff);
-    border-radius: 50%;
-    margin-top: -4px; /* 垂直居中 */
-    box-shadow: 0 0 4px rgba(0, 250, 255, 0.5);
-}
-
-/* 滑块的拖动按钮（Firefox） */
-.volume-slider::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    background: var(--primary-color, #00faff);
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-}
-
-.private-chat-wrapper,
-.group-chat-wrapper {
-    white-space: normal; /* 关键：忽略代码中的换行符和缩进 */
-    display: block;
-    width: 100%;
-}
-/* --- 新增样式 --- */
-.ws-tab-header {
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 15px;
-}
-.ws-tab-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary-color);
-    padding: 10px;
-    cursor: pointer;
-    transition: all 0.3s;
-    border-bottom: 2px solid transparent;
-}
-.ws-tab-btn:hover { color: var(--text-color); background: rgba(255,255,255,0.05); }
-.ws-tab-btn.active {
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--primary-color);
-    font-weight: bold;
-}
-.ws-tab-content { display: none; animation: fadeIn 0.3s; }
-.ws-tab-content.active { display: block; }
-
-.ws-form-group { margin-bottom: 12px; }
-.ws-form-label { display: block; color: var(--secondary-color); font-size: 0.9em; margin-bottom: 5px; }
-.ws-input {
-    width: 100%;
-    padding: 8px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    border-radius: 4px;
-}
-.ws-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--glow-color); }
-.ws-file-input {
-    border: 1px dashed var(--border-color);
-    padding: 10px;
-    width: 100%;
-    color: var(--text-secondary-color);
-    cursor: pointer;
-}
-.ws-tip { font-size: 0.8em; color: #888; margin-top: 4px; }
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.ws-tag-select-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 8px;
-    padding: 5px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 4px;
-}
-.ws-selectable-tag {
-    font-size: 12px;
-    padding: 4px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 15px;
-    cursor: pointer;
-    color: var(--text-secondary-color);
-    transition: all 0.2s;
-    user-select: none;
-}
-.ws-selectable-tag:hover {
-    border-color: var(--primary-color);
-    color: var(--text-color);
-}
-.ws-selectable-tag.selected {
-    background: var(--primary-color);
-    color: black;
-    border-color: var(--primary-color);
-    font-weight: bold;
-}
-/* 自定义标签输入框微调 */
-.ws-tag-input-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-
-#custom-prompt-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 13px;
-    resize: vertical;
-}
-
-#keyword-modal textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    resize: vertical;
-}
-
-/* 数据注入标签容器 */
-.data-injection-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-/* 数据注入标签样式 */
-.data-tag {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    background: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    color: var(--text-color);
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    user-select: none;
-}
-
-.data-tag:hover {
-    background: rgba(0, 250, 255, 0.1);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 8px var(--glow-color);
-}
-
-.data-tag.selected {
-    background: linear-gradient(135deg, rgba(0, 250, 255, 0.2), rgba(122, 255, 255, 0.2));
-    border-color: var(--primary-color);
-    box-shadow: 0 0 12px var(--glow-color);
-}
-
-.data-tag input[type="checkbox"] {
-    margin-right: 6px;
-    cursor: pointer;
-}
-
-/* 自定义复选框样式 */
-.data-tag input[type="checkbox"] {
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--border-color);
-    border-radius: 3px;
-    background: transparent;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.data-tag input[type="checkbox"]:checked {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 6px var(--glow-color);
-}
-
-.data-tag input[type="checkbox"]:checked::after {
-    content: '✓';
-    position: absolute;
-    top: -2px;
-    left: 2px;
-    color: var(--background-color);
-    font-size: 14px;
-    font-weight: bold;
-}
-
-#swipe-handle {
-    position: fixed; /* 固定在视口上 */
-    left: 0;
-    bottom: 0;
-    width: 100%; /* 触发区域的宽度，可以根据需要调整 */
-    height: 35vh; /* 占据整个屏幕高度 */
-    z-index: 998; /* 比选项区低一点，但要高于大部分背景内容 */
-    /* background-color: rgba(255, 0, 0, 0.2); */ /* 调试时可以打开，看看区域在哪 */
-}
-/* 引导层 */
-/* --- 引导层容器 --- */
-#guide-overlay-container {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    z-index: 9999999;
-    pointer-events: auto; /* 拦截点击 */
-    display: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-/* 模式A：有目标时，容器透明，靠聚光灯阴影遮罩 */
-#guide-overlay-container.spotlight-mode {
-    background-color: transparent;
-}
-
-/* 模式B：无目标时，容器全屏变暗 (需求1) */
-#guide-overlay-container.dim-mode {
-    background-color: rgba(0, 0, 0, 0.85);
-}
-
-/* --- 聚光灯 --- */
-#guide-spotlight {
-    position: absolute;
-    border-radius: 8px;
-    /* 巨大的阴影构成遮罩 */
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    pointer-events: none;
-    z-index: 1000;
-    border: 2px solid rgba(255, 215, 0, 0.7);
-    display: none; /* 默认隐藏，有目标才显示 */
-}
-
-/* --- 提示文字框 --- */
-#guide-tooltip {
-    position: absolute;
-    width: 320px;
-    background: rgba(20, 20, 30, 0.98);
-    border: 1px solid rgba(255, 215, 0, 0.4);
-    color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    z-index: 1001;
-    transition: all 0.3s ease;
-}
-
-#guide-tooltip h3 { margin: 0 0 10px 0; font-size: 18px; color: #ffd700; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-#guide-tooltip .content { margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #ddd; }
-#guide-tooltip .guide-footer { display: flex; justify-content: space-between; align-items: center; }
-#guide-tooltip .step-counter { font-size: 12px; color: #666; }
-
-#guide-tooltip button {
-    padding: 6px 14px; cursor: pointer; border-radius: 4px; font-size: 13px; transition: all 0.2s;
-}
-#guide-tooltip .btn-skip { background: transparent; border: 1px solid #444; color: #aaa; }
-#guide-tooltip .btn-skip:hover { border-color: #666; color: #fff; }
-#guide-tooltip .btn-next { background: #ffd700; border: 1px solid #ffd700; color: #000; font-weight: bold; margin-left: 10px; }
-#guide-tooltip .btn-next:hover { background: #ffed4a; }
-
-/* --- 教程选择面板 (需求3) --- */
- #guide-selector-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw; /* <-- 修改在这里 */
-    height: 100vh; /* 同样建议使用 vh 保持一致 */
-    background: rgba(0, 0, 0, 0.8);
-    z-index: 10000000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.guide-selector-content {
-    background: #1a1a1a; width: 400px; padding: 25px; border-radius: 12px;
-    border: 1px solid #444; box-shadow: 0 0 50px rgba(0,0,0,0.5);
-}
-.guide-selector-content h2 { color: #ffd700; margin-top: 0; text-align: center; }
-.guide-list {   max-height: 60vh; /* 最大高度为视口高度的60% */
-    overflow-y: auto; /* 内容超出时显示滚动条 */display: flex; flex-direction: column; gap: 10px; margin: 20px 0; max-height: 60vh; overflow-y: auto; }
-.guide-item-btn {
-    padding: 15px; background: #2a2a2a; border: 1px solid #333; color: white;
-    text-align: left; cursor: pointer; border-radius: 6px; display: flex; justify-content: space-between;
-}
-.guide-item-btn:hover { background: #333; border-color: #ffd700; }
-.guide-item-btn .status { font-size: 12px; padding: 2px 6px; border-radius: 4px; background: #444; color: #aaa; }
-.guide-item-btn .status.done { background: #2e7d32; color: #fff; }
-.guide-close-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid #444; color: #aaa; cursor: pointer; }
-
- 
   </style>
  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -12791,7 +12795,7 @@ pointer-events: auto;
         <div class="mod-tab" data-for="dice-2" data-name="dice-level">困难骰</div>
         <div class="mod-tab" data-for="dice-3" data-name="dice-level">炼狱骰</div>
         <div class="mod-tab" data-for="behavior-on" data-name="behavior-mode" data-off-id="behavior-off">表现骰</div>
-        <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off">回合战斗</div>
+        <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off" >回合战斗</div>
          <div class="mod-label">造物设置</div>
           <div class="mod-tab" data-for="nohuman-on" data-name="nohuman-mode" data-off-id="nohuman-off" style="display: none;">人外增强</div>
         <div class="mod-tab" data-for="creator-neutral" data-name="creator-attitude">造物中立</div>
@@ -14812,7 +14816,7 @@ pointer-events: auto;
 <div class="settings-page" id="settings-page-workshop">
     <div class="workshop-container">
  <div class="workshop-toolbar">
-    <div class="workshop-search">
+    <div class="wottings-page-workrch">
         <input type="text" id="workshop-search-input" placeholder="搜索模组...">
         <button id="workshop-search-btn" class="control-btn">🔍</button>
     </div>
@@ -15199,7 +15203,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.11';
+window.current_game_version = '3.7.12';
 
 
 
@@ -53987,8 +53991,7 @@ this.isAoeAttack = false;            // 标记当前是否为群攻流程
     this.status = initialCombatData.status || 'not_started';
     this.combatData = initialCombatData;  
       let finalPlayerData;
-
-    
+ 
     if (window.combatManager && window.combatManager.floorId === this.floorId) {
         // 直接继承当前活跃的 combatManager 的 player 对象，这是最最真实的数据！
         finalPlayerData = window.combatManager.player;
@@ -54614,9 +54617,9 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
         isPersuaded: null,
         isScanned: type === 'teammate' ? true : (data.isScanned || false),
         saves: data.saves || {
-            "强韧": data.衍生属性?.豁免检定基础.强韧[0] || 0,
-            "反射": data.衍生属性?.豁免检定基础.反射[0] || 0,
-            "意志": data.衍生属性?.豁免检定基础.意志[0] || 0
+            "强韧":   0,
+            "反射":   0,
+            "意志": data.衍生属性?.意志力?.意志值[0] || 0
         },
           raw_data: JSON.parse(JSON.stringify(data)) // 为所有角色深度拷贝一份原始数据
     };
@@ -54639,11 +54642,11 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
                         });
                     });
                      // 提取体积
-                    if (data.衍生属性) {
-                        fullPool['体积'] = data.衍生属性.体积[0];
-                    }
+                    
+                        fullPool['体积'] = 5;
+                 
 if (data.衍生属性 && data.衍生属性.先攻) {
-    fullPool['先攻'] = data.衍生属性.先攻[0];
+    fullPool['先攻'] = 5;
 }
                     character.dicePool = fullPool;
                 }
