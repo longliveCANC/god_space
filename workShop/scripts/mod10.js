@@ -65,10 +65,18 @@
      * 钩子处理函数:在保存前处理 AI 响应 (净化判断版)
      */
     async function processRefinementBeforeSave(hookData) {
-        console.log('[Refiner DEBUG] Hook triggered. Initial response length:', hookData.response?.length);
-        let currentResponse = hookData.response;
-       const refineTagRegex = /<refine>([\s\S]*?)<\/refine>(?![\s\S]*<refine>[\s\S]*?<\/refine>)/;
-        const match = currentResponse.match(refineTagRegex);
+       let currentResponse = hookData.response || (hookData.message ? hookData.message.content : null);
+
+        console.log('[Refiner DEBUG] Hook triggered. Initial content length:', currentResponse?.length);
+
+        if (!currentResponse) return hookData; // 如果没有内容则直接返回
+               const refineTagRegex = /<refine>((?:(?!<refine>)[\s\S])*?)<\/refine>/g;
+
+        // 获取所有匹配项
+        const matches = [...currentResponse.matchAll(refineTagRegex)];
+        // 取最后一个匹配项作为有效指令
+        const match = matches.length > 0 ? matches[matches.length - 1] : null;
+       
 
         if (match && match[1]) {
             console.log('[Refiner DEBUG] Successfully matched the LAST <refine> block.');
@@ -77,13 +85,13 @@
             if (refineInstructions) {
                 console.log('[Refiner DEBUG] Instructions parsed successfully.');
 
-                // 移除refine标签，得到用于后续处理的当前响应
-                let processedCurrentResponse = currentResponse.replace(refineTagRegex, '').trim();
-
-                const history = hookData.context.history;
-                const lastAiMessage = history.slice().reverse().find(m => m.role === 'assistant');
-
-                // --- 核心修正：使用净化后的文本进行判断 ---
+              
+                let processedCurrentResponse = currentResponse.replace(match[0], '').trim();
+        
+            
+                  const history = hookData.context ? hookData.context.history : [];
+                const lastAiMessage = history.length > 0 ? history.slice().reverse().find(m => m.role === 'assistant') : null;
+                
                 const purifiedCurrentResponse = purifyTextForJudgment(processedCurrentResponse);
                 const purifiedHistoryContent = lastAiMessage ? purifyTextForJudgment(lastAiMessage.content) : "";
 
@@ -147,8 +155,13 @@
                     }
                 }
 
-                hookData.response = processedCurrentResponse;
-                console.log('[Refiner DEBUG] Hook finished. Final hookData.response length:', hookData.response.length);
+                if (hookData.response !== undefined) {
+                    hookData.response = processedCurrentResponse;
+                } else if (hookData.message) {
+                    hookData.message.content = processedCurrentResponse;
+                }
+                console.log('[Refiner DEBUG] Hook finished. Final content length:', processedCurrentResponse.length);
+ 
             }
         } else {
             console.warn('[Refiner DEBUG] No <refine> block found using the final regex.');
@@ -156,7 +169,7 @@
 
         return hookData;
     }
-
+ window.NovaHooks.add('before_message_render', processRefinementBeforeSave);
     window.NovaHooks.add('before_ai_response_save', processRefinementBeforeSave);
     console.log('[Refiner Plugin] Registered ONLY on before_ai_response_save hook (Purify-Judgment Version).');
 })();
