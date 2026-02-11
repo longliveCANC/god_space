@@ -515,10 +515,11 @@
     "id": "x-mod-解析玩家",
     "name": "解析和记录玩家信息",
     "author": "LAST泉神丶",
-    "version": "1.3",
+    "version": "1.4",
     "tags": [ "功能拓展"],
-    "description":"[修复了路径写错了导致数据一直没展示上的bug，牛魔的被自己蠢哭了][修复了分析轮次错误i的写成了1的bug]\n感谢LAST泉神丶开放授权！\n此功能摘自izumi的用户画像模式。\n挂载后，每回合会记录玩家的癖好和暴露出来的信息，并每25回合就深度分析一次用户画像。识小球分类的名称是玩家分析。原预设链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1414563818587160586\" target=\"_blank\">→Discord频道←</a>",
-      "scriptUrl": "",
+    "description":"[0211增加了美化脚本，依旧被加进了识小球的悬浮轮盘中][修复了分析轮次错误i的写成了1的bug]\n感谢LAST泉神丶开放授权！\n此功能摘自izumi的用户画像模式。\n挂载后，每回合会记录玩家的癖好和暴露出来的信息，并每25回合就深度分析一次用户画像。识小球分类的名称是玩家分析。原预设链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1414563818587160586\" target=\"_blank\">→Discord频道←</a>",
+       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod20analysis.js",
+
      "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-解析玩家.json",
     "previewImage": ""
   },
