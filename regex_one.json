@@ -12365,15 +12365,55 @@ pointer-events: auto;
 }
 
 /* 预览卡片 */
-.mod-preview-card {
+ .mod-preview-card {
     display: flex;
     gap: 10px;
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     cursor: pointer;
+    background: rgba(255, 255, 255, 0.03);
+    position: relative; /* 关键：为伪元素定位提供基准 */
     
-    background: rgba(255,255,255,0.03);
+}
+
+/* 当模组被启用时的样式 */
+.mod-preview-card.is-enabled {
+    /* 1. 温和的绿色背景 */
+    /* 使用线性渐变，从左到右，由淡绿色过渡到透明，避免整个背景都是绿色显得突兀 */
+    background: linear-gradient(to right, rgba(20, 150, 100, 0.2), rgba(20, 150, 100, 0.05) 70%);
+    border-color: rgba(77, 255, 136, 0.5); /* 边框也带上一点绿色 */
+}
+
+/* 2. 创建右侧的斜圆圈和文字 */
+.mod-preview-card.is-enabled::after {
+    content: '已启用'; /* 伪元素的内容，即显示的文字 */
+    position: absolute; /* 绝对定位，相对于父元素 .mod-preview-card */
+    right: -35px;       /* 向右移出，以便旋转后能看到部分 */
+    top: -15px;         /* 向上移出 */
+
+    /* 尺寸和形状 */
+    width: 100px;       /* 圆圈的宽度 */
+    height: 100px;      /* 圆圈的高度 */
+ 
+  
+    /* 文字样式和对齐 */
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 160px; /* 调整行高将文字垂直居中于旋转后的可见区域 */
+
+    /* 旋转效果 */
+    transform: rotate(30deg); /* 顺时针旋转30度 */
+ 
+    
+    z-index: 1; /* 确保它在内容下方，但在背景之上 */
+}
+
+/* 确保卡片内的实际内容在伪元素之上，避免被遮挡 */
+.mod-preview-card > * {
+    position: relative;
+    z-index: 2;
 }
 .mod-preview-card:hover {
     background: rgba(var(--primary-rgb), 0.1);
@@ -17888,6 +17928,20 @@ async function checkUpdatesOnStartup() {
     const listContainer = document.getElementById('ws-mod-list-preview-v2');
     if (!listContainer) return;
 
+    // 【新增】在筛选前，一次性获取所有启用的模组设置
+    const userSettings = await getUserModSettings();
+    const enabledModIds = new Set(
+        userSettings.filter(s => s.enabled).map(s => String(s.id))
+    );
+    const allLocalMods = await getLocalScripts(); // 确保本地脚本已加载
+    allLocalMods.forEach(localMod => {
+        if (localMod.enabled) {
+            enabledModIds.add(String(localMod.id));
+        }
+    });
+
+
+    // 重新筛选时，清空列表并重置状态
     if (needsRefilter) {
         listContainer.innerHTML = '<div class="workshop-loading">筛选中...</div>';
         state.currentPage = 1;
@@ -17897,9 +17951,7 @@ async function checkUpdatesOnStartup() {
         state.searchTerm = term;
 
         const allMods = [...allLocalMods, ...allRemoteMods];
-
-        // 【修改】更新筛选逻辑以支持“已订阅”
-        state.filteredList = allMods.filter(mod => {
+          state.filteredList = allMods.filter(mod => {
             const isSubscribed = state.subscriptions.has(`sub_mod_${mod.id}`) || state.subscriptions.has(`sub_author_${mod.author}`);
 
             let matchTag = false;
@@ -17921,7 +17973,6 @@ async function checkUpdatesOnStartup() {
             const matchSearch = !term || mod.name.toLowerCase().includes(term) ||
                               (mod.description && mod.description.toLowerCase().includes(term)) ||
                               (mod.author && mod.author.toLowerCase().includes(term));
-
             return matchTag && matchSearch;
         });
     }
@@ -17942,9 +17993,11 @@ async function checkUpdatesOnStartup() {
 
     // 渲染当页的卡片
     pageItems.forEach(mod => {
-        const card = createPreviewCard(mod);
+        // 【修改】将 enabledModIds 传递给 createPreviewCard
+        const card = createPreviewCard(mod, enabledModIds);
         listContainer.appendChild(card);
     });
+
 
     // 更新加载状态
     if (end >= state.filteredList.length) {
@@ -17968,22 +18021,35 @@ async function checkUpdatesOnStartup() {
         highlightSelectedCard();
     }
 }
- function createPreviewCard(mod) {
+ function createPreviewCard(mod, enabledModIds) { // 接收 enabledModIds
     const card = document.createElement('div');
     card.className = 'mod-preview-card';
     card.dataset.modId = mod.id;
+
+    // 检查模组是否已启用，并添加 is-enabled 类
+    const isEnabled = enabledModIds.has(String(mod.id));
+    if (isEnabled) {
+        card.classList.add('is-enabled');
+    }
 
     const tagsHtml = (mod.tags || []).slice(0, 2).map(t => {
         const tagName = t.includes('/') ? t.split('/')[1] : t;
         return `<span class="mod-preview-tag-badge">${tagName}</span>`;
     }).join('');
 
-    // 【修改】图片处理逻辑
+    // 【修改】为了实现背景叠加效果，包裹一层 div
     let imgHtml = '';
+    const imgContainerClass = 'mod-preview-img-container';
     if (mod.previewImage) {
-        imgHtml = `<img src="${mod.previewImage}" class="mod-preview-img">`;
+        imgHtml = `
+        <div class="${imgContainerClass}">
+            <img src="${mod.previewImage}" class="mod-preview-img">
+        </div>`;
     } else {
-        imgHtml = `<div class="mod-no-img-placeholder">暂无图片</div>`;
+        imgHtml = `
+        <div class="${imgContainerClass}">
+            <div class="mod-no-img-placeholder">暂无图片</div>
+        </div>`;
     }
 
     card.innerHTML = `
@@ -18001,7 +18067,6 @@ async function checkUpdatesOnStartup() {
     };
     return card;
 }
- 
  async function renderDetailPanel(mod) {
     const desktopContainer = document.getElementById('ws-panel-right-v2');
     const mobileModal = document.getElementById('ws-mobile-detail-container'); // 这是遮罩层
