@@ -5,30 +5,26 @@
         "authorToken":"0354437c-3984-4fb6-872c-bc1a299ddfa3",
     "author": "assa",
     "version": "1.7",
-   "tags": ["官方/重要/⭐公告", "#世界书"],
-    "description": "[⛑⛑⛑创意工坊维修中，tag出现异常是正常的]第一次启用脚本后，需要点击重载刷新界面。\ndlc需要开启无世界观。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
+     "tags": ["官方/重要/⭐公告", "#世界书"],
+    "description": "第一次启用脚本后，需要点击重载刷新界面。\ndlc需要开启无世界观。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
     "scriptUrl": "",
-    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",
-
-  "previewImage": ""
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",  "previewImage": ""
   },   {
     "id": "mod00",
     "name": "【更多的教程】",
     "author": "assa",
     "version": "1.1",
-    "tags": ["官方/重要/⭐教程", "#脚本"],
+       "tags": ["官方/重要/⭐教程", "#脚本"],
     "description": "目前教程列表：[开局:世界构建,基础：主体界面]。\n还在施工中。若有需要，你可以先订阅此mod。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod00.js",
-    "worldBookUrl": "",
-
-  "previewImage": ""
+    "worldBookUrl": "",  "previewImage": ""
   },{
     "id": "小蝌蚪找妈妈-同层版",
     "name": "本体世界书快捷链接",
      "authorToken":"0354437c-3984-4fb6-872c-bc1a299ddfa3",
     "author": "assa",
     "version": "1.0",
-   "tags": ["官方/重要/⭐核心资源", "#世界书"],
+      "tags": ["官方/重要/⭐核心资源", "#世界书"],
     "description": "永远最新的本体世界书链接，如果在线更新有什么问题，可以在这里手动下载。",
    "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/book.json",
@@ -38,7 +34,7 @@
     "name": "数据编辑器",
     "author": "assa",
     "version": "1.1",
-"tags": ["功能增强/数据接口", "#脚本"],
+   "tags": ["系统工具/便捷工具", "#脚本"],
     "description": "开启该脚本后，令小盒左上角可以直接编辑世界状态和人物角色数据。也就是statdata和playcharacterdata。需要游戏版本是3.3.13及以上。现在也可以编辑assa_data了，主要是为了编辑里面的未显示字段，如资源条、称号等",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod02.js",
     "worldBookUrl": "",
@@ -55,9 +51,7 @@
         "#世界书",
         "#依赖-异步"
     ],
-    "description":"[必看！点进来看！警告！！这是给第二次异步甚至第三次第四次异步使用的，如果你只是想要用简单的异步变量，就不需要开这个，这个是进阶模块！\n游戏默认的异步是直接在<h3>设置-调整模组-系统设置-异步变量</h3>，把那个打开就完事了，开启后就能默认进行单次异步了。你如果想为这一次的单次异步配置单独的api，就在设置界面下面打开多api并配置你的aip 2]\n使用此mod，在设置界面的第一页的上面会出现多异步管线的配置。配合多api，可以实现无限异步的pip流。世界书是一个示例用例，配置好多异步并应用后，就可以接替原本的弹幕功能，将弹幕任务交给第三个AI。",
-    
-  "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/modA1pip.js",
+    "description":"[必看！点进来看！警告！！这是给第二次异步甚至第三次第四次异步使用的，如果你只是想要用简单的异步变量，就不需要开这个，这个是进阶模块！\n游戏默认的异步是直接在<h3>设置-调整模组-系统设置-异步变量</h3>，把那个打开就完事了，开启后就能默认进行单次异步了。你如果想为这一次的单次异步配置单独的api，就在设置界面下面打开多api并配置你的aip 2]\n使用此mod，在设置界面的第一页的上面会出现多异步管线的配置。配合多api，可以实现无限异步的pip流。世界书是一个示例用例，配置好多异步并应用后，就可以接替原本的弹幕功能，将弹幕任务交给第三个AI。",  "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/modA1pip.js",
      "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-b3ex0-弹幕.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 32.png"
   },{
@@ -65,7 +59,7 @@
     "name": "npc美化01",
     "author": "assa",
     "version": "4.0",
-        "tags": [
+           "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -77,15 +71,14 @@
     "id": "x-mod-超复杂npc",
     "name": "超复杂npc档案",
     "author": "assa",
-    "version": "3.7",
-    
-    "tags": [
-        "内容扩展/玩法框架",
+    "version": "3.8",
+     "tags": [
+        "功能增强/信息解析和记录",
         "#世界书",
         "#NSFW",
         "#依赖-异步"
     ],
-    "description": "[0209增加了内心解剖条目，是默认关的，有自带美化，美化内嵌在npc美化01里了，需游戏3.7.8版本以上才能显示美化。这个条目我自己用了挺久了，用于纯爱/扭曲/多人故事线非常好味]\n[0208小修了一下，加了nsfw.性主动度字段和货币字段，以及在d0加了档案强调]<h3>需要配合脚本npc美化！点击了那个npc的关注按钮才能生成习惯、离线事件等哦！</h3>[0122增加了离线事件的时间计算，增加了npc的货币字段][增加了自动总结印象的可选项，默认关闭，15条总结，阈值都可以自己改][角色关系会自动删除带有user的条目;只对关注的角色生成意象等;nsfw现在可以都选了，根据性别实现定向爆破;更新规则改变，在场npc和离线npc彻底分开了]\n[0113要使用新功能的话建议开异步，不然哈基米脑子不够用了。更新了离线事件（关注了npc才行）、角色关系表、以及关键记忆自动浓缩，更新的东西你都是可以关的。然后丰富了一下外貌字段，事件增加了当前位置字段。]\n[1219拆分初始化规则和更新规则，减少了d0的token；增加了承诺，且会在d0再强调一次承诺内容]\n[1213世界书更新意象/声线/小习惯/批注，选开.美化已对应更新。可能会塑造人物更稳定，大概。去掉了恩怨和承诺]\n世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
+    "description": "[0211，肘击了nsfw档案在后续更新后会丢失信息的问题。解决办法是细分条目][0209增加了内心解剖条目，是默认关的，有自带美化，美化内嵌在npc美化01里了，需游戏3.7.8版本以上才能显示美化。这个条目我自己用了挺久了，用于纯爱/扭曲/多人故事线非常好味]\n[0208小修了一下，加了nsfw.性主动度字段和货币字段，以及在d0加了档案强调]<h3>需要配合脚本npc美化！点击了那个npc的关注按钮才能生成习惯、离线事件等哦！</h3>[0122增加了离线事件的时间计算，增加了npc的货币字段][增加了自动总结印象的可选项，默认关闭，15条总结，阈值都可以自己改][角色关系会自动删除带有user的条目;只对关注的角色生成意象等;nsfw现在可以都选了，根据性别实现定向爆破;更新规则改变，在场npc和离线npc彻底分开了]\n[0113要使用新功能的话建议开异步，不然哈基米脑子不够用了。更新了离线事件（关注了npc才行）、角色关系表、以及关键记忆自动浓缩，更新的东西你都是可以关的。然后丰富了一下外貌字段，事件增加了当前位置字段。]\n[1219拆分初始化规则和更新规则，减少了d0的token；增加了承诺，且会在d0再强调一次承诺内容]\n[1213世界书更新意象/声线/小习惯/批注，选开.美化已对应更新。可能会塑造人物更稳定，大概。去掉了恩怨和承诺]\n世界书是超复杂npc档案，会给npc初始化的比较复杂，可以下载也可以不用,挂载后会直接覆盖其他的npc档案,不用关闭原来的",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-超复杂npc.json",
     "previewImage": ""
@@ -95,7 +88,7 @@
     "name": "世界事件",
     "author": "assa",
     "version": "1.5",
-     "tags": [
+         "tags": [
         "内容扩展/玩法框架",
         "#脚本",
         "#世界书",
@@ -110,7 +103,7 @@
     "name": "自定义词条世界书",
     "author": "assa",
     "version": "1.0",
-     "tags": [
+       "tags": [
         "功能增强/高级自定义",
         "#世界书"
     ],
@@ -138,13 +131,13 @@
      "is_dowload_raw_name":true,
     "author": "仿生人",
     "version": "1.4",
-      "tags": [
+       "tags": [
         "内容扩展/大型DLC",
         "#脚本",
         "#世界书",
         "#依赖-自定义属性"
     ],
-    "description": "[0112游戏机运行框架差不多了，后面还有现实灵气复苏方面的剧情指导再慢慢加上去了]\n[0106兼容了模拟经营、战略类游戏，脚本也有改动适配不同类型的游戏]\n[1230完善了一波,前端脚本也改了]\n<h3>以一个游戏机为主题，在游玩过程中，不断通关游戏提升现实中灵气复苏程度的世界。</h3>\n[需开启自定义属性，同时开启本dlc的脚本。需开启无世界观，外挂本世界书后并选择手动发送。\n如何应用自定义属性：将世界书挂载后，重新加载，去自定义属性那里就能看到本dlc的专属自定义属性模板，然后点击应用即可]",
+    "description": "[0112游戏机运行框架差不多了，后面还有现实灵气复苏方面的剧情指导再慢慢加上去了]\n[0106兼容了模拟经营、战略类游戏，脚本也有改动适配不同类型的游戏]\n[1230完善了一波,前端脚本也改了]\n<h3>以一个游戏机为主题，在游玩过程中，不断通关游戏提升现实中灵气复苏程度的世界。</h3>\n[需开启自定义属性，同时开启本dlc的脚本。需开启无世界观，外挂本世界书后并选择手动发送。\n如何应用自定义属性：将世界书挂载后，去自定义属性那里就能看到本dlc的专属自定义属性模板，然后点击应用即可]",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod001小世界.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-dlc-小世界.json",
     "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 23.png"
@@ -153,7 +146,7 @@
     "name": "领养小孩",
     "author": "assa",
     "version": "1.0",
-    "tags": [
+       "tags": [
         "内容扩展/大型DLC",
         "#世界书"
     ],
@@ -166,7 +159,7 @@
     "name": "领养大人",
     "author": "assa",
     "version": "1.0",
-    "tags": [
+       "tags": [
         "内容扩展/大型DLC",
         "#世界书"
     ],
@@ -179,7 +172,7 @@
     "name": "在正文生成美化的物品面板",
     "author": "LushFlower",
     "version": "1.0",
-      "tags": [
+         "tags": [
         "界面美化/信息面板",
         "#世界书"
     ],
@@ -192,7 +185,7 @@
     "name": "垂钓诸天",
     "author": "GG棒",
     "version": "2.0",
-        "tags": [
+         "tags": [
         "内容扩展/大型DLC",
         "#世界书"
     ],
@@ -205,7 +198,7 @@
     "name": "天气改变",
     "author": "assa",
     "version": "1.0",
-     "tags": [
+        "tags": [
         "系统工具/便捷工具"
     ],
    "description": "一个小功能，将以下面的文本直接复制到世界书的某个地方，比如最高优先级或者d0 深度2，可以随机改变天气。垂钓诸天不用开因为它自带了。<br><h3>{{random::此回合必须改变天气并体现在正文中！天气格式为:天气图标 天气，包括但不限于:☀️晴天，🌤️晴转多云，⛈️雷暴雨，🌨️小雪，☁️阴天，🌨️下雪，❄️大雪:: :: :: :: :: :: :: :: :: :: :: :: }}</h3>",
@@ -217,7 +210,7 @@
     "name": "将军模拟器",
     "author": "北极星星",
     "version": "2.0",
-      "tags": [
+        "tags": [
         "内容扩展/大型DLC",
         "#世界书"
     ],
@@ -230,7 +223,7 @@
     "name": "抽卡美化01-哥特",
     "author": "assa",
     "version": "1.0",
-      "tags": [
+   "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-哥特"
@@ -244,7 +237,7 @@
     "name": "抽卡美化02-像素",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+     "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-像素"
@@ -258,7 +251,7 @@
     "name": "抽卡美化03-老虎机",
     "author": "assa",
     "version": "1.0",
-     "tags": [
+   "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -271,7 +264,7 @@
     "name": "抽卡美化04-苏联工业",
     "author": "assa",
     "version": "1.0",
-        "tags": [
+         "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-工业"
@@ -285,7 +278,7 @@
     "name": "抽卡美化05-超市大促销",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+          "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -298,7 +291,7 @@
     "name": "抽卡美化06-野生宝箱",
     "author": "assa",
     "version": "1.0",
-        "tags": [
+          "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -311,7 +304,7 @@
     "name": "物品美化01-steam库",
     "author": "assa",
     "version": "1.0",
-        "tags": [
+           "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-Steam"
@@ -325,8 +318,8 @@
     "name": "给物品技能加上图标和评论",
     "author": "assa",
     "version": "1.1",
-       "tags": [
-        "系统工具/格式化",
+          "tags": [
+        "功能增强/信息解析和记录",
         "#世界书"
     ],
     "description": "[1222肘击了哈基米可能会出现嵌套字段的bug]挂载该世界书后，物品和技能会自带emoji和一个对物品的comment。适配所有我创意工坊的物品界面美化mod。非覆盖式，直接挂上或者改进你的自定义格式里就行。",
@@ -338,7 +331,7 @@
     "name": "物品美化02-红+米白",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+          "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -351,7 +344,7 @@
     "name": "物品美化03-星空",
     "author": "assa",
     "version": "1.0",
-     "tags": [
+        "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-星空"
@@ -365,7 +358,7 @@
     "name": "物品美化04-赛博朋克",
     "author": "assa",
     "version": "1.0",
-     "tags": [
+         "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-赛博朋克"
@@ -379,7 +372,7 @@
     "name": "物品美化05-老式游戏",
     "author": "assa",
     "version": "1.0",
-      "tags": [
+          "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-复古"
@@ -393,7 +386,7 @@
     "name": "物品美化06-红+米白2",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+         "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -406,7 +399,7 @@
     "name": "物品美化07-立体卡片",
     "author": "assa",
     "version": "1.0",
-     "tags": [
+       "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -419,7 +412,7 @@
     "name": "物品美化08-黑金",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+        "tags": [
         "界面美化/组件美化",
         "#脚本"
     ],
@@ -432,7 +425,7 @@
     "name": "物品美化09-宝可梦图鉴",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+         "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-宝可梦"
@@ -446,7 +439,7 @@
     "name": "物品美化10-简洁野炊",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+           "tags": [
         "界面美化/组件美化",
         "#脚本",
         "#主题-塞尔达"
@@ -460,50 +453,43 @@
     "name": "自定义书签编辑器",
     "author": "assa",
     "version": "1.0",
-    
-    "tags": [
+        "tags": [
         "功能增强/高级自定义",
         "#脚本"
     ],
     "description": "[需求版本是3.3.26及以上]开启该脚本后，识小球左上角可以自定义书签,支持生成文本或者直接变成世界书.内容你是完全可以自定义的,不必按照我提供的默认格式来.",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod05.js",
     "worldBookUrl": "",
- "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 10.png"
- 
-  }  ,  {
+ "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 10.png"  }  ,  {
     "id": "mod06-自定义背景拓展",
     "name": "自定义背景",
     "author": "assa",
     "version": "1.0",
-        "tags": [
+            "tags": [
         "功能增强/高级自定义",
         "#脚本"
     ],
     "description": "开启该脚本后，点击设置界面的显示设置的自定义主题的编辑,可以存储更多的自定义主题,且支持调整颜色的透明度,支持导入导出色卡.且能自定义背景图,要自定义背景图的话就别开哈基米给你设置场景图的那个选项.",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod06.js",
     "worldBookUrl": "",
- "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 11.png"
- 
-  }  ,  {
+ "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 11.png"  }  ,  {
     "id": "mod07-自定义属性",
     "name": "自定义属性",
     "author": "assa",
     "version": "2.1",
-       "tags": [
+          "tags": [
         "功能增强/高级自定义",
         "#脚本"
     ],
     "description": "[0101现在可以自定义属性的联动规则了，比如你可以定义积分=积分+财力x10。同时可以导出你的模板放到世界书中，会自动识别成本地模板，方便传播]开启该脚本后，可以自定义你的人物属性，并存储为模板。位置在设置界面的奖杯右边的扳手。注意，自定义属性之后，记得关闭💫2手动可选:基础属性和技能分阶段，不然你会变得弱不禁风。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod07.js",
     "worldBookUrl": "",
- "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 26.png"
- 
-  } ,  {
+ "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 26.png"  } ,  {
     "id": "x-mod-无限恐怖世界观优化",
     "name": "无限恐怖世界观优化",
     "author": "飛梭花",
     "version": "0.01",
-       "tags": [
+        "tags": [
         "内容扩展/世界观设定",
         "#世界书",
         "#无限恐怖"
@@ -511,14 +497,12 @@
     "description": "[1213无限恐怖原著特化更新补丁V0.01]\n更新项目如下：\n更改了 6.2 轮回小队选择性添加原则，因为这一描述会添加过度模板/脸谱化的角色\n修改了引导者可能过于贫穷，一把手枪都没有，或者过于富有直接扛着火箭筒进入第一部恐怖片的问题\n修改了队员刷新机制，现在你可以正常的在中洲队看到中国人，而不是内阁了\n修复了引导者指导欲望过于强大的问题。现在引导者应该不会变成指导者了。\n增加了开局安全区机制，妈妈再也不用担心我进去第一秒就被霸王龙大口大口嚼嚼嚼了\n添加了原著内就有的资深者讲解规则加钱功能。\n主神的AI逻辑进行了一次更新，现在他会给轮回小队成员颁发身份。轮回小队成员终于不再是黑户了！\n移除了him\n\n因为我是元祖无限爱好者所以我自己改了一下无限恐怖模式，玩着还可以诡异感不是特别大。将其世界书外挂在全局即可直接覆盖世界观。开局的基调和类型需要都修改为`从片单中抽取`，不然会生成很奇怪的开局",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-无限恐怖世界观优化.json",
- "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 18.png"
- 
-  } ,{
+ "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 18.png"  } ,{
     "id": "mod08",
     "name": "隐藏侧边小球和顶部小球",
     "author": "assa",
     "version": "1.0",
-     "tags": [
+       "tags": [
         "界面美化/界面布局",
         "#脚本"
     ],
@@ -531,7 +515,7 @@
     "name": "一键加上/去除地点的日常标签",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+        "tags": [
         "系统工具/便捷工具",
         "#脚本"
     ],
@@ -544,8 +528,8 @@
     "name": "refine润色功能兼容",
     "author": "assa",
     "version": "1.1",
-      "tags": [
-        "系统工具/兼容补丁",
+          "tags": [
+        "系统工具/预设兼容",
         "#脚本"
     ],
     "description": "[需版本是3.5.4及其以上][润色内容会弹窗显示]astro最新版的润色(以及kemini也有的润色功能，反正就是预设的diff_refine润色功能都可以开这个)需要关闭原生的润色2正则，然后开启这个脚本，来实现在同层中也能使用润色功能。开启该脚本后就不用管了。",
@@ -557,7 +541,7 @@
     "name": "消息楼层快捷滚动",
     "author": "11",
     "version": "1.1",
-        "tags": [
+          "tags": [
         "系统工具/便捷工具",
         "#脚本"
     ],
@@ -571,8 +555,8 @@
     "name": "兼容预设的小总结",
     "author": "assa",
     "version": "1.2",
-       "tags": [
-        "系统工具/兼容补丁",
+         "tags": [
+        "系统工具/预设兼容",
         "#脚本"
     ],
     "description": "[需游戏版本是3.5.6及其以上]如题。开了之后就可以关闭卡的小总结，而使用预设的小总结内容了。原理是将&lt;summary&gt;(现在可以自由配置了，在设置界面的第一页最上面)中的内容解析出来，放到我们的变量系统里面去。因此需要关闭这个卡的原小总结",
@@ -584,8 +568,8 @@
     "name": "提取cot内容进悬浮球查看并可在正文删除",
     "author": "assa",
     "version": "1.1",
-       "tags": [
-        "流程控制/响应处理",
+          "tags": [
+        "系统工具/便捷工具",
         "#脚本"
     ],
     "description": "如题。可以配置你的cot标签内容，代码提取，然后在悬浮小球点击查看。主要是流式的时候看完正文还想看看cot，但是懒得往上翻。还有就是可以可选的生成结束后直接删除正文的cot。这个功能主要是为了防止有些世界书绿灯会读取cot内部的文本，导致错误触发，有点烦。\ncot频繁掉格式的不建议开自动删除，不然有可能错误的给你正文也删了",
@@ -597,7 +581,7 @@
     "name": "将正文变成gal界面",
     "author": "assa",
     "version": "2.2",
-        "tags": [
+          "tags": [
         "界面美化/界面布局",
         "#脚本",
         "#世界书",
@@ -614,13 +598,14 @@
     "name": "简单coc7检定",
     "author": "11",
     "version": "1.0",
+   
      "tags": [
         "内容扩展/检定与规则",
         "#世界书",
         "#依赖-自定义属性" 
         
     ],
-    "description": " 这是一个简单的coc7检定，是为了让剧情有点拉扯感，把过程张弛有度。但是我这个在高武数值，还需自己再做一下提示词适配，比如当数值超过110就要把骰子难度弄成十分之一。世界观不同，也需要稍微做一下适配，比如火影忍者mp要写为查克拉，死神要增加灵压属性和灵力属性之类的。友方数值也需要让ai好好写，这样ai在高智力和高注意力才会好调动队方npc的行动。推荐在异步和3万token内使用(哈机密2.5/3)\n含有自定义属性，需要开启自定义属性脚本并将世界书挂载后，重新加载前端，去自定义属性那里就能看到本dlc的专属自定义属性模板，然后点击应用即可\n覆盖了原本的骰子，挂载世界书则自动视为不再使用合理性审查之骰",
+    "description": " 这是一个简单的coc7检定，是为了让剧情有点拉扯感，把过程张弛有度。但是我这个在高武数值，还需自己再做一下提示词适配，比如当数值超过110就要把骰子难度弄成十分之一。世界观不同，也需要稍微做一下适配，比如火影忍者mp要写为查克拉，死神要增加灵压属性和灵力属性之类的。友方数值也需要让ai好好写，这样ai在高智力和高注意力才会好调动队方npc的行动。推荐在异步和3万token内使用(哈机密2.5/3)\n含有自定义属性，需要开启自定义属性脚本并将世界书挂载后，去自定义属性那里就能看到本dlc的专属自定义属性模板，然后点击应用即可\n覆盖了原本的骰子，挂载世界书则自动视为不再使用合理性审查之骰",
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-简单coc7检定.json",
     "previewImage": ""
@@ -630,8 +615,8 @@
     "author": "欧码-基米曼-波",
      "authorToken":"8bcfbb40-7210-4d17-bd2a-f98515a79756",
     "version": "1.0",
-      "tags": [
-        "内容扩展/世界观设定",
+         "tags": [
+        "功能增强/信息解析和记录",
         "#世界书"
     ],
     "description": "在生成世界设定与全局设定时标注情报来源，加强沉浸感以及避免哈基米胡言乱语",
@@ -643,8 +628,8 @@
     "name": "即时立绘",
     "author": "assa",
     "version": "1.0",
-       "tags": [
-        "功能增强/外部接口",
+           "tags": [
+        "功能增强/npc立绘",
         "#脚本",
         "#世界书",
         "#特性-AI绘图" 
@@ -654,14 +639,12 @@
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod15tachie.js",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-生成立绘.json",
     "previewImage": ""
-  } 
- 
-  ,{
+  }   ,{
     "id": "x-dlc-游戏制作人之他们只玩过传奇？！",
     "name": "游戏制作人之他们只玩过传奇？！",
     "author": "Sayuki07",
     "version": "1.0",
-      "tags": [
+        "tags": [
         "内容扩展/大型DLC",
         "#脚本",
         "#世界书",
@@ -676,8 +659,7 @@
     "name": "AI输出结束后提醒",
     "author": "assa",
     "version": "1.0",
-    
-    "tags": [
+        "tags": [
         "系统工具/便捷工具",
         "#脚本"
     ],
@@ -703,15 +685,15 @@
     "id": "x-mod-解析玩家",
     "name": "解析和记录玩家信息",
     "author": "LAST泉神丶",
-    "version": "1.3",
-    
-    "tags": [
-        "功能增强/信息解析",
+    "version": "1.4",
+       "tags": [
+        "功能增强/信息解析和记录",
         "#世界书",
         "#特性-自动记录", "#特性-用户画像"
     ],
-    "description":"[修复了路径写错了导致数据一直没展示上的bug，牛魔的被自己蠢哭了][修复了分析轮次错误i的写成了1的bug]\n感谢LAST泉神丶开放授权！\n此功能摘自izumi的用户画像模式。\n挂载后，每回合会记录玩家的癖好和暴露出来的信息，并每25回合就深度分析一次用户画像。识小球分类的名称是玩家分析。原预设链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1414563818587160586\" target=\"_blank\">→Discord频道←</a>",
-      "scriptUrl": "",
+    "description":"[0211增加了美化脚本，依旧被加进了识小球的悬浮轮盘中，名字是心理侧写][修复了分析轮次错误i的写成了1的bug]\n感谢LAST泉神丶开放授权！\n此功能摘自izumi的用户画像模式。\n挂载后，每回合会记录玩家的癖好和暴露出来的信息，并每25回合就深度分析一次用户画像。识小球分类的名称是玩家分析。原预设链接(请多多为原作者点赞喵！):<a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1414563818587160586\" target=\"_blank\">→Discord频道←</a>",
+       "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod20analysis.js",
+
      "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-解析玩家.json",
     "previewImage": ""
   },
@@ -720,24 +702,22 @@
     "name": "WS Bridge",
     "author": "assa",
     "version": "1.0",
-       "tags": [
+         "tags": [
         "系统工具/开发者工具",
         "#脚本",
         "#特性-外部联动"
     ],
     "is_dowload_raw_name":true,
        "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/modA2ws.js",
-    "worldBookUrl": "",
-   
-   "description": " WS Bridge (IIFE): 自动连接 ws://localhost:3001。\n[服务端可用指令]:\n1. 获取状态: {\"action\": \"getGameState\", \"data\": {\"key\": \"(可选)GameAPI字段\", \"correlationId\": \"ID\"}} -> 客户端回传 {\"action\": \"gameStateResponse\"}。\n2. 模拟发送: {\"action\": \"handleSend\", \"data\": {\"userText\": \"输入内容\", \"options\": {}}} -> 自动写入 userInput 并调用 handleSend。\n3. 显示弹窗: {\"action\": \"showAlert\", \"data\": {\"message\": \"提示文本\"}}。\n[流式回调]: 脚本会挂载 window.novaStreamHook，游戏内部调用该钩子时，会自动向服务端发送 {\"action\": \"handleSendStream\", \"data\": ...}。"
+    "worldBookUrl": "",   "description": " WS Bridge (IIFE): 自动连接 ws://localhost:3001。\n[服务端可用指令]:\n1. 获取状态: {\"action\": \"getGameState\", \"data\": {\"key\": \"(可选)GameAPI字段\", \"correlationId\": \"ID\"}} -> 客户端回传 {\"action\": \"gameStateResponse\"}。\n2. 模拟发送: {\"action\": \"handleSend\", \"data\": {\"userText\": \"输入内容\", \"options\": {}}} -> 自动写入 userInput 并调用 handleSend。\n3. 显示弹窗: {\"action\": \"showAlert\", \"data\": {\"message\": \"提示文本\"}}。\n[流式回调]: 脚本会挂载 window.novaStreamHook，游戏内部调用该钩子时，会自动向服务端发送 {\"action\": \"handleSendStream\", \"data\": ...}。"
   },
-  {
+   {
         "id": "x-mod-plot",
     "name": "故事线和伏笔记录",
     "author": "assa",
     "version": "1.0",
-       "tags": [
-        "功能增强/信息解析",
+           "tags": [
+        "功能增强/信息解析和记录",
         "#脚本",
         "#世界书",
         "#特性-自动记录"
@@ -748,4 +728,18 @@
    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 33.png",
  
    "description": "如图，会去记录剧情线，不过AI实在是太喜欢记流水账了，我就设置每条剧情线如果有10个事件就自动浓缩了。这个阈值你愿意的也可以进去改。" }
-]
+
+ ,{
+    "id": "更精准的bgm",
+     "is_dowload_raw_name":true,
+    "name": "更精准的bgm",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["功能增强/bgm"],
+   "description": "这本世界书会让AI在选歌前先想一下。其实就只是加了一句在最后面：\n你需要使用一个单独的<!-- music check: ${思考内容} -->包裹思考内容，应该挑选哪首歌。\n你完全可以自己diy。额外的：\n那个关掉的条目是内部有挑了一些2026年比较流行的歌（网易云推荐非主包口味，后面的听感描述也都是抄的网易云评论，非主包创作），这个主要是做一个示例，你可以在里面放你喜欢的歌，哈基米会优先去里面挑。\n这两个条目我都将bgm默认放到变量层了，因为太耗脑力，如果是同步层，这俩条目直接都不生效。\n最后，如果发现消息结束后bgm没有播放，请在设置-模组设置-高级设置开启：完整渲染时再次播放bgm。",
+   "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-更精准的bgm.json",
+ 
+    "previewImage": ""
+}
+  ]
