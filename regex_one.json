@@ -27973,37 +27973,30 @@ qqSearch: async function(songName, singerName, httpGet) {
         // console.log('    数据歌名:', `"${songData.song}" → "${dataSongNorm}"`);
         // console.log('    数据歌手:', `"${songData.singer}" → "${dataSingerNorm}"`);
         
-        // 歌名相似度计算
-        if (dataSongNorm === querySongNorm) {
-            score += 100;
-            // console.log('    ✓ 歌名完全匹配 +100');
-        } else {
-            // 计算字符匹配率
-            const songMatchRatio = calculateMatchRatio(querySongNorm, dataSongNorm);
-            const songScore = Math.floor(songMatchRatio * 150);
-            score += songScore;
-            // console.log(`    ○ 歌名相似度 ${(songMatchRatio * 100).toFixed(1)}% +${songScore}`);
-        }
-        
-        // 歌手相似度计算
-        if (querySingerNorm && dataSingerNorm) {
-            if (dataSingerNorm === querySingerNorm) {
-                score += 100;
-                // console.log('    ✓ 歌手完全匹配 +100');
-            } else {
-                const singerMatchRatio = calculateMatchRatio(querySingerNorm, dataSingerNorm);
-                const singerScore = Math.floor(singerMatchRatio * 80);
-                score += singerScore;
-                // console.log(`    ○ 歌手相似度 ${(singerMatchRatio * 100).toFixed(1)}% +${singerScore}`);
-            }
-        }
-        
-        // Live版本惩罚
-        if (songData.song.match(/live/gi)) {
-            score -= 30;
-            // console.log('    ✗ Live版本 -30');
-        }
-        
+            
+ if (dataSongNorm === querySongNorm) {
+    score += 120;   // 原100 → 提高一点，强化精准命中
+} else {
+    const songMatchRatio = calculateMatchRatio(querySongNorm, dataSongNorm);
+
+    // 使用平方强化高相似，削弱低相似
+    const songScore = Math.floor(Math.pow(songMatchRatio, 1.5) * 120);
+    score += songScore;
+}
+
+
+// 歌手相似度计算
+if (querySingerNorm && dataSingerNorm) {
+    if (dataSingerNorm === querySingerNorm) {
+        score += 60;   // 原50 → 提升
+    } else {
+        const singerMatchRatio = calculateMatchRatio(querySingerNorm, dataSingerNorm);
+
+        const singerScore = Math.floor(Math.pow(singerMatchRatio, 1.5) * 60);
+        score += singerScore;
+    }
+}
+ 
         // console.log('    总分:', score);
         return score;
     };
