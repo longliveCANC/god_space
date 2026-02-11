@@ -725,7 +725,7 @@ function formatObjectGraceSimple(data, indent = 0, is_huanhang = true) {
         // 如果不需要递归换行，则将数组元素在一行内显示
         if (!is_huanhang) {
             const items = data.map(item => formatObjectGraceSimple(item, 0, false));
-            return '[' + items.join(', ') + ']';
+            return '[' + items.join(',') + ']';
         }
 
         // 递归格式化数组的每一项
@@ -772,11 +772,11 @@ function formatObjectGraceSimple(data, indent = 0, is_huanhang = true) {
 
         // 如果不需要递归换行，则键和值在一行
         if (!is_huanhang) {
-            return \`"\${key}": \${valueString}\`;
+            return \`"\${key}":\${valueString}\`;
         }
 
         // 否则，键和值在新行并带缩进
-        return \`\${nextIndentString}"\${key}": \${valueString}\`;
+        return \`\${nextIndentString}"\${key}":\${valueString}\`;
     });
 
     // 获取当前对象的保护标记
@@ -790,7 +790,7 @@ function formatObjectGraceSimple(data, indent = 0, is_huanhang = true) {
               
              return '{\\n' + formattedLines.map(line => nextIndentString + line).join(',\\n') + '\\n}' + protectionMark;
         }
-        return '{' + formattedLines.join(', ') + '}' + protectionMark;
+        return '{' + formattedLines.join(',') + '}' + protectionMark;
     }
  
     return '{\\n' + formattedLines.join(',\\n') + '\\n' + indentString + '}' + protectionMark;
