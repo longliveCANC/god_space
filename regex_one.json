@@ -15311,7 +15311,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.15';
+window.current_game_version = '3.7.16';
 
 
 
@@ -16627,7 +16627,7 @@ async function checkUpdatesOnStartup() {
         // 3. 点击“知道了”关闭
         if(confirmBtn) confirmBtn.onclick = closeModal;
     }
- function renderFiltersUI() {
+     function renderFiltersUI() {
     const container = document.getElementById('ws-filter-area-v2');
     if (!container) return;
 
@@ -16638,9 +16638,8 @@ async function checkUpdatesOnStartup() {
     allMods.forEach(mod => {
         if (mod.tags && mod.tags.length > 0) {
             mod.tags.forEach(tag => {
-                // 【修改】使用正则表达式精确过滤 #xx-xx 格式的标签
                 if (/^#\w+-\w+/.test(tag)) {
-                    return; // 如果匹配 #xx-xx 格式，则跳过，不添加到筛选区
+                    return;
                 }
 
                 const parts = tag.split('/');
@@ -16652,7 +16651,6 @@ async function checkUpdatesOnStartup() {
                     }
                     tagsByCategory[category].add(subTag);
                 } else {
-                    // 其他标签（包括 #NSFW）都进入“未分类”
                     tagsByCategory['未分类'].add(tag);
                 }
             });
@@ -16660,9 +16658,11 @@ async function checkUpdatesOnStartup() {
     });
 
     // 2. 构建HTML
+    // 根级别的“全部”和“已订阅”
     let html = `<div class="ws-tag-group">
         <div class="ws-tag-items">
             <button class="ws-tag-btn ${state.currentTag === 'all' ? 'active' : ''}" data-tag="all">全部</button>
+            <button class="ws-tag-btn ${state.currentTag === 'subscribed' ? 'active' : ''}" data-tag="subscribed">已订阅</button>
         </div>
     </div>`;
 
@@ -16684,13 +16684,17 @@ async function checkUpdatesOnStartup() {
         const tags = Array.from(tagsByCategory[category]).sort();
         if (tags.length === 0 && category !== '未分类') continue;
 
-        // 【修改】为 <details> 标签添加 'open' 属性，使其默认展开
+        // 【修改】如果分类是“未分类”，则<details>标签不加'open'属性，使其默认收起
+        const detailsOpenAttribute = category === '未分类' ? '' : 'open';
+
         html += `
         <div class="ws-tag-group">
-            <details open>
+            <details ${detailsOpenAttribute}>
                 <summary>${category}</summary>
                 <div class="ws-tag-items">
                     <button class="ws-tag-btn ${state.currentTag === category ? 'active' : ''}" data-tag="${category}">全部</button>
+                    <!-- 【新增】为每个分类添加“已订阅”按钮 -->
+                    <button class="ws-tag-btn ${state.currentTag === `${category}/subscribed` ? 'active' : ''}" data-tag="${category}/subscribed">已订阅</button>
                     ${tags.map(tag => {
                         const fullTag = category === '未分类' ? tag : `${category}/${tag}`;
                         return `<button class="ws-tag-btn ${state.currentTag === fullTag ? 'active' : ''}" data-tag="${fullTag}">${tag}</button>`;
@@ -16705,18 +16709,19 @@ async function checkUpdatesOnStartup() {
     // 3. 绑定事件 (保持不变)
     container.querySelectorAll('.ws-tag-btn').forEach(btn => {
         btn.onclick = () => {
-            if (btn.classList.contains('active') && btn.dataset.tag !== 'all') {
-                state.currentTag = 'all';
+            // 点击已激活的按钮（非'all'）则取消筛选，返回'all'
+            if (btn.classList.contains('active') && !['all', 'subscribed'].includes(btn.dataset.tag)) {
+                 state.currentTag = 'all';
             } else {
                 state.currentTag = btn.dataset.tag;
             }
             state.currentPage = 1;
             state.allModsLoaded = false;
-            refreshView(true);
+            refreshView(true); // 传入 true 表示需要重新筛选
         };
     });
 }
-   function hasValidScript(mod) {
+ function hasValidScript(mod) {
         if (mod.scriptUrl === 'local') return true; // 本地脚本默认认为有效
         return mod.scriptUrl && mod.scriptUrl.trim() !== "";
     }
@@ -17879,11 +17884,10 @@ async function checkUpdatesOnStartup() {
         renderFiltersUI(); // 使用新的渲染函数
         refreshView(true);
     }
-    async function refreshView(needsRefilter = true) {
+     async function refreshView(needsRefilter = true) {
     const listContainer = document.getElementById('ws-mod-list-preview-v2');
     if (!listContainer) return;
 
-    // 重新筛选时，清空列表并重置状态
     if (needsRefilter) {
         listContainer.innerHTML = '<div class="workshop-loading">筛选中...</div>';
         state.currentPage = 1;
@@ -17893,17 +17897,31 @@ async function checkUpdatesOnStartup() {
         state.searchTerm = term;
 
         const allMods = [...allLocalMods, ...allRemoteMods];
-          state.filteredList = allMods.filter(mod => {
-            // 【修改】更新标签匹配逻辑
-            const matchTag = state.currentTag === 'all' ||
-                             (mod.tags && mod.tags.some(t =>
-                                 t === state.currentTag || // 完全匹配 (如 "内容扩展/检定与规则")
-                                 t.startsWith(state.currentTag + '/') // 分类匹配 (如 "内容扩展")
-                             ));
+
+        // 【修改】更新筛选逻辑以支持“已订阅”
+        state.filteredList = allMods.filter(mod => {
+            const isSubscribed = state.subscriptions.has(`sub_mod_${mod.id}`) || state.subscriptions.has(`sub_author_${mod.author}`);
+
+            let matchTag = false;
+            if (state.currentTag === 'all') {
+                matchTag = true;
+            } else if (state.currentTag === 'subscribed') {
+                matchTag = isSubscribed;
+            } else if (state.currentTag.endsWith('/subscribed')) {
+                const category = state.currentTag.split('/')[0];
+                const inCategory = mod.tags && mod.tags.some(t => t.startsWith(category));
+                matchTag = isSubscribed && inCategory;
+            } else {
+                matchTag = mod.tags && mod.tags.some(t =>
+                    t === state.currentTag ||
+                    t.startsWith(state.currentTag + '/')
+                );
+            }
 
             const matchSearch = !term || mod.name.toLowerCase().includes(term) ||
                               (mod.description && mod.description.toLowerCase().includes(term)) ||
                               (mod.author && mod.author.toLowerCase().includes(term));
+
             return matchTag && matchSearch;
         });
     }
