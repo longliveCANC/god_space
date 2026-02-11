@@ -3015,6 +3015,15 @@ this.allItems.forEach((item, index) => {
                     if (nsfwData.性渴望度.总体) {
                         desireContent += `<p class="mod01-nsfw-text" style="margin-bottom:15px;">${nsfwData.性渴望度.总体}</p>`;
                     }
+                     if (nsfwData.性渴望度.严重程度) {
+                        desireContent += `<p class="mod01-nsfw-text" style="margin-bottom:15px;">${nsfwData.性渴望度.严重程度}</p>`;
+                    }
+                     if (nsfwData.性渴望度.解决方式) {
+                        desireContent += `<p class="mod01-nsfw-text" style="margin-bottom:15px;">${nsfwData.性渴望度.解决方式}</p>`;
+                    }
+                     if (nsfwData.性渴望度.性幻想方向) {
+                        desireContent += `<p class="mod01-nsfw-text" style="margin-bottom:15px;">${nsfwData.性渴望度.性幻想方向}</p>`;
+                    }
                     if (nsfwData.性渴望度.部位 && typeof nsfwData.性渴望度.部位 === 'object') {
                         desireContent += '<div class="mod01-nsfw-desire-grid">';
                         Object.entries(nsfwData.性渴望度.部位).forEach(([k, v]) => {
