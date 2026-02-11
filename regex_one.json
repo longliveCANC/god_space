@@ -12201,239 +12201,7 @@ pointer-events: auto;
  
 
 
-
  
-/* 创意工坊样式模块 */
-.workshop-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    gap: 15px;
-}
-
-.workshop-toolbar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
-    flex-wrap: wrap;
-      justify-content: space-between; /* 让搜索框和按钮组分开 */
-}
-.toolbar-btn-group {
-    display: flex;
-    gap: 8px;
-}
-.workshop-search {
-    flex: 1;
-    display: flex;
-    gap: 5px;
-    min-width: 200px;
-}
-
-/* 2. 订阅按钮样式 (详情页) */
-.sub-btn {
-    background: transparent;
-    border: 1px solid var(--text-secondary-color);
-    color: var(--text-secondary-color);
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.sub-btn:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.sub-btn.subscribed {
-    background: var(--primary-color);
-    color: #000; /* 选中态文字颜色，根据主题可能需要调整 */
-    border-color: var(--primary-color);
-}
-
-/* 3. 筛选类型切换 (标签/作者) */
-.filter-type-switch {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    padding: 0 5px;
-    font-size: 14px;
-    color: var(--text-secondary-color);
-}
-.filter-type-btn {
-    cursor: pointer;
-    padding-bottom: 2px;
-    border-bottom: 2px solid transparent;
-}
-.filter-type-btn.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-}
-
-/* 4. 自定义更新弹窗 */
-.update-modal-content {
-    background: var(--background-color);
-    border: 1px solid var(--primary-color);
-    box-shadow: 0 0 20px var(--glow-color);
-    width: 400px;
-    max-width: 90%;
-    padding: 20px;
-    border-radius: 8px;
-    position: relative;
-    color: var(--text-color);
-}
-
-.update-list {
-    max-height: 200px;
-    overflow-y: auto;
-    margin: 15px 0;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    padding: 10px 0;
-}
-
-.update-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    font-size: 13px;
-}
-.update-item .new-badge {
-    background: var(--danger-color);
-    color: white;
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-size: 10px;
-    margin-right: 5px;
-}
-#workshop-search-input {
-    flex: 1;
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    padding: 6px 10px;
-    border-radius: 4px;
-}
-
-.workshop-filters {
-    display: flex;
-    gap: 5px;
-}
-
-.filter-tag {
-    background: none;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary-color);
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.filter-tag.active, .filter-tag:hover {
-    background: var(--primary-color);
-    color: #000;
-    border-color: var(--primary-color);
-}
-
-.workshop-list {
-    flex: 1;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 15px;
-    padding-right: 5px;
-}
-
-/* Mod 卡片样式 */
-.mod-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.mod-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 250, 255, 0.1);
-}
-
-.mod-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.mod-title {
-    font-weight: bold;
-    color: var(--primary-color);
-    font-size: 1.1em;
-}
-
-.mod-author {
-    font-size: 0.8em;
-    color: var(--text-secondary-color);
-}
-
-.mod-tags {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.mod-tag-badge {
-    background: rgba(0, 250, 255, 0.1);
-    color: var(--secondary-color);
-    font-size: 0.75em;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-
-.mod-desc {
-    font-size: 0.9em;
-    color: var(--text-color);
-    flex: 1;
-    line-height: 1.4;
-    opacity: 0.9;
-    max-height: 80px; /* 固定的最大高度 */
-    overflow-y: auto;  /* 当内容超出时显示滚动条 */
-    padding-right: 5px; /* 为滚动条留出一点空间 */
-}
-
-.mod-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 5px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mod-status {
-    font-size: 0.8em;
-}
-
-.status-enabled { color: var(--success-color); }
-.status-disabled { color: var(--text-secondary-color); }
-
-.loading-msg {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 20px;
-    color: var(--secondary-color);
-}
-
 .group-chat-message-bubble {
     /* display: flex; */
     /* flex-direction: column; */
@@ -12449,77 +12217,131 @@ pointer-events: auto;
     margin: 4px 0;
 }
 
-
-
-.dev-mode-panel {
-    display: none; /* 默认隐藏 */
-    background-color: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 0 10px var(--glow-color);
-}
-
-.dev-mode-panel.active {
-    display: block;
-    animation: fadeIn 0.3s ease;
-}
-
-.dev-mode-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    color: var(--primary-color);
-    font-weight: bold;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 5px;
-}
-
-.dev-mode-textarea {
+ /* ==================================
+   全新创意工坊 UI/UX 样式 (V2)
+   ================================== */
+ #settings-page-workshop {
+    /* 强制占满父容器，且绝对禁止溢出 */
     width: 100%;
-    height: 150px;
-    background-color: rgba(0, 0, 0, 0.3);
-    color: var(--success-color); /*以此区分代码区域*/
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 14px;
-    resize: vertical;
-    outline: none;
-    margin-bottom: 10px;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden !important;
+    display: none; /* 新增：默认隐藏 */
+    flex-direction: column;
+    padding: 0 !important;
+    position: relative; /* 确保子元素定位基准 */
 }
-
-.dev-mode-textarea:focus {
-    box-shadow: 0 0 5px var(--glow-color);
+/* 当它被激活时，通过 .active 类来显示 */
+#settings-page-workshop.active {
+    display: flex; /* 新增 */
 }
-
-.dev-mode-actions {
+/* --- 核心布局 --- */
+.workshop-container-v2 {
     display: flex;
-    justify-content: flex-end;
+    height: 100%;
+    width: 100%;
+    gap: 15px;
+    overflow: hidden;
+    padding: 15px;
+    box-sizing: border-box;
+    /* 确保 flex 子项能正确计算高度 */
+    min-height: 0;
+}
+
+/* 左侧面板：探索与列表 */
+.ws-panel-left {
+    width: 35%;
+    min-width: 320px;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-right: 1px solid var(--border-color);
+    padding-right: 15px;
+    height: 100%; /* 占满高度 */
+}
+
+/* 右侧面板：详情展示 */
+.ws-panel-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* 详情内容可独立滚动 */
+    padding-right: 5px; /* 为滚动条留出空间 */
+}
+
+/* --- 左侧面板内部样式 --- */
+.ws-left-header {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
 }
-/* ==================== 创意工坊新功能样式 ==================== */
 
-/* 1. 动态标签区域 */
-.ws-tags-wrapper {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 10px;
-    border-radius: 8px;
-    margin: 10px 0;
+.ws-search-box {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 5px;
+}
+
+#workshop-search-input-v2 {
+    flex: 1;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* 标签筛选区域 */
+.ws-filter-area {
+    max-height: 250px; /* 给一个最大高度，超出则滚动 */
+    overflow-y: auto;
+    padding: 5px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
     border: 1px solid var(--border-color);
 }
+
+/* 标签分组 */
+.ws-tag-group details {
+    margin-bottom: 5px;
+}
+
+.ws-tag-group summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--primary-color);
+    padding: 5px 8px;
+    background: rgba(var(--primary-rgb), 0.1);
+    border-radius: 3px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    list-style: none; /* 移除默认三角 */
+}
+.ws-tag-group summary::-webkit-details-marker { display: none; } /* 移除默认三角 for Chrome */
+.ws-tag-group summary::before {
+    content: '▶';
+    margin-right: 8px;
+    font-size: 10px;
+    display: inline-block;
+    transition: transform 0.2s;
+}
+.ws-tag-group details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.ws-tag-items {
+    padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
 .ws-tag-btn {
     background: transparent;
     border: 1px solid var(--text-secondary-color);
     color: var(--text-secondary-color);
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 3px 8px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 12px;
     transition: all 0.2s;
@@ -12530,33 +12352,303 @@ pointer-events: auto;
     border-color: var(--primary-color);
 }
 
-/* 2. 分页控件 */
-.ws-pagination {
+/* 模组预览列表 */
+.ws-mod-list-preview {
+    flex: 1;
+    overflow-y: auto; /* 开启独立滚动 */
     display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 15px; /* 放在顶部 */
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 5px;
+    min-height: 0; /* Flexbox 滚动修复的关键 */
+    max-height:400px;
+}
+
+/* 预览卡片 */
+.mod-preview-card {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    
+    background: rgba(255,255,255,0.03);
+}
+.mod-preview-card:hover {
+    background: rgba(var(--primary-rgb), 0.1);
+}
+.mod-preview-card.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--glow-color);
+    background: rgba(var(--primary-rgb), 0.15);
+}
+
+.mod-preview-img {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 3px;
+    background: #333;
+    flex-shrink: 0;
+}
+
+.mod-preview-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.mod-preview-title {
     font-weight: bold;
     color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.ws-page-btn {
-    background: var(--container-bg-color);
-    border: 1px solid var(--primary-color);
+.mod-preview-card.active .mod-preview-title {
     color: var(--primary-color);
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
+}
+
+.mod-preview-author {
+    font-size: 0.8em;
+    color: var(--text-secondary-color);
+}
+
+.mod-preview-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.mod-preview-tag-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary-color);
+    font-size: 0.7em;
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
+/* --- 右侧详情面板样式 --- */
+.ws-panel-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* 开启独立滚动 */
+    padding-right: 5px;
+    height: 100%; /* 占满高度 */
+    min-height: 0; /* Flexbox 滚动修复的关键 */
+}
+.mod-no-img-placeholder {
+    width: 80px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-.ws-page-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    border-color: var(--text-secondary-color);
+    font-size: 10px;
     color: var(--text-secondary-color);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.ws-detail-no-img {
+    width: 100%;
+    height: 200px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary-color);
+    margin-bottom: 15px;
+}
+/* --- Markdown 简单样式支持 --- */
+.ws-detail-desc h1, .ws-detail-desc h2, .ws-detail-desc h3 {
+    color: var(--primary-color);
+    margin-top: 10px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.ws-detail-desc ul { padding-left: 20px; margin: 5px 0; }
+.ws-detail-desc li { margin-bottom: 2px; }
+.ws-detail-desc code {
+    background: rgba(0,0,0,0.3);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+    color: var(--success-color);
+}
+.ws-detail-desc blockquote {
+    border-left: 3px solid var(--secondary-color);
+    margin: 5px 0;
+    padding-left: 10px;
+    color: var(--text-secondary-color);
+}
+.ws-detail-view {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.ws-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.ws-detail-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+.ws-detail-meta {
+    font-size: 0.9em;
+    color: var(--text-secondary-color);
+    text-align: right;
+}
+.ws-detail-author .sub-btn { /* 订阅按钮样式复用 */
+    margin-left: 10px;
+    font-size: 11px;
+    padding: 2px 6px;
+}
+
+.ws-detail-img {
+    width: 100%;
+    max-height: 350px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    cursor: zoom-in;
+}
+
+.ws-detail-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ws-detail-desc {
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--text-color);
+    background: rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 4px;
+}
+ .ws-mobile-detail-modal {
+        /* display: none; */ /* display 由 active 类控制 */
+ 
+        display: none; /* 新增：使用 flex 轻松实现居中 */
+        
+    }
+ /* --- 响应式设计 --- */
+@media (max-width: 768px) {
+    .workshop-container-v2 {
+        flex-direction: column;
+        height: 100%; /* 确保在列模式下也占满高度 */
+    }
+    .ws-panel-left {
+        width: 100%;
+        max-width: 100%;
+        border-right: none;
+        padding-right: 0;
+        height: 100%; /* 占满整个屏幕 */
+    }
+    .ws-panel-right {
+        display: none; /* 桌面端的右侧面板在移动端彻底隐藏 */
+    }
+
+  
+  
+ .ws-mobile-detail-modal {
+        /* display: none; */ /* display 由 active 类控制 */
+        position: fixed; /* 改为 fixed，覆盖整个视口 */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        
+        z-index: 20000;
+        display: flex; /* 新增：使用 flex 轻松实现居中 */
+        align-items: center; /* 新增：垂直居中 */
+        justify-content: center; /* 新增：水平居中 */
+        padding: 15px; /* 新增：为弹窗内容留出边距 */
+        box-sizing: border-box;
+        opacity: 0; /* 新增：用于实现淡入淡出动画 */
+        pointer-events: none; /* 新增：默认不可交互 */
+        transition: opacity 0.2s ease-out; /* 新增：动画效果 */
+    }
+
+    .ws-mobile-detail-modal.active {
+        /* display: block; */ /* 不再需要 display: block */
+        opacity: 1; /* 新增：激活时显示 */
+        pointer-events: auto; /* 新增：激活时可交互 */
+    }
+
+    /* 新增：为弹窗内容本身创建一个容器 */
+    .ws-mobile-detail-content {
+        background: var(--background-color);
+        border: 1px solid var(--primary-color);
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px; /* 限制最大宽度 */
+        max-height: 85vh; /* 限制最大高度 */
+        overflow-y: auto; /* 内容超出时可滚动 */
+        display: flex;
+        flex-direction: column;
+        position: relative; /* 为关闭按钮定位 */
+        box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+        transform: scale(0.95); /* 配合动画 */
+        transition: transform 0.2s ease-out;
+    }
+    .ws-mobile-detail-modal.active .ws-mobile-detail-content {
+        transform: scale(1); /* 激活时的动画效果 */
+    }
+
+
+    .ws-mobile-close-btn {
+        position: absolute; /* 改为 absolute，相对于 .ws-mobile-detail-content 定位 */
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--text-secondary-color);
+        color: var(--text-secondary-color);
+        border-radius: 50%;
+        font-size: 20px;
+        /* 其他样式保持或微调 */
+        z-index: 10; /* 确保在内容之上 */
+    }
+
+    /* 新增：进入动画定义 */
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+}
+
+/* 滚动条美化 */
+.ws-filter-area::-webkit-scrollbar,
+.ws-mod-list-preview::-webkit-scrollbar,
+.ws-panel-right::-webkit-scrollbar {
+    width: 6px;
+}
+.ws-filter-area::-webkit-scrollbar-thumb,
+.ws-mod-list-preview::-webkit-scrollbar-thumb,
+.ws-panel-right::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
 }
 
 /* 3. 详情弹窗 */
@@ -12634,38 +12726,45 @@ pointer-events: auto;
     padding: 10px;
     border: 1px solid var(--border-color);
 }
-/* 自定义滚动条 */
-.ws-modal-content::-webkit-scrollbar {
-    width: 8px;
-}
-.ws-modal-content::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 4px;
-}
-.ws-modal-content::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.2);
-}
-
-/* 详情页图片限制 */
-.ws-detail-img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 10px 0;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* 卡片底部操作栏 */
-.mod-card-actions {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+ 
+/* 【新增】批量操作按钮的容器 */
+.book-batch-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
+    justify-content: flex-end; /* 让按钮靠右对齐 */
+    gap: 10px; /* 按钮之间的间距 */
+    padding: 10px 15px; /* 容器的内边距 */
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* 与上方翻页控件的分隔线 */
 }
 
+/* 【新增】批量操作按钮的基础样式 */
+.batch-action-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--text-secondary-color);
+    background-color: transparent;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.batch-action-btn:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #000; /* 或者你的主题背景色 */
+}
+
+/* 【新增】危险操作按钮的特殊样式 */
+.batch-action-btn.danger {
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+.batch-action-btn.danger:hover {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: #fff;
+}
   </style>
  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -12795,7 +12894,7 @@ pointer-events: auto;
         <div class="mod-tab" data-for="dice-2" data-name="dice-level">困难骰</div>
         <div class="mod-tab" data-for="dice-3" data-name="dice-level">炼狱骰</div>
         <div class="mod-tab" data-for="behavior-on" data-name="behavior-mode" data-off-id="behavior-off">表现骰</div>
-        <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off" >回合战斗</div>
+        <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off">回合战斗</div>
          <div class="mod-label">造物设置</div>
           <div class="mod-tab" data-for="nohuman-on" data-name="nohuman-mode" data-off-id="nohuman-off" style="display: none;">人外增强</div>
         <div class="mod-tab" data-for="creator-neutral" data-name="creator-attitude">造物中立</div>
@@ -14219,6 +14318,9 @@ pointer-events: auto;
                     <span id="book-page-info">1 / 1</span>
                     <button id="book-next-page" class="page-turn-btn right">›</button>
                 </div>
+                <div id="book-batch-actions-container" class="book-batch-actions">
+    <!-- 按钮将由 JavaScript 动态生成到这里 -->
+</div>
             </div>
         </div>
     </div>
@@ -14813,47 +14915,53 @@ pointer-events: auto;
                 </div>
             </div>
         </div>
-<div class="settings-page" id="settings-page-workshop">
-    <div class="workshop-container">
- <div class="workshop-toolbar">
-    <div class="wottings-page-workrch">
-        <input type="text" id="workshop-search-input" placeholder="搜索模组...">
-        <button id="workshop-search-btn" class="control-btn">🔍</button>
+ <div class="settings-page" id="settings-page-workshop">
+    <div class="workshop-container-v2">
+
+        <!-- ================== 左侧面板 ================== -->
+        <div class="ws-panel-left">
+            <!-- 1. 顶部操作区 -->
+            <div class="ws-left-header">
+                <div class="ws-search-box">
+                    <input type="text" id="workshop-search-input-v2" placeholder="搜索模组名称、作者、描述...">
+                </div>
+                <div class="toolbar-btn-group">
+                    <button id="ws-manage-btn" class="control-btn">⚙️ 管理拓展</button>
+                    <button id="ws-dev-menu-btn" class="control-btn" style="border-color: var(--secondary-color); color: var(--secondary-color);">🛠️ 开发者</button>
+                    <button id="workshop-reload-runtime-btn" class="control-btn danger-btn">重载</button>
+                </div>
+            </div>
+
+            <!-- 2. 标签筛选区 -->
+            <div id="ws-filter-area-v2" class="ws-filter-area">
+                <!-- 标签将由JS动态生成 -->
+            </div>
+
+            <!-- 3. 模组预览列表 -->
+         <div id="ws-mod-list-preview-v2" class="ws-mod-list-preview">
+                <div class="workshop-loading">正在连接创意工坊...</div>
+            </div>
+        </div>
+
+        <!-- ================== 右侧详情面板 ================== -->
+        <div class="ws-panel-right" id="ws-panel-right-v2">
+            <!-- 初始占位符 -->
+            <div class="ws-panel-right-placeholder">
+                <p>从左侧列表选择一个模组<br>以查看详情</p>
+            </div>
+
+            
+        </div>
+
     </div>
-
-    <div class="toolbar-btn-group">
-
-        <button id="ws-manage-btn" class="control-btn">⚙️ 管理拓展</button>
-
-
-        <button id="ws-dev-menu-btn" class="control-btn" style="border-color: var(--secondary-color); color: var(--secondary-color);">🛠️ 开发者</button>
-
+    <div id="ws-mobile-detail-container" class="ws-mobile-detail-modal">
+        <!-- 新增一个关闭按钮和内容容器 -->
+        <div id="ws-mobile-detail-content" class="ws-mobile-detail-content">
+            <!-- 详情内容将由JS动态填充到这里 -->
+        </div>
+        <div id="ws-mobile-close-btn-action" class="ws-mobile-close-btn">×</div>
+    </div>
  
-        <button id="workshop-reload-runtime-btn" class="control-btn danger-btn">重载</button>
-    </div>
-</div>
-
-
-<div class="filter-type-switch">
-    <span class="filter-type-btn active" id="filter-by-tag">按标签</span>
-    <span class="filter-type-btn" id="filter-by-author">按作者</span>
-</div>
-
-
-<div id="ws-tags-container" class="ws-tags-wrapper"></div>
-
-
-        <div id="ws-pagination-controls" class="ws-pagination">
-            <button class="ws-page-btn" id="ws-prev-page"><</button>
-            <span id="ws-page-info">第 1 / 1 页</span>
-            <button class="ws-page-btn" id="ws-next-page">></button>
-        </div>
-
-
-        <div id="workshop-mod-list" class="workshop-list">
-            <div class="workshop-loading">正在连接创意工坊...</div>
-        </div>
-    </div>
 </div>
 
     </div>
@@ -15203,7 +15311,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.14';
+window.current_game_version = '3.7.15';
 
 
 
@@ -16057,7 +16165,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
 
     const STORE_MOD_SETTINGS = 'user_mods';
     const STORE_LOCAL_SCRIPTS = 'local_scripts';
-    // 【新增】新增两个存储库
+    // 新增两个存储库
     const STORE_SUBSCRIPTIONS = 'subscriptions'; // 存储订阅关系
     const STORE_META_CACHE = 'meta_cache';       // 存储上次的 mods.json
 
@@ -16068,11 +16176,13 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
     // 状态管理
     let state = {
         currentPage: 1,
-        itemsPerPage: 4,
+        itemsPerPage: 8,
         currentTag: 'all',
         filterMode: 'tag', // 'tag' 或 'author'
         searchTerm: '',
         filteredList: [],
+         selectedModId: null, // 追踪当前选中的模组ID
+    allModsLoaded: false, // 标记是否所有模组都已加载
         subscriptions: new Set() // 内存中缓存订阅ID，方便快速判断
     };
 
@@ -16084,7 +16194,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
                 db = event.target.result;
                 if (!db.objectStoreNames.contains(STORE_MOD_SETTINGS)) db.createObjectStore(STORE_MOD_SETTINGS, { keyPath: 'id' });
                 if (!db.objectStoreNames.contains(STORE_LOCAL_SCRIPTS)) db.createObjectStore(STORE_LOCAL_SCRIPTS, { keyPath: 'id' });
-                // 【新增】创建新表
+                // 创建新表
                 if (!db.objectStoreNames.contains(STORE_SUBSCRIPTIONS)) db.createObjectStore(STORE_SUBSCRIPTIONS, { keyPath: 'id' });
                 if (!db.objectStoreNames.contains(STORE_META_CACHE)) db.createObjectStore(STORE_META_CACHE, { keyPath: 'key' });
             };
@@ -16135,7 +16245,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
             }).sort();
         },
 
-        // 【新增】名称清洗工具
+        // 名称清洗工具
         cleanName: function(rawName) {
             // 匹配 x-mod-, x-dlc-, x-xxx- 或者不带横杠的 x-mod 等
             // 例如: x-mod-fishing -> fishing, x-mod -> x-mod (如果后面没东西保留原样，或者也清空看需求，这里逻辑是去除前缀)
@@ -16331,7 +16441,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
             };
         });
     }
-    // 【新增】订阅相关数据库操作
+    // 订阅相关数据库操作
     function getSubscriptions() {
         return new Promise(resolve => {
             const tx = db.transaction([STORE_SUBSCRIPTIONS], 'readonly');
@@ -16367,7 +16477,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
         });
     }
 
-    // 【新增】缓存 JSON 操作
+    // 缓存 JSON 操作
     function getCachedJson() {
         return new Promise(resolve => {
             const tx = db.transaction([STORE_META_CACHE], 'readonly');
@@ -16439,7 +16549,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
         // 检测完成后，更新缓存
         saveCachedJson(newMods);
     }
-// 【新增】启动时检查更新（不依赖 UI 加载）
+// 启动时检查更新（不依赖 UI 加载）
 async function checkUpdatesOnStartup() {
     try {
         let remoteData = [];
@@ -16517,49 +16627,96 @@ async function checkUpdatesOnStartup() {
         // 3. 点击“知道了”关闭
         if(confirmBtn) confirmBtn.onclick = closeModal;
     }
- 
-    function renderFiltersUI() {
-        const container = document.getElementById('ws-tags-container');
-        if(!container) return;
+ function renderFiltersUI() {
+    const container = document.getElementById('ws-filter-area-v2');
+    if (!container) return;
 
-        let items = [];
-        if (state.filterMode === 'tag') {
-            // 收集所有标签
-            const tags = new Set(['all']);
-            [...allRemoteMods, ...allLocalMods].forEach(m => {
-                if(m.tags) m.tags.forEach(t => tags.add(t));
+    // 1. 收集所有标签并解析
+    const tagsByCategory = { '未分类': new Set() };
+    const allMods = [...allLocalMods, ...allRemoteMods];
+
+    allMods.forEach(mod => {
+        if (mod.tags && mod.tags.length > 0) {
+            mod.tags.forEach(tag => {
+                // 【修改】使用正则表达式精确过滤 #xx-xx 格式的标签
+                if (/^#\w+-\w+/.test(tag)) {
+                    return; // 如果匹配 #xx-xx 格式，则跳过，不添加到筛选区
+                }
+
+                const parts = tag.split('/');
+                if (parts.length > 1) {
+                    const category = parts[0];
+                    const subTag = parts.slice(1).join('/');
+                    if (!tagsByCategory[category]) {
+                        tagsByCategory[category] = new Set();
+                    }
+                    tagsByCategory[category].add(subTag);
+                } else {
+                    // 其他标签（包括 #NSFW）都进入“未分类”
+                    tagsByCategory['未分类'].add(tag);
+                }
             });
-            items = Array.from(tags);
-        } else {
-            // 收集所有作者
-            const authors = new Set(['all']);
-            [...allRemoteMods, ...allLocalMods].forEach(m => {
-                if(m.author) authors.add(m.author);
-            });
-            items = Array.from(authors);
         }
+    });
 
-        let html = '';
-        items.forEach(item => {
-            const activeClass = state.currentTag === item ? 'active' : '';
-            const displayName = item === 'all' ? (state.filterMode === 'tag' ? '全部标签' : '全部作者') : item;
-            html += `<button class="ws-tag-btn ${activeClass}" data-val="${item}">${displayName}</button>`;
-        });
-        container.innerHTML = html;
+    // 2. 构建HTML
+    let html = `<div class="ws-tag-group">
+        <div class="ws-tag-items">
+            <button class="ws-tag-btn ${state.currentTag === 'all' ? 'active' : ''}" data-tag="all">全部</button>
+        </div>
+    </div>`;
 
-        container.querySelectorAll('.ws-tag-btn').forEach(btn => {
-            btn.onclick = () => {
-                container.querySelectorAll('.ws-tag-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                state.currentTag = btn.dataset.val;
-                state.currentPage = 1;
-                refreshView();
-            };
-        });
+    const categoryOrder = ['官方/重要', '内容扩展', '功能增强', '界面美化', '流程控制', '系统工具', '主题'];
+    const sortedCategories = Object.keys(tagsByCategory).sort((a, b) => {
+        if (a.startsWith('官方/重要')) return -1;
+        if (b.startsWith('官方/重要')) return 1;
+        const indexA = categoryOrder.indexOf(a);
+        const indexB = categoryOrder.indexOf(b);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        if (a === '未分类') return 1;
+        if (b === '未分类') return -1;
+        return a.localeCompare(b);
+    });
+
+    for (const category of sortedCategories) {
+        const tags = Array.from(tagsByCategory[category]).sort();
+        if (tags.length === 0 && category !== '未分类') continue;
+
+        // 【修改】为 <details> 标签添加 'open' 属性，使其默认展开
+        html += `
+        <div class="ws-tag-group">
+            <details open>
+                <summary>${category}</summary>
+                <div class="ws-tag-items">
+                    <button class="ws-tag-btn ${state.currentTag === category ? 'active' : ''}" data-tag="${category}">全部</button>
+                    ${tags.map(tag => {
+                        const fullTag = category === '未分类' ? tag : `${category}/${tag}`;
+                        return `<button class="ws-tag-btn ${state.currentTag === fullTag ? 'active' : ''}" data-tag="${fullTag}">${tag}</button>`;
+                    }).join('')}
+                </div>
+            </details>
+        </div>`;
     }
-    // --- 辅助函数：检查脚本是否有效 ---
-    // 【修改点1】如果是 null, undefined 或 空字符串，则视为无效
-    function hasValidScript(mod) {
+
+    container.innerHTML = html;
+
+    // 3. 绑定事件 (保持不变)
+    container.querySelectorAll('.ws-tag-btn').forEach(btn => {
+        btn.onclick = () => {
+            if (btn.classList.contains('active') && btn.dataset.tag !== 'all') {
+                state.currentTag = 'all';
+            } else {
+                state.currentTag = btn.dataset.tag;
+            }
+            state.currentPage = 1;
+            state.allModsLoaded = false;
+            refreshView(true);
+        };
+    });
+}
+   function hasValidScript(mod) {
         if (mod.scriptUrl === 'local') return true; // 本地脚本默认认为有效
         return mod.scriptUrl && mod.scriptUrl.trim() !== "";
     }
@@ -16684,7 +16841,7 @@ async function checkUpdatesOnStartup() {
         author.innerHTML = `
             作者: ${mod.author}
             <button class="sub-btn ${authorBtnClass}" id="ws-sub-author-btn" style="margin-left:10px;">
-                ${isAuthorSubbed ? '❤️' : '🤍'} ${authorBtnText}
+                ${isAuthorSubbed ? '❤️' : '🤍 订阅作者'} ${authorBtnText}
             </button>
         `;
 
@@ -16704,7 +16861,7 @@ async function checkUpdatesOnStartup() {
         // 底部按钮组
         let btnHtml = '';
 
-        // 【新增】作品订阅按钮 (仅对远程模组有效)
+        // 作品订阅按钮 (仅对远程模组有效)
         if (mod.scriptUrl !== 'local') {
             const isModSubbed = state.subscriptions.has(`sub_mod_${mod.id}`);
             const modBtnText = isModSubbed ? '已订阅更新' : '订阅更新';
@@ -16743,7 +16900,7 @@ async function checkUpdatesOnStartup() {
                 const newState = await toggleSubscription(mod.author, 'author', mod.author);
                 // 刷新当前弹窗内的按钮状态
                 subAuthorBtn.className = `sub-btn ${newState ? 'subscribed' : ''}`;
-                subAuthorBtn.innerHTML = `${newState ? '❤️' : '🤍'} ${newState ? '已订阅作者' : '订阅作者'}`;
+                subAuthorBtn.innerHTML = `${newState ? '❤️' : '🤍 订阅作者'} ${newState ? '已订阅作者' : '订阅作者'}`;
             };
         }
 
@@ -17356,7 +17513,7 @@ async function checkUpdatesOnStartup() {
                 <!-- Header -->
                 <div style="padding: 15px 20px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background: rgba(0, 250, 255, 0.05);">
                     <div style="display:flex; align-items:center; gap: 10px;">
-                        <!-- 【新增】移动端抽屉开关按钮 -->
+                        <!-- 移动端抽屉开关按钮 -->
                         <button id="ws-drawer-toggle" class="ws-mobile-toggle control-btn" style="padding: 5px 10px;">☰ 预设</button>
                         <div style="display:flex; flex-direction:column;">
                             <span style="font-size: 16px; color: var(--primary-color); letter-spacing: 2px; font-weight: bold; text-transform: uppercase;">额外模组管理</span>
@@ -17696,22 +17853,22 @@ async function checkUpdatesOnStartup() {
         renderMatrix();
         renderPresets();
     }
-         async function loadDataAndRender() {
-    // 1. 获取订阅信息
+ async function loadDataAndRender() {
     await getSubscriptions();
 
-    // 2. 获取远程数据（如果启动时已加载，则跳过）
     if (allRemoteMods.length === 0) {
         try {
             let remoteData = [];
+            // 【修改】添加时间戳参数破除缓存
+            const noCacheUrl = `${REMOTE_URL}?t=${Date.now()}`;
+
             if (typeof loadRemoteJson !== 'function') {
-                const res = await fetch(REMOTE_URL);
+                const res = await fetch(noCacheUrl);
                 remoteData = await res.json();
             } else {
-                remoteData = await loadRemoteJson(REMOTE_URL, []);
+                remoteData = await loadRemoteJson(noCacheUrl, []);
             }
             allRemoteMods = remoteData;
-            // 【移除】不在这里检测更新，因为启动时已经检测过了
         } catch (e) {
             console.error("Fetch mods failed", e);
         }
@@ -17722,171 +17879,330 @@ async function checkUpdatesOnStartup() {
         renderFiltersUI(); // 使用新的渲染函数
         refreshView(true);
     }
-  // 【修改】refreshView 适配筛选模式及排序逻辑
     async function refreshView(needsRefilter = true) {
-        const container = document.getElementById('workshop-mod-list');
-        const userSettings = await getUserModSettings();
-        const settingsMap = new Map(userSettings.map(i => [String(i.id), i]));
+    const listContainer = document.getElementById('ws-mod-list-preview-v2');
+    if (!listContainer) return;
 
-        // 辅助函数：判断模组是否启用
-        const checkEnabled = (mod) => {
-            if (mod.scriptUrl === 'local') return mod.enabled;
-            const s = settingsMap.get(String(mod.id));
-            return s ? s.enabled : false;
-        };
+    // 重新筛选时，清空列表并重置状态
+    if (needsRefilter) {
+        listContainer.innerHTML = '<div class="workshop-loading">筛选中...</div>';
+        state.currentPage = 1;
+        state.allModsLoaded = false;
 
-        // 辅助函数：判断是否订阅
-        const checkSubscribed = (mod) => {
-            // 远程模组检查订阅ID，本地模组视为未订阅（或根据需求调整）
-            if (mod.scriptUrl === 'local') return false;
-            return state.subscriptions.has(`sub_mod_${mod.id}`);
-        };
+        const term = (document.getElementById('workshop-search-input-v2').value || '').toLowerCase();
+        state.searchTerm = term;
 
-        if(needsRefilter) {
-            const term = state.searchTerm.toLowerCase();
-            const list = [...allLocalMods, ...allRemoteMods];
+        const allMods = [...allLocalMods, ...allRemoteMods];
+          state.filteredList = allMods.filter(mod => {
+            // 【修改】更新标签匹配逻辑
+            const matchTag = state.currentTag === 'all' ||
+                             (mod.tags && mod.tags.some(t =>
+                                 t === state.currentTag || // 完全匹配 (如 "内容扩展/检定与规则")
+                                 t.startsWith(state.currentTag + '/') // 分类匹配 (如 "内容扩展")
+                             ));
 
-            // 1. 筛选
-            let tempFiltered = list.filter(mod => {
-                let matchFilter = true;
-                if (state.currentTag !== 'all') {
-                    if (state.filterMode === 'tag') {
-                        matchFilter = mod.tags && mod.tags.includes(state.currentTag);
-                    } else {
-                        matchFilter = mod.author === state.currentTag;
-                    }
-                }
-                const matchSearch = mod.name.toLowerCase().includes(term) ||
-                                  (mod.description && mod.description.toLowerCase().includes(term)) ||
-                                  (mod.author && mod.author.toLowerCase().includes(term));
-                return matchFilter && matchSearch;
-            });
-
-            // 2. 排序：已订阅 > 已启用 > 默认
-            tempFiltered.sort((a, b) => {
-                const subA = checkSubscribed(a) ? 1 : 0;
-                const subB = checkSubscribed(b) ? 1 : 0;
-                if (subA !== subB) return subB - subA; // 订阅优先
-
-                const enableA = checkEnabled(a) ? 1 : 0;
-                const enableB = checkEnabled(b) ? 1 : 0;
-                if (enableA !== enableB) return enableB - enableA; // 启用次之
-
-                return 0; // 保持原序
-            });
-
-            state.filteredList = tempFiltered;
-        }
-
-        renderPaginationUI(state.filteredList.length);
-        const start = (state.currentPage - 1) * state.itemsPerPage;
-        const pageItems = state.filteredList.slice(start, start + state.itemsPerPage);
-
-        const fragment = document.createDocumentFragment();
-
-        if(pageItems.length === 0) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.style.cssText = "padding:20px; text-align:center; color:#888; width:100%;";
-            emptyDiv.innerText = '没有找到相关模组';
-            fragment.appendChild(emptyDiv);
-        } else {
-            pageItems.forEach(mod => {
-                const isEnabled = checkEnabled(mod);
-                // ... (后续卡片渲染代码保持不变，直到 fragment.appendChild(card))
-
-                // 为了节省篇幅，这里省略了卡片内部 HTML 构建代码，
-                // 请保留原有的 card.innerHTML 构建逻辑，
-                // 只要确保 isEnabled 是通过上面的 checkEnabled 获取的即可。
-
-                const card = document.createElement('div');
-                card.className = 'mod-card';
-                card.style.cursor = 'pointer';
-
-                const tagsHtml = (mod.tags || []).slice(0, 3).map(t => `<span class="mod-tag-badge">${t}</span>`).join('');
-
-                let actionBtnHtml = '';
-                if(hasValidScript(mod)) {
-                    const btnText = isEnabled ? '禁用' : '启用';
-                    const style = isEnabled
-                        ? `border:1px solid var(--danger-color); color:var(--danger-color);`
-                        : `border:1px solid var(--success-color); color:var(--success-color);`;
-                    actionBtnHtml += `<button class="card-action-btn" style="${style} background:transparent; padding:2px 8px; font-size:12px; cursor:pointer;">${btnText}</button>`;
-                } else {
-                    actionBtnHtml += `<span style="font-size:11px; color:#555;">无脚本</span>`;
-                }
-
-                if(hasValidWorldBook(mod)) {
-                    actionBtnHtml += `<button class="card-dl-btn" style="border:1px solid var(--primary-color); color:var(--primary-color); background:transparent; padding:2px 8px; font-size:12px; cursor:pointer; margin-left:5px;">⬇ 世界书</button>`;
-                }
-
-                // 增加订阅标识 (可选)
-                let subIndicator = '';
-                if (checkSubscribed(mod)) {
-                    subIndicator = `<span style="color:var(--primary-color); font-size:12px; margin-left:5px;">★</span>`;
-                }
-
-                card.innerHTML = `
-                    <div class="mod-header">
-                        <div class="mod-title">${mod.name}${subIndicator}</div>
-                        <div class="mod-tags">${tagsHtml}</div>
-                    </div>
-                    <div class="mod-desc" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px;  margin:5px 0;">
-                    ${mod.description}
-                    </div>
-                    <div class="mod-card-actions">
-                        <div style="font-size:12px; color:#888;">v${mod.version || '1.0'}</div>
-                        <div class="card-buttons">${actionBtnHtml}</div>
-                    </div>
-                `;
-
-                // ... (原有的 onclick 事件绑定代码保持不变)
-                card.onclick = (e) => {
-                    const toggleCallback = async () => {
-                        if(mod.scriptUrl === 'local') {
-                            await toggleLocalStatus(mod.id, !isEnabled);
-                            mod.enabled = !isEnabled;
-                        } else {
-                            await toggleModStatus(mod.id, !isEnabled, mod);
-                        }
-                    };
-                    openDetailModal(mod, isEnabled, toggleCallback);
-                };
-
-                const scriptBtn = card.querySelector('.card-action-btn');
-                if(scriptBtn) {
-                    scriptBtn.onclick = async (e) => {
-                        e.stopPropagation();
-                        if(mod.scriptUrl === 'local') {
-                            await toggleLocalStatus(mod.id, !isEnabled);
-                            mod.enabled = !isEnabled;
-                        } else {
-                            await toggleModStatus(mod.id, !isEnabled, mod);
-                        }
-                        refreshView(false); // 保持当前页刷新
-                    };
-                }
-
-                const dlBtn = card.querySelector('.card-dl-btn');
-                if(dlBtn) {
-                    dlBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if(window.NovaWorkshop.downloadWorldBook) {
-                            const fileName = mod.is_dowload_raw_name
-                                ? mod.worldBookUrl.split('/').pop()
-                                : `${mod.id}.json`;
-                            window.NovaWorkshop.downloadWorldBook(mod.worldBookUrl, fileName);
-                        }
-                    };
-                }
-
-                fragment.appendChild(card);
-            });
-        }
-
-        container.innerHTML = '';
-        container.appendChild(fragment);
+            const matchSearch = !term || mod.name.toLowerCase().includes(term) ||
+                              (mod.description && mod.description.toLowerCase().includes(term)) ||
+                              (mod.author && mod.author.toLowerCase().includes(term));
+            return matchTag && matchSearch;
+        });
     }
-     async function downloadFile(url, filename) {
+
+    const start = (state.currentPage - 1) * state.itemsPerPage;
+    const end = start + state.itemsPerPage;
+    const pageItems = state.filteredList.slice(start, end);
+
+    if (needsRefilter) {
+        listContainer.innerHTML = ''; // 清空加载提示
+    }
+
+    if (state.filteredList.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">未找到匹配的模组</div>';
+        renderDetailPanel(null); // 清空右侧详情
+        return;
+    }
+
+    // 渲染当页的卡片
+    pageItems.forEach(mod => {
+        const card = createPreviewCard(mod);
+        listContainer.appendChild(card);
+    });
+
+    // 更新加载状态
+    if (end >= state.filteredList.length) {
+        state.allModsLoaded = true;
+        // 可以在这里添加一个“已全部加载”的提示
+    }
+
+     if (needsRefilter && state.filteredList.length > 0) {
+        state.selectedModId = state.filteredList[0].id;
+
+        // 如果不是移动端，则自动显示第一个的详情
+        if (window.innerWidth > 768) {
+            renderDetailPanel(state.filteredList[0]);
+        }
+
+        // 无论如何都高亮第一个卡片
+        const firstCard = listContainer.querySelector('.mod-preview-card');
+        if (firstCard) firstCard.classList.add('active');
+    } else {
+        // 刷新时保持高亮
+        highlightSelectedCard();
+    }
+}
+ function createPreviewCard(mod) {
+    const card = document.createElement('div');
+    card.className = 'mod-preview-card';
+    card.dataset.modId = mod.id;
+
+    const tagsHtml = (mod.tags || []).slice(0, 2).map(t => {
+        const tagName = t.includes('/') ? t.split('/')[1] : t;
+        return `<span class="mod-preview-tag-badge">${tagName}</span>`;
+    }).join('');
+
+    // 【修改】图片处理逻辑
+    let imgHtml = '';
+    if (mod.previewImage) {
+        imgHtml = `<img src="${mod.previewImage}" class="mod-preview-img">`;
+    } else {
+        imgHtml = `<div class="mod-no-img-placeholder">暂无图片</div>`;
+    }
+
+    card.innerHTML = `
+        ${imgHtml}
+        <div class="mod-preview-info">
+            <div class="mod-preview-title">${mod.name}</div>
+            <div class="mod-preview-author">by ${mod.author || 'Unknown'} | v${mod.version || '1.0'}</div>
+            <div class="mod-preview-tags">${tagsHtml}</div>
+        </div>
+    `;
+    card.onclick = () => {
+        state.selectedModId = mod.id;
+        renderDetailPanel(mod);
+        highlightSelectedCard();
+    };
+    return card;
+}
+ 
+ async function renderDetailPanel(mod) {
+    const desktopContainer = document.getElementById('ws-panel-right-v2');
+    const mobileModal = document.getElementById('ws-mobile-detail-container'); // 这是遮罩层
+
+    // --- 新增：获取内容容器的引用 ---
+    const mobileContentContainer = document.getElementById('ws-mobile-detail-content');
+
+
+    if (!mod) {
+        desktopContainer.innerHTML = `<div class="ws-panel-right-placeholder"><p>从左侧列表选择一个模组<br>以查看详情</p></div>`;
+        return;
+    }
+
+    const userSettings = await getUserModSettings();
+    const settingsMap = new Map(userSettings.map(i => [String(i.id), i]));
+    const modSetting = settingsMap.get(String(mod.id));
+    const isEnabled = mod.scriptUrl === 'local' ? mod.enabled : (modSetting ? modSetting.enabled : false);
+    const isAuthorSubbed = state.subscriptions.has(`sub_author_${mod.author}`);
+    const isModSubbed = state.subscriptions.has(`sub_mod_${mod.id}`);
+const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
+    const featureTagsHtml = featureTags.map(t => {
+        const tagName = t.substring(1).replace(/-/g, ':'); // 移除'#'并替换'-'为空格
+        return `<span class="mod-preview-tag-badge" >${tagName}</span>`;
+    }).join('');
+    // 按钮组构建
+    let actionsHtml = '';
+    if (mod.scriptUrl !== 'local') {
+        actionsHtml += `<button class="control-btn sub-btn ${isModSubbed ? 'subscribed' : ''}" data-action="sub-mod">
+            ${isModSubbed ? '🔔 已订阅' : '🔕 订阅更新'}
+        </button>`;
+    }
+    if (hasValidWorldBook(mod)) {
+        actionsHtml += `<button class="control-btn" data-action="download-wb">📘 下载世界书</button>`;
+    }
+    if (hasValidScript(mod)) {
+        actionsHtml += `<button class="control-btn ${isEnabled ? 'danger-btn' : ''}" data-action="toggle-script">
+            ${isEnabled ? '🔴 禁用脚本' : '🟢 启用脚本'}
+        </button>`;
+    }
+    if (mod.scriptUrl === 'local') {
+        actionsHtml += `<button class="control-btn" data-action="edit-local">✏️ 编辑</button>`;
+    }
+
+    // 【修改点1】图片处理：无图片则不显示任何内容，节省空间
+    const imgDisplay = mod.previewImage
+        ? `<img src="${mod.previewImage}" class="ws-detail-img" data-action="zoom-img">`
+        : ``; // 空字符串
+
+    // Markdown 解析
+    const descHtml = simpleMarkdownParser(mod.description);
+
+    // 详情页 HTML 结构
+    const detailHtml = `
+        <div class="ws-detail-view">
+            <div class="ws-detail-header" style="display:block;">
+                <h2 class="ws-detail-title" style="margin-bottom: 8px;">${mod.name}</h2>
+                <div class="ws-detail-meta" style="text-align: left; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span class="ws-detail-author">
+                            作者: ${mod.author}
+                            <button class="sub-btn ${isAuthorSubbed ? 'subscribed' : ''}" data-action="sub-author" style="margin-left: 5px;">
+                                ${isAuthorSubbed ? '❤️' : '🤍 订阅作者'}
+                            </button>
+                        </span>
+                        <span>版本: ${mod.version || '1.0'}</span>
+                    </div>
+                    <!-- 特性标签展示区域 -->
+                    ${featureTagsHtml ? `<div class="mod-preview-tags" style="margin-top: 5px;">${featureTagsHtml}</div>` : ''}
+                </div>
+            </div>
+
+            ${imgDisplay}
+
+            <div class="ws-detail-actions">${actionsHtml}</div>
+
+            <div class="ws-detail-desc">${descHtml}</div>
+        </div>
+    `;
+
+
+    // --- 修改点：移动端渲染逻辑 ---
+    if (window.innerWidth <= 768) {
+        // 将详情内容注入到内容容器，而不是整个模态框
+        mobileContentContainer.innerHTML = detailHtml;
+
+        // 激活模态框
+        mobileModal.classList.add('active');
+
+        // 为新渲染的内容绑定事件
+        bindDetailEvents(mobileContentContainer, mod, isEnabled);
+
+    } else {
+        desktopContainer.innerHTML = detailHtml;
+        bindDetailEvents(desktopContainer, mod, isEnabled);
+    }
+ 
+}
+function simpleMarkdownParser(text) {
+    if (!text) return '暂无简介';
+    let html = text
+        .replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">") // 转义 HTML
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>')
+        .replace(/\*(.*)\*/gim, '<i>$1</i>')
+        .replace(/`(.*?)`/gim, '<code>$1</code>')
+        .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+        .replace(/\n/g, '<br>');
+    return html;
+}
+//  为详情面板绑定事件的函数
+function bindDetailEvents(container, mod, isEnabled) {
+    // --- 新增：为移动端弹窗绑定关闭事件 ---
+    const mobileModal = document.getElementById('ws-mobile-detail-container');
+    const closeBtn = document.getElementById('ws-mobile-close-btn-action');
+
+    const closeModal = () => {
+        if (mobileModal) mobileModal.classList.remove('active');
+    };
+
+    if (closeBtn) closeBtn.onclick = closeModal;
+    // 点击遮罩层背景关闭
+    if (mobileModal) {
+        mobileModal.onclick = (e) => {
+            if (e.target === mobileModal) {
+                closeModal();
+            }
+        };
+    }
+    container.querySelector('[data-action="sub-author"]')?.addEventListener('click', async (e) => {
+        const newState = await toggleSubscription(mod.author, 'author', mod.author);
+        e.target.className = `sub-btn ${newState ? 'subscribed' : ''}`;
+        e.target.innerHTML = `${newState ? '❤️ 已订阅' : '🤍 订阅作者'}`;
+    });
+
+    container.querySelector('[data-action="sub-mod"]')?.addEventListener('click', async (e) => {
+        const newState = await toggleSubscription(mod.id, 'mod', mod.name);
+        e.target.className = `control-btn sub-btn ${newState ? 'subscribed' : ''}`;
+        e.target.innerHTML = `${newState ? '🔔 已订阅' : '🔕 订阅更新'}`;
+    });
+
+    container.querySelector('[data-action="toggle-script"]')?.addEventListener('click', async () => {
+        if (mod.scriptUrl === 'local') {
+            await toggleLocalStatus(mod.id, !isEnabled);
+            mod.enabled = !isEnabled;
+        } else {
+            await toggleModStatus(mod.id, !isEnabled, mod);
+        }
+        // 重新渲染详情以更新按钮状态
+        renderDetailPanel(mod);
+    });
+
+    container.querySelector('[data-action="download-wb"]')?.addEventListener('click', () => {
+        const fileName = mod.is_dowload_raw_name ? mod.worldBookUrl.split('/').pop() : `${mod.id}.json`;
+        window.NovaWorkshop.downloadWorldBook(mod.worldBookUrl, fileName);
+    });
+
+    container.querySelector('[data-action="edit-local"]')?.addEventListener('click', () => {
+        if (window.innerWidth <= 768) document.getElementById('ws-mobile-detail-container').classList.remove('active');
+        openDevCenter('local', mod);
+    });
+
+    container.querySelector('[data-action="zoom-img"]')?.addEventListener('click', (e) => {
+        showFullImage(e.target.src);
+    });
+ container.querySelector('[data-action="toggle-script"]')?.addEventListener('click', async () => {
+        const newStatus = !isEnabled;
+
+        if (mod.scriptUrl === 'local') {
+            await toggleLocalStatus(mod.id, newStatus);
+            mod.enabled = newStatus;
+
+            // 立即执行本地脚本
+            if (newStatus) {
+                try {
+                    const script = document.createElement('script');
+                    script.textContent = mod.scriptContent;
+                    script.setAttribute('data-local-mod-id', String(mod.id));
+                    document.body.appendChild(script);
+                    showNovaAlert(`脚本 [${mod.name}] 已启用并立即执行`);
+                } catch(e) {
+                    console.error(e);
+                    showNovaAlert(`执行失败: ${e.message}`);
+                }
+            }
+        } else {
+            await toggleModStatus(mod.id, newStatus, mod);
+
+            // 立即执行远程脚本
+            if (newStatus) {
+                try {
+                    // 检查是否已存在
+                    if(!document.querySelector(`script[data-mod-id="${mod.id}"]`)) {
+                        const script = document.createElement('script');
+                        // 同样加上时间戳防止缓存
+                        const cleanUrl = mod.scriptUrl.split('?')[0];
+                        script.src = `${cleanUrl}?t=${Date.now()}`;
+                        script.setAttribute('data-mod-id', String(mod.id));
+                        document.body.appendChild(script);
+                        showNovaAlert(`脚本 [${mod.name}] 已启用并立即执行`);
+                    }
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+        }
+        // 重新渲染详情以更新按钮状态
+        renderDetailPanel(mod);
+    });
+}
+ 
+// 高亮当前选中卡片的辅助函数
+function highlightSelectedCard() {
+    document.querySelectorAll('.mod-preview-card').forEach(c => {
+        c.classList.toggle('active', c.dataset.modId === String(state.selectedModId));
+    });
+}
+      async function downloadFile(url, filename) {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
@@ -17949,16 +18265,30 @@ async function checkUpdatesOnStartup() {
                 openManagementPanel(); // <--- 指向新面板
             };
         }
-        const searchInput = document.getElementById('workshop-search-input');
-        const searchBtn = document.getElementById('workshop-search-btn');
-        if(searchBtn) searchBtn.onclick = () => {
-            state.searchTerm = searchInput.value;
-            state.currentPage = 1;
-            refreshView(true);
+       const searchInput = document.getElementById('workshop-search-input-v2');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.oninput = () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                refreshView(true);
+            }, 300); // 延迟搜索，提高体验
         };
+    }
+
+    // 2. 无限滚动事件
+    const listContainer = document.getElementById('ws-mod-list-preview-v2');
+    if (listContainer) {
+        listContainer.onscroll = () => {
+            // 当滚动条接近底部，并且还有未加载的模组时
+            if (!state.allModsLoaded && listContainer.scrollTop + listContainer.clientHeight >= listContainer.scrollHeight - 100) {
+                state.currentPage++;
+                refreshView(false); // 加载下一页，不重新筛选
+            }
+        };
+    }
 
  
-
         // 重新加载运行时 (Reload Runtime)
         const reloadBtn = document.getElementById('workshop-reload-runtime-btn');
         if(reloadBtn) reloadBtn.onclick = () => {
@@ -17975,7 +18305,7 @@ async function checkUpdatesOnStartup() {
         });
     }
 
-    // 【修改】执行脚本：严格过滤 enabled 状态
+    //  执行脚本：严格过滤 enabled 状态
     async function executeActiveMods() {
         await initDB();
 
@@ -18014,16 +18344,49 @@ async function checkUpdatesOnStartup() {
             } catch(e) { console.error(`本地脚本 ${mod.name} 执行失败`, e); }
         });
     }
+    
+    
+    
     return {
 init: async function() {
     await initDB();
     bindEvents();
-    // 【新增】主界面加载时检查更新
+    // 主界面加载时检查更新
     await checkUpdatesOnStartup();
+    // 1. 获取左右面板的DOM引用
+        const leftPanel = document.querySelector('.ws-panel-left');
+        const rightPanel = document.querySelector('.ws-panel-right');
+
+        // 2. 检查元素是否存在，确保代码健壮性
+        if (leftPanel && rightPanel) {
+            // 3. 创建一个 ResizeObserver 实例
+            const resizeObserver = new ResizeObserver(entries => {
+                // entries[0] 就是被观察的元素 (leftPanel)
+                const leftPanelHeight = entries[0].contentRect.height;
+
+                // 4. 将左侧面板的高度设置为右侧面板的 max-height
+                // 使用 requestAnimationFrame 可以在下一次浏览器重绘前更新，避免布局抖动
+                requestAnimationFrame(() => {
+                    rightPanel.style.maxHeight = `${leftPanelHeight}px`;
+                });
+            });
+
+            // 5. 开始观察左侧面板的尺寸变化
+            resizeObserver.observe(leftPanel);
+
+            // 6. 初始加载时手动触发一次高度设置，以防初始状态不匹配
+            const initialHeight = leftPanel.clientHeight;
+            rightPanel.style.maxHeight = `${initialHeight}px`;
+
+        } else {
+            console.warn("Workshop panels not found, height synchronization disabled.");
+        }
+
 },
 showInputModal:showInputModal,
         runMods: executeActiveMods,
        downloadWorldBook: downloadFile  
+       
     };
 })();
 
@@ -20544,7 +20907,7 @@ if (teammateCountLabel) teammateCountLabel.textContent = '人数';
             store.get(key).onsuccess = e => resolve(e.target.result);
         });
     },
-    // ✨【新增】专门用来获取所有钥匙（文件名）的方法 ✨
+    // ✨专门用来获取所有钥匙（文件名）的方法 ✨
     async keys(storeName) {
         if (!this.stores.includes(storeName)) throw new Error(`未知的保险箱: ${storeName}`);
         return this._transaction(storeName, 'readonly', (store, resolve) => {
@@ -27973,7 +28336,6 @@ qqSearch: async function(songName, singerName, httpGet) {
         // console.log('    数据歌名:', `"${songData.song}" → "${dataSongNorm}"`);
         // console.log('    数据歌手:', `"${songData.singer}" → "${dataSingerNorm}"`);
         
-            
  if (dataSongNorm === querySongNorm) {
     score += 120;   // 原100 → 提高一点，强化精准命中
 } else {
@@ -27996,7 +28358,13 @@ if (querySingerNorm && dataSingerNorm) {
         score += singerScore;
     }
 }
- 
+        
+        // Live版本惩罚
+        // if (songData.song.match(/live/gi)) {
+        //     score -= 30;
+            
+        // }
+        
         // console.log('    总分:', score);
         return score;
     };
@@ -37662,9 +38030,18 @@ let backupData = {};
 
             // 检查是否需要用户确认 (仅在 Batch 1 -> Batch 2 之间保留确认逻辑，或者根据配置)
             let userConfirmed = true;
-            if (currentBatchIndex === 1 && nextStep.batchIndex === 2 && if_confirm_phase2_generation === 'true') {
-                 userConfirmed = await createConfirmationModal('第二阶段确认', '是否继续生成记忆更新？');
-            }
+            if (if_confirm_phase2_generation === 'true') {
+                if(currentBatchIndex === 1 && nextStep.batchIndex === 2 ){
+ userConfirmed = await createConfirmationModal('正文确认', '请检查正文，是否继续生成记忆更新？');
+           
+                }else if(currentBatchIndex === 0 && nextStep.batchIndex === 1){
+                   userConfirmed = await createConfirmationModal(`预处理层确认`,`请检查预处理层，是否继续生成正文？`);
+     
+                }else if(currentBatchIndex !== 1){
+   userConfirmed = await createConfirmationModal(`batch ${currentBatchIndex}确认`,`请检查当前生成的内容，是否继续？`);
+     
+                }
+                 } 
 
             if (userConfirmed) {
                 // UI 状态恢复 (解锁按钮，因为 handleSend 开头会重新锁)
@@ -48449,55 +48826,59 @@ function renderNestedData(container, data, parentPath = '', rootTab = '', hideFa
     }
      container.appendChild(treeRoot);
 }
+/**
+ * 处理批量操作的辅助函数
+ * @param {Array} dataEntries - 当前分类的数据条目数组
+ * @param {string} currentTab - 当前的标签页名称
+ * @param {'set_filter' | 'unset_filter'} actionType - 操作类型
+ */
+function handleBatchAction(dataEntries, currentTab, actionType) {
+    const isSettingFilter = actionType === 'set_filter';
+    const rootPath = getEntryPath(currentTab);
+    let commands = [];
 
-function renderWorldBook() {
-    if(is_worldbook_lock === "true"){
-showNovaAlert("识小球不会渲染了");
-return;
+    // 遍历当前分类下的所有顶级条目
+    for (const [key, value] of dataEntries) {
+        // 确保我们只对对象类型的条目操作
+        if (typeof value === 'object' && value !== null) {
+            const fullPath = `${rootPath}.${key}`;
+            // 构建批量命令
+            commands.push(`memory('${fullPath}', '_filter', ${isSettingFilter})`);
+        }
+    }
+
+    // 如果有命令需要执行，就将它们组合成一个输入发送出去
+    if (commands.length > 0) {
+        const finalCommand = commands.join('; ');
+        generateAndSendCommand(finalCommand);
+        const actionText = isSettingFilter ? '设为绿灯' : '取消绿灯';
+        showNovaAlert(`已为 ${commands.length} 个条目执行【${actionText}】操作。`);
+    } else {
+        showNovaAlert('当前分类下没有可操作的条目。');
+    }
+}
+ function renderWorldBook() {
+    if (is_worldbook_lock === "true") {
+        showNovaAlert("识小球不会渲染了");
+        return;
     }
     const { currentTab, currentPage, itemsPerPage } = worldBookState;
     const displayArea = document.getElementById('book-display-area');
     const pageInfo = document.getElementById('book-page-info');
 
-    displayArea.innerHTML = ''; // 每次渲染前，都先擦干净书页
+    // 【修改】获取新的批量操作按钮容器
+    const batchActionsContainer = document.getElementById('book-batch-actions-container');
+
+    displayArea.innerHTML = '';
+
+    // 【修改】每次渲染时，清空旧的按钮，防止重复
+    if (batchActionsContainer) {
+        batchActionsContainer.innerHTML = '';
+    }
+
 
     if (currentTab === 'the_created') {
-        if (typeof currentGameData !== 'undefined' && currentGameData.world && currentGameData.the_created) {
-            const createdData = currentGameData.the_created;
-            const entryDiv = document.createElement('div');
-            entryDiv.className = 'book-entry created-entry';
-
-            const titleMap = {
-                "name": "名字",
-                "identity_in_world": "世界身份",
-                "current_status": "当前状态",
-                "mood": "当前心情",
-                "description": "详细介绍"
-            };
-
-            let contentHTML = '<div class="created-header"></div>';
-            for (const key in createdData) {
-                if (Object.hasOwnProperty.call(createdData, key)) {
-                    const valueArray = createdData[key];
-                    const displayValue = Array.isArray(valueArray) ? valueArray[0] : valueArray;
-                    const displayName = titleMap[key] || key;
-
-                    contentHTML += `
-                        <div class="created-item">
-                            <div class="created-key">${displayName}</div>
-                            <div class="created-value">${displayValue}</div>
-                        </div>
-                    `;
-                }
-            }
-            entryDiv.innerHTML = contentHTML;
-            displayArea.appendChild(entryDiv);
-            pageInfo.textContent = '1 / 1';
-            document.getElementById('book-prev-page').disabled = true;
-            document.getElementById('book-next-page').disabled = true;
-        } else {
-            displayArea.innerHTML = `<p class="book-empty-text">尚未发现此地的造物。</p>`;
-        }
+  
     } else {
         // --- 这部分是我们旧的魔法，现在要用新的来替换一部分 ---
         let sourceData = {};
@@ -48531,6 +48912,47 @@ return;
             // 现在，我们把判断是不是有东西和分页的逻辑，都放在顶层来处理
             const dataEntries = Object.entries(dataToRender);
             const totalItems = dataEntries.length;
+  if (totalItems > 0 && batchActionsContainer) {
+
+                // --- 按钮1: 全部设为绿灯 ---
+                const btnSetAllFilter = document.createElement('button');
+                btnSetAllFilter.className = 'book-button batch-action-btn'; // 使用统一的按钮样式
+                btnSetAllFilter.textContent = '全部绿灯';
+                btnSetAllFilter.title = '将当前分类下的所有顶级条目设为绿灯';
+                btnSetAllFilter.onclick = () => {
+                    handleBatchAction(dataEntries, currentTab, 'set_filter');
+                };
+
+                // --- 按钮2: 全部取消绿灯 ---
+                const btnUnsetAllFilter = document.createElement('button');
+                btnUnsetAllFilter.className = 'book-button batch-action-btn';
+                btnUnsetAllFilter.textContent = '全部蓝灯';
+                btnUnsetAllFilter.title = '取消当前分类下所有顶级条目的绿灯状态';
+                btnUnsetAllFilter.onclick = () => {
+                    handleBatchAction(dataEntries, currentTab, 'unset_filter');
+                };
+
+                // --- 按钮3: 全部删除 (危险操作) ---
+                const btnDeleteAll = document.createElement('button');
+                btnDeleteAll.className = 'book-button batch-action-btn danger'; // 添加危险样式
+                btnDeleteAll.textContent = '全部删除';
+                btnDeleteAll.title = '删除当前分类下的所有条目。可在令小盒撤销';
+                btnDeleteAll.onclick = () => {
+                    // 对于危险操作，最好弹出一个确认框
+ 
+                        const rootPath = getEntryPath(currentTab);
+                        const command = `delete('${rootPath}', 'all')`;
+                        generateAndSendCommand(command);
+                        showNovaAlert(`已发送删除【${currentTab.replace(/global_|world_/, '')}】全部内容的指令。`);
+               
+                };
+
+                // 将按钮添加到容器中
+                batchActionsContainer.appendChild(btnSetAllFilter);
+                batchActionsContainer.appendChild(btnUnsetAllFilter);
+                batchActionsContainer.appendChild(btnDeleteAll);
+            }
+            // ==================【逻辑结束】==================
 
             if (totalItems === 0) {
                  displayArea.innerHTML = `<p class="book-empty-text">这里空空如也。</p>`;
@@ -53984,7 +54406,8 @@ this.isAoeAttack = false;            // 标记当前是否为群攻流程
     this.status = initialCombatData.status || 'not_started';
     this.combatData = initialCombatData;  
       let finalPlayerData;
- 
+
+    
     if (window.combatManager && window.combatManager.floorId === this.floorId) {
         // 直接继承当前活跃的 combatManager 的 player 对象，这是最最真实的数据！
         finalPlayerData = window.combatManager.player;
@@ -54610,9 +55033,9 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
         isPersuaded: null,
         isScanned: type === 'teammate' ? true : (data.isScanned || false),
         saves: data.saves || {
-            "强韧":   0,
-            "反射":   0,
-            "意志": data.衍生属性?.意志力?.意志值[0] || 0
+            "强韧": data.衍生属性?.豁免检定基础.强韧[0] || 0,
+            "反射": data.衍生属性?.豁免检定基础.反射[0] || 0,
+            "意志": data.衍生属性?.豁免检定基础.意志[0] || 0
         },
           raw_data: JSON.parse(JSON.stringify(data)) // 为所有角色深度拷贝一份原始数据
     };
@@ -54635,11 +55058,11 @@ console.log("所有敌人创建完毕, 当前敌人列表:", this.enemies.map(e 
                         });
                     });
                      // 提取体积
-                    
-                        fullPool['体积'] = 5;
-                 
+                    if (data.衍生属性) {
+                        fullPool['体积'] = data.衍生属性.体积[0];
+                    }
 if (data.衍生属性 && data.衍生属性.先攻) {
-    fullPool['先攻'] = 5;
+    fullPool['先攻'] = data.衍生属性.先攻[0];
 }
                     character.dicePool = fullPool;
                 }
