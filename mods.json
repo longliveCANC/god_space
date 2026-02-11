@@ -546,4 +546,18 @@
    "previewImage": "https://longlivecanc.github.io/god_space/workShop/img/image copy 33.png",
  
    "description": "如图，会去记录剧情线，不过AI实在是太喜欢记流水账了，我就设置每条剧情线如果有10个事件就自动浓缩了。这个阈值你愿意的也可以进去改。" }
-]
+
+ ,{
+    "id": "更精准的bgm",
+     "is_dowload_raw_name":true,
+    "name": "更精准的bgm",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["小功能"],
+   "description": "这本世界书会让AI在选歌前先想一下。其实就只是加了一句在最后面：\n你需要使用一个单独的<!-- music check: ${思考内容} -->包裹思考内容，应该挑选哪首歌。\n你完全可以自己diy。额外的：\n那个关掉的条目是内部有挑了一些2026年比较流行的歌（网易云推荐非主包口味，后面的听感描述也都是抄的网易云评论，非主包创作），这个主要是做一个示例，你可以在里面放你喜欢的歌，哈基米会优先去里面挑。\n这两个条目我都将bgm默认放到变量层了，因为太耗脑力，如果是同步层，这俩条目直接都不生效。\n最后，如果发现消息结束后bgm没有播放，请在设置-模组设置-高级设置开启：完整渲染时再次播放bgm。",
+   "scriptUrl": "",
+    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-更精准的bgm.json",
+ 
+    "previewImage": ""
+}
+  ]
