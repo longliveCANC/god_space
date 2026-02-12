@@ -385,22 +385,36 @@
         } catch (e) { return {}; }
     }
 
-    // 通用渲染：将对象渲染为键值对列表
-    function renderGenericContent(data) {
-        if (typeof data === 'string') return `<div style="white-space: pre-wrap;">${data}</div>`;
-        if (typeof data !== 'object' || data === null) return String(data);
+  function renderGenericContent(data, isNested = false) {
+        // 基本类型或 null，直接返回值
+        if (typeof data !== 'object' || data === null) {
+            return `<div class="mod20-v">${String(data)}</div>`;
+        }
 
+        // 如果是数组，递归渲染每一项
+        if (Array.isArray(data)) {
+            return data.map(item => renderGenericContent(item, true)).join('');
+        }
+
+        // 如果是对象，遍历键值对
         return Object.entries(data).map(([k, v]) => {
-            let valStr = '';
-            if (typeof v === 'object' && v !== null) {
-                valStr = JSON.stringify(v, null, 2); // 兜底嵌套对象
-            } else {
-                valStr = v;
+            // 如果值是对象（非数组），则创建一个嵌套的键值对结构
+            if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+                return `
+                    <div class="mod20-kv">
+                        <span class="mod20-k">${translate(k)}</span>
+                        <div class="mod20-v" style="padding-left: 20px; border-left-color: rgba(255,255,255,0.2);">
+                            ${renderGenericContent(v, true)}
+                        </div>
+                    </div>
+                `;
             }
+
+            // 如果值是基本类型或数组，则直接渲染
             return `
                 <div class="mod20-kv">
                     <span class="mod20-k">${translate(k)}</span>
-                    <div class="mod20-v">${valStr}</div>
+                    ${renderGenericContent(v, true)}
                 </div>
             `;
         }).join('');

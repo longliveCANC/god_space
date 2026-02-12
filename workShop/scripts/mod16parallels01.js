@@ -707,6 +707,22 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
             this.orbId = 'world-book-orb';
             this.wheelId = 'mod16-wheel-container';
             this.init();
+            this.translationMap = {
+    'info': '信息',
+    'type': '类型',
+    'name': '名称',
+    'desc': '描述',
+    'description': '描述',
+    'status': '状态',
+    'progress': '进展',
+    'source': '来源',
+    'details': '详情',
+    'update_time': '更新时间',
+    'title': '标题',
+    'content': '内容',
+    'quality':'品质'
+     
+};
         }
 
   init() {
@@ -1132,15 +1148,13 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
             });
         }
 
-        // --- 新增：递归数据格式化器 (核心) ---
-        formatDataRecursive(data, isRoot = true) {
+ formatDataRecursive(data, isRoot = true) {
             if (data === null || data === undefined) {
                 return '<span style="color:gray; font-style:italic">无数据</span>';
             }
 
             // 1. 处理字符串 (如果是长文本，特殊处理)
             if (typeof data === 'string') {
-                // 如果包含换行符，或者长度超过50，视为长文本段落
                 if (data.includes('\n') || data.length > 50) {
                     return `<div class="mod16-long-text">${data}</div>`;
                 }
@@ -1156,7 +1170,6 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
             if (Array.isArray(data)) {
                 if (data.length === 0) return '<span style="color:gray">[]</span>';
 
-                // 如果是纯字符串数组，用逗号连接更简洁？或者列表？这里选择列表
                 let html = `<div class="mod16-info-group">`;
                 data.forEach((item, index) => {
                     html += `
@@ -1170,25 +1183,27 @@ window.Mod16WheelManager = window.Mod16WheelManager || (function() {
                 return html;
             }
 
-            // 4. 处理对象 (核心逻辑)
-            // 这里的逻辑是：直接展开所有 Key: Value
+            // 4. 处理对象 (核心修改逻辑)
             let html = isRoot ? '' : `<div class="mod16-info-group">`;
 
             Object.entries(data).forEach(([key, value]) => {
-                // 判断值是否是复杂对象，决定是否换行显示
+                // [修改] 过滤以下划线开头的字段
+                if (key.startsWith('_')) {
+                    return; // 跳过此条目
+                }
+
+                // [修改] 尝试汉化键名
+                const displayKey = this.translationMap[key.toLowerCase()] || key;
+
                 const isComplex = typeof value === 'object' && value !== null;
 
                 html += `<div class="mod16-info-row">`;
+                // 使用汉化后的键名
+                html += `<span class="mod16-info-key">${displayKey}</span>`;
 
-                // 键名
-                html += `<span class="mod16-info-key">${key}</span>`;
-
-                // 如果是复杂对象，标题后换行，然后渲染内容
                 if (isComplex) {
-                    // 递归调用
                     html += this.formatDataRecursive(value, false);
                 } else {
-                    // 简单值，直接跟在后面
                     html += this.formatDataRecursive(value, false);
                 }
 
