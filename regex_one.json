@@ -15351,7 +15351,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.16';
+window.current_game_version = '3.7.17';
 
 
 
@@ -25468,11 +25468,15 @@ async function loadPreviousMessages() {
     }
 }
 
-function limitConsecutiveNewlines(text, maxNewlines = 2) {
-    // 将3个及以上的换行符替换为最多2个
+ function limitConsecutiveNewlines(text, maxNewlines = 2) {
+    // 1. 先删除每行末尾的空白字符（空格、制表符）
+    text = text.replace(/[ \t]+$/gm, '');
+    
+    // 2. 将连续的换行符（3个或以上）替换为指定数量
     const regex = new RegExp(`\n{${maxNewlines + 1},}`, 'g');
     return text.replace(regex, '\n'.repeat(maxNewlines));
 }
+
  async function renderReadingModeChapter(msg) {
     // 使用一个临时的 div 元素来辅助 DOM 操作，最终返回其 innerHTML
     const bubble = document.createElement('div');
@@ -25528,7 +25532,7 @@ function limitConsecutiveNewlines(text, maxNewlines = 2) {
         { depth: -1 } // 阅读模式固定深度为 -1
     );
 processedContent = limitConsecutiveNewlines(processedContent);
-    // 步骤2：保护 HTML 和代码块
+   
     let protectedHtmlContent = processedContent.replace(/<html>([\s\S]*?)<\/html>|```(\w*)\n([\s\S]*?)\n```/gs, (match, htmlBlock, lang, markdownBlock) => {
         const placeholder = `HTMLREADINGPLACEHOLDER${placeholderIndex}`;
         const rawContent = htmlBlock || markdownBlock;
@@ -29447,7 +29451,7 @@ function renderGroupChatToHtml(sender, content, userNickname) {
 }
    async function createMessageBubble(msg, mode = 'chat', is_from_render = false) { 
 
- console.log("要创建气泡了哦");
+ 
      const bubble = document.createElement('div');
     bubble.classList.add('message-bubble');
     bubble.classList.add(msg.role === 'user' ? 'user-message' : 'assistant-message');
@@ -37297,7 +37301,7 @@ if (typeof is_chat_mode !== 'undefined' && is_chat_mode === 'true') {
 
             // 将格式化后的用户消息拼接到AI消息内容的开头
             nextAiMsg.content = `${formattedUserMsg}\n${nextAiMsg.content}`;
-
+            
             // 标记用户消息已被处理（设为null），以便后续过滤
             historyCopy[i] = null;
         }
@@ -37306,7 +37310,7 @@ if (typeof is_chat_mode !== 'undefined' && is_chat_mode === 'true') {
     // 4. 从处理过的小片段中，筛选出所有AI消息
     const combinedAiMessages = historyCopy.filter(msg => msg && msg.role === 'assistant');
 
-    // 5. 【关键】从合并后的消息中，再次截取，确保最终数量严格等于 hideLatestCount
+    // 5.  从合并后的消息中，再次截取，确保最终数量严格等于 hideLatestCount
     recentMessagesForPrompt = combinedAiMessages.slice(-hideLatestCount);
 
     console.log(`[Nova's Prompt Builder] 成功拼接并提取了 ${recentMessagesForPrompt.length} 条包含用户输入的AI历史消息。`);
@@ -37319,6 +37323,10 @@ if (typeof is_chat_mode !== 'undefined' && is_chat_mode === 'true') {
    
     
 }
+recentMessagesForPrompt = recentMessagesForPrompt.map(msg => ({
+    ...msg,
+    content: limitConsecutiveNewlines(msg.content)
+}));
             let promptsForAI = [];
              if (lastUserMessage || isContinuation) {
             promptsForAI = [];
@@ -37763,7 +37771,7 @@ const finalAiResponse = hookDataBeforeSave.response;
 AI回复: ${theAImessage}
 
 仔细阅读上面的对话内容，然后用memory_update_system等其他系统中提到的对应格式分析并更新game.memory中需要初始化/更新的字段。额外的，如memory.status的字段部分若为空，则直接视为需要初始化，你需要立刻推测其值，而不是说你无法更新。
-在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，使用<!-- -->标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
+在你输出记忆更新内容之前，你需要用<build/>标签回顾一下正确的格式指令，然后在进行analyze之前，再使用一次<build/>标签逐项罗列出你接收到的所有addition task之后再去执行，以防止遗忘。`;
         await TavernHelper.insertOrAssignVariables({ AI回复:theAImessage }, { type: 'chat' });
 
             // 调用组装，使用默认或绑定的书
