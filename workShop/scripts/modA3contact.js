@@ -11,7 +11,9 @@
         currentRole: null, // 'host' | 'client'
         roomId: null,
         myInfo: { name: '', desc: '' },
-        players: [] // [{name, isReady, isHost}]
+        players: [], // [{name, isReady, isHost}]
+            isCommandPanelEnabled: false, // 🔴 新增: 看板开关状态
+        commandPanelContent: ""       // 🔴 新增: 看板内容
     };
 
     // 1. 注入 CSS (使用指定变量)
@@ -171,7 +173,8 @@
           
             top: 50%;
             transform: translateY(-50%);
-            width: 300px;
+            min-width: 300px;
+            max-width:80vw;
             max-height: 80vh;
             overflow-y: auto;
             background: var(--container-bg-color);
@@ -216,51 +219,50 @@
         init: function() {
             this.injectSettingsButton();
             this.hookHostStream();
-            this.hookHandleSend();
+             this.hookPipelineSync();  
+             this.monitorHostCommandArea();
         },
- hookHandleSend: async function() {
-            if (typeof window.handleSend !== 'function' || window.originalHandleSend) return;
+         monitorHostCommandArea: function() {
+            const commandArea = document.getElementById('command-edit-area');
+            if (!commandArea) return;
 
-            window.originalHandleSend = window.handleSend;
-
-            window.handleSend = async (...args) => {
-                // 仅在作为主机时执行联机逻辑
-                if (State.currentRole === 'host' && State.socket && State.socket.readyState === WebSocket.OPEN) {
-                    try {
-                        // 捕获即将发送的用户输入
-                        const userInputElem = document.getElementById('user-input');
-                        const userText = userInputElem ? userInputElem.value.trim() : '';
-                        if (userText) {
-                            // 组合所有玩家的输入
-                            const clientInputs = Array.from(document.querySelectorAll('.mp-client-input-area')).map(el => el.textContent).join('\n');
-                            const fullInput = (userText + '\n' + clientInputs).trim();
-
-                            // 广播最终的用户输入给所有客户端
-                            this.sendAction('client_input_sync', { content: fullInput });
-                        }
-                    } catch (e) {
-                        console.error('[MP Hook] 捕获用户输入时出错:', e);
-                    }
+            let debounceTimer;
+            commandArea.addEventListener('input', () => {
+                // 只有房主且看板开启时才发送更新
+                if (State.currentRole !== 'host' || !State.isCommandPanelEnabled) {
+                    return;
                 }
 
-                // 执行原始的 handleSend 函数
-                const result = await window.originalHandleSend.apply(this, args);
-
-                // 在 handleSend 执行完毕后，捕获最终的 AI 回复
-                if (State.currentRole === 'host' && State.socket && State.socket.readyState === WebSocket.OPEN) {
-                    if (typeof conversationHistory !== 'undefined' && conversationHistory.length > 0) {
-                        const lastMessage = conversationHistory[conversationHistory.length - 1];
-                        // 确保最后一条是 AI 的回复
-                        if (lastMessage && lastMessage.role === 'assistant') {
-                            // 广播这条最终确定的消息
-                            this.sendAction('host_history_sync', { message: lastMessage });
-                        }
-                    }
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    this.sendAction('update_command_panel', { content: commandArea.value });
+                }, 250); // 使用防抖，避免过于频繁地发送
+            });
+        },
+  hookPipelineSync: function() {
+            // 定义一个全局钩子，供 handleSend 在 finally 阶段调用
+            window.novaSyncHook = (data) => {
+                // 1. 仅房主触发
+                if (State.currentRole !== 'host' || !State.socket || State.socket.readyState !== WebSocket.OPEN) {
+                    return;
                 }
 
-                return result;
+                console.log('[Multiplayer] 接收到流水线完成信号 (Direct Hook)，准备同步最终历史...');
+
+                // 2. 获取最后一条消息
+                if (typeof conversationHistory !== 'undefined' && conversationHistory.length > 0) {
+                    const lastMessage = conversationHistory[conversationHistory.length - 1];
+
+                    // 3. 确保最后一条是 AI 的回复 (assistant)
+                    if (lastMessage && lastMessage.role === 'assistant') {
+                        // 4. 广播这条最终确定的消息
+                        this.sendAction('host_history_sync', { message: lastMessage });
+                        console.log('[Multiplayer] 已广播最终AI回复。');
+                    }
+                }
             };
-            console.log('[Multiplayer] 已成功 Hook handleSend 函数。');
+
+            console.log('[Multiplayer] 已成功挂载 novaSyncHook。');
         },
         // 注入设置按钮
         injectSettingsButton: function() {
@@ -283,7 +285,7 @@
         },
 
         // 渲染联机大厅 (根据当前状态动态显示)
-        renderLobby: function() {
+        async renderLobby() {  
             const old = document.querySelector('.mp-modal');
             if (old) old.remove();
 
@@ -294,7 +296,7 @@
 
             if (State.roomId) {
                 // 已在房间内
-                contentHtml = `
+               contentHtml = `
                     <h3>当前房间: ${State.roomId}</h3>
                     <div style="text-align:center; margin-bottom:10px; color:var(--secondary-color)">
                         身份: ${State.currentRole === 'host' ? '房主 (HOST)' : '玩家 (CLIENT)'}
@@ -304,7 +306,10 @@
                     </div>
                     <div class="mp-divider"></div>
                     ${State.currentRole === 'host'
-                        ? `<button id="mp-dissolve-btn" class="mp-btn danger">🚫 解散房间</button>`
+                        ? `
+                            <button id="mp-toggle-panel-btn" class="mp-btn">${State.isCommandPanelEnabled ? '✅ 关闭指令看板' : '⬜️ 开启指令看板'}</button>
+                            <button id="mp-dissolve-btn" class="mp-btn danger">🚫 解散房间</button>
+                          `
                         : `<button id="mp-leave-btn" class="mp-btn danger">🚪 退出房间</button>`
                     }
                 `;
@@ -332,9 +337,23 @@
             document.getElementById('mp-close-btn').onclick = () => modal.remove();
 
             if (State.roomId) {
-                this.updateLobbyPlayerList(); // 立即填充列表
+                this.updateLobbyPlayerList();
                 if (State.currentRole === 'host') {
                     document.getElementById('mp-dissolve-btn').onclick = () => this.sendAction('dissolve_room');
+                     
+                        document.getElementById('mp-toggle-panel-btn').onclick = () => {
+                        const newIsEnabledState = !State.isCommandPanelEnabled;
+                        this.sendAction('toggle_command_panel', { isEnabled: newIsEnabledState });
+
+                       
+                        if (newIsEnabledState) {
+                            const commandArea = document.getElementById('command-edit-area');
+                            if (commandArea) {
+                                this.sendAction('update_command_panel', { content: commandArea.value });
+                            }
+                        }
+                    };
+
                 } else {
                     document.getElementById('mp-leave-btn').onclick = () => this.sendAction('leave_room');
                 }
@@ -370,25 +389,42 @@
                 return;
             }
 
-            // 🔴 修改点 1: 排序，将自己放在最前面
+             let commandPanelBallHtml = '';
+            if (State.isCommandPanelEnabled) {
+                commandPanelBallHtml = `
+                    <div class="mp-ball" id="mp-command-panel-ball" title="主机指令看板">
+                        ⌘
+                    </div>
+                    <div class="mp-divider" style="margin: -5px 0;"></div>
+                `;
+            }
+
             const sortedPlayers = [...State.players].sort((a, b) => {
                 if (a.name === State.myInfo.name) return -1;
                 if (b.name === State.myInfo.name) return 1;
                 return a.name.localeCompare(b.name);
             });
 
-            container.innerHTML = sortedPlayers.map(p => {
+            // 🔴 修改: 将看板球和玩家球组合
+            container.innerHTML = commandPanelBallHtml + sortedPlayers.map(p => {
                 const isMine = p.name === State.myInfo.name;
                 const firstChar = isMine ? '你' : p.name.charAt(0).toUpperCase();
                 const readyClass = p.isReady ? 'is-ready' : '';
-                const mineClass = isMine ? 'is-me' : ''; // 自己的特殊 class
+                const mineClass = isMine ? 'is-me' : '';
                 const clickAttr = isMine ? 'data-mine="true"' : '';
 
                 return `<div class="mp-ball ${readyClass} ${mineClass}" ${clickAttr} data-player-name="${p.name}" title="${p.name}">${firstChar}</div>`;
             }).join('');
 
-            // 绑定点击事件 (逻辑不变)
-            container.querySelectorAll('.mp-ball').forEach(ball => {
+            // 🔴 新增: 为看板球绑定事件
+            const panelBall = document.getElementById('mp-command-panel-ball');
+            if (panelBall) {
+                panelBall.addEventListener('click', () => {
+                    this.showPlayerBio('__COMMAND_PANEL__'); // 使用特殊名称来显示看板
+                });
+            }
+
+            container.querySelectorAll('.mp-ball[data-player-name]').forEach(ball => {
                 ball.addEventListener('click', (e) => {
                     const targetBall = e.currentTarget;
                     if (targetBall.dataset.mine === 'true') {
@@ -401,22 +437,31 @@
             });
         },
        
-        showPlayerBio: function(playerName) {
+ showPlayerBio: function(playerName) {
             const oldPopup = document.getElementById('mp-bio-popup');
             if (oldPopup) oldPopup.remove();
 
-            const player = State.players.find(p => p.name === playerName);
-            if (!player) return;
+            let title, content;
+
+            // 🔴 修改: 判断是显示玩家简介还是看板内容
+            if (playerName === '__COMMAND_PANEL__') {
+                title = '主机指令看板';
+                content = State.commandPanelContent || '看板当前无内容。';
+            } else {
+                const player = State.players.find(p => p.name === playerName);
+                if (!player) return;
+                title = player.name;
+                content = player.desc || '该用户没有留下简介。';
+            }
 
             const popup = document.createElement('div');
             popup.id = 'mp-bio-popup';
             popup.innerHTML = `
-                <h4>${player.name}</h4>
-                <p>${player.desc || '该用户没有留下简介。'}</p>
+                <h4>${title}</h4>
+                <p>${content}</p>
             `;
             document.body.appendChild(popup);
 
-            // 点击外部或弹窗自身关闭
             setTimeout(() => {
                 const closeHandler = (e) => {
                     if (!popup.contains(e.target)) {
@@ -425,10 +470,10 @@
                     }
                 };
                 document.body.addEventListener('click', closeHandler);
-            }, 100); // 延迟绑定以防止立即关闭
+            }, 100);
         },
 
-         connect: async function(role, roomId = null) {
+          async connect(role, roomId = null) {
             const statusDiv = document.getElementById('mp-status-text');
             if (statusDiv) statusDiv.innerText = '正在连接服务器...';
 
@@ -482,7 +527,7 @@
                 }
             };
 
-            State.socket.onmessage = (event) => {
+           State.socket.onmessage = async (event) => {
                 const data = JSON.parse(event.data);
                await this.handleSocketMessage(data);
             };
@@ -512,7 +557,7 @@
             }
         },
 
-        handleSocketMessage: async function(data) {
+          async handleSocketMessage(data) {
             switch (data.type) {
                 case 'room_created':
                     State.currentRole = 'host';
@@ -555,9 +600,23 @@
                     }
 
                     // 核心：更新玩家列表和状态
-                    State.players = data.players;
-                    this.updateLobbyPlayerList();
-                    this.renderFloatingBalls();
+                   State.players = data.players;
+                       
+                       // 🔴 修改: 直接从服务端接收权威状态，不再猜测
+                    if (data.isCommandPanelEnabled !== undefined) {
+                        State.isCommandPanelEnabled = data.isCommandPanelEnabled;
+                    }
+                    if (data.commandPanelContent !== undefined) {
+                        State.commandPanelContent = data.commandPanelContent;
+                    }
+
+                    // 如果大厅是打开的，重新渲染它以更新按钮文本
+                    if (document.querySelector('.mp-modal')) {
+                        this.renderLobby();
+                    }
+
+                    this.updateLobbyPlayerList(); // 更新玩家列表DOM
+                    this.renderFloatingBalls();   // 根据新状态重新渲染悬浮球
                     break;
 
                 case 'room_dissolved':
@@ -574,7 +633,7 @@
                     if (State.currentRole === 'client') this.handleClientReceiveStream(data);
                     break;
 
-                // 🔴 新增: 客户端接收主机最终的用户输入并渲染
+                
                 case 'client_input_sync':
                     if (State.currentRole === 'client') {
                         const userMessage = { role: 'user', content: data.content };
@@ -584,7 +643,7 @@
                     }
                     break;
 
-                // 🔴 新增: 客户端接收最终的AI历史消息并同步
+              
                 case 'host_history_sync':
                     if (State.currentRole === 'client') {
                         // 移除临时的流式气泡
@@ -594,8 +653,9 @@
                         // 将最终消息添加到历史并渲染
                         if (typeof conversationHistory !== 'undefined' && Array.isArray(conversationHistory)) {
                             conversationHistory.push(data.message);
-                           await saveHistory();
-                             worldHelper.processUpdateMemoryCommands(data.message);
+                            await window.saveHistory();
+                            await window.processUpdateMemoryCommands(data.message.content);
+                             await new Promise(resolve => setTimeout(resolve, 500));
                             worldHelper.renderHistory();
                        
                         }
@@ -668,7 +728,7 @@
             }
         },
 
-         hijackClientSendButton: function() {
+  hijackClientSendButton: function() {
             const sendBtn = document.getElementById('send-button');
             if (!sendBtn) return;
             if (sendBtn.getAttribute('data-hijacked')) return;
@@ -678,15 +738,14 @@
             newBtn.id = 'send-button';
             newBtn.setAttribute('data-hijacked', 'true');
 
-            newBtn.addEventListener('click', async () => {
-              
+            // 封装发送逻辑，以便按钮和回车键复用
+            const performClientSend = () => {
                 const userInput = document.getElementById('user-input');
                 const commandArea = document.getElementById('command-edit-area');
 
                 let userText = userInput ? userInput.value : "";
                 let commandText = commandArea ? commandArea.value : "";
 
-                // 组合文本，如果都有内容，用换行符隔开
                 let combinedText = commandText.trim();
                 if (combinedText && userText.trim()) {
                     combinedText += '\n' + userText.trim();
@@ -704,7 +763,23 @@
                 } else {
                     showNovaAlert("未连接到主机");
                 }
-            });
+            };
+
+            newBtn.addEventListener('click', performClientSend);
+
+            // 🔴 新增代码开始: 劫持 Enter 键
+            const userInputElem = document.getElementById('user-input');
+            if (userInputElem) {
+                userInputElem.addEventListener('keydown', (event) => {
+                    // 检查是否是 Enter 键，并且没有按下 Shift 键 (允许换行)
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault(); // 阻止默认的回车行为 (如换行或表单提交)
+                        performClientSend();    // 执行和点击按钮相同的发送逻辑
+                    }
+                });
+                console.log('[Multiplayer] 已成功劫持客户端输入框的 Enter 键。');
+            }
+            // 🔴 新增代码结束
         },
 
 
