@@ -741,5 +741,17 @@
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/x-mod-更精准的bgm.json",
  
     "previewImage": ""
+} ,{
+    "id": "modA3contact",
+     "is_dowload_raw_name":true,
+    "name": "联机测试，不用管，别开",
+    "author": "assa",
+    "version": "1.0",
+    "tags": ["系统工具/开发者测试中"],
+   "description": "联机测试用，别开千万别开",
+ 
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/modA3contact.js",
+ 
+    "previewImage": ""
 }
   ]
