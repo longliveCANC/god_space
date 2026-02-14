@@ -23,7 +23,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: var(--container-bg-color);
+            
             border: 1px solid var(--border-color);
             box-shadow: 0 0 15px var(--glow-color);
             padding: 25px;
@@ -46,7 +46,7 @@
 
         /* 按钮通用 */
         .mp-btn {
-            background: rgba(0, 250, 255, 0.1);
+            
             color: var(--primary-color);
             border: 1px solid var(--border-color);
             padding: 10px 15px;
@@ -61,7 +61,7 @@
         .mp-btn:hover {
             background: var(--glow-color);
             color: #000;
-            box-shadow: 0 0 15px var(--glow-color);
+             
         }
 
         .mp-btn.danger {
