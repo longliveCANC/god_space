@@ -15,23 +15,32 @@
             isCommandPanelEnabled: false, // 🔴 新增: 看板开关状态
         commandPanelContent: ""       // 🔴 新增: 看板内容
     };
-
+window.MultiplayerState = {
+        isClient: function() {
+            // 当角色是 'client' 并且处于连接状态时，返回 true
+            return State.currentRole !== 'host' ;
+        },
+        
+        getMyInfo: function() {
+            return State.myInfo;
+        }
+    };
     // 1. 注入 CSS (使用指定变量)
     const style = document.createElement('style');
     style.innerHTML = `
         /* 联机模态框 */
         .mp-modal {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            
+            
             
             border: 1px solid var(--border-color);
            
             padding: 25px;
             z-index: 9999;
             border-radius: 8px;
-            width: 400px;
+            min-width: 300px;
+            max-width: 400px;
             color: var(--text-color);
             font-family: var(--base-font-family);
             backdrop-filter: blur(5px);
@@ -146,7 +155,32 @@
         .mp-ball:hover {
             transform: scale(1.1);
         }
+       /* 🔴 新增: 玩家喊话气泡样式 */
+        .mp-shout-bubble {
+            position: absolute; /* 相对于 #mp-floating-container 定位 */
+            /* left 和 top 将由 JS 动态设置 */
+            transform: translateY(-50%); /* 垂直居中 */
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+            width: max-content; 
+            max-width: 90vw;
+            white-space: pre-wrap; /* 允许内容过长时换行 */
+            word-break: break-all;
+            opacity: 0;
+            animation: mp-shout-fade 0.5s forwards;
+            pointer-events: none;
+            z-index: 9999;
+        }
 
+        @keyframes mp-shout-fade {
+            from { opacity: 0; transform: translateY(-50%) translateX(-10px); }
+            to { opacity: 1; transform: translateY(-50%) translateX(0); }
+        }
         /* OK 状态遮罩 */
         .mp-ball.is-ready::after {
             content: "OK";
@@ -174,7 +208,7 @@
             top: 50%;
             transform: translateY(-50%);
             min-width: 300px;
-            max-width:80vw;
+            max-width: 800px;
             max-height: 80vh;
             overflow-y: auto;
             background: var(--container-bg-color);
@@ -187,6 +221,7 @@
             font-family: var(--base-font-family);
             line-height: var(--base-line-height);
             animation: mp-fade-in 0.3s ease-out;
+            backdrop-filter:blur(2px);
         }
         #mp-bio-popup h4 {
             color: var(--primary-color);
@@ -258,6 +293,7 @@
                         // 4. 广播这条最终确定的消息
                         this.sendAction('host_history_sync', { message: lastMessage });
                         console.log('[Multiplayer] 已广播最终AI回复。');
+                        this.sendAction('unready_all');
                     }
                 }
             };
@@ -299,7 +335,7 @@
                contentHtml = `
                     <h3>当前房间: ${State.roomId}</h3>
                     <div style="text-align:center; margin-bottom:10px; color:var(--secondary-color)">
-                        身份: ${State.currentRole === 'host' ? '房主 (HOST)' : '玩家 (CLIENT)'}
+                        身份: ${State.currentRole === 'host' ? '房主' : '玩家'}
                     </div>
                     <div class="mp-player-list" id="mp-lobby-list">
                         <!-- 玩家列表动态填充 -->
@@ -307,7 +343,7 @@
                     <div class="mp-divider"></div>
                     ${State.currentRole === 'host'
                         ? `
-                            <button id="mp-toggle-panel-btn" class="mp-btn">${State.isCommandPanelEnabled ? '✅ 关闭指令看板' : '⬜️ 开启指令看板'}</button>
+                            <button id="mp-toggle-panel-btn" class="mp-btn">${State.isCommandPanelEnabled ? '✅ 关闭看板通信' : '⬜️ 开启看板通信'}</button>
                             <button id="mp-dissolve-btn" class="mp-btn danger">🚫 解散房间</button>
                           `
                         : `<button id="mp-leave-btn" class="mp-btn danger">🚪 退出房间</button>`
@@ -318,10 +354,10 @@
                 contentHtml = `
                     <h3>SYSTEM LINK</h3>
                     <div id="mp-controls">
-                        <button id="mp-create-btn" class="mp-btn">我是房主 (HOST)</button>
+                        <button id="mp-create-btn" class="mp-btn">我要建房</button>
                         <div class="mp-divider"></div>
-                        <input type="text" id="mp-room-id" class="mp-input" placeholder="输入房间号 (ROOM ID)">
-                        <button id="mp-join-btn" class="mp-btn">我是玩家 (CLIENT)</button>
+                        <input type="text" id="mp-room-id" class="mp-input" placeholder="输入房间号">
+                        <button id="mp-join-btn" class="mp-btn">我要进房</button>
                     </div>
                 `;
             }
@@ -355,7 +391,22 @@
                     };
 
                 } else {
-                    document.getElementById('mp-leave-btn').onclick = () => this.sendAction('leave_room');
+              document.getElementById('mp-leave-btn').onclick = () => {
+                // 1. 先向服务器发送离开请求
+                this.sendAction('leave_room');
+
+                // 2. 立即重置本地状态
+                this.resetState();
+
+                // 3. 显示提示信息
+                showNovaAlert('您已退出房间');
+
+                // 4. （可选，但推荐）如果WebSocket连接还存在，主动关闭它
+                if (State.socket) {
+                    State.socket.close();
+                }
+            };
+     
                 }
             } else {
                 document.getElementById('mp-create-btn').onclick = () => this.connect('host');
@@ -518,6 +569,7 @@
             }
 
             State.socket.onopen = () => {
+                State.isConnected = true;
                 if (statusDiv) statusDiv.innerText = '握手成功...';
                 const payload = { playerInfo: State.myInfo };
                 if (role === 'host') {
@@ -533,6 +585,7 @@
             };
 
             State.socket.onclose = () => {
+                
                 this.resetState();
                 showNovaAlert('联机服务已断开');
             };
@@ -550,11 +603,51 @@
             State.currentRole = null;
             State.players = [];
             this.renderFloatingBalls(); // 清空球
-
+ State.isConnected = false;
             // 如果大厅开着，刷新它
             if (document.querySelector('.mp-modal')) {
                 this.renderLobby();
             }
+        },
+         showPlayerShout: function(playerName, message) {
+            // 1. 找到目标悬浮球和它的父容器
+            const ball = document.querySelector(`.mp-ball[data-player-name="${playerName}"]`);
+            const container = document.getElementById('mp-floating-container');
+            if (!ball || !container) return;
+
+            // 2. 移除可能存在的旧气泡 (现在从父容器中查找)
+            const oldBubble = document.getElementById(`shout-bubble-for-${playerName}`);
+            if (oldBubble) oldBubble.remove();
+
+            // 3. 创建新的气泡
+            const bubble = document.createElement('div');
+            bubble.className = 'mp-shout-bubble';
+            bubble.id = `shout-bubble-for-${playerName}`; // 给一个唯一的ID方便管理
+            bubble.textContent = message;
+
+            // 4. 将气泡添加到父容器中
+            container.appendChild(bubble);
+
+            // 5. 动态计算并设置气泡的位置
+            //    使其与目标悬浮球对齐
+            const ballRect = ball.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // 计算气泡的 top 值，使其相对于父容器垂直居中于目标球
+            bubble.style.top = `${ballRect.top - containerRect.top + (ball.offsetHeight / 2)}px`;
+            // left 值保持不变，因为它已经是相对于父容器的 .mp-ball 的右侧
+            bubble.style.left = `${ball.offsetLeft + ball.offsetWidth + 10}px`; // 稍微调整间距
+
+            // 6. 设置自动消失的定时器 (逻辑不变)
+            const duration = 2000 + Math.floor(message.length / 10) * 1000;
+
+            setTimeout(() => {
+                if (bubble) {
+                    bubble.style.transition = 'opacity 0.5s ease';
+                    bubble.style.opacity = '0';
+                    setTimeout(() => bubble.remove(), 500);
+                }
+            }, duration);
         },
 
           async handleSocketMessage(data) {
@@ -565,7 +658,10 @@
                     showNovaAlert(`房间 ${data.roomId} 已创建`);
                     this.renderLobby(); // 刷新大厅界面
                     break;
-
+          case 'player_shout':
+                     
+                    this.showPlayerShout(data.senderName, data.content);
+                    break;
                 case 'joined_success':
                     State.currentRole = 'client';
                     State.roomId = data.roomId;
@@ -594,7 +690,7 @@
                             if (!newPlayers.has(oldName) && oldName !== State.myInfo.name) {
                                 const varName = `player_${oldName}`;
                                 // 删除变量（通过设置为空字符串或特定标记）
-                                TavernHelper.insertOrAssignVariables({ [varName]: 'Status: Offline' }, { type: 'chat' });
+                                TavernHelper.insertOrAssignVariables({ [varName]: 'Status: Offline。' }, { type: 'chat' });
                             }
                         });
                     }
@@ -759,7 +855,7 @@
                     this.sendAction('client_msg', { content: combinedText });
                     if (userInput) userInput.value = '';
                     if (commandArea) commandArea.value = '';
-                    toastr.info("指令已上传至主机");
+                    showNovaAlert("指令已上传至主机");
                 } else {
                     showNovaAlert("未连接到主机");
                 }
@@ -767,20 +863,24 @@
 
             newBtn.addEventListener('click', performClientSend);
 
-            // 🔴 新增代码开始: 劫持 Enter 键
             const userInputElem = document.getElementById('user-input');
-            if (userInputElem) {
-                userInputElem.addEventListener('keydown', (event) => {
-                    // 检查是否是 Enter 键，并且没有按下 Shift 键 (允许换行)
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault(); // 阻止默认的回车行为 (如换行或表单提交)
-                        performClientSend();    // 执行和点击按钮相同的发送逻辑
-                    }
-                });
-                console.log('[Multiplayer] 已成功劫持客户端输入框的 Enter 键。');
+    if (userInputElem) {
+      
+        userInputElem.addEventListener('keydown', (event) => {
+            // 检查是否是 Enter 键，并且没有按下 Shift 键 (允许换行)
+            if (event.key === 'Enter' && !event.shiftKey) {
+               
+                event.stopImmediatePropagation();
+                event.preventDefault(); // 同时保留 preventDefault 以确保万无一失
+
+                performClientSend();    // 执行和点击按钮相同的发送逻辑
             }
-            // 🔴 新增代码结束
-        },
+        }, true);  
+
+        console.log('[Multiplayer] 已成功劫持客户端输入框的 Enter 键 (使用捕获模式)。');
+    }
+    
+},
 
 
         // Hook 房主流
@@ -799,4 +899,5 @@
     };
 
     Multiplayer.init();
+    
 })();
