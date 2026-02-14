@@ -25,7 +25,7 @@
             transform: translate(-50%, -50%);
             
             border: 1px solid var(--border-color);
-            box-shadow: 0 0 15px var(--glow-color);
+           
             padding: 25px;
             z-index: 9999;
             border-radius: 8px;
@@ -61,7 +61,7 @@
         .mp-btn:hover {
             background: var(--glow-color);
             color: #000;
-             
+          
         }
 
         .mp-btn.danger {
@@ -71,14 +71,14 @@
         .mp-btn.danger:hover {
             background: var(--danger-glow-color);
             color: #fff;
-            box-shadow: 0 0 15px var(--danger-glow-color);
+            
         }
 
         .mp-input {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
-            background: rgba(0, 0, 0, 0.3);
+             
             color: var(--text-color);
             border: 1px solid var(--border-color);
             box-sizing: border-box;
@@ -87,7 +87,7 @@
         .mp-input:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 5px var(--glow-color);
+            
         }
 
         /* 玩家列表 (模态框内) */
@@ -136,7 +136,7 @@
             font-weight: bold;
             cursor: pointer;
             pointer-events: auto; /* 球体可点击 */
-            box-shadow: 0 0 10px var(--glow-color);
+            
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -164,6 +164,46 @@
             background: linear-gradient(90deg, transparent, var(--border-color), transparent);
             margin: 15px 0;
         }
+
+         /* 玩家简介弹窗 */
+        #mp-bio-popup {
+            position: fixed;
+          
+            top: 50%;
+            transform: translateY(-50%);
+            width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: var(--container-bg-color);
+            border: 1px solid var(--border-color);
+            
+            color: var(--text-color);
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 9500;
+            font-family: var(--base-font-family);
+            line-height: var(--base-line-height);
+            animation: mp-fade-in 0.3s ease-out;
+        }
+        #mp-bio-popup h4 {
+            color: var(--primary-color);
+            margin-top: 0;
+            text-align: center;
+        }
+        #mp-bio-popup p {
+            white-space: pre-wrap; /* 保持换行 */
+            color: var(--text-secondary-color);
+        }
+        @keyframes mp-fade-in {
+            from { opacity: 0; transform: translateY(-50%) scale(0.95); }
+            to { opacity: 1; transform: translateY(-50%) scale(1); }
+        }
+
+         .mp-ball.is-me {
+            border-color: var(--success-color);
+            color: var(--success-color);
+             
+        }
     `;
     document.head.appendChild(style);
 
@@ -176,8 +216,52 @@
         init: function() {
             this.injectSettingsButton();
             this.hookHostStream();
+            this.hookHandleSend();
         },
+ hookHandleSend: async function() {
+            if (typeof window.handleSend !== 'function' || window.originalHandleSend) return;
 
+            window.originalHandleSend = window.handleSend;
+
+            window.handleSend = async (...args) => {
+                // 仅在作为主机时执行联机逻辑
+                if (State.currentRole === 'host' && State.socket && State.socket.readyState === WebSocket.OPEN) {
+                    try {
+                        // 捕获即将发送的用户输入
+                        const userInputElem = document.getElementById('user-input');
+                        const userText = userInputElem ? userInputElem.value.trim() : '';
+                        if (userText) {
+                            // 组合所有玩家的输入
+                            const clientInputs = Array.from(document.querySelectorAll('.mp-client-input-area')).map(el => el.textContent).join('\n');
+                            const fullInput = (userText + '\n' + clientInputs).trim();
+
+                            // 广播最终的用户输入给所有客户端
+                            this.sendAction('client_input_sync', { content: fullInput });
+                        }
+                    } catch (e) {
+                        console.error('[MP Hook] 捕获用户输入时出错:', e);
+                    }
+                }
+
+                // 执行原始的 handleSend 函数
+                const result = await window.originalHandleSend.apply(this, args);
+
+                // 在 handleSend 执行完毕后，捕获最终的 AI 回复
+                if (State.currentRole === 'host' && State.socket && State.socket.readyState === WebSocket.OPEN) {
+                    if (typeof conversationHistory !== 'undefined' && conversationHistory.length > 0) {
+                        const lastMessage = conversationHistory[conversationHistory.length - 1];
+                        // 确保最后一条是 AI 的回复
+                        if (lastMessage && lastMessage.role === 'assistant') {
+                            // 广播这条最终确定的消息
+                            this.sendAction('host_history_sync', { message: lastMessage });
+                        }
+                    }
+                }
+
+                return result;
+            };
+            console.log('[Multiplayer] 已成功 Hook handleSend 函数。');
+        },
         // 注入设置按钮
         injectSettingsButton: function() {
             const observer = new MutationObserver(() => {
@@ -277,49 +361,91 @@
             `).join('');
         },
 
-        // 渲染左侧悬浮球
-        renderFloatingBalls: function() {
+  renderFloatingBalls: function() {
             const container = document.getElementById('mp-floating-container');
             if (!container) return;
 
-            // 如果不在房间，清空
             if (!State.roomId) {
                 container.innerHTML = '';
                 return;
             }
 
-            container.innerHTML = State.players.map(p => {
-                const firstChar = p.name.charAt(0).toUpperCase();
-                const readyClass = p.isReady ? 'is-ready' : '';
-                // 只有自己的球可以点击
+            // 🔴 修改点 1: 排序，将自己放在最前面
+            const sortedPlayers = [...State.players].sort((a, b) => {
+                if (a.name === State.myInfo.name) return -1;
+                if (b.name === State.myInfo.name) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            container.innerHTML = sortedPlayers.map(p => {
                 const isMine = p.name === State.myInfo.name;
+                const firstChar = isMine ? '你' : p.name.charAt(0).toUpperCase();
+                const readyClass = p.isReady ? 'is-ready' : '';
+                const mineClass = isMine ? 'is-me' : ''; // 自己的特殊 class
                 const clickAttr = isMine ? 'data-mine="true"' : '';
 
-                return `<div class="mp-ball ${readyClass}" ${clickAttr} title="${p.name}">${firstChar}</div>`;
+                return `<div class="mp-ball ${readyClass} ${mineClass}" ${clickAttr} data-player-name="${p.name}" title="${p.name}">${firstChar}</div>`;
             }).join('');
 
-            // 绑定点击事件
-            const myBall = container.querySelector('[data-mine="true"]');
-            if (myBall) {
-                myBall.addEventListener('click', () => {
-                    this.sendAction('toggle_ready');
+            // 绑定点击事件 (逻辑不变)
+            container.querySelectorAll('.mp-ball').forEach(ball => {
+                ball.addEventListener('click', (e) => {
+                    const targetBall = e.currentTarget;
+                    if (targetBall.dataset.mine === 'true') {
+                        this.sendAction('toggle_ready');
+                    } else {
+                        const playerName = targetBall.dataset.playerName;
+                        this.showPlayerBio(playerName);
+                    }
                 });
-            }
+            });
+        },
+       
+        showPlayerBio: function(playerName) {
+            const oldPopup = document.getElementById('mp-bio-popup');
+            if (oldPopup) oldPopup.remove();
+
+            const player = State.players.find(p => p.name === playerName);
+            if (!player) return;
+
+            const popup = document.createElement('div');
+            popup.id = 'mp-bio-popup';
+            popup.innerHTML = `
+                <h4>${player.name}</h4>
+                <p>${player.desc || '该用户没有留下简介。'}</p>
+            `;
+            document.body.appendChild(popup);
+
+            // 点击外部或弹窗自身关闭
+            setTimeout(() => {
+                const closeHandler = (e) => {
+                    if (!popup.contains(e.target)) {
+                        popup.remove();
+                        document.body.removeEventListener('click', closeHandler);
+                    }
+                };
+                document.body.addEventListener('click', closeHandler);
+            }, 100); // 延迟绑定以防止立即关闭
         },
 
-        // 连接逻辑
-        connect: async function(role, roomId = null) {
+         connect: async function(role, roomId = null) {
             const statusDiv = document.getElementById('mp-status-text');
             if (statusDiv) statusDiv.innerText = '正在连接服务器...';
 
-            // 获取用户信息
-            let playerName = (typeof SillyTavern !== 'undefined' && SillyTavern.name1) ? SillyTavern.name1 : "User";
-            let playerDesc = "";
-            try {
+            
+            let playerName = "User";
+            if (typeof SillyTavern !== 'undefined' && SillyTavern.name1) {
+                playerName = SillyTavern.name1;
+            }
+
+            let playerDesc = "No description.";
+             try {
+                
                 const descElem = document.getElementById('persona_description');
                 if (descElem) playerDesc = descElem.value;
-                else playerDesc = await evalTemplate('<%= persona_description %>');
-            } catch (e) {}
+                else playerDesc = await EjsTemplate.evalTemplate('<%= persona_description.value %>');
+            } catch (e) { console.warn("简介获取失败", e); }
+
 
             State.myInfo = { name: playerName, desc: playerDesc };
 
@@ -358,7 +484,7 @@
 
             State.socket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                this.handleSocketMessage(data);
+               await this.handleSocketMessage(data);
             };
 
             State.socket.onclose = () => {
@@ -386,7 +512,7 @@
             }
         },
 
-        handleSocketMessage: function(data) {
+        handleSocketMessage: async function(data) {
             switch (data.type) {
                 case 'room_created':
                     State.currentRole = 'host';
@@ -403,11 +529,35 @@
                     this.renderLobby(); // 刷新大厅界面
                     break;
 
-                case 'room_update':
+                     case 'room_update':
+                   
+                    if (State.currentRole === 'host' && typeof TavernHelper !== 'undefined') {
+                        const oldPlayers = new Set(State.players.map(p => p.name));
+                        const newPlayers = new Set(data.players.map(p => p.name));
+
+                        // 遍历新列表，更新或添加玩家信息
+                        data.players.forEach(player => {
+                            if (player.name !== State.myInfo.name) { // 不处理自己
+                                const varName = `player_${player.name}`;
+                                const content = `${player.desc}\nStatus: Online`;
+                                TavernHelper.insertOrAssignVariables({ [varName]: content }, { type: 'chat' });
+                            }
+                        });
+
+                        // 找出离开的玩家并删除其变量
+                        oldPlayers.forEach(oldName => {
+                            if (!newPlayers.has(oldName) && oldName !== State.myInfo.name) {
+                                const varName = `player_${oldName}`;
+                                // 删除变量（通过设置为空字符串或特定标记）
+                                TavernHelper.insertOrAssignVariables({ [varName]: 'Status: Offline' }, { type: 'chat' });
+                            }
+                        });
+                    }
+
                     // 核心：更新玩家列表和状态
                     State.players = data.players;
-                    this.updateLobbyPlayerList(); // 更新大厅列表
-                    this.renderFloatingBalls();   // 更新悬浮球
+                    this.updateLobbyPlayerList();
+                    this.renderFloatingBalls();
                     break;
 
                 case 'room_dissolved':
@@ -424,6 +574,34 @@
                     if (State.currentRole === 'client') this.handleClientReceiveStream(data);
                     break;
 
+                // 🔴 新增: 客户端接收主机最终的用户输入并渲染
+                case 'client_input_sync':
+                    if (State.currentRole === 'client') {
+                        const userMessage = { role: 'user', content: data.content };
+                        if (typeof window.renderNewMessages === 'function') {
+                            window.renderNewMessages([userMessage]);
+                        }
+                    }
+                    break;
+
+                // 🔴 新增: 客户端接收最终的AI历史消息并同步
+                case 'host_history_sync':
+                    if (State.currentRole === 'client') {
+                        // 移除临时的流式气泡
+                        const tempBubble = document.getElementById('mp-ai-bubble');
+                        if (tempBubble) tempBubble.remove();
+                              
+                        // 将最终消息添加到历史并渲染
+                        if (typeof conversationHistory !== 'undefined' && Array.isArray(conversationHistory)) {
+                            conversationHistory.push(data.message);
+                           await saveHistory();
+                             worldHelper.processUpdateMemoryCommands(data.message);
+                            worldHelper.renderHistory();
+                       
+                        }
+                    }
+                    break;
+
                 case 'error':
                     showNovaAlert(`错误: ${data.message}`);
                     if (document.getElementById('mp-status-text')) {
@@ -433,9 +611,47 @@
             }
         },
 
-        // 客户端接收流：空函数
-        handleClientReceiveStream: function(data) {
-            // 按照需求，此处逻辑留空，之后再做
+ handleClientReceiveStream: function(data) {
+            // 确保客户端有一个用于显示AI回复的气泡
+            let aiResponseBubble = document.getElementById('mp-ai-bubble');
+            if (!aiResponseBubble) {
+                const chatHistoryDiv = document.getElementById('chat-display-area'); // 确认你的聊天显示区域ID
+                if (!chatHistoryDiv) return;
+
+                aiResponseBubble = document.createElement('div');
+                aiResponseBubble.id = 'mp-ai-bubble';
+                aiResponseBubble.classList.add('message-bubble', 'assistant-message');
+                aiResponseBubble.innerHTML = '<em>正在接收主机信号...</em>';
+                chatHistoryDiv.appendChild(aiResponseBubble);
+                chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            }
+
+            const text = data.text;
+
+            // 使用节流阀避免过于频繁的DOM操作
+            if (this.renderThrottler) return;
+            this.renderThrottler = setTimeout(() => {
+                this.renderThrottler = null;
+                if (typeof is_simple_stream !== 'undefined' && is_simple_stream === 'true') {
+                    aiResponseBubble.innerHTML = text;
+                } else {
+                    let formattedText = text.replace(/“/g, '<span class="dialogue-quote">“')
+                        .replace(/”/g, '”</span>')
+                        .replace(/「/g, '<span class="dialogue-quote">「')
+                        .replace(/」/g, '」</span>')
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+                    if (typeof formatAsTavernRegexedString === 'function') {
+                        aiResponseBubble.innerHTML = formatAsTavernRegexedString(
+                            formattedText, 'ai_output', 'display', { depth: -1 }
+                        );
+                    } else {
+                        aiResponseBubble.innerHTML = formattedText; // 降级处理
+                    }
+                }
+                aiResponseBubble.parentElement.scrollTop = aiResponseBubble.parentElement.scrollHeight;
+            }, 100);
         },
 
         // 房主接收消息
@@ -452,11 +668,9 @@
             }
         },
 
-        // 劫持客户端发送按钮
-        hijackClientSendButton: function() {
+         hijackClientSendButton: function() {
             const sendBtn = document.getElementById('send-button');
             if (!sendBtn) return;
-            // 防止重复劫持
             if (sendBtn.getAttribute('data-hijacked')) return;
 
             const newBtn = sendBtn.cloneNode(true);
@@ -465,19 +679,34 @@
             newBtn.setAttribute('data-hijacked', 'true');
 
             newBtn.addEventListener('click', async () => {
-                const inputArea = document.getElementById('user-input');
-                let text = inputArea ? inputArea.value : "";
-                if (!text.trim()) return;
+              
+                const userInput = document.getElementById('user-input');
+                const commandArea = document.getElementById('command-edit-area');
+
+                let userText = userInput ? userInput.value : "";
+                let commandText = commandArea ? commandArea.value : "";
+
+                // 组合文本，如果都有内容，用换行符隔开
+                let combinedText = commandText.trim();
+                if (combinedText && userText.trim()) {
+                    combinedText += '\n' + userText.trim();
+                } else if (userText.trim()) {
+                    combinedText = userText.trim();
+                }
+
+                if (!combinedText) return;
 
                 if (State.socket && State.socket.readyState === WebSocket.OPEN) {
-                    this.sendAction('client_msg', { content: text });
-                    if (inputArea) inputArea.value = '';
+                    this.sendAction('client_msg', { content: combinedText });
+                    if (userInput) userInput.value = '';
+                    if (commandArea) commandArea.value = '';
                     toastr.info("指令已上传至主机");
                 } else {
                     showNovaAlert("未连接到主机");
                 }
             });
         },
+
 
         // Hook 房主流
         hookHostStream: function() {
