@@ -12,8 +12,12 @@
         roomId: null,
         myInfo: { name: '', desc: '' },
         players: [], // [{name, isReady, isHost}]
-            isCommandPanelEnabled: false, // 🔴 新增: 看板开关状态
-        commandPanelContent: ""       // 🔴 新增: 看板内容
+            isCommandPanelEnabled: false,  
+        commandPanelContent: ""  ,    
+         chatHistory: [],  
+        isChatMode: false,  
+        hostIsEditing: false, 
+         isCommandModalActive: false,  
     };
 window.MultiplayerState = {
         isClient: function() {
@@ -158,7 +162,7 @@ window.MultiplayerState = {
         .mp-ball:hover {
             transform: scale(1.1);
         }
-       /* 🔴 新增: 玩家喊话气泡样式 */
+      
         .mp-shout-bubble {
             position: absolute; /* 相对于 #mp-floating-container 定位 */
             /* left 和 top 将由 JS 动态设置 */
@@ -210,7 +214,7 @@ window.MultiplayerState = {
           
             top: 50%;
             transform: translateY(-50%);
-            min-width: 300px;
+            min-width: 400px;
             max-width: 800px;
             max-height: 80vh;
             overflow-y: auto;
@@ -245,6 +249,88 @@ window.MultiplayerState = {
             color: var(--success-color);
              
         }
+             #mp-mode-switch {
+            margin-right: 5px;
+            padding: 0 10px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--container-bg-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            font-weight: bold;
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #mp-mode-switch.chat-mode {
+            background: var(--secondary-color); /* 区分颜色 */
+            color: #fff;
+            border-color: var(--secondary-color);
+        }
+
+        /* [新增] 聊天记录列表区域 */
+        .mp-chat-history-container {
+            margin-top: 15px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .mp-chat-item {
+            margin-bottom: 8px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 0.9em;
+        }
+        .mp-chat-item .sender {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-right: 5px;
+        }
+        .mp-chat-item .content {
+            color: var(--text-color);
+            word-break: break-word;
+        }
+
+        /* [新增] 悬浮球上的编辑状态标识 (...) */
+        .mp-ball .editing-dot {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 20px;
+            line-height: 10px;
+            color: #ffcc00; /* 醒目颜色 */
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+     .mp-chat-bubble {
+            position: absolute;
+            transform: translateY(-50%);
+            /* 使用 --glow-color 作为背景，这是 primary-color 的半透明版本 */
+            background: var(--glow-color);
+            backdrop-filter: blur(5px); /* 稍微增强模糊效果 */
+            /* 文字颜色使用深色以保证在亮背景上的可读性 */
+            color: #000;
+            font-weight: bold; /* 加粗以增强对比度 */
+            padding: 8px 12px;
+            /* 圆角和喊话气泡做一点区分，例如左下角为直角 */
+            border-radius: 6px 6px 6px 0;
+            /* 边框使用更亮、更实的 --secondary-color */
+            border: 1px solid var(--secondary-color);
+            font-size: 14px;
+            width: max-content;
+            max-width: 80vw;
+            white-space: pre-wrap;
+            word-break: break-all;
+            opacity: 0;
+            animation: mp-shout-fade 0.5s forwards;
+            pointer-events: none;
+            z-index: 9999;
+        }
+   
     `;
     document.head.appendChild(style);
 
@@ -259,6 +345,56 @@ window.MultiplayerState = {
             this.hookHostStream();
              this.hookPipelineSync();  
              this.monitorHostCommandArea();
+             this.observeCommandModal(); // [新增] 监控令小盒
+            this.hijackTriggerAssa();  
+        },
+ observeCommandModal: function() {
+            const modal = document.getElementById('command-modal');
+            if (!modal) return;
+
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach(mutation => {
+                    if (mutation.attributeName === 'class') {
+                        const isNowActive = modal.classList.contains('active');
+                        // 将状态存入 State，供 triggerassa 使用
+                        State.isCommandModalActive = isNowActive;
+
+                        // [可选] 也可以在这里广播编辑状态给其他玩家
+                        if (State.currentRole === 'host') {
+                            this.sendAction('host_edit_status', { isEditing: isNowActive });
+                        }
+                    }
+                });
+            });
+
+            observer.observe(modal, { attributes: true });
+        },
+
+        // [修改] 劫持 triggerassa 以实现追加逻辑
+        hijackTriggerAssa: function() {
+            if (typeof window.triggerassa === 'function' && !window.originalTriggerAssa) {
+                window.originalTriggerAssa = window.triggerassa;
+
+                window.triggerassa = (text) => {
+                    // 条件：我是房主，并且令小盒是打开的
+                    if (State.currentRole === 'host' && State.isCommandModalActive) {
+                        const commandArea = document.getElementById('command-edit-area');
+                        if (commandArea) {
+                            const currentVal = commandArea.value;
+                            const newContent = text.replace(/^\/setinput\s+/, '');
+
+                            commandArea.value = currentVal + (currentVal ? '\n' : '') + newContent;
+                            commandArea.dispatchEvent(new Event('input')); // 触发更新
+                            showNovaAlert('收到新数据，已追加到令小盒');
+                        } else {
+                            window.originalTriggerAssa(text); // 降级处理
+                        }
+                    } else {
+                        // 否则执行原有逻辑
+                        window.originalTriggerAssa(text);
+                    }
+                };
+            }
         },
          monitorHostCommandArea: function() {
             const commandArea = document.getElementById('command-edit-area');
@@ -444,10 +580,13 @@ window.MultiplayerState = {
             }
 
              let commandPanelBallHtml = '';
-            if (State.isCommandPanelEnabled) {
+             if (State.isCommandPanelEnabled) {
+                // [修改] 增加编辑状态显示
+                const editingIndicator = State.hostIsEditing ? '<span class="editing-dot">...</span>' : '';
+
                 commandPanelBallHtml = `
                     <div class="mp-ball" id="mp-command-panel-ball" title="主机指令看板">
-                        ⌘
+                        ⌘ ${editingIndicator}
                     </div>
                     <div class="mp-divider" style="margin: -5px 0;"></div>
                 `;
@@ -491,31 +630,44 @@ window.MultiplayerState = {
             });
         },
        
- showPlayerBio: function(playerName) {
+  showPlayerBio: function(playerName) {
             const oldPopup = document.getElementById('mp-bio-popup');
             if (oldPopup) oldPopup.remove();
 
-            let title, content;
-
-            // 🔴 修改: 判断是显示玩家简介还是看板内容
-            if (playerName === '__COMMAND_PANEL__') {
-                title = '主机指令看板';
-                content = State.commandPanelContent || '看板当前无内容。';
-            } else {
-                const player = State.players.find(p => p.name === playerName);
-                if (!player) return;
-                title = player.name;
-                content = player.desc || '该用户没有留下简介。';
-            }
-
             const popup = document.createElement('div');
             popup.id = 'mp-bio-popup';
-            popup.innerHTML = `
-                <h4>${title}</h4>
-                <p>${content}</p>
-            `;
             document.body.appendChild(popup);
 
+             if (playerName === '__COMMAND_PANEL__') {
+                // 看板模式：显示加载中，并请求数据
+                popup.innerHTML = `
+                    <h4>主机指令看板</h4>
+                    <div id="mp-panel-content" style="white-space: pre-wrap; min-height: 50px; color: var(--text-secondary-color);">
+                        正在从主机获取最新数据...
+                    </div>
+                    <div class="mp-divider"></div>
+                    <h4>房间对话记录</h4>
+                    <div id="mp-chat-list" class="mp-chat-history-container">
+                        <!-- 聊天记录将在这里渲染 -->
+                    </div>
+                `;
+
+                this.updateChatHistoryDOM();
+
+                // [修改] 发送获取 localStorage 的请求
+                this.sendAction('fetch_storage_content');
+
+            } else {
+                // 普通玩家简介模式 (保持不变)
+                const player = State.players.find(p => p.name === playerName);
+                if (!player) return;
+                popup.innerHTML = `
+                    <h4>${player.name}</h4>
+                    <p>${player.desc || '该用户没有留下简介。'}</p>
+                `;
+            }
+
+            // 关闭逻辑
             setTimeout(() => {
                 const closeHandler = (e) => {
                     if (!popup.contains(e.target)) {
@@ -525,6 +677,32 @@ window.MultiplayerState = {
                 };
                 document.body.addEventListener('click', closeHandler);
             }, 100);
+        },
+
+        // [新增] 更新弹窗内的看板内容
+        updatePanelContentDOM: function(content) {
+            const container = document.getElementById('mp-panel-content');
+            if (container) {
+                container.textContent = content || "（看板当前无内容）";
+                container.style.color = "var(--text-color)";
+            }
+        },
+
+        // [新增] 更新弹窗内的聊天列表
+        updateChatHistoryDOM: function() {
+            const list = document.getElementById('mp-chat-list');
+            if (!list) return;
+
+            list.innerHTML = State.chatHistory.map(msg => {
+                const time = new Date(msg.timestamp).toLocaleTimeString();
+                return `
+                    <div class="mp-chat-item">
+                        <span style="font-size:0.8em; color:#666;">[${time}]</span>
+                        <span class="sender">${msg.senderName}:</span>
+                        <span class="content">${msg.content}</span>
+                    </div>
+                `;
+            }).reverse().join(''); // 最新的在上面
         },
 
           async connect(role, roomId = null) {
@@ -612,24 +790,20 @@ window.MultiplayerState = {
                 this.renderLobby();
             }
         },
-         showPlayerShout: function(playerName, message) {
-            // 1. 找到目标悬浮球和它的父容器
+         showPlayerShout: function(playerName, message, isChat = false) {
             const ball = document.querySelector(`.mp-ball[data-player-name="${playerName}"]`);
             const container = document.getElementById('mp-floating-container');
             if (!ball || !container) return;
 
-            // 2. 移除可能存在的旧气泡 (现在从父容器中查找)
             const oldBubble = document.getElementById(`shout-bubble-for-${playerName}`);
             if (oldBubble) oldBubble.remove();
 
-            // 3. 创建新的气泡
             const bubble = document.createElement('div');
-            bubble.className = 'mp-shout-bubble';
-            bubble.id = `shout-bubble-for-${playerName}`; // 给一个唯一的ID方便管理
+            // [修改] 根据类型选择样式类
+            bubble.className = isChat ? 'mp-chat-bubble' : 'mp-shout-bubble';
+            bubble.id = `shout-bubble-for-${playerName}`;
             bubble.textContent = message;
-
-            // 4. 将气泡添加到父容器中
-            container.appendChild(bubble);
+ container.appendChild(bubble);
 
             // 5. 动态计算并设置气泡的位置
             //    使其与目标悬浮球对齐
@@ -656,25 +830,28 @@ setTimeout(() => {
 
         },
 
-          async handleSocketMessage(data) {
-            switch (data.type) {
-                case 'room_created':
-                    State.currentRole = 'host';
-                    State.roomId = data.roomId;
-                    showNovaAlert(`房间 ${data.roomId} 已创建`);
-                    this.renderLobby(); // 刷新大厅界面
-                    break;
+         async handleSocketMessage(data) {
+                switch (data.type) {
+                    case 'room_created':
+                        State.currentRole = 'host';
+                        State.roomId = data.roomId;
+                        showNovaAlert(`房间 ${data.roomId} 已创建`);
+                        this.renderLobby();
+                        this.setupInputInterface(); // [修改] 房主也设置输入界面
+                        break;
+
+                    case 'joined_success':
+                        State.currentRole = 'client';
+                        State.roomId = data.roomId;
+                        showNovaAlert(`成功加入房间 ${data.roomId}`);
+                        this.renderLobby();
+                        this.setupInputInterface(); // [修改] 调用新函数
+                        break;
           case 'player_shout':
                      
                     this.showPlayerShout(data.senderName, data.content);
                     break;
-                case 'joined_success':
-                    State.currentRole = 'client';
-                    State.roomId = data.roomId;
-                    showNovaAlert(`成功加入房间 ${data.roomId}`);
-                    this.hijackClientSendButton();
-                    this.renderLobby(); // 刷新大厅界面
-                    break;
+          
 
                      case 'room_update':
                    
@@ -776,8 +953,56 @@ setTimeout(() => {
                         document.getElementById('mp-status-text').innerText = data.message;
                     }
                     break;
-            }
-        },
+              case 'chat_broadcast':
+                    // 1. 存入历史 (保留最近50条)
+                    State.chatHistory.push(data);
+                    if (State.chatHistory.length > 50) State.chatHistory.shift();
+
+                    // 2. 显示气泡 (使用不同的样式)
+                    this.showPlayerShout(data.senderName, data.content, true);
+
+                    // 3. 如果看板弹窗正开着，实时更新列表
+                    this.updateChatHistoryDOM();
+                    break;
+
+                // [新增] 接收房主编辑状态
+                case 'host_status_update':
+                    State.hostIsEditing = data.isEditing;
+                    this.renderFloatingBalls(); // 刷新球体显示状态
+                    break;
+
+                // [新增] 接收房主返回的实时看板数据
+                case 'panel_data_sync':
+                    this.updatePanelContentDOM(data.content);
+                    break;
+
+                // [新增] 房主收到请求，发送数据
+                case 'request_panel_sync':
+                    if (State.currentRole === 'host') {
+                        const commandArea = document.getElementById('command-edit-area');
+                        const content = commandArea ? commandArea.value : "";
+                        this.sendAction('return_command_panel', {
+                            requesterId: data.requesterId,
+                            content: content
+                        });
+                    }
+                    break;
+       case 'request_storage_sync':
+                        if (State.currentRole === 'host') {
+                            const content = localStorage.getItem('assaCommandQueue') || '';
+                            this.sendAction('return_storage_content', {
+                                requesterId: data.requesterId,
+                                content: content
+                            });
+                        }
+                        break;
+
+                    // [新增] 客户端接收到最终的 localStorage 内容
+                    case 'storage_data_sync':
+                        this.updatePanelContentDOM(data.content);
+                        break;
+                }
+            },
 
  handleClientReceiveStream: function(data) {
             // 确保客户端有一个用于显示AI回复的气泡
@@ -836,9 +1061,28 @@ setTimeout(() => {
             }
         },
 
-  hijackClientSendButton: function() {
+        setupInputInterface: function() {
             const sendBtn = document.getElementById('send-button');
-            if (!sendBtn) return;
+            const userInput = document.getElementById('user-input');
+            if (!sendBtn || !userInput) return;
+
+            // 注入切换按钮 (如果不存在)
+            if (!document.getElementById('mp-mode-switch')) {
+                const switchBtn = document.createElement('div');
+                switchBtn.id = 'mp-mode-switch';
+                switchBtn.innerText = '行';
+                switchBtn.title = "点击切换：行动 / 对话";
+                userInput.parentNode.insertBefore(switchBtn, userInput);
+
+                switchBtn.onclick = () => {
+                    State.isChatMode = !State.isChatMode;
+                    switchBtn.innerText = State.isChatMode ? '话' : '行';
+                    switchBtn.className = State.isChatMode ? 'chat-mode' : '';
+                    userInput.placeholder = State.isChatMode ? '输入对话内容...' : '在这里输入你的行动...';
+                };
+            }
+
+            // 劫持发送按钮 (如果尚未劫持)
             if (sendBtn.getAttribute('data-hijacked')) return;
 
             const newBtn = sendBtn.cloneNode(true);
@@ -846,53 +1090,53 @@ setTimeout(() => {
             newBtn.id = 'send-button';
             newBtn.setAttribute('data-hijacked', 'true');
 
-            // 封装发送逻辑，以便按钮和回车键复用
-            const performClientSend = () => {
-                const userInput = document.getElementById('user-input');
-                const commandArea = document.getElementById('command-edit-area');
-
-                let userText = userInput ? userInput.value : "";
-                let commandText = commandArea ? commandArea.value : "";
-
-                let combinedText = commandText.trim();
-                if (combinedText && userText.trim()) {
-                    combinedText += '\n' + userText.trim();
-                } else if (userText.trim()) {
-                    combinedText = userText.trim();
-                }
-
-                if (!combinedText) return;
+            const performSend = () => {
+                const userInputElem = document.getElementById('user-input');
+                let userText = userInputElem ? userInputElem.value.trim() : "";
+                if (!userText) return;
 
                 if (State.socket && State.socket.readyState === WebSocket.OPEN) {
-                    this.sendAction('client_msg', { content: combinedText });
-                    if (userInput) userInput.value = '';
-                    if (commandArea) commandArea.value = '';
-                    showNovaAlert("指令已上传至主机");
+                    if (State.isChatMode) {
+                        // 发送对话消息 (房主和客户端都一样)
+                        this.sendAction('client_chat', { content: userText });
+                    } else {
+                        // 发送行动消息
+                        if (State.currentRole === 'host') {
+                     
+                            if(typeof handleSend === 'function') {
+                                handleSend(); // 触发酒馆自身的发送流程
+                            } else {
+                                console.error("handleSend function not found!");
+                            }
+                        } else {
+                            // 客户端：上传给主机
+                            const commandArea = document.getElementById('command-edit-area');
+                            let combinedText = userText;
+                            if (commandArea && commandArea.value.trim()) {
+                                combinedText = commandArea.value.trim() + '\n' + userText;
+                            }
+                            this.sendAction('client_msg', { content: combinedText });
+                            showNovaAlert("指令已上传至主机");
+                        }
+                    }
+                    if (userInputElem) userInputElem.value = '';
                 } else {
-                    showNovaAlert("未连接到主机");
+                    showNovaAlert("未连接到联机服务");
                 }
             };
 
-            newBtn.addEventListener('click', performClientSend);
+            newBtn.addEventListener('click', performSend);
 
-            const userInputElem = document.getElementById('user-input');
-    if (userInputElem) {
-      
-        userInputElem.addEventListener('keydown', (event) => {
-            // 检查是否是 Enter 键，并且没有按下 Shift 键 (允许换行)
-            if (event.key === 'Enter' && !event.shiftKey) {
-               
-                event.stopImmediatePropagation();
-                event.preventDefault(); // 同时保留 preventDefault 以确保万无一失
-
-                performClientSend();    // 执行和点击按钮相同的发送逻辑
-            }
-        }, true);  
-
-        console.log('[Multiplayer] 已成功劫持客户端输入框的 Enter 键 (使用捕获模式)。');
-    }
-    
-},
+            // 劫持回车键
+            userInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
+                    performSend();
+                }
+            }, true);
+        },
+ 
 
 
         // Hook 房主流
