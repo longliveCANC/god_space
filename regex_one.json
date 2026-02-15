@@ -13844,7 +13844,7 @@ pointer-events: auto;
     <button id="action-menu-btn" class="action-button zero-level-btn" title="更多操作">☰</button>
     <div id="action-popup-menu" class="action-popup-menu">
         <button id="add-qr-button" class="popup-menu-button">自定义qr</button>
-        <button id="things-button" class="popup-menu-button">记约定</button>
+         
         <button id="look-forum-button" class="popup-menu-button">看论坛</button>
         <button id="look-random-items-button" class="popup-menu-button">生成随机商品</button>
         <br>
@@ -31004,14 +31004,11 @@ const chatHistoryDiv = document.getElementById('chat-display-area'); // 我们�
     const userInput = document.getElementById('user-input');
     window.userInput = userInput;
     const sendButton = document.getElementById('send-button');
-    const thingsButton = document.getElementById('things-button');
+  
         const rerollButton = document.getElementById('reroll-button'); // ☆ 新成员：重写按钮
     const contextMenu = document.getElementById('context-menu');   // ☆ 新成员：右键菜单
    let worldBookName = "小蝌蚪找妈妈-同层版";
-   thingsButton.addEventListener('click', (event) => {
-         const messageToSend = `<request:在合适的路径记录正文中出现过的、且没有被记录过的约定/日程/待办事项>`;
-triggerassa(`/setinput ${messageToSend}`);
-});
+ 
 const lookForumButton = document.getElementById('look-forum-button');
    lookForumButton.addEventListener('click', (event) => {
          const messageToSend = `<request:${userName}同时要查看论坛，立刻参考forum.output_format规则，按照正确格式>`;
