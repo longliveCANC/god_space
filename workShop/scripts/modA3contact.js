@@ -343,7 +343,7 @@ window.MultiplayerState = {
                     <div class="mp-divider"></div>
                     ${State.currentRole === 'host'
                         ? `
-                            <button id="mp-toggle-panel-btn" class="mp-btn">${State.isCommandPanelEnabled ? '✅ 关闭看板通信' : '⬜️ 开启看板通信'}</button>
+                            <button id="mp-toggle-panel-btn" class="mp-btn">${State.isCommandPanelEnabled ? '✅ 关闭公屏' : '⬜️ 开启公屏'}</button>
                             <button id="mp-dissolve-btn" class="mp-btn danger">🚫 解散房间</button>
                           `
                         : `<button id="mp-leave-btn" class="mp-btn danger">🚪 退出房间</button>`
@@ -732,9 +732,15 @@ window.MultiplayerState = {
                 
                 case 'client_input_sync':
                     if (State.currentRole === 'client') {
+                        console.log("接收到了主机传来的user消息");
                         const userMessage = { role: 'user', content: data.content };
-                        if (typeof window.renderNewMessages === 'function') {
-                            window.renderNewMessages([userMessage]);
+                     if (typeof conversationHistory !== 'undefined' && Array.isArray(conversationHistory)) {
+                            conversationHistory.push(userMessage);
+                            await window.saveHistory();
+                            await window.processUpdateMemoryCommands(data.content);
+                             await new Promise(resolve => setTimeout(resolve, 500));
+                            worldHelper.renderHistory();
+                       
                         }
                     }
                     break;
@@ -897,7 +903,7 @@ window.MultiplayerState = {
             };
         }
     };
-
+ window.Multiplayer = Multiplayer;
     Multiplayer.init();
     
 })();
