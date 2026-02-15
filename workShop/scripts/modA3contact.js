@@ -345,7 +345,7 @@ window.MultiplayerState = {
             this.hookHostStream();
              this.hookPipelineSync();  
              this.monitorHostCommandArea();
-             this.observeCommandModal(); // [新增] 监控令小盒
+             this.observeCommandModal();  
             this.hijackTriggerAssa();  
         },
  observeCommandModal: function() {
@@ -708,8 +708,7 @@ window.MultiplayerState = {
           async connect(role, roomId = null) {
             const statusDiv = document.getElementById('mp-status-text');
             if (statusDiv) statusDiv.innerText = '正在连接服务器...';
-
-            
+ 
             let playerName = "User";
             if (typeof SillyTavern !== 'undefined' && SillyTavern.name1) {
                 playerName = SillyTavern.name1;
@@ -1061,55 +1060,40 @@ setTimeout(() => {
             }
         },
 
-        setupInputInterface: function() {
+   setupInputInterface: function() {
             const sendBtn = document.getElementById('send-button');
             const userInput = document.getElementById('user-input');
             if (!sendBtn || !userInput) return;
 
-            // 注入切换按钮 (如果不存在)
-            if (!document.getElementById('mp-mode-switch')) {
-                const switchBtn = document.createElement('div');
-                switchBtn.id = 'mp-mode-switch';
-                switchBtn.innerText = '行';
-                switchBtn.title = "点击切换：行动 / 对话";
-                userInput.parentNode.insertBefore(switchBtn, userInput);
-
-                switchBtn.onclick = () => {
-                    State.isChatMode = !State.isChatMode;
-                    switchBtn.innerText = State.isChatMode ? '话' : '行';
-                    switchBtn.className = State.isChatMode ? 'chat-mode' : '';
-                    userInput.placeholder = State.isChatMode ? '输入对话内容...' : '在这里输入你的行动...';
-                };
+            // 如果已经设置过，就跳过，防止重复绑定
+            if (document.body.getAttribute('data-mp-interface-setup') === 'true') {
+                return;
             }
+            document.body.setAttribute('data-mp-interface-setup', 'true');
 
-            // 劫持发送按钮 (如果尚未劫持)
-            if (sendBtn.getAttribute('data-hijacked')) return;
 
-            const newBtn = sendBtn.cloneNode(true);
-            sendBtn.parentNode.replaceChild(newBtn, sendBtn);
-            newBtn.id = 'send-button';
-            newBtn.setAttribute('data-hijacked', 'true');
+            // 1. 保存原始按钮的克隆，用于恢复
+            const originalBtnClone = sendBtn.cloneNode(true);
+            originalBtnClone.id = 'send-button-original-clone'; // 给个不同的ID
 
-            const performSend = () => {
+            // 2. 创建我们的联机模式发送按钮
+            const multiplayerBtn = sendBtn.cloneNode(true);
+            multiplayerBtn.id = 'send-button-multiplayer';
+
+
+            // 3. 定义联机模式下的发送逻辑
+            const performMultiplayerSend = () => {
                 const userInputElem = document.getElementById('user-input');
                 let userText = userInputElem ? userInputElem.value.trim() : "";
                 if (!userText) return;
 
                 if (State.socket && State.socket.readyState === WebSocket.OPEN) {
+                    // 在联机模式下，无论是房主还是客户端，"话"都是发聊天消息
                     if (State.isChatMode) {
-                        // 发送对话消息 (房主和客户端都一样)
                         this.sendAction('client_chat', { content: userText });
                     } else {
-                        // 发送行动消息
-                        if (State.currentRole === 'host') {
-                     
-                            if(typeof handleSend === 'function') {
-                                handleSend(); // 触发酒馆自身的发送流程
-                            } else {
-                                console.error("handleSend function not found!");
-                            }
-                        } else {
-                            // 客户端：上传给主机
+                        // 只有客户端在"行"模式下才需要上传给主机
+                        if (State.currentRole === 'client') {
                             const commandArea = document.getElementById('command-edit-area');
                             let combinedText = userText;
                             if (commandArea && commandArea.value.trim()) {
@@ -1118,6 +1102,7 @@ setTimeout(() => {
                             this.sendAction('client_msg', { content: combinedText });
                             showNovaAlert("指令已上传至主机");
                         }
+                        // 注意：房主在"行"模式下不走这里，因为按钮被换掉了
                     }
                     if (userInputElem) userInputElem.value = '';
                 } else {
@@ -1125,16 +1110,66 @@ setTimeout(() => {
                 }
             };
 
-            newBtn.addEventListener('click', performSend);
+            // 4. 给我们的联机按钮绑定事件
+            multiplayerBtn.addEventListener('click', performMultiplayerSend);
 
-            // 劫持回车键
+
+            // 5. 注入模式切换按钮
+            const switchBtn = document.createElement('div');
+            switchBtn.id = 'mp-mode-switch';
+            switchBtn.innerText = '行';
+            switchBtn.title = "点击切换：行动 / 对话";
+            userInput.parentNode.insertBefore(switchBtn, userInput);
+
+            // 6. 核心逻辑：切换按钮时，替换发送按钮
+            switchBtn.onclick = () => {
+                State.isChatMode = !State.isChatMode;
+                switchBtn.innerText = State.isChatMode ? '话' : '行';
+                switchBtn.className = State.isChatMode ? 'chat-mode' : '';
+                userInput.placeholder = State.isChatMode ? '输入对话内容...' : '在这里输入你的行动...';
+
+                // 如果是房主，并且切换到了"行动"模式，就换回原始按钮
+                const currentSendBtn = document.getElementById('send-button');
+                if (State.currentRole === 'host' && !State.isChatMode) {
+                    // 恢复到最原始的按钮逻辑
+                    if (currentSendBtn) {
+                         // 必须先克隆再替换，以保证事件监听器是最原始的
+                        const freshOriginalClone = originalBtnClone.cloneNode(true);
+                        freshOriginalClone.id = 'send-button';
+                        currentSendBtn.parentNode.replaceChild(freshOriginalClone, currentSendBtn);
+                    }
+                } else {
+                    // 否则（客户端，或房主的"话"模式），使用我们的联机按钮
+                    if (currentSendBtn) {
+                        const freshMpClone = multiplayerBtn.cloneNode(true);
+                        freshMpClone.id = 'send-button';
+                        // 重新绑定一次点击事件，因为克隆不会带事件
+                        freshMpClone.addEventListener('click', performMultiplayerSend);
+                        currentSendBtn.parentNode.replaceChild(freshMpClone, currentSendBtn);
+                    }
+                }
+            };
+
+            // 7. 劫持回车键
             userInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                     event.stopImmediatePropagation();
                     event.preventDefault();
-                    performSend();
+
+                    // 回车键的行为跟随当前按钮的点击行为
+                    document.getElementById('send-button').click();
                 }
             }, true);
+
+            // 初始状态设置：如果是房主，默认就是"行"模式，所以初始时不需要替换按钮。
+            // 如果是客户端，则需要立即替换成我们的联机按钮。
+            if (State.currentRole === 'client') {
+                 const currentSendBtn = document.getElementById('send-button');
+                 const freshMpClone = multiplayerBtn.cloneNode(true);
+                 freshMpClone.id = 'send-button';
+                 freshMpClone.addEventListener('click', performMultiplayerSend);
+                 currentSendBtn.parentNode.replaceChild(freshMpClone, currentSendBtn);
+            }
         },
  
 
