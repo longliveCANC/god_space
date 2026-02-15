@@ -15351,7 +15351,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.17';
+window.current_game_version = '3.7.18';
 
 
 
@@ -24995,6 +24995,67 @@ function safeValue(element, defaultValue = '') {
     return element.value ?? defaultValue;
 }
  async function generateFullCommand(isMission, customText = null) {
+
+     
+    // 检查全局是否存在联机状态接口，并且当前是否为客户端模式
+    if (typeof window.MultiplayerState?.isClient === 'function' && window.MultiplayerState.isClient() && window.MultiplayerState.isConnected()) {
+  
+
+        console.log('[Multiplayer] generateFullCommand 已在内部被劫持 (客户端模式)。');
+
+        let finalCommand = '<updateMemory>\n';
+        let updates = [];
+
+ 
+
+        //  提取属性点分配
+        document.querySelectorAll('.分配项').forEach(item => {
+            const path = item.dataset.path;
+            const pointsElement = item.querySelector('.分配-点数');
+            if (path && pointsElement) {
+                const points = parseInt(pointsElement.textContent);
+                if (points > 0) {
+                    const pathParts = path.split('.');
+                    let propertyName = '';
+                    if (pathParts.length > 0) {
+                        if (pathParts[pathParts.length - 1] === '基础' && pathParts.length > 1) {
+                            propertyName = pathParts[pathParts.length - 2];
+                        } else {
+                            propertyName = pathParts[pathParts.length - 1];
+                        }
+                    }
+                    if (propertyName) {
+                        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.属性.${propertyName}', ${points})`);
+                    }
+                }
+            }
+        });
+
+        if (updates.length > 0) {
+                  updates.push(`memory('global_lore.npc.${SillyTavern.name1}.身份', '')`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.hp', '100/100')`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.相关设定', {})`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.货币', {})`);
+        
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.背包', {})`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.技能', {})`);
+            finalCommand += `${updates.join('\n')}\n`;
+        }
+  
+    
+   
+        
+        
+        finalCommand += '</updateMemory>\n';
+
+        // 3. 附加玩家的额外输入
+        if (customText) {
+            finalCommand += `\n<request:额外要求：${customText}>`;
+        }
+
+        // 4. 直接返回精简后的指令，不再执行后续的完整逻辑
+        return finalCommand;
+    }
 if (!currentGameData || !assaSettingsData ||!currentGameData.user ) {
             await worldHelper.init();
         }
@@ -25210,13 +25271,49 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
         const viceSelect = document.getElementById('vice-select');
         updates.push(`set_attribute('概念段.美德与恶德.恶德', "愤怒", "${viceSelect.value}");`);
 
-        document.querySelectorAll('.分配项').forEach(item => {
+
+  if (typeof window.MultiplayerState?.isClient === 'function' && !window.MultiplayerState.isClient() && window.MultiplayerState.isConnected()) {
+         document.querySelectorAll('.分配项').forEach(item => {
+            const path = item.dataset.path;
+            const pointsElement = item.querySelector('.分配-点数');
+            if (path && pointsElement) {
+                const points = parseInt(pointsElement.textContent);
+                if (points > 0) {
+                    const pathParts = path.split('.');
+                    let propertyName = '';
+                    if (pathParts.length > 0) {
+                        if (pathParts[pathParts.length - 1] === '基础' && pathParts.length > 1) {
+                            propertyName = pathParts[pathParts.length - 2];
+                        } else {
+                            propertyName = pathParts[pathParts.length - 1];
+                        }
+                    }
+                    if (propertyName) {
+                        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.属性.${propertyName}', ${points})`);
+                    }
+                }
+            }
+        });
+     updates.push(`delete('global_lore.npc.${SillyTavern.name1}',info)`);
+      updates.push(`memory('global_lore.npc.${SillyTavern.name1}.身份', '')`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.hp', '100/100')`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.相关设定', {})`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.货币', {})`);
+        
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.背包', {})`);
+        updates.push(`memory('global_lore.npc.${SillyTavern.name1}.技能', {})`);
+    
+   
+            }else{
+ document.querySelectorAll('.分配项').forEach(item => {
             const path = item.dataset.path;
             const points = parseInt(item.querySelector('.分配-点数').textContent);
             if (points > 0) {
                 updates.push(`set_attribute('${path}', 0, ${points});`);
             }
         });
+  }
+       
 
         if (updates.length > 0) {
             finalCommand += `${updates.join('\n')}\n`;
@@ -25258,16 +25355,15 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
             finalCommand += `<request:同时，在正文立刻随机生成一个${userName}的天赋并记忆在global_lore.其他技能中。天赋不得和判定相关>\n`;
         }
         finalCommand += `正在校准...`;
+        if (typeof window.MultiplayerState?.isClient === 'function' && !window.MultiplayerState.isClient() && window.MultiplayerState.isConnected()) {
+    //  多人模式的后门
+            }
         return finalCommand;
     }
-
-
+ 
 /* 💖 妈妈为你设计的、简洁而强大的指令官（脱离酒馆环境版） 💖 */
 async function sendCommand(command, button, successText, showWarning) {
-    // 禁用按钮，防止重复点击
-    // initButton.disabled = true;
-    // godSpaceButton.disabled = true;
-    // if (customActionButton) customActionButton.disabled = true;
+     
     button.textContent = `[ 指令发送中... ]`;
 
     try {
@@ -25396,7 +25492,7 @@ godSpaceButton.addEventListener('click', async () => {
     
  
 }
-
+window.runInitializationMagic = runInitializationMagic;
 // 初始化结束————————————————————————————————————————————
 
    // 首先，在你的变量定义区域，添加这些新的变量
@@ -26584,8 +26680,8 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-       find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)/gs", // 赋予其全新的侦测法则
-     
+        find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)|<options\\b[^>]*>[\\s\\S]*?<\/options>/gs"
+      
         };
 
 
@@ -26975,8 +27071,8 @@ function nameMessageTitle(index) {
 }
   function showConfirmModal(title, message, onConfirm, onCancel) {
     const modal = document.getElementById('delete-modal');
-    if (!modal) return;
-
+ if (!modal) return;
+ modal.style.zIndex = '999999999';
     const titleEl = modal.querySelector('.modal-title');
     const messageEl = modal.querySelector('#delete-modal-message');
     
@@ -27015,8 +27111,7 @@ function nameMessageTitle(index) {
     modal.classList.add('active');
 }
 
-
-   async function saveHistory() {
+ async function saveHistory() {
     try {
          
         const zeroLevelMessage = await TavernHelper.getChatMessages(0);
@@ -30020,7 +30115,7 @@ async function processSpecialModulesInMessage(content) {
     }
  
     // 先移除thinking/think/guide标签内容
-    const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking))>/gs, '');
+    const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking|build))>/gs, '');
 const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S])*?)<\/danmu>/gs)];
   if (allDanmuMatches.length > 0) {
     const lastDanmuMatch = allDanmuMatches[allDanmuMatches.length - 1];
@@ -30050,6 +30145,43 @@ const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S
             }
         }
     }
+    if (typeof window.MultiplayerState?.getMyInfo === 'function') {
+    const myInfo = window.MultiplayerState.getMyInfo();
+ const myName = SillyTavern.name1;
+    // 只有在获取到自己名字的情况下才进行处理
+    if (myName) {
+        console.log("名字？",myName);
+        // 1. 匹配所有 <options target="...">...</options> 区块
+        const allOptionsMatches = [...cleanedContent.matchAll(/<options\s+target="([^"]+)">((?:(?!<\/options>)[\s\S])*?)<\/options>/gs)];
+
+        if (allOptionsMatches.length > 0) {
+            let myOptionsContent = ''; // 用于存储自己的选项内容
+        
+            allOptionsMatches.forEach(match => {
+                const targetName = match[1];
+                const optionsData = match[2].trim();
+console.log([...targetName].map(c => c.charCodeAt(0)));
+console.log([...myName].map(c => c.charCodeAt(0)));
+                // 如果目标是自己，则保存选项数据
+                 if (targetName.trim().normalize() === myName.trim().normalize()){
+                    myOptionsContent = optionsData;
+                }
+
+        
+            });
+
+            // 2. 如果找到了自己的选项，则调用 setupUI
+            const optionsContainer = document.getElementById('options-module-container');
+            if (optionsContainer && myOptionsContent && typeof setupUI === 'function') {
+                optionsContainer.style.display = 'block';
+                setupUI(myOptionsContent);
+                console.log(`[Multiplayer Options] 已为玩家 "${myName}" 渲染专属选项。`);
+            }
+
+         
+        }
+    }
+}
 
     // --- 全新的"论坛"处理逻辑 ---
     const allForumMatches = [...cleanedContent.matchAll(/<forum_threads>((?:(?!<forum_threads>)[\s\S])*?)<\/forum_threads>/gs)];
@@ -31490,6 +31622,8 @@ async function saveHistory() {
 
 
 }
+window.saveHistory = saveHistory;
+
 
  async function handleReroll() {
     if (rerollButton.disabled) return;
@@ -33776,7 +33910,7 @@ const extractBalancedArgs = (str, startTrigger) => {
 
 
  const debouncedHandle = debounce((ops) => {
-   
+
     // 如果没有传入 operations，就默认使用全局的 collectedBatchOps
       let  opsToProcess = ops || collectedBatchOps;
 
@@ -36525,7 +36659,7 @@ console.log(`[Nova's Prompt Assembler] 分组处理后剩下 ${finalEntriesToPro
     
     // 移除其他 {{...}} 格式（非random的）
     content = content.replace(/\{\{(?!random::?).*?\}\}/g, '');
-    
+ 
     // 替换用户名
     if (typeof userName !== 'undefined' && userName) {
         content = content.replace(/&lt;user&gt;/g, userName);
@@ -36625,7 +36759,7 @@ async function handleSend(options = {}) {
     const abortSignal = NovaAbortController.start();
     setTimeout(() => console.log('等待锁释放'), 50);
 
-    // --- 🆕 逻辑修正：优先级调整 🆕 ---
+     
     // 1. 优先使用传入的 batchIndex，如果没有传，默认为 1
     let currentBatchIndex;
     let currentExBatchIndex;
@@ -36921,7 +37055,10 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
             //console.log("检测到并移除了包裹指令的引号。");
         }
 
-       
+ if (typeof window.MultiplayerState?.isClient === 'function' && !window.MultiplayerState.isClient() && window.MultiplayerState.isConnected() && userInput.value.trim()) {
+                      userInput.value = `\n"${userName}":${userInput.value}` ;
+
+    }
         userInput.value = cleanCommand + userInput.value;
 
        let continuationText = '';
@@ -37003,13 +37140,18 @@ if(ifScanMemory === "true"){
     }
 
         if (!isReroll) {
-                if (!userText || sendButton.disabled) {
+        if (!userText || sendButton.disabled) {
             overlay.classList.remove('active'); // 如果无效，也别忘了开锁
             return;
         }
          const userMessage = { role: 'user', content: userText };
            if (!isReroll && !isContinuation) {
               conversationHistory.push(userMessage);
+               if (typeof window.MultiplayerState?.isClient === 'function' && !window.MultiplayerState.isClient() && window.MultiplayerState.isConnected()) {
+                    console.log('[Multiplayer] 同步主机用户输入到客户端...');
+                    // 通过 window.Multiplayer 调用 sendAction
+                    window.Multiplayer.sendAction('client_input_sync', { content: userMessage.content });
+                }
            }
        
    
@@ -37440,13 +37582,13 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                 .replace(/」/g, '」</span>')
                 // .replace(/NOVA_BR/g, '<br>')
                  .replace(/\*\*(.+?)\*\*/g, function(match, p1) { return '<strong>' + p1 + '</strong>'; })
-    .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
+          .replace(/\*(.+?)\*/g, function(match, p1) { return '<em>' + p1 + '</em>'; });
                             aiResponseBubble.innerHTML = formatAsTavernRegexedString(
             text,
               'ai_output',
             'display',
             { depth: -1 }
-        );
+          );
                         // aiResponseBubble.innerHTML = formatAsDisplayedMessage(text);
                     }
                 }, 100);
@@ -37609,7 +37751,7 @@ const finalAiResponse = hookDataBeforeSave.response;
         console.log("[Nova's Tapestry] 成功将新的故事片段编织到当前分支中。");
 
         if(!isContinuationVar){
-            await worldHelper.renderHistory();
+            await worldHelper.renderHistory(false,true);
         } else {
             const chatDisplayArea = document.getElementById('chat-display-area');
             if (chatDisplayArea && chatDisplayArea.children.length > 0) {
@@ -37872,7 +38014,7 @@ const finalAiResponse = hookDataBeforeSave.response;
         console.log("[Nova's Tapestry] (非流式) 成功将新的故事片段编织到当前分支中。");
 
         if(!isContinuationVar){
-            await worldHelper.renderHistory();
+            await worldHelper.renderHistory(false,true);
         } else {
             const chatDisplayArea = document.getElementById('chat-display-area');
             if (chatDisplayArea && chatDisplayArea.children.length > 0) {
@@ -38167,8 +38309,19 @@ let backupData = {};
                 await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
             }
         } else {
-                 if(is_show_notifications === 'true'){
-        if((double_api === "true" && batches === 2)){
+              try {
+                if (typeof window.novaSyncHook === 'function') {
+                    console.log('[Multiplayer Trigger] 流水线执行完毕，触发最终历史同步钩子。');
+                    window.novaSyncHook({
+                        status: 'finished',
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            } catch (hookError) {
+                console.error('[Multiplayer Trigger] 触发最终同步钩子时出错:', hookError);
+            }
+    if(is_show_notifications === 'true'){
+    if((double_api === "true" && batches === 2)){
 
    if(if_render_after_2batch=== 'false'){
                debouncedHandle();
@@ -38235,7 +38388,7 @@ let backupData = {};
                 console.log("[Nova's Tapestry] 中断后，成功将新的片段编织到上一段记忆中。");
 
                 if (!isContinuationVar) {
-                    await worldHelper.renderHistory();
+                    await worldHelper.renderHistory(false,true);
                 } else {
                     // 你的特殊UI处理逻辑...
                     const chatDisplayArea = document.getElementById('chat-display-area');
@@ -38372,11 +38525,11 @@ let backupData = {};
         document.getElementById('continue-button').disabled = false;
         document.getElementById('continue-var-button').disabled = false;  
         updateRerollButtonState();
-
-   
+  
     }
 }
 window.handleSend = handleSend;
+ 
  
  async function checkAndRestoreDirtyWorldbooks() {
     console.log("[Nova's Safety Net] 正在启动时检查是否有未恢复的世界书 (from IndexedDB)...");
@@ -43982,6 +44135,7 @@ const isThingsRecord = String(chatdata.things_record||'true');
  const is_genji = String(chatdata.is_genji||'false');
   const is_complex_task = String(chatdata.is_complex_task||'true');
     const map_rule = String(chatdata.map_rule||'');
+    const multiPlayer_mode = String(chatdata.multiPlayer_mode||'false');
 
 
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
@@ -44110,8 +44264,9 @@ if(dice_use ==="false"){
 }
 if(map_rule ==="false"){
 document.getElementById('map-view-orb').style.display = 'none';
- 
 }
+
+
 
 if(is_complex_task !== "true"){
           document.getElementById('task_bookmark').style.display = 'none';
@@ -44137,10 +44292,20 @@ if(is_complex_task !== "true"){
           
         }
 
-        if(weneedshop ==='true'){
+    
+if(multiPlayer_mode ==="true"){
+   
+document.getElementById('skill-choice-orb').style.display = 'none';
+document.getElementById('page-character-orb').style.display = 'none';
+}else{
+ 
+document.getElementById('skill-choice-orb').style.display = 'flex';
+document.getElementById('page-character-orb').style.display = 'flex';
+}
+
+    if(weneedshop ==='true'){
                 document.getElementById('shop-wrapper-orb').style.display = 'flex';
         }
-
         if (!currentGameData || !assaSettingsData || !playCharacterData) {
             throw new Error("核心数据(stat_data, assa_data, or play_character_data)缺失");
         }
@@ -46847,7 +47012,7 @@ function setupReconfigModal() {
         { name: '一直启用商店', key: 'we_need_shop', default: 'false', desc: '使商店即使在末日和无世界观也可以开启' },
         { name: '显示更新通知', key: 'is_show_notifications', default: 'true', desc: '关闭后不再弹出变量更新提示' },
         { name: '不再备份快照', key: 'is_no_backup', default: 'false', desc: '不再进行存档快照备份和每回合消息的备份' },
-        { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染。异步最好开启这个去渲染弹幕和评论区' },
+        { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染。异步最好开启这个去渲染弹幕和选项区' },
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
            { name: '异步前确认', key: 'if_confirm_phase2_generation', default: 'false', desc: '开启后，在生成异步前，会弹出一个确认框' },
@@ -52166,7 +52331,7 @@ function generateChoices(options) {
                     }
                 });
 
-                // --- 新增代码开始：键盘快捷键支持 ---
+                
                 document.addEventListener('keydown', (e) => {
                     // 如果当前聚焦在输入框、文本域或可编辑区域，则不触发快捷键
                     const activeTag = document.activeElement.tagName.toLowerCase();
@@ -60593,27 +60758,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isNewGame && isInitPage) {
          GuideEngine.init();
         GuideEngine.start('intro', TUTORIAL_MODULES['intro'].steps, () => {
-            // 开局引导完成后的回调：使用自定义弹窗询问
-            // GuideEngine.confirm(
-            //     '开局引导完成',
-            //     '是否继续查看主界面引导？<br>(将生成测试消息并进入主界面)',
-            //     async () => { // 用户点击了"继续"
-            //         // 伪造历史并跳转
-            //         if (typeof conversationHistory !== 'undefined') {
-            //             conversationHistory.push({
-            //                 role: 'assistant',
-            //                 content: '【系统提示】引导模式已启动。正在模拟进入主神空间...<br>你发现自己站在一个巨大的光球下方，四周是无尽的星空。'
-            //             });
-            //         }
-            //         if (window.worldHelper && window.worldHelper.renderHistory) {
-            //             // 等待界面渲染完成
-            //             await window.worldHelper.renderHistory(false, true);
-
-            //             // --- 修复点：在渲染完成后再启动主界面引导 ---
-            //             GuideEngine.start('main_interface', TUTORIAL_MODULES['main_interface'].steps);
-            //         }
-            //     }
-            // );
+           
         });
     }
 

@@ -1,4 +1,4 @@
-(function () {
+( function () {
     'use strict';
 
     // 🔴 配置区域
@@ -20,7 +20,10 @@ window.MultiplayerState = {
             // 当角色是 'client' 并且处于连接状态时，返回 true
             return State.currentRole !== 'host' ;
         },
-        
+         isConnected: function() {
+            // 当角色是 'client' 并且处于连接状态时，返回 true
+            return State.isConnected;
+        },
         getMyInfo: function() {
             return State.myInfo;
         }
@@ -168,7 +171,7 @@ window.MultiplayerState = {
             border: 1px solid var(--border-color);
             font-size: 14px;
             width: max-content; 
-            max-width: 90vw;
+            max-width: 80vw;
             white-space: pre-wrap; /* 允许内容过长时换行 */
             word-break: break-all;
             opacity: 0;
@@ -548,7 +551,7 @@ window.MultiplayerState = {
             // 客户端警告
             if (role === 'client') {
                 const confirm = await new Promise(resolve => {
-                    showConfirmModal('数据上传警告',
+                    createConfirmModal('数据上传警告',
                         `即将连接至房间 [${roomId}]。\n您的ID [${playerName}] 及当前角色设定将被上传至主机。\n是否确认授权？`,
                         () => resolve(true),
                         () => resolve(false)
@@ -639,15 +642,18 @@ window.MultiplayerState = {
             bubble.style.left = `${ball.offsetLeft + ball.offsetWidth + 10}px`; // 稍微调整间距
 
             // 6. 设置自动消失的定时器 (逻辑不变)
-            const duration = 2000 + Math.floor(message.length / 10) * 1000;
+            const baseDuration = 2000 + Math.floor(message.length / 10) * 1000;
+const maxDuration = 5000; // 最大停留时间
+const duration = Math.min(baseDuration, maxDuration);
 
-            setTimeout(() => {
-                if (bubble) {
-                    bubble.style.transition = 'opacity 0.5s ease';
-                    bubble.style.opacity = '0';
-                    setTimeout(() => bubble.remove(), 500);
-                }
-            }, duration);
+setTimeout(() => {
+    if (bubble) {
+        bubble.style.transition = 'opacity 0.5s ease';
+        bubble.style.opacity = '0';
+        setTimeout(() => bubble.remove(), 500);
+    }
+}, duration);
+
         },
 
           async handleSocketMessage(data) {
@@ -758,7 +764,7 @@ window.MultiplayerState = {
                             await window.saveHistory();
                             await window.processUpdateMemoryCommands(data.message.content);
                              await new Promise(resolve => setTimeout(resolve, 500));
-                            worldHelper.renderHistory();
+                            worldHelper.renderHistory(false,true);
                        
                         }
                     }
@@ -785,7 +791,7 @@ window.MultiplayerState = {
                 aiResponseBubble.classList.add('message-bubble', 'assistant-message');
                 aiResponseBubble.innerHTML = '<em>正在接收主机信号...</em>';
                 chatHistoryDiv.appendChild(aiResponseBubble);
-                chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+                // chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
             }
 
             const text = data.text;
@@ -812,7 +818,7 @@ window.MultiplayerState = {
                         aiResponseBubble.innerHTML = formattedText; // 降级处理
                     }
                 }
-                aiResponseBubble.parentElement.scrollTop = aiResponseBubble.parentElement.scrollHeight;
+                // aiResponseBubble.parentElement.scrollTop = aiResponseBubble.parentElement.scrollHeight;
             }, 100);
         },
 
@@ -906,4 +912,148 @@ window.MultiplayerState = {
  window.Multiplayer = Multiplayer;
     Multiplayer.init();
     
+//正则导入
+     
+
+    try {
+        const ruleName = '主神空间_骰子美化_01';
+
+        const existing = TavernHelper.getTavernRegexes({ scope: 'character' })
+            .some(r => r.script_name === ruleName);
+
+        if (existing) {
+            
+            return; // 直接退出，不调用更新函数
+        }
+
+          TavernHelper.updateTavernRegexesWith((regexes) => {
+
+            const newRule = {
+                id: crypto.randomUUID(),
+                script_name: ruleName,
+                enabled: true,
+                scope: 'character',
+
+                find_regex: "/<roll>([\\s\\S]*?)<\\/roll>/gs",
+                replace_string: `<div style="
+  max-width:600px;
+  max-height:400px;
+  overflow:auto;
+  padding:12px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  background:#f7f7f7;
+  color:black;
+  font-family:Consolas, monospace;
+  font-size:14px;
+  line-height:1.5;
+  white-space:pre-wrap;
+  word-break:break-word;
+">
+  <pre style="margin:0;">$1</pre>
+</div>`,
+
+                trim_strings: "",
+
+                source: {
+                    user_input: false,
+                    ai_output: true,
+                    slash_command: false,
+                    world_info: false,
+                },
+
+                destination: {
+                    display: true,
+                    prompt: false,
+                },
+
+                run_on_edit: false,
+                min_depth: null,
+                max_depth: null,
+            };
+
+            regexes.unshift(newRule);
+            return regexes;
+
+        }, { scope: 'character' });
+
+        toastr.success('主神空间_骰子美化_01 正则导入完成。');
+
+    } catch (error) {
+        console.error(error);
+        toastr.error('导入失败：' + error.message);
+        throw error;
+    }
+ 
+ function createConfirmModal(title, message, onConfirm, onCancel) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: var(--container-bg-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2147483647;
+        backdrop-filter: blur(6px);
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: var(--modal-content-bg);
+        background-color: var(--background-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+    
+        padding: 24px;
+        border-radius: 12px;
+        min-width: 320px;
+        font-family: var(--base-font-family);
+        font-size: var(--base-font-size);
+        line-height: var(--base-line-height);
+    `;
+
+    modal.innerHTML = `
+        <h3 style="margin:0 0 10px 0; color: var(--primary-color);">
+            ${title}
+        </h3>
+        <div style="margin:15px 0; color: var(--text-secondary-color);">
+            ${message}
+        </div>
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button id="confirmBtn" style="
+                background: var(--primary-color);
+                color: #000;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                cursor: pointer;
+            ">确认</button>
+
+            <button id="cancelBtn" style="
+                background: var(--danger-color);
+                color: #fff;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                cursor: pointer;
+            ">取消</button>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    modal.querySelector('#confirmBtn').onclick = () => {
+        document.body.removeChild(overlay);
+        onConfirm && onConfirm();
+    };
+
+    modal.querySelector('#cancelBtn').onclick = () => {
+        document.body.removeChild(overlay);
+        onCancel && onCancel();
+    };
+}
+
+  
 })();
