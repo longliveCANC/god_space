@@ -15351,7 +15351,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.19';
+window.current_game_version = '3.7.20';
 
 
 
@@ -38317,6 +38317,17 @@ let backupData = {};
                 await TavernHelper.insertOrAssignVariables({ batch: 1, exbatch: 0, batches: 1 }, { type: 'chat' });
             }
         } else {
+          if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
+            const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
+
+            // 确保我们有可以修改的消息，并且时间信息不为空
+        
+            if (aiMessage && aiMessage.content && timeString.trim() !== '' ) {
+                aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
+                //console.log(`[Nova's Time Stamp] (Pre-Save) 已为这条回应添加了时间的印记 -> ${timeString}`);
+ 
+            }
+        }
               try {
                 if (typeof window.novaSyncHook === 'function') {
                     //console.log('[Multiplayer Trigger] 流水线执行完毕，触发最终历史同步钩子。');
@@ -38510,19 +38521,6 @@ let backupData = {};
             await initDisplay();
                 
  
- 
-     if (typeof isEmphasizeTime !== 'undefined' && isEmphasizeTime === 'true' && currentGameData) {
-            const timeString = `${SafeGetValue(currentGameData?.user?.current_location)}-${SafeGetValue(currentGameData?.纪年)}-${SafeGetValue(currentGameData?.日期)}-${SafeGetValue(currentGameData?.时间)}-${SafeGetValue(currentGameData?.星期)} ${SafeGetValue(currentGameData?.天气)}`;
-
-            // 确保我们有可以修改的消息，并且时间信息不为空
-        
-            if (aiMessage && aiMessage.content && timeString.trim() !== '' ) {
-                aiMessage.content += `\n<loc&time>${timeString}</loc&time>`;
-                //console.log(`[Nova's Time Stamp] (Pre-Save) 已为这条回应添加了时间的印记 -> ${timeString}`);
- 
-            }
-        }
-  
             // 使用 setTimeout 保持原来的后台恢复行为
             setTimeout(() => restoreWorldbookNow().catch(e => console.error("后台恢复世界书时出错:", e)), 500);
         } 
@@ -44179,6 +44177,9 @@ dice_use= String(chatdata.dice_use||'true');
     weneedshop = String(localStorage.getItem('we_need_shop')) || 'false';
     is_show_notifications = String(localStorage.getItem('is_show_notifications')) || 'true';
     noBackup = String(localStorage.getItem('is_no_backup')) || 'false';
+    if(!localStorage.getItem('if_render_after_2batch')){
+        localStorage.setItem('if_render_after_2batch','true');
+    }
     if_render_after_2batch = String(localStorage.getItem('if_render_after_2batch')) || 'true';
     // if_render_after_2batch = "true";
     is_worldbook_lock = String(localStorage.getItem('is_worldbook_lock')) || 'false';
