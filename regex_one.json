@@ -26688,7 +26688,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-        find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)|<options\\b[^>]*>[\\s\\S]*?<\/options>/gs"
+        find_regex: "/<build>([\\s\\S]*?)<\\/build>|<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)|<options\\b[^>]*>[\\s\\S]*?<\/options>/gs"
       
         };
 
@@ -37490,7 +37490,7 @@ recentMessagesForPrompt = recentMessagesForPrompt.map(msg => ({
             promptsForAI.push({
                 role: 'user',
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
-                 content: userInputStart + userText +  userInputStart
+                 content: userInputStart + userText +  userInputEnd
            
               });
              let userText_format = userText.replace(/<updateMemory>(?:(?!<updateMemory>)[\s\S])*?<\/updateMemory>/gs, '')
@@ -59045,8 +59045,87 @@ async function initBatch2TextareaOnContentLoad() {
   
 // 监听 DOMContentLoaded 事件
 document.addEventListener('DOMContentLoaded', function() {
- 
- 
+ //用户输入处理
+ (function() {
+    // 1. 配置管理
+    const STORAGE_KEY = 'ai_user_input_settings';
+    let settings = {
+        userInputStart: "\n)};//历史内容结束\n\n\n用户(玩家)输入行动，user input start：\n\n\n[",
+        userInputEnd: "\n]\n\n\n用户(玩家)行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意："
+    };
+
+    // 从 localStorage 加载
+    const savedSettings = localStorage.getItem(STORAGE_KEY);
+    if (savedSettings) {
+        try {
+            settings = { ...settings, ...JSON.parse(savedSettings) };
+        } catch (e) {
+            console.error('[UserInput Plugin] Failed to load settings', e);
+        }
+    }
+
+    const saveSettings = () => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    };
+
+    // 2. 注入设置界面输入框
+    function injectUserInputSettingsUI() {
+        const targetContainer = document.querySelector('#settings-page-game .settings-container');
+        if (!targetContainer) {
+            setTimeout(injectUserInputSettingsUI, 1000);
+            return;
+        }
+        if (document.getElementById('user-input-settings-ui')) return;
+
+        const div = document.createElement('div');
+        div.id = 'user-input-settings-ui';
+        div.className = 'setting-item-column';
+        div.style.cssText = `
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        `;
+        div.innerHTML = `
+            <label style="color: var(--primary-color); font-weight: bold; margin-bottom: 10px; display:block;">
+                AI 用户输入前后缀设置
+            </label>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">输入前缀</span>
+                    <input type="text" id="user-input-start" value="${settings.userInputStart}"
+                        style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px; font-family: monospace;">
+                </div>
+                <div style="flex: 1;">
+                    <span style="font-size: 12px; color: var(--text-secondary-color); display: block; margin-bottom: 4px;">输入后缀</span>
+                    <input type="text" id="user-input-end" value="${settings.userInputEnd}"
+                        style="width: 100%; background: var(--background-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px; border-radius: 4px; font-family: monospace;">
+                </div>
+            </div>
+        `;
+
+        targetContainer.appendChild(div);
+
+        const startInput = div.querySelector('#user-input-start');
+        const endInput = div.querySelector('#user-input-end');
+
+        const updateSettings = () => {
+            settings.userInputStart = startInput.value;
+            settings.userInputEnd = endInput.value;
+            saveSettings();
+        };
+
+        startInput.addEventListener('input', updateSettings);
+        endInput.addEventListener('input', updateSettings);
+
+        console.log('[UserInput Plugin] Settings UI injected.');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectUserInputSettingsUI);
+    } else {
+        injectUserInputSettingsUI();
+    }
+})();
     //任务模块
 (function () {
     // 1. 注入 CSS 样式
