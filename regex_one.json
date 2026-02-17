@@ -15392,6 +15392,7 @@ let lasttoken = 0;
 let summarys = null;
 let ISNEWMAP = "false";
 let isEmphasizeTime = "false";
+let is_user_relative_attr= "false";
 let is_simple_stream = "false";
 let old_doubleapi = "false";
 let noBackup = "false";
@@ -15412,6 +15413,9 @@ let batches = 1;
 let playerinput = "";
 let double_api = "false"; // 控制是否双重发送。暂时为了调试先这样
 let enable_preset_2nd_pass = "true"; // 控制第二次发送是否启用酒馆预设
+let userInputStart = "\n)};//历史内容结束\n\n\n用户(玩家)输入行动，user input start：\n\n\n[";
+let userInputEnd = "\n]\n\n\n用户(玩家)行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意：";
+
     let worldBookState = {
         currentTab: 'settings', // 默认显示设定
         currentPage: 1,
@@ -21196,6 +21200,10 @@ function isColliding(rect1, existingRects) {
   // HUD toggle 按钮点击事件
 document.querySelectorAll('.hud-toggle').forEach(toggle => {
     toggle.addEventListener('click', (e) => {
+        
+        //每次点的时候都判断是不是联机，或者别的逻辑，去扣除某个选项。
+        //1、联机。2、 无世界观
+
         e.stopPropagation(); // 阻止事件冒泡
         playSound(document.getElementById('click-sound'), 0.6);
         const targetId = e.currentTarget.dataset.target;
@@ -35203,6 +35211,7 @@ if (lastPathSegment === key) {
 
  
       let valueToProcess = path2Str;
+      if(is_user_relative_attr === "true"){
 if (typeof valueToProcess === 'string') {
     const trimmedValue = valueToProcess.trim().replace(/^["']|["']$/g, '');
     if (/^[+\-]\d+(\.\d+)?$/.test(trimmedValue)) {
@@ -35236,7 +35245,7 @@ if (typeof valueToProcess === 'string') {
         }
     }
 }
-
+}
 const finalValue = tryParseJson(valueToProcess); 
 
 
@@ -37481,7 +37490,7 @@ recentMessagesForPrompt = recentMessagesForPrompt.map(msg => ({
             promptsForAI.push({
                 role: 'user',
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
-                 content: "\n)};//历史内容结束\n\n\n用户(玩家)输入行动，user input start：\n\n\n[\n" + userText + "\n]\n\n\n用户(玩家)行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意："
+                 content: userInputStart + userText +  userInputStart
            
               });
              let userText_format = userText.replace(/<updateMemory>(?:(?!<updateMemory>)[\s\S])*?<\/updateMemory>/gs, '')
@@ -44086,13 +44095,23 @@ async function checkWorldbookBinding(worldbookName = '小蝌蚪找妈妈-同层�
 
 
 async function initDisplay(is_first=true) {
-  
+ 
     console.log(`[initDisplay 被召唤] is_first: ${is_first}, 当前时间: ${new Date().toLocaleTimeString()}`);
     try {
  
+const savedSettings = localStorage.getItem('ai_user_input_settings');
+if (savedSettings) {
+    try {
+        const parsed = JSON.parse(savedSettings);
+        userInputStart = parsed.userInputStart || userInputStart;
+        userInputEnd = parsed.userInputEnd || userInputEnd;
+    } catch (e) {
+        console.error('[UserInput] Failed to parse settings', e);
+    }
+}
 
  // 设置高度为设备高度
-document.getElementById('main-wrapper').style.height = window.innerHeight + 'px';
+// document.getElementById('main-wrapper').style.height = window.innerHeight + 'px';
 renderCustomQRButtons();
  const data = await TavernHelper.getVariables({ type: 'message' });
   const chatdata = await TavernHelper.getVariables({ type: 'chat' });
@@ -44134,7 +44153,7 @@ const isThingsRecord = String(chatdata.things_record||'true');
     const map_rule = String(chatdata.map_rule||'');
     const multiPlayer_mode = String(chatdata.multiPlayer_mode||'false');
 
-
+is_user_relative_attr =String(chatdata.is_user_relative_attr||'false');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);
