@@ -12954,7 +12954,7 @@ pointer-events: auto;
   <div class="mod-tab" data-for="npccg-on" data-name="npccg-mode" data-off-id="npccg-off">npc立绘</div>
          <div class="mod-tab" data-for="npc-info-1" data-name="npc-info">极简npc</div>
         <div class="mod-tab" data-for="npc-info-2" data-name="npc-info">简单npc</div>
-        <div class="mod-tab" data-for="npc-info-3" data-name="npc-info">复杂npc</div>
+        <div class="mod-tab" data-for="npc-info-3" data-name="npc-info">空npc</div>
 <div class="mod-tab" data-for="npc-love-on" data-name="npc-love-mode" data-off-id="npc-love-off">分阶段好感</div>
          <div class="mod-label">其他</div>
                 <div class="mod-tab" data-for="options-on" data-name="options-mode" data-off-id="options-off">选项区</div>
@@ -15351,7 +15351,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.18';
+window.current_game_version = '3.7.19';
 
 
 
@@ -44111,7 +44111,13 @@ if (savedSettings) {
 }
 
  // 设置高度为设备高度
-// document.getElementById('main-wrapper').style.height = window.innerHeight + 'px';
+const mainWrapper = document.getElementById('main-wrapper');
+const currentHeight = parseInt(mainWrapper.style.height) || 0;
+
+if (currentHeight < 800) {
+    mainWrapper.style.height = window.innerHeight + 'px';
+}
+
 renderCustomQRButtons();
  const data = await TavernHelper.getVariables({ type: 'message' });
   const chatdata = await TavernHelper.getVariables({ type: 'chat' });
@@ -46989,7 +46995,7 @@ function setupReconfigModal() {
         { name: '称号系统', uid: 51, category: 'gameplay', desc: '启用玩家称号' },
          { name: '极简npc', uid: 44, group: 'npc-info', category: 'gameplay', desc: '极少NPC信息' },
         { name: '简单npc', uid: 72, group: 'npc-info', category: 'gameplay', desc: '标准NPC信息' },
-        { name: '复杂npc', uid: 36, group: 'npc-info', category: 'gameplay', desc: '详细NPC信息' },
+        { name: '空npc', uid: 36, group: 'npc-info', category: 'gameplay', desc: '不给npc任何具体格式' },
                { name: '根基体系', uid: 63, category: 'gameplay', desc: '启用血统、改造、功法' },
                 { name: '任务系统开', uid: 7, group: 'mission',category: 'gameplay', desc: '启用任务记录和追踪'},
                  { name: '任务系统关', uid: 95, group: 'mission',category: 'gameplay', desc: '关闭任务系统'},
