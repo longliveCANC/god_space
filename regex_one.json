@@ -12901,8 +12901,9 @@ pointer-events: auto;
     </div>
     <div class="creator-attitude-group">
 
-        <div class="mod-tab" data-for="real-world-on" data-name="real-world-mode" data-off-id="real-world-off">真实MOD</div>
+        <div class="mod-tab" data-for="real-world-on" data-name="real-world-mode" data-off-id="real-world-off" style="display: none;">真实MOD</div>
         <div class="mod-tab" data-for="hard-on" data-name="hard-mode" data-off-id="hard-off">困难MOD</div>
+        <div class="mod-tab" data-for="npchard-on" data-name="npchard-mode" data-off-id="npchard-off">npc韧性</div>
         <div class="mod-tab" data-for="title-on" data-name="title-mode" data-off-id="title-off">称号系统</div>
          <br>
            <div class="mod-tab" data-for="resource-on" data-name="resource-mode" data-off-id="resource-off">资源消耗</div>
@@ -12995,6 +12996,9 @@ pointer-events: auto;
         
         <input type="radio" id="optionshard-on" name="optionshard-mode" value="on" >
         <input type="radio" id="optionshard-off" name="optionshard-mode" value="off" checked>
+
+         <input type="radio" id="npchard-on" name="npchard-mode" value="on" checked>
+        <input type="radio" id="npchard-off" name="npchard-mode" value="off" >
 
          <input type="radio" id="private-chat-on" name="private-chat-mode" value="55" checked>
         <input type="radio" id="private-chat-off" name="private-chat-mode" value="56">
@@ -15351,7 +15355,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.21';
+window.current_game_version = '3.7.22';
 
 
 
@@ -23531,7 +23535,8 @@ async function handleModeSelection() {
         const selectedOptionsMode = getSafeValue('options-mode', '10');     
 
          const selectedOptionshardMode = getSafeValue('optionshard-mode', 'off');    
-        
+         const npchardMode = getSafeValue('npchard-mode', 'on');    
+       
         // HTML: value="55" checked (对应 id="private-chat-on")
         const privateChatMode = getSafeValue('private-chat-mode', '55'); 
         
@@ -23634,6 +23639,10 @@ async function handleModeSelection() {
     if (selectedOptionshardMode === 'on') {
                 uidsToEnable.push(84);
             }
+                if (npchardMode === 'on') {
+                uidsToEnable.push(99);
+            }
+            
             if(spacialdatevalue === 'on'){
                 uidsToEnable.push(42, 73);
             }
@@ -23699,7 +23708,7 @@ uidsToEnable.push(91);
             uidsToEnable = [...new Set(uidsToEnable)];
 
             // --- 现在，我们的UID列表干净又整洁，可以更新世界书了 ---
-            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,95,30,94,7,11,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+            const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,99,95,30,94,7,11,9,91, 6, 37, 12, 16, 15, 25, 26, 33, 34,  38, 41, 50, 51, 52, 53, 45, 46, 48, 54, 55, 56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
             let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
             uidsToEnable.forEach(uid => {
@@ -46886,7 +46895,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
 
             if (uidsToEnable.length > 0) {
                 //console.log("💖 找到了我们的记忆烙印!正在恢复世界设定...", uidsToEnable);
-                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,95,30,94,7,11, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,99,95,30,94,7,11, 9,91,6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                 let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -46909,7 +46918,7 @@ if (typeof window.mapStrokes === 'undefined') window.mapStrokes = [];
                     
                     if (uidsToEnable.length > 0) {
                         //console.log("💖 从备用存储找到了世界书设定!", uidsToEnable);
-                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,95,30,94,7,11,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
+                        const allUids = [ ...WORLD_MODE_UIDS.all, ...CREATOR_ATTITUDE_UIDS.all, ...OPTIONS_MODE_UIDS.all,99,95,30,94,7,11,9,91, 6, 37,12,16,15 ,25, 26,33,34,38,41,50,51,52,53,45,46,48,54,55,56,58,59,60,61,62,36,44,64,65,66,49,69,70,72,74,75,76,77,78,79,42,73,85,89,21,88,35,40,63,84,83,86 ];
 
                         let entriesToUpdate = allUids.map(uid => ({ uid, enabled: false }));
 
@@ -47002,8 +47011,9 @@ function setupReconfigModal() {
                { name: '根基体系', uid: 63, category: 'gameplay', desc: '启用血统、改造、功法' },
                 { name: '任务系统开', uid: 7, group: 'mission',category: 'gameplay', desc: '启用任务记录和追踪'},
                  { name: '任务系统关', uid: 95, group: 'mission',category: 'gameplay', desc: '关闭任务系统'},
-                 { name: '真实MOD', uid: 12, category: 'gameplay', desc: '启用真实模式' },
+                //  { name: '真实MOD', uid: 12, category: 'gameplay', desc: '启用真实模式' },
         { name: '困难MOD', uid: 16, category: 'gameplay', desc: '启用困难模式' },
+        { name: 'npc韧性', uid: 99, category: 'gameplay', desc: '反神化/反绝望/稍微反全知' },
              { name: '求生本能开', uid: 69, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
         { name: '求生本能关', uid: 70, group: 'live', category: 'gameplay', desc: '配合资源条使用' },
 
