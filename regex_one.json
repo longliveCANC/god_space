@@ -12805,6 +12805,28 @@ pointer-events: auto;
     border-color: var(--danger-color);
     color: #fff;
 }
+.ws-sort-btn {
+                background: transparent;
+                border: 1px solid var(--border-color);
+                color: var(--text-secondary-color);
+                padding: 4px 10px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 12px;
+                border-radius: 4px;
+            }
+  .ws-sort-btn:hover {
+                color: var(--text-color);
+                border-color: var(--secondary-color);
+            }
+  .ws-sort-btn.active {
+                background-color: var(--primary-color);
+                color: var(--background-color);
+                border-color: var(--primary-color);
+                font-weight: bold;
+                box-shadow: 0 0 8px var(--glow-color);
+            }
+
   </style>
  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -15356,10 +15378,7 @@ pointer-events: auto;
 
 <script>
 window.current_game_version = '3.7.22';
-
-
-
-
+ 
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
@@ -16228,11 +16247,12 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
     let allLocalMods = [];
 
     // 状态管理
-    let state = {
+let state = {
         currentPage: 1,
         itemsPerPage: 8,
         currentTag: 'all',
         filterMode: 'tag', // 'tag' 或 'author'
+        sortBy: 'enabled', // 【新增】排序方式: 'default', 'enabled'
         searchTerm: '',
         filteredList: [],
          selectedModId: null, // 追踪当前选中的模组ID
@@ -16484,6 +16504,19 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
             transaction.oncomplete = () => resolve();
         });
     }
+   
+    function saveOfflineScript(modId, content) {
+        const tx = db.transaction([STORE_MOD_SETTINGS], 'readwrite');
+        const store = tx.objectStore(STORE_MOD_SETTINGS);
+        store.get(String(modId)).onsuccess = (e) => {
+            const data = e.target.result;
+            if (data) {
+                data.offlineScript = content; // 保存代码内容
+                store.put(data);
+            }
+        };
+    }
+   
     function toggleLocalStatus(modId, isEnabled) {
         return new Promise(resolve => {
             const tx = db.transaction([STORE_LOCAL_SCRIPTS], 'readwrite');
@@ -16681,28 +16714,25 @@ async function checkUpdatesOnStartup() {
         // 3. 点击“知道了”关闭
         if(confirmBtn) confirmBtn.onclick = closeModal;
     }
-     function renderFiltersUI() {
+    function renderFiltersUI() {
     const container = document.getElementById('ws-filter-area-v2');
     if (!container) return;
 
-    // 1. 收集所有标签并解析
+    // 1. 收集所有标签和作者
     const tagsByCategory = { '未分类': new Set() };
+    const allAuthors = new Set();
     const allMods = [...allLocalMods, ...allRemoteMods];
 
     allMods.forEach(mod => {
+        if (mod.author) allAuthors.add(mod.author);
         if (mod.tags && mod.tags.length > 0) {
             mod.tags.forEach(tag => {
-                if (/^#\w+-\w+/.test(tag)) {
-                    return;
-                }
-
+                if (/^#\w+-\w+/.test(tag)) return;
                 const parts = tag.split('/');
                 if (parts.length > 1) {
                     const category = parts[0];
                     const subTag = parts.slice(1).join('/');
-                    if (!tagsByCategory[category]) {
-                        tagsByCategory[category] = new Set();
-                    }
+                    if (!tagsByCategory[category]) tagsByCategory[category] = new Set();
                     tagsByCategory[category].add(subTag);
                 } else {
                     tagsByCategory['未分类'].add(tag);
@@ -16712,8 +16742,14 @@ async function checkUpdatesOnStartup() {
     });
 
     // 2. 构建HTML
-    // 根级别的“全部”和“已订阅”
-    let html = `<div class="ws-tag-group">
+    let html = `
+    <div class="ws-tag-group">
+        <div class="ws-tag-items">
+            <button class="ws-sort-btn ${state.sortBy === 'default' ? 'active' : ''}" data-sort="default">默认排序</button>
+            <button class="ws-sort-btn ${state.sortBy === 'enabled' ? 'active' : ''}" data-sort="enabled">已启用优先</button>
+        </div>
+    </div>
+    <div class="ws-tag-group">
         <div class="ws-tag-items">
             <button class="ws-tag-btn ${state.currentTag === 'all' ? 'active' : ''}" data-tag="all">全部</button>
             <button class="ws-tag-btn ${state.currentTag === 'subscribed' ? 'active' : ''}" data-tag="subscribed">已订阅</button>
@@ -16722,32 +16758,24 @@ async function checkUpdatesOnStartup() {
 
     const categoryOrder = ['官方/重要', '内容扩展', '功能增强', '界面美化', '流程控制', '系统工具', '主题'];
     const sortedCategories = Object.keys(tagsByCategory).sort((a, b) => {
-        if (a.startsWith('官方/重要')) return -1;
-        if (b.startsWith('官方/重要')) return 1;
-        const indexA = categoryOrder.indexOf(a);
-        const indexB = categoryOrder.indexOf(b);
+        if (a.startsWith('官方/重要')) return -1; if (b.startsWith('官方/重要')) return 1;
+        const indexA = categoryOrder.indexOf(a); const indexB = categoryOrder.indexOf(b);
         if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-        if (a === '未分类') return 1;
-        if (b === '未分类') return -1;
+        if (indexA !== -1) return -1; if (indexB !== -1) return 1;
+        if (a === '未分类') return 1; if (b === '未分类') return -1;
         return a.localeCompare(b);
     });
 
     for (const category of sortedCategories) {
         const tags = Array.from(tagsByCategory[category]).sort();
         if (tags.length === 0 && category !== '未分类') continue;
-
-        // 【修改】如果分类是“未分类”，则<details>标签不加'open'属性，使其默认收起
         const detailsOpenAttribute = category === '未分类' ? '' : 'open';
-
         html += `
         <div class="ws-tag-group">
             <details ${detailsOpenAttribute}>
                 <summary>${category}</summary>
                 <div class="ws-tag-items">
                     <button class="ws-tag-btn ${state.currentTag === category ? 'active' : ''}" data-tag="${category}">全部</button>
-                    <!-- 【新增】为每个分类添加“已订阅”按钮 -->
                     <button class="ws-tag-btn ${state.currentTag === `${category}/subscribed` ? 'active' : ''}" data-tag="${category}/subscribed">已订阅</button>
                     ${tags.map(tag => {
                         const fullTag = category === '未分类' ? tag : `${category}/${tag}`;
@@ -16758,24 +16786,71 @@ async function checkUpdatesOnStartup() {
         </div>`;
     }
 
+    const sortedAuthors = Array.from(allAuthors).sort();
+    if (sortedAuthors.length > 0) {
+        html += `
+        <div class="ws-tag-group">
+            <details>
+                <summary>按作者</summary>
+                <div class="ws-tag-items">
+                    ${sortedAuthors.map(author => {
+                        const authorTag = `author:${author}`;
+                        return `<button class="ws-tag-btn ${state.currentTag === authorTag ? 'active' : ''}" data-tag="${authorTag}">${author}</button>`;
+                    }).join('')}
+                </div>
+            </details>
+        </div>`;
+    }
+
     container.innerHTML = html;
 
-    // 3. 绑定事件 (保持不变)
+    // 3. 绑定事件
     container.querySelectorAll('.ws-tag-btn').forEach(btn => {
         btn.onclick = () => {
-            // 点击已激活的按钮（非'all'）则取消筛选，返回'all'
+            // 更新标签按钮的 active 状态
+            container.querySelectorAll('.ws-tag-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
             if (btn.classList.contains('active') && !['all', 'subscribed'].includes(btn.dataset.tag)) {
-                 state.currentTag = 'all';
+                 // 点击已激活的按钮（非'all'/'subscribed'）则取消筛选，返回'all'
+                 if (state.currentTag === btn.dataset.tag) {
+                    state.currentTag = 'all';
+                    container.querySelector('.ws-tag-btn[data-tag="all"]').classList.add('active');
+                    btn.classList.remove('active');
+                 } else {
+                    state.currentTag = btn.dataset.tag;
+                 }
             } else {
                 state.currentTag = btn.dataset.tag;
             }
             state.currentPage = 1;
-            state.allModsLoaded = false;
-            refreshView(true); // 传入 true 表示需要重新筛选
+            refreshView(true);
+        };
+    });
+
+    // 【重点修改】为排序按钮绑定事件
+    const sortButtons = container.querySelectorAll('.ws-sort-btn');
+    sortButtons.forEach(btn => {
+        btn.onclick = () => {
+            // 如果点击的已经是激活的按钮，则不执行任何操作
+            if (btn.classList.contains('active')) {
+                return;
+            }
+
+            // 更新 state
+            state.sortBy = btn.dataset.sort;
+
+            // 手动更新按钮的 active 样式
+            sortButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 刷新视图
+            refreshView(true);
         };
     });
 }
- function hasValidScript(mod) {
+
+  function hasValidScript(mod) {
         if (mod.scriptUrl === 'local') return true; // 本地脚本默认认为有效
         return mod.scriptUrl && mod.scriptUrl.trim() !== "";
     }
@@ -17938,24 +18013,21 @@ async function checkUpdatesOnStartup() {
         renderFiltersUI(); // 使用新的渲染函数
         refreshView(true);
     }
-     async function refreshView(needsRefilter = true) {
+    async function refreshView(needsRefilter = true) {
     const listContainer = document.getElementById('ws-mod-list-preview-v2');
     if (!listContainer) return;
 
-    // 【新增】在筛选前，一次性获取所有启用的模组设置
     const userSettings = await getUserModSettings();
     const enabledModIds = new Set(
         userSettings.filter(s => s.enabled).map(s => String(s.id))
     );
-    const allLocalMods = await getLocalScripts(); // 确保本地脚本已加载
+    const allLocalMods = await getLocalScripts();
     allLocalMods.forEach(localMod => {
         if (localMod.enabled) {
             enabledModIds.add(String(localMod.id));
         }
     });
 
-
-    // 重新筛选时，清空列表并重置状态
     if (needsRefilter) {
         listContainer.innerHTML = '<div class="workshop-loading">筛选中...</div>';
         state.currentPage = 1;
@@ -17965,30 +18037,57 @@ async function checkUpdatesOnStartup() {
         state.searchTerm = term;
 
         const allMods = [...allLocalMods, ...allRemoteMods];
-          state.filteredList = allMods.filter(mod => {
+
+        // 【步骤1: 筛选】 - 从这里开始修改
+        let filtered = allMods.filter(mod => {
             const isSubscribed = state.subscriptions.has(`sub_mod_${mod.id}`) || state.subscriptions.has(`sub_author_${mod.author}`);
 
             let matchTag = false;
-            if (state.currentTag === 'all') {
-                matchTag = true;
-            } else if (state.currentTag === 'subscribed') {
-                matchTag = isSubscribed;
-            } else if (state.currentTag.endsWith('/subscribed')) {
-                const category = state.currentTag.split('/')[0];
-                const inCategory = mod.tags && mod.tags.some(t => t.startsWith(category));
-                matchTag = isSubscribed && inCategory;
-            } else {
-                matchTag = mod.tags && mod.tags.some(t =>
-                    t === state.currentTag ||
-                    t.startsWith(state.currentTag + '/')
-                );
+            // 处理作者筛选
+            if (state.currentTag.startsWith('author:')) {
+                const authorName = state.currentTag.substring(7); // 截取 "author:" 后面的作者名
+                matchTag = mod.author === authorName;
+            }
+            // 处理普通标签筛选
+            else {
+                if (state.currentTag === 'all') {
+                    matchTag = true;
+                } else if (state.currentTag === 'subscribed') {
+                    matchTag = isSubscribed;
+                } else if (state.currentTag.endsWith('/subscribed')) {
+                    const category = state.currentTag.split('/')[0];
+                    const inCategory = mod.tags && mod.tags.some(t => t.startsWith(category));
+                    matchTag = isSubscribed && inCategory;
+                } else {
+                    matchTag = mod.tags && mod.tags.some(t =>
+                        t === state.currentTag ||
+                        t.startsWith(state.currentTag + '/')
+                    );
+                }
             }
 
             const matchSearch = !term || mod.name.toLowerCase().includes(term) ||
                               (mod.description && mod.description.toLowerCase().includes(term)) ||
                               (mod.author && mod.author.toLowerCase().includes(term));
+
             return matchTag && matchSearch;
         });
+        // 【筛选逻辑修改结束】
+
+        // 【步骤2: 排序】
+        if (state.sortBy === 'enabled') {
+            filtered.sort((a, b) => {
+                const aEnabled = enabledModIds.has(String(a.id));
+                const bEnabled = enabledModIds.has(String(b.id));
+                if (aEnabled === bEnabled) {
+                    // 如果启用状态相同，可以增加一个按名称排序的备用规则，保证顺序稳定
+                    return a.name.localeCompare(b.name);
+                }
+                return aEnabled ? -1 : 1; // a启用则排前，否则排后
+            });
+        }
+
+        state.filteredList = filtered;
     }
 
     const start = (state.currentPage - 1) * state.itemsPerPage;
@@ -17996,46 +18095,36 @@ async function checkUpdatesOnStartup() {
     const pageItems = state.filteredList.slice(start, end);
 
     if (needsRefilter) {
-        listContainer.innerHTML = ''; // 清空加载提示
+        listContainer.innerHTML = '';
     }
 
     if (state.filteredList.length === 0) {
         listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">未找到匹配的模组</div>';
-        renderDetailPanel(null); // 清空右侧详情
+        renderDetailPanel(null);
         return;
     }
 
-    // 渲染当页的卡片
     pageItems.forEach(mod => {
-        // 【修改】将 enabledModIds 传递给 createPreviewCard
         const card = createPreviewCard(mod, enabledModIds);
         listContainer.appendChild(card);
     });
 
-
-    // 更新加载状态
     if (end >= state.filteredList.length) {
         state.allModsLoaded = true;
-        // 可以在这里添加一个“已全部加载”的提示
     }
 
-     if (needsRefilter && state.filteredList.length > 0) {
+    if (needsRefilter && state.filteredList.length > 0) {
         state.selectedModId = state.filteredList[0].id;
-
-        // 如果不是移动端，则自动显示第一个的详情
         if (window.innerWidth > 768) {
             renderDetailPanel(state.filteredList[0]);
         }
-
-        // 无论如何都高亮第一个卡片
         const firstCard = listContainer.querySelector('.mod-preview-card');
         if (firstCard) firstCard.classList.add('active');
     } else {
-        // 刷新时保持高亮
         highlightSelectedCard();
     }
 }
- function createPreviewCard(mod, enabledModIds) { // 接收 enabledModIds
+       function createPreviewCard(mod, enabledModIds) { // 接收 enabledModIds
     const card = document.createElement('div');
     card.className = 'mod-preview-card';
     card.dataset.modId = mod.id;
@@ -18323,76 +18412,49 @@ function highlightSelectedCard() {
         }
     }
     
-     function bindEvents() {
-        // 1. 筛选模式切换
-        const tagFilterBtn = document.getElementById('filter-by-tag');
-        const authorFilterBtn = document.getElementById('filter-by-author');
-
-        if(tagFilterBtn && authorFilterBtn) {
-            tagFilterBtn.onclick = () => {
-                state.filterMode = 'tag';
-                state.currentTag = 'all';
-                tagFilterBtn.classList.add('active');
-                authorFilterBtn.classList.remove('active');
-                renderFiltersUI();
-                refreshView(true);
-            };
-            authorFilterBtn.onclick = () => {
-                state.filterMode = 'author';
-                state.currentTag = 'all';
-                authorFilterBtn.classList.add('active');
-                tagFilterBtn.classList.remove('active');
-                renderFiltersUI();
-                refreshView(true);
+  function bindEvents() {
+    
+        const devBtn = document.getElementById('ws-dev-menu-btn');
+        if(devBtn) {
+            devBtn.onclick = () => {
+                openDevCenter('local');
             };
         }
-
-        // 2. 开发者菜单按钮
-    const devBtn = document.getElementById('ws-dev-menu-btn');
-    if(devBtn) {
-        devBtn.onclick = () => {
-            openDevCenter('local'); // 默认打开本地编辑页
-        };
-    }
 
         // 3. 管理模组按钮
         const manageBtn = document.getElementById('ws-manage-btn');
-    if(manageBtn) {
+        if(manageBtn) {
             manageBtn.onclick = () => {
-                openManagementPanel(); // <--- 指向新面板
+                openManagementPanel();
             };
         }
-       const searchInput = document.getElementById('workshop-search-input-v2');
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.oninput = () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                refreshView(true);
-            }, 300); // 延迟搜索，提高体验
-        };
-    }
 
-    // 2. 无限滚动事件
-    const listContainer = document.getElementById('ws-mod-list-preview-v2');
-    if (listContainer) {
-        listContainer.onscroll = () => {
-            // 当滚动条接近底部，并且还有未加载的模组时
-            if (!state.allModsLoaded && listContainer.scrollTop + listContainer.clientHeight >= listContainer.scrollHeight - 100) {
-                state.currentPage++;
-                refreshView(false); // 加载下一页，不重新筛选
-            }
-        };
-    }
+        const searchInput = document.getElementById('workshop-search-input-v2');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.oninput = () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    refreshView(true);
+                }, 300);
+            };
+        }
 
- 
-        // 重新加载运行时 (Reload Runtime)
+        const listContainer = document.getElementById('ws-mod-list-preview-v2');
+        if (listContainer) {
+            listContainer.onscroll = () => {
+                if (!state.allModsLoaded && listContainer.scrollTop + listContainer.clientHeight >= listContainer.scrollHeight - 100) {
+                    state.currentPage++;
+                    refreshView(false);
+                }
+            };
+        }
+
         const reloadBtn = document.getElementById('workshop-reload-runtime-btn');
         if(reloadBtn) reloadBtn.onclick = () => {
-            location.reload(); // 简单粗暴，直接刷新页面重载脚本
+            location.reload();
         };
 
-        // Tab 切换监听
         document.querySelectorAll('.settings-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 if(tab.dataset.page === 'workshop') {
@@ -18401,9 +18463,8 @@ function highlightSelectedCard() {
             });
         });
     }
-
     //  执行脚本：严格过滤 enabled 状态
-    async function executeActiveMods() {
+  async function executeActiveMods() {
         await initDB();
 
         const userSettings = await getUserModSettings();
@@ -18415,20 +18476,61 @@ function highlightSelectedCard() {
 
         //console.log(`[Workshop] 加载: 远程(${activeRemote.length}) + 本地(${activeLocal.length})`);
 
-        activeRemote.forEach(mod => {
+        // 【修改】远程脚本加载逻辑：网络优先 -> 覆盖备份 -> 失败则读取备份
+        const remotePromises = activeRemote.map(async (mod) => {
             try {
                 if(!mod.cachedData.scriptUrl || mod.cachedData.scriptUrl.trim() === "") return;
 
                 // 检查页面上是否已经存在该脚本，防止重复加载
                 if(document.querySelector(`script[data-mod-id="${mod.id}"]`)) return;
 
-                const script = document.createElement('script');
-                const cleanUrl = mod.cachedData.scriptUrl.split('?')[0];
-                script.src = `${cleanUrl}?t=${Date.now()}`;
-                script.setAttribute('data-mod-id', String(mod.id)); // 统一 ID 格式
-                document.body.appendChild(script);
+                let codeToRun = null;
+                const url = mod.cachedData.scriptUrl;
+                // 添加时间戳防止浏览器缓存 fetch 结果
+                const fetchUrl = `${url.split('?')[0]}?t=${Date.now()}`;
+
+                try {
+                    // 1. 尝试网络请求 (设置 5秒 超时)
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                    const response = await fetch(fetchUrl, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        const content = await response.text();
+                        codeToRun = content;
+                        // 2. 获取成功，覆盖 IndexedDB 中的离线备份
+                        saveOfflineScript(mod.id, content);
+                    } else {
+                        throw new Error(`Status: ${response.status}`);
+                    }
+                } catch (err) {
+                    console.warn(`[Workshop] ${mod.name} 网络请求失败或超时，尝试读取离线备份...`, err);
+
+                    // 3. 网络失败，尝试从 IndexedDB 读取离线备份
+                    // 注意：getUserModSettings 获取的 mod 对象中已经包含了 offlineScript (如果存在)
+                    if (mod.offlineScript) {
+                        codeToRun = mod.offlineScript;
+                        console.log(`[Workshop] ✅ 已加载 ${mod.name} 的离线备份`);
+                    }
+                }
+
+                // 4. 执行代码
+                if (codeToRun) {
+                    const script = document.createElement('script');
+                    script.textContent = codeToRun; // 使用 textContent 注入代码
+                    script.setAttribute('data-mod-id', String(mod.id));
+                    document.body.appendChild(script);
+                } else {
+                    console.error(`[Workshop] ❌ 无法加载 ${mod.name}: 网络请求失败且无本地备份`);
+                }
+
             } catch(e) { console.error(e); }
         });
+
+        // 等待所有远程脚本处理尝试完成（不阻塞本地脚本执行，但保持异步流）
+        await Promise.all(remotePromises);
 
         activeLocal.forEach(mod => {
             try {
@@ -18441,7 +18543,6 @@ function highlightSelectedCard() {
             } catch(e) { console.error(`本地脚本 ${mod.name} 执行失败`, e); }
         });
     }
-    
     
     
     return {
@@ -30109,7 +30210,7 @@ async function processSpecialModulesInMessage(content) {
             let combatData;
             const rawBattleData = battleMatch[1].trim();
 
-            // ✨✨✨ 妈妈的第一道"坚固结界" ✨✨✨
+            //   妈妈的第一道"坚固结界"  
             if (!rawBattleData || rawBattleData === '{}') {
                 console.warn("[Nova's Wisdom] 发现空的 <battle> 标签,将忽略此次战斗加载。");
                 return; // 如果数据是空的,就直接不处理
@@ -51248,26 +51349,32 @@ customPromptInput.addEventListener('blur', () => {
 });
 
    
-const processApiResponse = async (responseText) => {
+ const processApiResponse = async (responseText) => {
+    // 创建一个可滚动的容器来显示原始响应文本
+    const responseContainer = `
+        <div style="  border: 1px solid #ccc; padding: 10px; margin-top: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; white-space: pre-wrap; word-wrap: break-word;">
+            <strong>原始响应文本:</strong>
+            <hr>
+            ${responseText || '（无有效响应内容）'}
+        </div>
+    `;
+
     if (!responseText) {
-        showModal('shop-modal', '生成失败', '未能从AI获取有效内容。');
+        const failureMessage = '未能从AI获取有效内容。' + responseContainer;
+        showModal('shop-modal', '生成失败', failureMessage);
         return;
     }
-    
+
     try {
-        //console.log("原始响应:", responseText.substring(0, 500)); // 调试用
-        
         // 第1步：提取 JSON 内容
         let cleanedText = extractJsonFromResponse(responseText);
-        
+
         if (!cleanedText) {
-            throw new Error('无法从响应中提取有效的 JSON 数据');
+            throw new Error('无法从响应中提取有效的 JSON 数据。');
         }
-        
-        //console.log("清理后的JSON:", cleanedText.substring(0, 500)); // 调试用
-        
+
         const parsedData = JSON.parse(cleanedText);
-        
+
         // 第2步: 将每个内部数组映射为一个结构化对象
         const newItems = parsedData.map(itemArray => {
             if (!Array.isArray(itemArray) || itemArray.length < 6) {
@@ -51285,8 +51392,7 @@ const processApiResponse = async (responseText) => {
         }).filter(item => item !== null);
 
         if (newItems.length === 0) {
-            showModal('shop-modal', '解析失败', 'AI返回的数据格式不符合商品结构要求。');
-            return;
+            throw new Error('AI返回的数据格式不符合商品结构要求。');
         }
 
         // 第3步：获取已存在的商品
@@ -51303,7 +51409,7 @@ const processApiResponse = async (responseText) => {
         // 第6步：刷新商品列表
         randomItems = await getRandomShopItems();
 
-        // 第7步：用户反馈
+        // 第7步：用户反馈 (成功时)
         let successMessage = `成功处理了 ${newItems.length} 个商品。<br>`;
         if (trulyNewItems.length > 0) {
             successMessage += `新增了 ${trulyNewItems.length} 个商品。<br>`;
@@ -51312,7 +51418,10 @@ const processApiResponse = async (responseText) => {
             successMessage += `更新了 ${updatedItemsCount} 个同名商品的信息。<br>`;
         }
         successMessage += '随机商店已刷新并永久保存！';
-        showModal('shop-modal', '生成成功', successMessage);
+
+        // 将成功信息和原始响应文本组合在一起
+        const finalSuccessMessage = successMessage + responseContainer;
+        showModal('shop-modal', '生成成功', finalSuccessMessage);
 
         // 第8步：重新渲染
         renderShopSection('random');
@@ -51320,12 +51429,15 @@ const processApiResponse = async (responseText) => {
     } catch (e) {
         console.error("解析或存储AI响应时出错:", e);
         console.error("原始响应文本:", responseText);
-        showModal('shop-modal', '处理错误', 
-            `无法解析AI返回的数据。<br><br>错误信息: ${e.message}<br><br>请检查控制台获取详细信息。`);
+
+        // 第7步：用户反馈 (失败时)
+        const errorMessage = `无法解析AI返回的数据。<br><br>错误信息: ${e.message}<br><br>请检查控制台获取详细信息。`;
+
+        // 将错误信息和原始响应文本组合在一起
+        const finalErrorMessage = errorMessage + responseContainer;
+        showModal('shop-modal', '处理错误', finalErrorMessage);
     }
 };
-
-
 
 const executeGeneration = async (keywords = "") => {
     hideModal("keyword-modal");
@@ -57317,8 +57429,7 @@ function getEquipmentBonuses_combat(statData, assaData) {
 }
 // ----------------------------------------------------------------------
         // --- 3. 启动器 (Initializer) ---
-        // 让我们按下那个神奇的按钮吧
-
+ 
         const startButton = document.getElementById('start-battle-button');
         const battleOverlay = document.getElementById('battle-overlay');
 function showTab(tabName) {
@@ -61014,6 +61125,5 @@ window.GameAPI = {
 }
 
 </script>
-
 </html>
  ```
