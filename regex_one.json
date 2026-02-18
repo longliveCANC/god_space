@@ -12826,7 +12826,18 @@ pointer-events: auto;
                 font-weight: bold;
                 box-shadow: 0 0 8px var(--glow-color);
             }
+.ws-update-notice-btn {
+    background-color: var(--success-color) !important;
+    color: black !important;
+    border: 1px solid var(--success-color) !important;
+    animation: pulse 2s infinite;
+}
 
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(var(--success-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0); }
+}
   </style>
  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -15377,7 +15388,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.22';
+window.current_game_version = '3.7.23';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -16247,7 +16258,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
     let allLocalMods = [];
 
     // 状态管理
-let state = {
+     let state = {
         currentPage: 1,
         itemsPerPage: 8,
         currentTag: 'all',
@@ -16255,9 +16266,11 @@ let state = {
         sortBy: 'enabled', // 【新增】排序方式: 'default', 'enabled'
         searchTerm: '',
         filteredList: [],
-         selectedModId: null, // 追踪当前选中的模组ID
-    allModsLoaded: false, // 标记是否所有模组都已加载
-        subscriptions: new Set() // 内存中缓存订阅ID，方便快速判断
+        selectedModId: null, // 追踪当前选中的模组ID
+        allModsLoaded: false, // 标记是否所有模组都已加载
+        subscriptions: new Set(), // 内存中缓存订阅ID，方便快速判断
+        hasSubscribedUpdates: false, // 【新增】用于标记是否有订阅更新
+         updatedModIds: new Set() 
     };
 
     // --- 数据库操作区域 ---
@@ -16607,6 +16620,7 @@ let state = {
 
         newMods.forEach(newMod => {
             const oldMod = oldModMap.get(String(newMod.id));
+            const modIdStr = String(newMod.id); // 统一使用字符串ID
 
             // 情况A: 订阅了作者，且这是个新模组 (旧列表里没有)
             if (subAuthors.has(newMod.author) && !oldMod) {
@@ -16615,21 +16629,23 @@ let state = {
                     title: `🎉 作者新作: ${newMod.author}`,
                     text: `发布了新模组 <b>${newMod.name}</b>`
                 });
+                state.updatedModIds.add(modIdStr); // 【新增】记录更新ID
             }
 
             // 情况B: 订阅了模组，且版本号变大
-            // 注意：这里简单判断字符串不相等且存在旧版本。实际生产环境建议引入 compareVersions 函数
-            if (subMods.has(String(newMod.id)) && oldMod && newMod.version !== oldMod.version) {
+            if (subMods.has(modIdStr) && oldMod && newMod.version !== oldMod.version) {
                 updates.push({
                     type: 'update_mod',
                     title: `🔄 模组更新: ${newMod.name}`,
                     text: `版本从 v${oldMod.version} 更新至 v${newMod.version}`
                 });
+                state.updatedModIds.add(modIdStr); // 【新增】记录更新ID
             }
         });
 
         // 只有当有实质更新内容时，才弹出窗口
         if (updates.length > 0) {
+             state.hasSubscribedUpdates = true; 
             showUpdateModal(updates);
         }
 
@@ -16742,21 +16758,32 @@ async function checkUpdatesOnStartup() {
     });
 
     // 2. 构建HTML
-    let html = `
-    <div class="ws-tag-group">
-        <div class="ws-tag-items">
-            <button class="ws-sort-btn ${state.sortBy === 'default' ? 'active' : ''}" data-sort="default">默认排序</button>
-            <button class="ws-sort-btn ${state.sortBy === 'enabled' ? 'active' : ''}" data-sort="enabled">已启用优先</button>
-        </div>
-    </div>
-    <div class="ws-tag-group">
-        <div class="ws-tag-items">
-            <button class="ws-tag-btn ${state.currentTag === 'all' ? 'active' : ''}" data-tag="all">全部</button>
+    let subscribedButtonsHTML = `
             <button class="ws-tag-btn ${state.currentTag === 'subscribed' ? 'active' : ''}" data-tag="subscribed">已订阅</button>
-        </div>
-    </div>`;
+        `;
+        if (state.hasSubscribedUpdates) {
+            // 【修改】为更新按钮设置 data-tag="updated" 并检查 active 状态
+            subscribedButtonsHTML += `
+                <button class="ws-tag-btn ws-update-notice-btn ${state.currentTag === 'updated' ? 'active' : ''}" data-tag="updated">你有关注的模组更新</button>
+            `;
+        }
 
-    const categoryOrder = ['官方/重要', '内容扩展', '功能增强', '界面美化', '流程控制', '系统工具', '主题'];
+        let html = `
+    
+        <div class="ws-tag-group">
+            <div class="ws-tag-items">
+                <button class="ws-sort-btn ${state.sortBy === 'default' ? 'active' : ''}" data-sort="default">默认排序</button>
+                <button class="ws-sort-btn ${state.sortBy === 'enabled' ? 'active' : ''}" data-sort="enabled">已启用优先</button>
+            </div>
+        </div>
+        <div class="ws-tag-group">
+            <div class="ws-tag-items">
+                <button class="ws-tag-btn ${state.currentTag === 'all' ? 'active' : ''}" data-tag="all">全部</button>
+                ${subscribedButtonsHTML}
+            </div>
+        </div>`;
+
+        const categoryOrder = ['官方/重要', '内容扩展', '功能增强', '界面美化', '流程控制', '系统工具', '主题'];
     const sortedCategories = Object.keys(tagsByCategory).sort((a, b) => {
         if (a.startsWith('官方/重要')) return -1; if (b.startsWith('官方/重要')) return 1;
         const indexA = categoryOrder.indexOf(a); const indexB = categoryOrder.indexOf(b);
@@ -16767,24 +16794,23 @@ async function checkUpdatesOnStartup() {
     });
 
     for (const category of sortedCategories) {
-        const tags = Array.from(tagsByCategory[category]).sort();
-        if (tags.length === 0 && category !== '未分类') continue;
-        const detailsOpenAttribute = category === '未分类' ? '' : 'open';
-        html += `
-        <div class="ws-tag-group">
-            <details ${detailsOpenAttribute}>
-                <summary>${category}</summary>
-                <div class="ws-tag-items">
-                    <button class="ws-tag-btn ${state.currentTag === category ? 'active' : ''}" data-tag="${category}">全部</button>
-                    <button class="ws-tag-btn ${state.currentTag === `${category}/subscribed` ? 'active' : ''}" data-tag="${category}/subscribed">已订阅</button>
-                    ${tags.map(tag => {
-                        const fullTag = category === '未分类' ? tag : `${category}/${tag}`;
-                        return `<button class="ws-tag-btn ${state.currentTag === fullTag ? 'active' : ''}" data-tag="${fullTag}">${tag}</button>`;
-                    }).join('')}
-                </div>
-            </details>
-        </div>`;
-    }
+            const tags = Array.from(tagsByCategory[category]).sort();
+            if (tags.length === 0 && category !== '未分类') continue;
+            const detailsOpenAttribute = category === '未分类' ? '' : 'open';
+            html += `
+            <div class="ws-tag-group">
+                <details ${detailsOpenAttribute}>
+                    <summary>${category}</summary>
+                    <div class="ws-tag-items">
+                        <button class="ws-tag-btn ${state.currentTag === category ? 'active' : ''}" data-tag="${category}">全部</button>
+                        ${tags.map(tag => { // 【修改】移除了这里的 "已订阅" 按钮
+                            const fullTag = category === '未分类' ? tag : `${category}/${tag}`;
+                            return `<button class="ws-tag-btn ${state.currentTag === fullTag ? 'active' : ''}" data-tag="${fullTag}">${tag}</button>`;
+                        }).join('')}
+                    </div>
+                </details>
+            </div>`;
+        }
 
     const sortedAuthors = Array.from(allAuthors).sort();
     if (sortedAuthors.length > 0) {
@@ -18043,9 +18069,13 @@ async function checkUpdatesOnStartup() {
             const isSubscribed = state.subscriptions.has(`sub_mod_${mod.id}`) || state.subscriptions.has(`sub_author_${mod.author}`);
 
             let matchTag = false;
+            // 【新增】处理更新筛选
+            if (state.currentTag === 'updated') {
+                matchTag = state.updatedModIds.has(String(mod.id));
+            }
             // 处理作者筛选
-            if (state.currentTag.startsWith('author:')) {
-                const authorName = state.currentTag.substring(7); // 截取 "author:" 后面的作者名
+            else if (state.currentTag.startsWith('author:')) {
+                const authorName = state.currentTag.substring(7);
                 matchTag = mod.author === authorName;
             }
             // 处理普通标签筛选
@@ -44893,6 +44923,7 @@ overlay.style.zIndex = '999999'; // 使用超高层级
  * 新增：根据解析出的标志，更新UI上的通知提示
  * @param {object} flags - 包含更新标志的对象
  */
+
 function displayUpdateNotifications(message, type = 'info') {
     if (!notificationLogContainer) return;
 
@@ -44904,7 +44935,7 @@ function displayUpdateNotifications(message, type = 'info') {
     // 现在是 appendChild，将新消息添加到日志末尾
     notificationLogContainer.appendChild(logItem);
 }
-
+window.displayUpdateNotifications = displayUpdateNotifications;
 function populateInventoryModal() {
     const inventoryList = document.getElementById('inventory-item-list');
     const deleteBtn = document.getElementById('delete-item-btn');
