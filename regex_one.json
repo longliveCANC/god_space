@@ -28599,16 +28599,16 @@ if (querySingerNorm && dataSingerNorm) {
     //console.log('  [QQ音乐] 搜索API响应:', res);
 
     if (res && res.data && res.data.length) {
-        //console.log(`  [QQ音乐] 找到 ${res.data.length} 首歌曲，开始智能匹配...`);
+         console.log(`  [QQ音乐] 找到 ${res.data.length} 首歌曲，开始智能匹配...`);
 
         const scoredSongs = res.data.map(d => ({
             ...d,
             similarity: calculateSimilarity(songName, singerName, d)
         })).sort((a, b) => b.similarity - a.similarity);
 
-        //console.log('  [QQ音乐] 相似度排序结果:');
+       console.log('  [QQ音乐] 相似度排序结果:');
         scoredSongs.slice(0, 5).forEach((d, i) => {
-            //console.log(`    ${i+1}. [${d.similarity}分] ${d.song} - ${d.singer}`);
+            console.log(`    ${i+1}. [${d.similarity}分] ${d.song} - ${d.singer}`);
         });
 
         for (let i = 0; i < Math.min(scoredSongs.length, 5); i++) {
@@ -30132,7 +30132,7 @@ async function processSpecialModulesInMessage(content) {
     }
  
     // 先移除thinking/think/guide标签内容
-    const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking|build))>/gs, '');
+    const cleanedContent = content.replace(/([\s\S]*)<(\/(safety_check|guide|think|thinking))>/gs, '').replace(/<build>[\s\S]*?<\/build>/gi, '');
 const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S])*?)<\/danmu>/gs)];
   if (allDanmuMatches.length > 0) {
     const lastDanmuMatch = allDanmuMatches[allDanmuMatches.length - 1];
@@ -36655,7 +36655,7 @@ const finalEntriesToProcess = [...nonGroupedEntries, ...groupWinners];
     let content = prompt.content;
     
     // 处理 {{random:...}} 或 {{random::...}} 格式
-    content = content.replace(/\{\{random::?(.*?)\}\}/g, (match, options) => {
+   content = content.replace(/\{\{random::?([\s\S]*?)\}\}/g, (match, options) => {
         // 优先检测 :: 分隔符
         let items;
         if (options.includes('::')) {
@@ -36675,8 +36675,7 @@ const finalEntriesToProcess = [...nonGroupedEntries, ...groupWinners];
     });
     
     // 移除其他 {{...}} 格式（非random的）
-    content = content.replace(/\{\{(?!random::?).*?\}\}/g, '');
- 
+content = content.replace(/\{\{(?!random::?)[\s\S]*?\}\}/g, '');
     // 替换用户名
     if (typeof userName !== 'undefined' && userName) {
         content = content.replace(/&lt;user&gt;/g, userName);
