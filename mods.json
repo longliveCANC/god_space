@@ -4,7 +4,7 @@
     "name": "公告位",
         "authorToken":"0354437c-3984-4fb6-872c-bc1a299ddfa3",
     "author": "assa",
-    "version": "1.9",
+    "version": "2.1",
      "tags": ["官方/重要/⭐公告", "#世界书"],
     "description": "3.7.15版本后，启用脚本会直接加载了。\ndlc需要开启无世界观，然后将世界书挂在全局。其他有世界书的mod都得挂全局。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
     "scriptUrl": "",
