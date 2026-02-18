@@ -145,14 +145,21 @@
                             lastAiMessage.swipes[swipeIndex] = tempContent;
                         }
                     }
+if (modificationCount > 0) {
+    // 使用 setTimeout 来延迟执行通知，延迟时间设置为 2000 毫秒 (2秒)
+    setTimeout(() => {
+        // 在延迟的回调函数内部，再次检查函数是否存在，这是一个好习惯
+        if (window.GameAPI && typeof window.GameAPI.showUpdateNotification === 'function') {
+            const notificationMessage = formatInstructionsForNotification(refineInstructions);
+            window.GameAPI.showUpdateNotification(notificationMessage);
+        }
+        // 你也可以把 console.log 放在这里，让它和通知一起延迟显示
+        console.log(`[Refiner Plugin] Applied ${modificationCount} corrections and showed notification after 2s delay.`);
+    }, 2000); // 这里的 2000 就是延迟的毫秒数
 
-                    if (modificationCount > 0) {
-                        if (window.GameAPI && typeof window.GameAPI.showUpdateNotification === 'function') {
-                            const notificationMessage = formatInstructionsForNotification(refineInstructions);
-                            window.GameAPI.showUpdateNotification(notificationMessage);
-                        }
-                        console.log(`[Refiner Plugin] Applied ${modificationCount} corrections.`);
-                    }
+    // 这个 log 会立即执行，因为它在 setTimeout 的外部
+    console.log(`[Refiner Plugin] Modifications found. Notification scheduled to show in 2 seconds.`);
+}
                 }
 
                 if (hookData.response !== undefined) {
