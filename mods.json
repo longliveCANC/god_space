@@ -213,8 +213,8 @@
     "version": "1.0",
    "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-哥特"
+        "#脚本" 
+        
     ],
     "description": "[跟随主题]开启该脚本后，在商店的顶上可以进入抽卡界面。3d的消耗性能比较大，但是为了炫酷，一切都是值得的！需要游戏版本是3.3.22及以上。 ",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha01.js",
@@ -227,8 +227,7 @@
     "version": "1.0",
      "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-像素"
+        "#脚本" 
     ],
     "description": "开启该脚本后，在商店的顶上可以进入抽卡界面。 需要游戏版本是3.3.22及以上。 ",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha02.js",
@@ -254,8 +253,7 @@
     "version": "1.0",
          "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-工业"
+        "#脚本" 
     ],
     "description": " 开启该脚本后，在商店的顶上可以进入抽卡界面。 需要游戏版本是3.3.22及以上。 ",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod03gacha04.js",
@@ -294,8 +292,7 @@
     "version": "1.0",
            "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-Steam"
+        "#脚本" 
     ],
     "description": "[半跟随主题]开启该脚本后，鼠标悬浮手机长按能小球，可以召唤出物品和技能的美化查看界面。所有物品美化不可同时开启，开一个就行。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data01.js",
@@ -334,8 +331,7 @@
     "version": "1.0",
         "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-星空"
+        "#脚本" 
     ],
     "description": "[跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data03.js",
@@ -348,8 +344,7 @@
     "version": "1.0",
          "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-赛博朋克"
+        "#脚本" 
     ],
     "description": "[跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data04.js",
@@ -362,8 +357,7 @@
     "version": "1.0",
           "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-复古"
+        "#脚本" 
     ],
     "description": "[跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data05.js",
@@ -415,8 +409,7 @@
     "version": "1.0",
          "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-宝可梦"
+        "#脚本" 
     ],
     "description": "[不跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data09.js",
@@ -429,8 +422,7 @@
     "version": "1.0",
            "tags": [
         "界面美化/组件美化",
-        "#脚本",
-        "#主题-塞尔达"
+        "#脚本" 
     ],
     "description": "[不跟随主题]无需多言。",
     "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod04data10.js",
