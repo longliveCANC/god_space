@@ -47817,7 +47817,7 @@ function setupReconfigModal() {
        { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
   { name: '显示音乐播放器', key: 'GlobalMusicWidgetVisible', default: 'true', desc: '开启后，则显示音乐播放器。设置后需要重载前端生效' },
   { name: '完整渲染时再次播放bgm', key: 'render_and_play_audio', default: 'false', desc: '开启后，完整渲染时（编辑结束、异步结束）会自动播放bgm' },
-  { name: '创意工坊使用老版的标签分类', key: 'useModsCopy', default: 'false', desc: '开启后需重载，创意工坊的标签分类会变成老版的' },
+//   { name: '创意工坊使用老版的标签分类', key: 'useModsCopy', default: 'false', desc: '开启后需重载，创意工坊的标签分类会变成老版的' },
    ];
     // 定义分类元数据
      const CATEGORIES = [
