@@ -12533,6 +12533,7 @@ pointer-events: auto;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    padding:15px;
 }
 
 .ws-detail-header {
@@ -12613,7 +12614,9 @@ pointer-events: auto;
         left: 0;
         width: 100%;
         height: 100%;
-        
+      background: rgba(0, 0, 0, 0.35);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
         z-index: 20000;
         display: flex; /* 新增：使用 flex 轻松实现居中 */
         align-items: center; /* 新增：垂直居中 */
@@ -12659,7 +12662,7 @@ pointer-events: auto;
         width: 32px;
         height: 32px;
         background: rgba(0, 0, 0, 0.3);
-        border: 1px solid var(--text-secondary-color);
+        
         color: var(--text-secondary-color);
         border-radius: 50%;
         font-size: 20px;
@@ -12838,6 +12841,179 @@ pointer-events: auto;
     70% { box-shadow: 0 0 0 10px rgba(var(--success-rgb), 0); }
     100% { box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0); }
 }
+.ws-user-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-secondary-color);
+    position:absolute;
+    right:50px;
+}
+.ws-icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+.ws-icon-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-color);
+}
+.ws-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* --- 现代化文件上传区 --- */
+.ws-upload-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.ws-upload-box {
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0,0,0,0.1);
+}
+.ws-upload-box:hover, .ws-upload-box.is-dragging {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.1);
+}
+.ws-upload-box.has-file {
+    border-style: solid;
+    border-color: var(--success-color);
+}
+.ws-upload-icon {
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+.ws-upload-text {
+    text-align: left;
+    overflow: hidden;
+}
+.ws-upload-text strong {
+    color: var(--text-color);
+    font-size: 14px;
+    display: block;
+}
+.ws-upload-filename {
+    font-size: 12px;
+    color: var(--text-secondary-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+.ws-upload-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* --- 现代化按钮 --- */
+.control-btn.primary-btn {
+    background: var(--primary-color);
+    color: var(--background-color);
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+}
+.ws-btn-icon {
+    display: inline-flex;
+}
+.control-btn .ws-btn-icon + * {
+    margin-left: 6px;
+}
+
+.ws-work-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.ws-work-item:last-child {
+    border-bottom: none;
+}
+.ws-work-title {
+    color: var(--text-color);
+    font-weight: bold;
+}
+.ws-work-version {
+    font-size: 0.8em;
+    color: #888;
+}
+.ws-work-id {
+    font-size: 0.8em;
+    color: var(--text-secondary-color);
+    font-family: monospace;
+}
+.ws-work-actions .danger-btn {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+.ws-type-chooser {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.ws-type-btn {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary-color);
+    padding: 15px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.ws-type-btn:hover {
+    border-color: var(--secondary-color);
+    color: var(--text-color);
+}
+.ws-type-btn.active {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.3);
+}
+.ws-type-btn svg {
+    width: 28px;
+    height: 28px;
+}
+.ws-type-btn span {
+    font-weight: bold;
+    font-size: 14px;
+}
+.ws-type-btn small {
+    font-size: 11px;
+    opacity: 0.7;
+}
   </style>
  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
@@ -12968,7 +13144,7 @@ pointer-events: auto;
         <div class="mod-tab" data-for="dice-2" data-name="dice-level">困难骰</div>
         <div class="mod-tab" data-for="dice-3" data-name="dice-level">炼狱骰</div>
         <div class="mod-tab" data-for="behavior-on" data-name="behavior-mode" data-off-id="behavior-off">表现骰</div>
-        <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off">回合战斗</div>
+        <div class="mod-tab" data-for="battle-on" data-name="battle-mode" data-off-id="battle-off" style="display: none;">回合战斗</div>
          <div class="mod-label">造物设置</div>
           <div class="mod-tab" data-for="nohuman-on" data-name="nohuman-mode" data-off-id="nohuman-off" style="display: none;">人外增强</div>
         <div class="mod-tab" data-for="creator-neutral" data-name="creator-attitude">造物中立</div>
@@ -15003,8 +15179,8 @@ pointer-events: auto;
                     <input type="text" id="workshop-search-input-v2" placeholder="搜索模组名称、作者、描述...">
                 </div>
                 <div class="toolbar-btn-group">
-                    <button id="ws-manage-btn" class="control-btn">⚙️ 管理拓展</button>
-                    <button id="ws-dev-menu-btn" class="control-btn" style="border-color: var(--secondary-color); color: var(--secondary-color);">🛠️ 开发者</button>
+                    <button id="ws-manage-btn" class="control-btn">管理拓展</button>
+                    <button id="ws-dev-menu-btn" class="control-btn" style="border-color: var(--secondary-color); color: var(--secondary-color);">开发者中心</button>
                     <button id="workshop-reload-runtime-btn" class="control-btn danger-btn">重载</button>
                 </div>
             </div>
@@ -15031,13 +15207,7 @@ pointer-events: auto;
         </div>
 
     </div>
-    <div id="ws-mobile-detail-container" class="ws-mobile-detail-modal">
-        <!-- 新增一个关闭按钮和内容容器 -->
-        <div id="ws-mobile-detail-content" class="ws-mobile-detail-content">
-            <!-- 详情内容将由JS动态填充到这里 -->
-        </div>
-        <div id="ws-mobile-close-btn-action" class="ws-mobile-close-btn">×</div>
-    </div>
+ 
  
 </div>
 
@@ -15388,7 +15558,7 @@ pointer-events: auto;
 </body>
 
 <script>
-window.current_game_version = '3.7.23';
+window.current_game_version = '3.8.1';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -16236,17 +16406,30 @@ const NovaHooks = {
 try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
 
  window.NovaWorkshop = (function() {
+     const ICONS = {
+        upload: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>`,
+        update: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"></path></svg>`,
+        send: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
+        like: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 18.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a2 2 0 0 1 1.79 1.11L15 5.88Z"></path></svg>`,
+        liked: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 18.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a2 2 0 0 1 1.79 1.11L15 5.88Z"></path></svg>`,
+        subscribe: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>`,
+        subscribed: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>`,
+        logout: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
+        file: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`,
+        text: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 6.1H3"></path><path d="M21 12.1H3"></path><path d="M15.1 18.1H3"></path></svg>`
+    };
+
       const useCopy = localStorage.getItem('useModsCopy') === 'true';
 
     // 根据值选择不同的 json
-    const REMOTE_URL = useCopy
-        ? 'https://longlivecanc.github.io/god_space/mods copy.json'
-        : 'https://longlivecanc.github.io/god_space/mods.json';
+    // const REMOTE_URL = useCopy
+    //     ? 'https://longlivecanc.github.io/god_space/mods copy.json'
+    //     : 'https://longlivecanc.github.io/god_space/mods.json';
 
     // 【修改】升级数据库版本
     const DB_NAME = 'GodSpaceWorkshopDB_v3';
     const DB_VERSION = 3;
-
+  const API_BASE = 'http://106.55.104.134:6678/api';
     const STORE_MOD_SETTINGS = 'user_mods';
     const STORE_LOCAL_SCRIPTS = 'local_scripts';
     // 新增两个存储库
@@ -16270,7 +16453,8 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
         allModsLoaded: false, // 标记是否所有模组都已加载
         subscriptions: new Set(), // 内存中缓存订阅ID，方便快速判断
         hasSubscribedUpdates: false, // 【新增】用于标记是否有订阅更新
-         updatedModIds: new Set() 
+         updatedModIds: new Set() ,
+        user: JSON.parse(localStorage.getItem('ws_user_info') || 'null'), // 【新增】读取本地登录状态
     };
 
     // --- 数据库操作区域 ---
@@ -16289,6 +16473,120 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
             request.onerror = (e) => reject(e);
         });
     }
+   
+   const API = {
+        // 通用请求封装
+        request: async (endpoint, method = 'GET', body = null, requireAuth = false) => {
+            const headers = { 'Content-Type': 'application/json' };
+            if (requireAuth) {
+                if (!state.user) throw new Error("请先登录");
+                headers['x-user-id'] = state.user.id;
+            }
+
+            const config = { method, headers };
+            if (body) config.body = JSON.stringify(body);
+
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, config);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || '请求失败');
+                return data;
+            } catch (e) {
+                throw e;
+            }
+        },
+
+        login: async (username, password) => {
+            const data = await API.request('/login', 'POST', { username, password });
+            state.user = data.user;
+            localStorage.setItem('ws_user_info', JSON.stringify(data.user));
+            return data.user;
+        },
+
+        register: async (username, password) => {
+            const data = await API.request('/register', 'POST', { username, password });
+            // 注册后自动登录逻辑可根据需求添加，这里仅返回成功
+            return data;
+        },
+
+        toggleLike: async (modId) => {
+            return await API.request(`/mods/${modId}/like`, 'POST', {}, true);
+        },
+     postComment: async (modId, content) => {
+            return await API.request(`/mods/${modId}/comment`, 'POST', { content }, true);
+        }
+    };
+
+    // 显示登录/注册弹窗
+    function showAuthModal(callback) {
+        const modalId = 'ws-auth-modal';
+        const old = document.getElementById(modalId);
+        if (old) old.remove();
+
+        const html = `
+        <div id="${modalId}" class="modal active" style="z-index: 15000;">
+            <div class="modal-content" style="max-width: 350px; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 20px var(--glow-color); text-align:center;">
+                <div class="modal-title" style="color: var(--primary-color); margin-bottom: 20px;">🔑 创意工坊通行证</div>
+
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="ws-auth-user" class="ws-input" placeholder="用户名" style="width: 80%; margin-bottom: 10px;">
+                    <input type="password" id="ws-auth-pass" class="ws-input" placeholder="密码" style="width: 80%;">
+                </div>
+
+                <div style="display:flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                    <button id="ws-btn-login" class="control-btn" style="width: 100px;">登录</button>
+                    <button id="ws-btn-register" class="control-btn" style="width: 100px; background: transparent; border: 1px solid var(--text-secondary-color);">注册</button>
+                </div>
+
+                <div id="ws-auth-msg" style="font-size: 12px; color: var(--danger-color); height: 20px;"></div>
+
+                <button class="modal-close" id="ws-auth-close">×</button>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        const modal = document.getElementById(modalId);
+        const msg = document.getElementById('ws-auth-msg');
+
+        const close = () => { modal.remove(); };
+        document.getElementById('ws-auth-close').onclick = close;
+
+        // 登录逻辑
+        document.getElementById('ws-btn-login').onclick = async () => {
+            const u = document.getElementById('ws-auth-user').value.trim();
+            const p = document.getElementById('ws-auth-pass').value.trim();
+            if(!u || !p) return msg.innerText = "请输入用户名和密码";
+
+            try {
+                await API.login(u, p);
+                showNovaAlert(`欢迎回来，${state.user.username}！`);
+                close();
+                if(callback) callback();
+            } catch(e) {
+                msg.innerText = e.message;
+            }
+        };
+
+        // 注册逻辑
+        document.getElementById('ws-btn-register').onclick = async () => {
+            const u = document.getElementById('ws-auth-user').value.trim();
+            const p = document.getElementById('ws-auth-pass').value.trim();
+            if(!u || !p) return msg.innerText = "请输入用户名和密码";
+
+            try {
+                await API.register(u, p);
+                // 注册成功后直接尝试登录
+                await API.login(u, p);
+                showNovaAlert(`注册成功！已自动登录。`);
+                close();
+                if(callback) callback();
+            } catch(e) {
+                msg.innerText = e.message;
+            }
+        };
+    }
+   
+   
     // --- 核心逻辑：预设管理 (LocalStorage) ---
     const PRESET_KEY = 'nova_workshop_mod_presets';
 
@@ -16542,19 +16840,26 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
         });
     }
     // 订阅相关数据库操作
-    function getSubscriptions() {
-        return new Promise(resolve => {
+  function getSubscriptions() {
+        return new Promise((resolve, reject) => {
+            if (!db) return reject("数据库未初始化");
+
             const tx = db.transaction([STORE_SUBSCRIPTIONS], 'readonly');
             const req = tx.objectStore(STORE_SUBSCRIPTIONS).getAll();
+
             req.onsuccess = () => {
                 const result = req.result || [];
-                // 更新内存状态
+                // 【核心修正】确保 state.subscriptions 永远是一个只包含 ID 字符串的 Set
                 state.subscriptions = new Set(result.map(item => item.id));
-                resolve(result);
+                resolve(); // 只通知完成，不返回任何值
+            };
+            req.onerror = (e) => {
+                // 如果出错，重置为一个空的 Set，防止后续 .has() 方法报错
+                state.subscriptions = new Set();
+                reject(e);
             };
         });
     }
-
     function toggleSubscription(targetId, type, name) {
         return new Promise(resolve => {
             const tx = db.transaction([STORE_SUBSCRIPTIONS], 'readwrite');
@@ -16652,30 +16957,26 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
         // 检测完成后，更新缓存
         saveCachedJson(newMods);
     }
-// 启动时检查更新（不依赖 UI 加载）
-async function checkUpdatesOnStartup() {
+    async function checkUpdatesOnStartup() {
     try {
-        let remoteData = [];
-        if (typeof loadRemoteJson !== 'function') {
-            const res = await fetch(REMOTE_URL);
-            remoteData = await res.json();
-        } else {
-            remoteData = await loadRemoteJson(REMOTE_URL, []);
-        }
-        
+        // 【修改】使用 API 获取数据
+        const res = await fetch(`${API_BASE}/mods?limit=1000`);
+        const json = await res.json();
+        const remoteData = json.data || [];
+
         // 先获取订阅信息
         await getSubscriptions();
-        
-        // 检测更新（会在有更新时自动弹窗）
+
+        // 检测更新
         await checkForUpdates(remoteData);
-        
-        // 缓存到全局变量，避免后续重复请求
+
+        // 缓存
         allRemoteMods = remoteData;
     } catch (e) {
         console.error("启动时检查更新失败", e);
     }
 }
-    // 参考游戏主程序的弹窗实现
+   // 参考游戏主程序的弹窗实现
     function showUpdateModal(updates) {
         // 如果已存在（极少情况），先移除
         const existingModal = document.getElementById('ws-update-modal');
@@ -16758,7 +17059,7 @@ async function checkUpdatesOnStartup() {
     });
 
     // 2. 构建HTML
-    let subscribedButtonsHTML = `
+     let subscribedButtonsHTML = `
             <button class="ws-tag-btn ${state.currentTag === 'subscribed' ? 'active' : ''}" data-tag="subscribed">已订阅</button>
         `;
         if (state.hasSubscribedUpdates) {
@@ -16780,10 +17081,29 @@ async function checkUpdatesOnStartup() {
             <div class="ws-tag-items">
                 <button class="ws-tag-btn ${state.currentTag === 'all' ? 'active' : ''}" data-tag="all">全部</button>
                 ${subscribedButtonsHTML}
+
+                  <!-- 【新增代码】开始 -->
+                <button class="ws-tag-btn ${state.currentTag === 'type:file' ? 'active' : ''}" data-tag="type:file">只看mod</button>
+                <button class="ws-tag-btn ${state.currentTag === 'type:text' ? 'active' : ''}" data-tag="type:text">只看数据</button>
             </div>
         </div>`;
+    const sortedAuthors = Array.from(allAuthors).sort();
+    if (sortedAuthors.length > 0) {
+        html += `
+        <div class="ws-tag-group">
+            <details>
+                <summary>按作者</summary>
+                <div class="ws-tag-items">
+                    ${sortedAuthors.map(author => {
+                        const authorTag = `author:${author}`;
+                        return `<button class="ws-tag-btn ${state.currentTag === authorTag ? 'active' : ''}" data-tag="${authorTag}">${author}</button>`;
+                    }).join('')}
+                </div>
+            </details>
+        </div>`;
+    }
 
-        const categoryOrder = ['官方/重要', '内容扩展', '功能增强', '界面美化', '流程控制', '系统工具', '主题'];
+        const categoryOrder = ['官方/重要',  '功能增强', '界面美化',  '流程控制', '系统工具', '主题'];
     const sortedCategories = Object.keys(tagsByCategory).sort((a, b) => {
         if (a.startsWith('官方/重要')) return -1; if (b.startsWith('官方/重要')) return 1;
         const indexA = categoryOrder.indexOf(a); const indexB = categoryOrder.indexOf(b);
@@ -16812,21 +17132,6 @@ async function checkUpdatesOnStartup() {
             </div>`;
         }
 
-    const sortedAuthors = Array.from(allAuthors).sort();
-    if (sortedAuthors.length > 0) {
-        html += `
-        <div class="ws-tag-group">
-            <details>
-                <summary>按作者</summary>
-                <div class="ws-tag-items">
-                    ${sortedAuthors.map(author => {
-                        const authorTag = `author:${author}`;
-                        return `<button class="ws-tag-btn ${state.currentTag === authorTag ? 'active' : ''}" data-tag="${authorTag}">${author}</button>`;
-                    }).join('')}
-                </div>
-            </details>
-        </div>`;
-    }
 
     container.innerHTML = html;
 
@@ -17033,7 +17338,7 @@ async function checkUpdatesOnStartup() {
 
         // 世界书下载 (保持不变)
         if(mod.worldBookUrl && mod.worldBookUrl.trim() !== "") {
-            btnHtml += `<button class="control-btn" id="ws-modal-dl-btn">📘 下载世界书</button> `;
+            btnHtml += `<button class="control-btn" id="ws-modal-dl-btn">下载世界书</button> `;
         }
 
         // 脚本开关 (保持不变)
@@ -17106,26 +17411,14 @@ async function checkUpdatesOnStartup() {
     }
 
  
-    // 1. 获取或生成作者身份标识
-    function getAuthorIdentity() {
-        let token = localStorage.getItem('ws_author_token');
-        if (!token) {
-            // 生成一个简单的 UUID
-            token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-            localStorage.setItem('ws_author_token', token);
-        }
-        return token;
-    }
-
+ 
     // 2. 获取“我的作品” (基于 Token 匹配远程数据)
-    function getMyRemoteWorks() {
-        const token = getAuthorIdentity();
-        // 假设 mods.json 中未来会包含 authorToken 字段 (隐藏字段)
-        // 或者是你手动维护的映射。这里演示直接匹配字段。
-        return allRemoteMods.filter(m => m.authorToken === token);
+     function getMyRemoteWorks() {
+        // 如果用户未登录，则没有作品
+        if (!state.user) return [];
+
+        // 根据 allRemoteMods 中存储的 author 字段和当前登录用户的 username 匹配
+        return allRemoteMods.filter(m => m.author === state.user.username);
     }
     // --- 辅助函数：读取文件内容 ---
     function readFileContent(file) {
@@ -17152,372 +17445,501 @@ async function checkUpdatesOnStartup() {
         });
         return Array.from(tags);
     }
+function openDevCenter(defaultTab = 'local', editData = null) {
+    const old = document.getElementById('ws-dev-modal');
+    if (old) old.remove();
 
-    // --- 开发者中心 ---
-    function openDevCenter(defaultTab = 'local', editData = null) {
-        const old = document.getElementById('ws-dev-modal');
-        if (old) old.remove();
+    const myWorks = getMyRemoteWorks();
+    const allTags = getAllExistingTags().filter(t => !t.startsWith('#') && !t.startsWith('官方'));
 
-        const token = getAuthorIdentity();
-        const myWorks = getMyRemoteWorks();
-        const allTags = getAllExistingTags(); // 获取所有标签
+    let selectedTags = new Set();
 
-        // 状态：当前选中的标签
-        let selectedTags = new Set();
+    const userStatusHtml = state.user
+        ? `<div class="ws-user-status">
+             <span>欢迎, <strong>${state.user.username}</strong></span>
+             <button id="ws-logout-btn" class="ws-icon-btn" title="退出登录">${ICONS.logout}</button>
+           </div>`
+        : `<div class="ws-user-status">
+             <button id="ws-login-prompt-btn" class="control-btn">登录以投稿和管理作品</button>
+           </div>`;
 
-        const html = `
-        <div id="ws-dev-modal" class="modal active" style="z-index: 11000;">
-            <div class="modal-content" style="max-width: 600px; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 20px var(--glow-color);">
-                <button class="modal-close" id="ws-dev-close">×</button>
-                <div class="modal-title" style="color: var(--primary-color);">🛠️ 开发者中心</div>
+    // 【修复】恢复了 tab-local 和 tab-works 的完整HTML内容
+    const html = `
+    <div id="ws-dev-modal" class="modal active" style="z-index: 11000;">
+        <div class="modal-content" style="max-width: 650px; background: var(--background-color); border: 1px solid var(--primary-color); box-shadow: 0 0 20px var(--glow-color);">
+            <button class="modal-close" id="ws-dev-close">×</button>
+            <div class="modal-title" style="color: var(--primary-color); display: flex; justify-content: space-between; align-items: center;">
+                <span>开发者中心</span>
+                ${userStatusHtml}
+            </div>
 
-                <div class="ws-tab-header">
-                    <button class="ws-tab-btn ${defaultTab === 'local' ? 'active' : ''}" data-tab="local">本地脚本</button>
-                    <button class="ws-tab-btn ${defaultTab === 'upload' ? 'active' : ''}" data-tab="upload"> 投稿/更新</button>
-                    <button class="ws-tab-btn ${defaultTab === 'works' ? 'active' : ''}" data-tab="works"> 我的作品</button>
+            <div class="ws-tab-header">
+                <button class="ws-tab-btn ${defaultTab === 'local' ? 'active' : ''}" data-tab="local">本地脚本</button>
+                <button class="ws-tab-btn ${defaultTab === 'upload' ? 'active' : ''}" data-tab="upload">投稿/更新</button>
+                <button class="ws-tab-btn ${defaultTab === 'works' ? 'active' : ''}" data-tab="works">我的作品</button>
+            </div>
+
+            <!-- Tab 1: 本地脚本 -->
+            <div id="tab-local" class="ws-tab-content ${defaultTab === 'local' ? 'active' : ''}">
+                <input type="text" id="ws-edit-name" class="ws-input" placeholder="脚本名称" style="margin-bottom:10px;">
+                <input type="text" id="ws-edit-desc" class="ws-input" placeholder="简介" style="margin-bottom:10px;">
+                <textarea id="ws-edit-code" class="ws-editor-area" placeholder="// 在此粘贴代码..." style="height: 200px; width:100%; background:rgba(0,0,0,0.3); color:var(--text-color); border:1px solid var(--border-color);"></textarea>
+                <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="control-btn" id="ws-run-local-now-btn" style="background: #b58900; color: black;">▶ 立刻执行</button>
+                    <button class="control-btn danger-btn" id="ws-delete-local-btn" style="display:none;">删除</button>
+                    <button class="control-btn" id="ws-save-local-btn">保存本地</button>
                 </div>
+            </div>
 
+             <div id="tab-upload" class="ws-tab-content ${defaultTab === 'upload' ? 'active' : ''}">
 
-                <div id="tab-local" class="ws-tab-content ${defaultTab === 'local' ? 'active' : ''}">
-                    <input type="text" id="ws-edit-name" class="ws-input" placeholder="脚本名称" style="margin-bottom:10px;">
-                    <input type="text" id="ws-edit-desc" class="ws-input" placeholder="简介" style="margin-bottom:10px;">
-                    <textarea id="ws-edit-code" class="ws-editor-area" placeholder="// 在此粘贴代码..." style="height: 200px; width:100%; background:rgba(0,0,0,0.3); color:var(--text-color); border:1px solid var(--border-color);"></textarea>
-                    <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
-                        <button class="control-btn" id="ws-run-local-now-btn" style="background: #b58900; color: black;">▶ 立刻执行</button>
-                        <button class="control-btn danger-btn" id="ws-delete-local-btn" style="display:none;">删除</button>
-                        <button class="control-btn" id="ws-save-local-btn">保存本地</button>
+             
+                <div class="ws-form-group">
+                    <label class="ws-form-label">模组类型</label>
+                    <div class="ws-type-chooser">
+                        <button class="ws-type-btn active" data-type="file">
+                            ${ICONS.file}
+                            <span>普通模组</span>
+                            <small>包含脚本/世界书</small>
+                        </button>
+                        <button class="ws-type-btn" data-type="text">
+                            ${ICONS.text}
+                            <span>数据分享</span>
+                            <small>只用于数据分享</small>
+                        </button>
                     </div>
+                    <input type="hidden" id="ws-upload-base-type" value="file">
                 </div>
 
-
-                <div id="tab-upload" class="ws-tab-content ${defaultTab === 'upload' ? 'active' : ''}">
+                <!-- 【新增】纯文本内容输入区域，默认隐藏 -->
+                <div id="ws-text-content-container" class="ws-form-group" style="display:none;">
+                    <label class="ws-form-label">文本内容</label>
+                    <textarea id="ws-upload-text-content" class="ws-input" rows="5" placeholder="在此输入你的memory注入指令..."></textarea>
+                </div>
+                <div class="ws-form-grid">
                     <div class="ws-form-group">
                         <label class="ws-form-label">投稿类型</label>
                         <select id="ws-upload-type" class="ws-input">
-                            <option value="new">✨ 新增模组</option>
-                            ${myWorks.length > 0 ? '<option value="update">🔄 更新已有作品</option>' : ''}
+                            <option value="new">新增模组</option>
+                            ${myWorks.length > 0 ? '<option value="update">更新已有作品</option>' : ''}
                         </select>
                     </div>
-
                     <div id="ws-update-select-container" class="ws-form-group" style="display:none;">
-                        <label class="ws-form-label">选择要更新的作品</label>
+                        <label class="ws-form-label">选择作品</label>
                         <select id="ws-upload-target-id" class="ws-input">
                             ${myWorks.map(m => `<option value="${m.id}">${m.name} (v${m.version})</option>`).join('')}
                         </select>
                     </div>
+                </div>
 
-                    <div class="ws-form-group">
-                        <label class="ws-form-label">模组名称</label>
-                        <input type="text" id="ws-upload-name" class="ws-input" placeholder="例如：垂钓诸天">
-                    </div>
+                <div class="ws-form-group">
+                    <label class="ws-form-label">模组名称</label>
+                    <input type="text" id="ws-upload-name" class="ws-input" placeholder="例如：垂钓诸天">
+                </div>
+ <div class="ws-form-group">
+                    <label class="ws-form-label">版本号</label>
+                    <input type="text" id="ws-upload-version" class="ws-input" placeholder="例如：1.0.1">
+                </div>
+                <div class="ws-form-group">
+                    <label class="ws-form-label">简介 (支持html和markdown)</label>
+                    <textarea id="ws-upload-desc" class="ws-input" rows="4"></textarea>
+                </div>
 
-                    <div style="display:flex; gap:10px;">
-                        <div class="ws-form-group" style="flex:1;">
-                            <label class="ws-form-label">作者署名</label>
-                            <input type="text" id="ws-upload-author" class="ws-input" placeholder="你的昵称">
-                        </div>
-                        <div class="ws-form-group" style="width:100px;">
-                            <label class="ws-form-label">版本号</label>
-                            <input type="text" id="ws-upload-version" class="ws-input" value="1.0">
-                        </div>
-                    </div>
-
-                    <div class="ws-form-group">
-                        <label class="ws-form-label">简介 (支持 HTML)</label>
-                        <textarea id="ws-upload-desc" class="ws-input" rows="3"></textarea>
-                    </div>
-
-
-                    <div class="ws-form-group">
-                        <label class="ws-form-label">标签 (点击选择 或 输入自定义)</label>
-                        <div id="ws-tags-selection-area" class="ws-tag-select-container">
-
-                        </div>
-                        <div class="ws-tag-input-wrapper">
-                            <input type="text" id="ws-custom-tag-input" class="ws-input" placeholder="输入新标签后按回车添加" style="flex:1;">
-                            <button id="ws-add-tag-btn" class="control-btn" style="padding: 8px 12px;">+</button>
-                        </div>
-                    </div>
-
-                    <div class="ws-form-group" style="border-top: 1px dashed var(--border-color); padding-top:10px;">
-                        <label class="ws-form-label">脚本文件 (.js) - 可选</label>
-                        <input type="file" id="ws-file-script" class="ws-file-input" accept=".js,.txt">
-                    </div>
-
-                    <div class="ws-form-group">
-                        <label class="ws-form-label">世界书文件 (.json) - 可选</label>
-                        <input type="file" id="ws-file-worldbook" class="ws-file-input" accept=".json">
-                    </div>
-
-                    <div class="ws-form-group">
-                        <label class="ws-form-label">给assa的留言 (可选)</label>
-                        <textarea id="ws-upload-note" class="ws-input" rows="2" placeholder="例如：这个脚本需要配合xx使用...以及，最好告诉assa要怎么联系你，比如dc昵称，方便后续的沟通"></textarea>
-                    </div>
-
-                    <div style="margin-top:15px; text-align:right;">
-                        <div class="ws-tip" style="margin-bottom:10px; color: var(--success-color);">* 作者一个月只能收到200封邮件，发不出去就是额度无了。文件大小只能在50kb内，超出范围的话直接在dc找assa吧（）</div>
-                        <button class="control-btn" id="ws-send-mail-btn" style="background:var(--primary-color); color:black;">🚀 直接投稿发送</button>
+                <div class="ws-form-group">
+                    <label class="ws-form-label">标签 (点击选择或输入自定义)</label>
+                    <div id="ws-tags-selection-area" class="ws-tag-select-container"></div>
+                    <div class="ws-tag-input-wrapper">
+                        <input type="text" id="ws-custom-tag-input" class="ws-input" placeholder="输入新标签后按回车添加">
                     </div>
                 </div>
 
+        <div id="ws-file-inputs-container" class="ws-form-group">
+                    <label class="ws-form-label">资源文件</label>
+                    <div class="ws-upload-area">
+                        <div class="ws-upload-box" id="ws-upload-box-script">
+                            <div class="ws-upload-icon">${ICONS.file}</div>
+                            <div class="ws-upload-text">
+                                <strong>脚本文件 (.js)</strong>
+                                <span class="ws-upload-filename">点击或拖拽到此区域</span>
+                            </div>
+                            <input type="file" id="ws-file-script" class="ws-upload-input" accept=".js,.txt">
+                        </div>
+                        <div class="ws-upload-box" id="ws-upload-box-wb">
+                            <div class="ws-upload-icon">${ICONS.file}</div>
+                            <div class="ws-upload-text">
+                                <strong>世界书 (.json)</strong>
+                                <span class="ws-upload-filename">点击或拖拽到此区域</span>
+                            </div>
+                            <input type="file" id="ws-file-worldbook" class="ws-upload-input" accept=".json">
+                        </div>
+                         <div class="ws-upload-box" id="ws-upload-box-img">
+                            <div class="ws-upload-icon">${ICONS.file}</div>
+                            <div class="ws-upload-text">
+                                <strong>预览图 (.jpg, .png)</strong>
+                                <span class="ws-upload-filename">点击或拖拽到此区域</span>
+                            </div>
+                            <input type="file" id="ws-file-image" class="ws-upload-input" accept="image/jpeg,image/png,image/gif">
+                        </div>
+                    </div>
+                </div>
 
-                <div id="tab-works" class="ws-tab-content ${defaultTab === 'works' ? 'active' : ''}">
-                    <div style="margin-bottom:10px; font-size:0.9em; color:#888;">
-                        你的作者 Token: <span style="font-family:monospace; background:#333; padding:2px;">${token}</span>
-                    </div>
-                    <div id="ws-my-works-list" style="max-height:300px; overflow-y:auto;">
-                        ${myWorks.length === 0 ? '<div style="text-align:center; padding:20px; color:#666;">暂无已发布的远程作品</div>' : ''}
-                    </div>
+                <div style="margin-top:20px; text-align:right;">
+                    <button class="control-btn primary-btn" id="ws-submit-upload-btn">
+                        <span class="ws-btn-icon">${ICONS.send}</span>
+                        <span class="ws-btn-text">提交作品</span>
+                    </button>
                 </div>
             </div>
-        </div>`;
 
-        document.body.insertAdjacentHTML('beforeend', html);
-        const modal = document.getElementById('ws-dev-modal');
+            <!-- Tab 3: 我的作品 -->
+            <div id="tab-works" class="ws-tab-content ${defaultTab === 'works' ? 'active' : ''}">
+                <div id="ws-my-works-list" style="max-height:300px; overflow-y:auto;">
+                    ${myWorks.length === 0 ? '<div style="text-align:center; padding:20px; color:#666;">暂无已发布的远程作品</div>' : ''}
+                </div>
+            </div>
+        </div>
+    </div>`;
 
-        // --- 通用事件绑定 ---
-        const closeModal = () => { modal.classList.remove('active'); setTimeout(() => modal.remove(), 300); };
-        document.getElementById('ws-dev-close').onclick = closeModal;
-        modal.onclick = (e) => { if(e.target === modal) closeModal(); };
+    document.body.insertAdjacentHTML('beforeend', html);
+    const modal = document.getElementById('ws-dev-modal');
 
-        const tabs = modal.querySelectorAll('.ws-tab-btn');
-        const contents = modal.querySelectorAll('.ws-tab-content');
-        tabs.forEach(btn => {
-            btn.onclick = () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                contents.forEach(c => c.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
-            };
+    // --- 通用事件绑定 ---
+    const closeModal = () => { modal.classList.remove('active'); setTimeout(() => modal.remove(), 300); };
+    document.getElementById('ws-dev-close').onclick = closeModal;
+    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+    const tabs = modal.querySelectorAll('.ws-tab-btn');
+    const contents = modal.querySelectorAll('.ws-tab-content');
+    tabs.forEach(btn => {
+        btn.onclick = () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+        };
+    });
+
+    // --- 用户状态事件 ---
+    const logoutBtn = document.getElementById('ws-logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            state.user = null;
+            localStorage.removeItem('ws_user_info');
+            showNovaAlert("已退出登录。");
+            closeModal();
+            refreshView(true);
+        };
+    }
+    const loginPromptBtn = document.getElementById('ws-login-prompt-btn');
+    if (loginPromptBtn) {
+        loginPromptBtn.onclick = () => showAuthModal(() => {
+            closeModal();
+            openDevCenter(defaultTab);
         });
+    }
 
-           // --- Tab 1: 本地编辑器逻辑 (使用 setTimeout 确保 DOM 渲染完成) ---
-        setTimeout(() => {
-            const nameInput = document.getElementById('ws-edit-name');
-            const descInput = document.getElementById('ws-edit-desc');
-            const codeInput = document.getElementById('ws-edit-code');
-            const saveBtn = document.getElementById('ws-save-local-btn');
-            const delBtn = document.getElementById('ws-delete-local-btn');
-            const runBtn = document.getElementById('ws-run-local-now-btn');
+    // --- Tab 1: 本地编辑器逻辑 ---
+    // 使用 setTimeout 确保DOM渲染完成
+    setTimeout(() => {
+        const nameInput = document.getElementById('ws-edit-name');
+        const descInput = document.getElementById('ws-edit-desc');
+        const codeInput = document.getElementById('ws-edit-code');
+        const saveBtn = document.getElementById('ws-save-local-btn');
+        const delBtn = document.getElementById('ws-delete-local-btn');
+        const runBtn = document.getElementById('ws-run-local-now-btn');
 
-            // 检查元素是否存在
-            if(!nameInput || !descInput || !codeInput || !saveBtn || !runBtn) {
-                console.error('本地编辑器元素未找到');
+        if (!nameInput || !descInput || !codeInput || !saveBtn || !runBtn) {
+            console.error('本地编辑器元素未找到');
+            return;
+        }
+
+        if (editData) {
+            nameInput.value = editData.name || '';
+            descInput.value = editData.description || '';
+            codeInput.value = editData.scriptContent || '';
+            delBtn.style.display = 'inline-block';
+            delBtn.onclick = async () => {
+                if (confirm('确定删除此脚本吗？')) {
+                    await deleteLocalScript(editData.id);
+                    closeModal();
+                    await loadDataAndRender();
+                }
+            };
+        }
+
+        saveBtn.onclick = async () => {
+            const name = nameInput.value.trim();
+            const code = codeInput.value.trim();
+            if (!name || !code) {
+                showNovaAlert('名称和代码不能为空');
+                return;
+            }
+            const data = {
+                id: editData ? editData.id : null,
+                name: name,
+                description: descInput.value.trim(),
+                scriptContent: code
+            };
+            await saveLocalScript(data);
+            showNovaAlert('保存成功！');
+            closeModal();
+            await loadDataAndRender();
+        };
+
+        runBtn.onclick = () => {
+            const code = codeInput.value.trim();
+            if (!code) {
+                showNovaAlert('没有代码可以执行');
+                return;
+            }
+            try {
+                const script = document.createElement('script');
+                script.textContent = code;
+                document.body.appendChild(script);
+                showNovaAlert('脚本已执行！请检查控制台输出');
+            } catch (e) {
+                console.error('脚本执行错误:', e);
+                showNovaAlert(`执行出错: ${e.message}`);
+            }
+        };
+    }, 100);
+
+    // --- Tab 2: 投稿逻辑 ---
+     const textContentContainer = document.getElementById('ws-text-content-container');
+    const fileInputsContainer = document.getElementById('ws-file-inputs-container');
+    const baseTypeInput = document.getElementById('ws-upload-base-type');
+
+    // 【新增】为新的类型选择按钮绑定事件
+    document.querySelectorAll('.ws-type-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.ws-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const selectedType = btn.dataset.type;
+            baseTypeInput.value = selectedType; // 更新隐藏的 input 值
+
+            if (selectedType === 'text') {
+                textContentContainer.style.display = 'block';
+                fileInputsContainer.style.display = 'none';
+            } else {
+                textContentContainer.style.display = 'none';
+                fileInputsContainer.style.display = 'block';
+            }
+        };
+    });
+    const typeSelect = document.getElementById('ws-upload-type');
+    const targetSelectContainer = document.getElementById('ws-update-select-container');
+    const targetSelect = document.getElementById('ws-upload-target-id');
+    const tagContainer = document.getElementById('ws-tags-selection-area');
+    const customTagInput = document.getElementById('ws-custom-tag-input');
+
+    function renderTags() {
+        tagContainer.innerHTML = '';
+        const displayTags = new Set([...allTags, ...selectedTags]);
+        displayTags.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = `ws-selectable-tag ${selectedTags.has(tag) ? 'selected' : ''}`;
+            span.innerText = tag;
+            span.onclick = () => {
+                if (selectedTags.has(tag)) {
+                    selectedTags.delete(tag);
+                } else {
+                    selectedTags.add(tag);
+                }
+                renderTags();
+            };
+            tagContainer.appendChild(span);
+        });
+    }
+
+    const addCustomTag = () => {
+        const val = customTagInput.value.trim();
+        if (val) {
+            selectedTags.add(val);
+            if (!allTags.includes(val)) allTags.push(val);
+            customTagInput.value = '';
+            renderTags();
+        }
+    };
+    customTagInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag(); } };
+
+    renderTags();
+
+    typeSelect.onchange = () => {
+        if (typeSelect.value === 'update') {
+            targetSelectContainer.style.display = 'block';
+            if (targetSelect.value) fillFormFromExisting(targetSelect.value);
+        } else {
+            targetSelectContainer.style.display = 'none';
+            document.getElementById('ws-upload-name').value = '';
+             document.getElementById('ws-upload-version').value = mod.version || '1.0';
+            document.getElementById('ws-upload-desc').value = '';
+            selectedTags.clear();
+            renderTags();
+        }
+    };
+    targetSelect.onchange = () => fillFormFromExisting(targetSelect.value);
+
+    function fillFormFromExisting(id) {
+        const mod = myWorks.find(m => m.id === id);
+        if (mod) {
+            document.getElementById('ws-upload-name').value = mod.name;
+            document.getElementById('ws-upload-desc').value = mod.description;
+            selectedTags.clear();
+            if (mod.tags) mod.tags.forEach(t => selectedTags.add(t));
+            renderTags();
+        }
+    }
+
+    function setupUploadBox(boxId) {
+        const box = document.getElementById(boxId);
+        if (!box) return;
+        const input = box.querySelector('.ws-upload-input');
+        const filenameSpan = box.querySelector('.ws-upload-filename');
+        input.onchange = () => {
+            if (input.files.length > 0) {
+                filenameSpan.textContent = input.files[0].name;
+                box.classList.add('has-file');
+            } else {
+                filenameSpan.textContent = '点击或拖拽到此区域';
+                box.classList.remove('has-file');
+            }
+        };
+        ['dragenter', 'dragover'].forEach(eventName => box.addEventListener(eventName, () => box.classList.add('is-dragging'), false));
+        ['dragleave', 'drop'].forEach(eventName => box.addEventListener(eventName, () => box.classList.remove('is-dragging'), false));
+    }
+    setupUploadBox('ws-upload-box-script');
+    setupUploadBox('ws-upload-box-wb');
+setupUploadBox('ws-upload-box-img');
+    // 【修复】确保获取正确的按钮ID
+  const submitBtn = document.getElementById('ws-submit-upload-btn');
+    if (submitBtn) {
+        submitBtn.onclick = async () => {
+            if (!state.user) {
+                showAuthModal(() => showNovaAlert("登录成功！请再次点击提交。"));
                 return;
             }
 
-            if (editData) {
-                nameInput.value = editData.name || '';
-                descInput.value = editData.description || '';
-                codeInput.value = editData.scriptContent || '';
-                delBtn.style.display = 'inline-block';
-                delBtn.onclick = async () => {
-                    if(confirm('确定删除此脚本吗？')) {
-                        await deleteLocalScript(editData.id);
-                        closeModal();
-                        await loadDataAndRender();
-                    }
-                };
+            const isUpdate = typeSelect.value === 'update';
+            const modId = isUpdate ? targetSelect.value : null;
+
+            // --- 【重点修复区域】 ---
+
+            // 1. 创建一个干净的 FormData 实例
+            const formData = new FormData();
+
+            // 2. 获取用户选择的真实模组类型
+            const baseType = baseTypeInput.value;
+
+            // 3. 【只添加一次】type 字段
+            formData.append('type', baseType);
+
+            // 4. 添加通用字段
+            formData.append('name', document.getElementById('ws-upload-name').value);
+            formData.append('author', state.user.username);
+           const version = document.getElementById('ws-upload-version').value.trim();
+           formData.append('version', version || '1.0'); // 如果为空，默认为 '1.0'
+            formData.append('description', document.getElementById('ws-upload-desc').value);
+            formData.append('tags', JSON.stringify(Array.from(selectedTags)));
+
+            if (isUpdate) {
+                formData.append('id', modId);
             }
 
-            saveBtn.onclick = async () => {
-                const name = nameInput.value.trim();
-                const code = codeInput.value.trim();
-                
-                if(!name || !code) { 
-                    showNovaAlert('名称和代码不能为空'); 
-                    return; 
+            // 5. 【根据类型】添加特定的内容或文件
+            if (baseType === 'text') {
+                // 如果是 text 类型，只添加 content
+                const textContent = document.getElementById('ws-upload-text-content').value;
+                if (!textContent) {
+                    showNovaAlert('数据分享类型模组的内容不能为空！');
+                    return;
                 }
-                
-                const data = { 
-                    id: editData ? editData.id : null, 
-                    name: name, 
-                    description: descInput.value.trim(), 
-                    scriptContent: code 
-                };
-                
-                await saveLocalScript(data);
-                showNovaAlert('保存成功！');
+                formData.append('content', textContent);
+            } else {
+                // 如果是 file 类型，只添加文件
+                const scriptFile = document.getElementById('ws-file-script').files[0];
+                const wbFile = document.getElementById('ws-file-worldbook').files[0];
+                  const imgFile = document.getElementById('ws-file-image').files[0];
+                if (scriptFile) {
+                    formData.append('scriptFile', scriptFile);
+                }
+                if (wbFile) {
+                    formData.append('worldBookFile', wbFile);
+                }
+                 if (imgFile) {
+                formData.append('previewImage', imgFile);
+            }
+            }
+
+            // --- 修复区域结束 ---
+
+
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ 正在上传...';
+
+            try {
+                const response = await fetch(`${API_BASE}/mods`, {
+                    method: 'POST',
+                    headers: { 'x-user-id': state.user.id },
+                    body: formData
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || '上传失败');
+                showNovaAlert(`✅ ${result.message}`);
                 closeModal();
                 await loadDataAndRender();
-            };
-
-            runBtn.onclick = () => {
-                const code = codeInput.value.trim();
-                if(!code) { 
-                    showNovaAlert('没有代码可以执行'); 
-                    return; 
-                }
-                try {
-                    const script = document.createElement('script');
-                    script.textContent = code;
-                    document.body.appendChild(script);
-                    showNovaAlert('脚本已执行！请检查控制台输出');
-                } catch(e) { 
-                    console.error('脚本执行错误:', e); 
-                    showNovaAlert(`执行出错: ${e.message}`); 
-                }
-            };
-        }, 100); // 延迟100ms确保DOM完全渲染
-        // --- Tab 2: 投稿逻辑 (含标签逻辑) ---
-        const typeSelect = document.getElementById('ws-upload-type');
-        const targetSelectContainer = document.getElementById('ws-update-select-container');
-        const targetSelect = document.getElementById('ws-upload-target-id');
-        const tagContainer = document.getElementById('ws-tags-selection-area');
-        const customTagInput = document.getElementById('ws-custom-tag-input');
-        const addTagBtn = document.getElementById('ws-add-tag-btn');
-
-        // 渲染标签函数
-        function renderTags() {
-            tagContainer.innerHTML = '';
-            // 合并现有标签和用户新加的标签(如果不在现有列表中)
-            const displayTags = new Set([...allTags, ...selectedTags]);
-
-            displayTags.forEach(tag => {
-                const span = document.createElement('span');
-                span.className = `ws-selectable-tag ${selectedTags.has(tag) ? 'selected' : ''}`;
-                span.innerText = tag;
-                span.onclick = () => {
-                    if (selectedTags.has(tag)) {
-                        selectedTags.delete(tag);
-                    } else {
-                        selectedTags.add(tag);
-                    }
-                    renderTags(); // 重绘
-                };
-                tagContainer.appendChild(span);
-            });
-        }
-
-        // 添加自定义标签逻辑
-        const addCustomTag = () => {
-            const val = customTagInput.value.trim();
-            if (val) {
-                selectedTags.add(val);
-                if (!allTags.includes(val)) allTags.push(val); // 临时加入列表
-                customTagInput.value = '';
-                renderTags();
-            }
-        };
-        addTagBtn.onclick = addCustomTag;
-        customTagInput.onkeydown = (e) => { if(e.key === 'Enter') addCustomTag(); };
-
-        // 初始化标签
-        renderTags();
-
-        // 联动逻辑
-        typeSelect.onchange = () => {
-            if (typeSelect.value === 'update') {
-                targetSelectContainer.style.display = 'block';
-                if(targetSelect.value) fillFormFromExisting(targetSelect.value);
-            } else {
-                targetSelectContainer.style.display = 'none';
-                document.getElementById('ws-upload-name').value = '';
-                document.getElementById('ws-upload-desc').value = '';
-                selectedTags.clear(); // 清空标签
-                renderTags();
-            }
-        };
-        targetSelect.onchange = () => fillFormFromExisting(targetSelect.value);
-
-        function fillFormFromExisting(id) {
-            const mod = myWorks.find(m => m.id === id);
-            if(mod) {
-                document.getElementById('ws-upload-name').value = mod.name;
-                document.getElementById('ws-upload-author').value = mod.author;
-                document.getElementById('ws-upload-version').value = mod.version;
-                document.getElementById('ws-upload-desc').value = mod.description;
-
-                // 填充标签
-                selectedTags.clear();
-                if(mod.tags) mod.tags.forEach(t => selectedTags.add(t));
-                renderTags();
-            }
-        }
-
-        // 发送逻辑
-        const sendBtn = document.getElementById('ws-send-mail-btn');
-        sendBtn.onclick = async () => {
-            const name = document.getElementById('ws-upload-name').value;
-            const author = document.getElementById('ws-upload-author').value;
-            const version = document.getElementById('ws-upload-version').value;
-            const desc = document.getElementById('ws-upload-desc').value;
-            const note = document.getElementById('ws-upload-note').value;
-            const scriptFile = document.getElementById('ws-file-script').files[0];
-            const wbFile = document.getElementById('ws-file-worldbook').files[0];
-
-            // 获取最终标签字符串
-            const finalTags = Array.from(selectedTags).join(', ');
-
-            if(!name || !author) { showNovaAlert('名称和作者必填'); return; }
-
-            const originalBtnText = sendBtn.innerHTML;
-            sendBtn.disabled = true;
-            sendBtn.innerHTML = '⏳ 正在打包并发送...';
-            sendBtn.style.opacity = '0.7';
-
-           try {
-    const scriptContent = await readFileContent(scriptFile);
-    const wbContent = await readFileContent(wbFile);
-
-    // EmailJS 参数
-    const emailParams = {
-        mod_name: name,
-        author: author,
-        version: version || '1.0',
-        type: typeSelect.value === 'update' ? '🔄 更新' : '✨ 新增',
-        target_id: typeSelect.value === 'update' ? targetSelect.value : '自动生成',
-        description: desc || '无',
-        tags: finalTags || '无',
-        note: note || '无',
-        token: token || '无',
-        script_filename: scriptFile ? scriptFile.name : '无',
-        script_content: scriptContent || '无',
-        worldbook_filename: wbFile ? wbFile.name : '无',
-        worldbook_content: wbContent || '无'
-    };
-
-    // 发送邮件
-    const result = await emailjs.send(
-        'service_sbz6u6c',      // 替换成你的 Service ID
-        'template_hlresca',     // 替换成你的 Template ID
-        emailParams
-    );
-
-    //console.log("EmailJS Response:", result);
-
-    if (result.status === 200) {
-        showNovaAlert(`✅ 投稿成功！\n\n开发者已收到你的作品：\n"${name}"\n\n请耐心等待审核更新。`);
-        closeModal();
-    } else {
-        throw new Error('发送失败');
-    }
- 
             } catch (error) {
                 console.error("Upload failed:", error);
-                showNovaAlert(`❌ 发送失败，文件大小大于50kb了？`);
+                showNovaAlert(`❌ 上传失败: ${error.message}`);
             } finally {
-                sendBtn.disabled = false;
-                sendBtn.innerHTML = originalBtnText;
-                sendBtn.style.opacity = '1';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
             }
         };
-
-        // --- Tab 3: 我的作品列表 (保持不变) ---
-        const worksList = document.getElementById('ws-my-works-list');
-        if(myWorks.length > 0) {
-            worksList.innerHTML = myWorks.map(m => `
-                <div style="padding:10px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <div style="color:var(--primary-color); font-weight:bold;">${m.name} <span style="font-size:0.8em; color:#888;">v${m.version}</span></div>
-                        <div style="font-size:0.8em; color:#aaa;">ID: ${m.id}</div>
-                    </div>
-                    <div style="font-size:0.8em; color:var(--success-color);">已发布</div>
-                </div>
-            `).join('');
-        }
     }
-    // --- 内部工具：自定义确认弹窗 ---
+    // --- Tab 3: 我的作品列表 ---
+    const worksList = document.getElementById('ws-my-works-list');
+    if (worksList && myWorks.length > 0) {
+        worksList.innerHTML = myWorks.map(m => `
+            <div class="ws-work-item">
+                <div>
+                    <div class="ws-work-title">${m.name} <span class="ws-work-version">v${m.version}</span></div>
+                    <div class="ws-work-id">ID: ${m.id}</div>
+                </div>
+                <div class="ws-work-actions">
+                    <button class="control-btn danger-btn" data-action="delete-mod" data-mod-id="${m.id}">删除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    worksList.querySelectorAll('[data-action="delete-mod"]').forEach(btn => {
+        btn.onclick = (e) => {
+            const modIdToDelete = e.currentTarget.dataset.modId;
+            const modToDelete = myWorks.find(m => m.id === modIdToDelete);
+            if (!modToDelete) return;
+
+            showCustomConfirm(
+                '确认删除',
+                `你确定要删除你的作品 <strong>"${modToDelete.name}"</strong> 吗？<br>这个操作不可恢复！`,
+                async () => {
+                    try {
+                        const result = await API.request(`/mods/${modIdToDelete}`, 'DELETE', null, true);
+                        showNovaAlert(result.message || "删除成功！");
+                        // const row = e.currentTarget.closest('.ws-work-item');
+                        // if (row) row.remove();
+                        await loadDataAndRender();
+                    } catch (error) {
+                        console.error('删除失败:', error);
+                        showNovaAlert(`删除失败: ${error.message}`);
+                    }
+                }
+            );
+        };
+    });
+}
+       // --- 内部工具：自定义确认弹窗 ---
     function showCustomConfirm(title, message, onConfirm) {
         const modalId = 'ws-confirm-modal';
         const old = document.getElementById(modalId);
@@ -18013,33 +18435,42 @@ async function checkUpdatesOnStartup() {
         renderMatrix();
         renderPresets();
     }
- async function loadDataAndRender() {
-    await getSubscriptions();
+     async function loadDataAndRender() {
+        await getSubscriptions();
 
-    if (allRemoteMods.length === 0) {
         try {
-            let remoteData = [];
-            // 【修改】添加时间戳参数破除缓存
-            const noCacheUrl = `${REMOTE_URL}?t=${Date.now()}`;
+            // 请求 API，获取足够多的数据以供前端筛选 (limit=1000)
+            // 注意：这里为了保留你现有的前端筛选逻辑，我们一次性拉取较多数据
+            const res = await fetch(`${API_BASE}/mods?limit=1000`);
+            const json = await res.json();
 
-            if (typeof loadRemoteJson !== 'function') {
-                const res = await fetch(noCacheUrl);
-                remoteData = await res.json();
-            } else {
-                remoteData = await loadRemoteJson(noCacheUrl, []);
+            if (json.data) {
+                // 数据清洗与兼容处理
+       allRemoteMods = json.data.map(mod => {
+                    return {
+                        ...mod,
+                        // 兼容旧版 JSON：如果没有 type，默认为 file
+                        type: mod.type || 'file',
+                        // 兼容旧版 JSON：确保 tags 是数组
+                        tags: Array.isArray(mod.tags) ? mod.tags : [],
+                        // 确保 likes 存在
+                        likes: mod.likes || 0,
+                        // 【新增】确保 comments 存在
+                        comments: mod.comments || []
+                    };
+                });
             }
-            allRemoteMods = remoteData;
         } catch (e) {
             console.error("Fetch mods failed", e);
-        }
+            showNovaAlert("连接创意工坊服务器失败，请检查网络");
+            allRemoteMods = [];
         }
 
-        allLocalMods = await getLocalScripts(); // 假设此函数存在
-
-        renderFiltersUI(); // 使用新的渲染函数
+        allLocalMods = await getLocalScripts();
+        renderFiltersUI();
         refreshView(true);
     }
-    async function refreshView(needsRefilter = true) {
+     async function refreshView(needsRefilter = true) {
     const listContainer = document.getElementById('ws-mod-list-preview-v2');
     if (!listContainer) return;
 
@@ -18061,47 +18492,43 @@ async function checkUpdatesOnStartup() {
 
         const term = (document.getElementById('workshop-search-input-v2').value || '').toLowerCase();
         state.searchTerm = term;
+console.log('当前订阅状态 (state.subscriptions):', state.subscriptions);
+         const allMods = [...allLocalMods, ...allRemoteMods];
 
-        const allMods = [...allLocalMods, ...allRemoteMods];
+            // 【步骤1: 筛选】 - 使用以下重构后的逻辑
+            let filtered = allMods.filter(mod => {
+           
+                const matchSearch = !term || mod.name.toLowerCase().includes(term) ||
+                                  (mod.description && mod.description.toLowerCase().includes(term)) ||
+                                  (mod.author && mod.author.toLowerCase().includes(term));
 
-        // 【步骤1: 筛选】 - 从这里开始修改
-        let filtered = allMods.filter(mod => {
-            const isSubscribed = state.subscriptions.has(`sub_mod_${mod.id}`) || state.subscriptions.has(`sub_author_${mod.author}`);
+                // --- 条件2: 标签/类型/作者等主要筛选 ---
+                let matchPrimaryFilter = false;
+                const currentFilter = state.currentTag;
 
-            let matchTag = false;
-            // 【新增】处理更新筛选
-            if (state.currentTag === 'updated') {
-                matchTag = state.updatedModIds.has(String(mod.id));
-            }
-            // 处理作者筛选
-            else if (state.currentTag.startsWith('author:')) {
-                const authorName = state.currentTag.substring(7);
-                matchTag = mod.author === authorName;
-            }
-            // 处理普通标签筛选
-            else {
-                if (state.currentTag === 'all') {
-                    matchTag = true;
-                } else if (state.currentTag === 'subscribed') {
-                    matchTag = isSubscribed;
-                } else if (state.currentTag.endsWith('/subscribed')) {
-                    const category = state.currentTag.split('/')[0];
-                    const inCategory = mod.tags && mod.tags.some(t => t.startsWith(category));
-                    matchTag = isSubscribed && inCategory;
-                } else {
-                    matchTag = mod.tags && mod.tags.some(t =>
-                        t === state.currentTag ||
-                        t.startsWith(state.currentTag + '/')
+                if (currentFilter === 'all') {
+                    matchPrimaryFilter = true;
+                } else if (currentFilter === 'subscribed') {
+                    // 【核心修正】只检查模组本身的订阅状态，不再检查作者订阅状态
+                    matchPrimaryFilter = state.subscriptions.has(`sub_mod_${mod.id}`);
+                } else if (currentFilter.startsWith('type:')) {
+                    const type = currentFilter.substring(5);
+                    matchPrimaryFilter = (mod.type || 'file') === type;
+                } else if (currentFilter === 'updated') {
+                    matchPrimaryFilter = state.updatedModIds.has(String(mod.id));
+                } else if (currentFilter.startsWith('author:')) {
+                    const authorName = currentFilter.substring(7);
+                    matchPrimaryFilter = mod.author === authorName;
+                } else { // 其他所有普通标签筛选
+                    matchPrimaryFilter = mod.tags && mod.tags.some(t =>
+                        t === currentFilter ||
+                        t.startsWith(currentFilter + '/')
                     );
                 }
-            }
 
-            const matchSearch = !term || mod.name.toLowerCase().includes(term) ||
-                              (mod.description && mod.description.toLowerCase().includes(term)) ||
-                              (mod.author && mod.author.toLowerCase().includes(term));
-
-            return matchTag && matchSearch;
-        });
+                // --- 最终组合所有条件 ---
+                return matchSearch && matchPrimaryFilter;
+            });
         // 【筛选逻辑修改结束】
 
         // 【步骤2: 排序】
@@ -18110,10 +18537,9 @@ async function checkUpdatesOnStartup() {
                 const aEnabled = enabledModIds.has(String(a.id));
                 const bEnabled = enabledModIds.has(String(b.id));
                 if (aEnabled === bEnabled) {
-                    // 如果启用状态相同，可以增加一个按名称排序的备用规则，保证顺序稳定
                     return a.name.localeCompare(b.name);
                 }
-                return aEnabled ? -1 : 1; // a启用则排前，否则排后
+                return aEnabled ? -1 : 1;
             });
         }
 
@@ -18154,12 +18580,11 @@ async function checkUpdatesOnStartup() {
         highlightSelectedCard();
     }
 }
-       function createPreviewCard(mod, enabledModIds) { // 接收 enabledModIds
+    function createPreviewCard(mod, enabledModIds) {
     const card = document.createElement('div');
     card.className = 'mod-preview-card';
     card.dataset.modId = mod.id;
 
-    // 检查模组是否已启用，并添加 is-enabled 类
     const isEnabled = enabledModIds.has(String(mod.id));
     if (isEnabled) {
         card.classList.add('is-enabled');
@@ -18170,7 +18595,6 @@ async function checkUpdatesOnStartup() {
         return `<span class="mod-preview-tag-badge">${tagName}</span>`;
     }).join('');
 
-    // 【修改】为了实现背景叠加效果，包裹一层 div
     let imgHtml = '';
     const imgContainerClass = 'mod-preview-img-container';
     if (mod.previewImage) {
@@ -18185,12 +18609,16 @@ async function checkUpdatesOnStartup() {
         </div>`;
     }
 
+    // 【修改】在卡片HTML中增加点赞数显示
     card.innerHTML = `
         ${imgHtml}
         <div class="mod-preview-info">
             <div class="mod-preview-title">${mod.name}</div>
             <div class="mod-preview-author">by ${mod.author || 'Unknown'} | v${mod.version || '1.0'}</div>
             <div class="mod-preview-tags">${tagsHtml}</div>
+        </div>
+        <div class="mod-preview-likes" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 3px;">
+            👍 ${mod.likes || 0}
         </div>
     `;
     card.onclick = () => {
@@ -18219,20 +18647,32 @@ async function checkUpdatesOnStartup() {
     const isEnabled = mod.scriptUrl === 'local' ? mod.enabled : (modSetting ? modSetting.enabled : false);
     const isAuthorSubbed = state.subscriptions.has(`sub_author_${mod.author}`);
     const isModSubbed = state.subscriptions.has(`sub_mod_${mod.id}`);
+     const isLiked = state.user && state.user.likedMods && state.user.likedMods.includes(mod.id);
 const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
     const featureTagsHtml = featureTags.map(t => {
         const tagName = t.substring(1).replace(/-/g, ':'); // 移除'#'并替换'-'为空格
         return `<span class="mod-preview-tag-badge" >${tagName}</span>`;
     }).join('');
     // 按钮组构建
+    // 【修改】按钮组构建：点赞按钮增加数字显示
     let actionsHtml = '';
-    if (mod.scriptUrl !== 'local') {
-        actionsHtml += `<button class="control-btn sub-btn ${isModSubbed ? 'subscribed' : ''}" data-action="sub-mod">
-            ${isModSubbed ? '🔔 已订阅' : '🔕 订阅更新'}
+
+     actionsHtml += `<button class="control-btn sub-btn ${isLiked ? 'subscribed' : ''}" data-action="like-mod" style="margin-right:5px;">
+        <span class="ws-btn-icon">${isLiked ? ICONS.liked : ICONS.like}</span>
+        <span id="ws-like-count">${mod.likes || 0}</span>
+    </button>`;
+
+    // 【修改】订阅按钮使用图标
+    if (mod.scriptUrl !== 'local' && mod.type !== 'text') {
+        actionsHtml += `<button class="control-btn sub-btn ${isModSubbed ? 'subscribed' : ''}" data-action="sub-mod" title="${isModSubbed ? '取消订阅' : '订阅更新'}">
+            <span class="ws-btn-icon">${isModSubbed ? ICONS.subscribed : ICONS.subscribe}</span>
         </button>`;
     }
     if (hasValidWorldBook(mod)) {
-        actionsHtml += `<button class="control-btn" data-action="download-wb">📘 下载世界书</button>`;
+        actionsHtml += `<button class="control-btn" data-action="download-wb">下载世界书</button>`;
+    }
+     if (mod.type === 'text') {
+        actionsHtml += `<button class="control-btn" data-action="inject-data" style="background: var(--success-color); color: #000;">⚡ 数据注入</button>`;
     }
     if (hasValidScript(mod)) {
         actionsHtml += `<button class="control-btn ${isEnabled ? 'danger-btn' : ''}" data-action="toggle-script">
@@ -18248,8 +18688,27 @@ const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
         ? `<img src="${mod.previewImage}" class="ws-detail-img" data-action="zoom-img">`
         : ``; // 空字符串
 
-    // Markdown 解析
-    const descHtml = simpleMarkdownParser(mod.description);
+      const descHtml = simpleMarkdownParser(mod.description);
+
+    // 【新增】评论区 HTML 生成
+    const commentsListHtml = (mod.comments || []).sort((a,b) => b.time - a.time).map(c => `
+        <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 0;">
+            <div style="font-size: 0.85em; color: var(--primary-color); display:flex; justify-content:space-between;">
+                <span>${c.authorName || c.author}</span>
+                <span style="color: #666;">${new Date(c.time).toLocaleDateString()}</span>
+            </div>
+            <div style="font-size: 0.9em; color: var(--text-color); margin-top: 4px;">${c.content}</div>
+        </div>
+    `).join('') || '<div style="color:#666; font-size:0.9em; padding:10px 0;">暂无评论</div>';
+
+    const commentInputHtml = state.user
+        ? `<div style="margin-top:10px; display:flex; gap:10px;">
+             <input type="text" id="ws-comment-input" class="ws-input" placeholder="友善评论..." style="flex:1;">
+             <button class="control-btn" data-action="post-comment">发送</button>
+           </div>`
+        : `<div style="margin-top:10px; font-size:0.9em; color:#888; text-align:center; padding:10px; background:rgba(0,0,0,0.2);">
+             <a href="#" onclick="window.NovaWorkshop.showAuth(); return false;" style="color:var(--primary-color);">登录</a> 后发表评论
+           </div>`;
 
     // 详情页 HTML 结构
     const detailHtml = `
@@ -18266,7 +18725,6 @@ const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
                         </span>
                         <span>版本: ${mod.version || '1.0'}</span>
                     </div>
-                    <!-- 特性标签展示区域 -->
                     ${featureTagsHtml ? `<div class="mod-preview-tags" style="margin-top: 5px;">${featureTagsHtml}</div>` : ''}
                 </div>
             </div>
@@ -18276,20 +18734,49 @@ const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
             <div class="ws-detail-actions">${actionsHtml}</div>
 
             <div class="ws-detail-desc">${descHtml}</div>
+
+            <!-- 【新增】评论区容器 -->
+            <div class="ws-detail-comments" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <h3 style="font-size: 1.1em; color: var(--text-color); margin-bottom: 10px;">评论 (${mod.comments ? mod.comments.length : 0})</h3>
+                <div id="ws-comment-list-container" style="max-height: 300px; overflow-y: auto;">
+                    ${commentsListHtml}
+                </div>
+                ${commentInputHtml}
+            </div>
         </div>
     `;
 
-
     // --- 修改点：移动端渲染逻辑 ---
-    if (window.innerWidth <= 768) {
-        // 将详情内容注入到内容容器，而不是整个模态框
-        mobileContentContainer.innerHTML = detailHtml;
+  if (window.innerWidth <= 768) {
+        // 【核心修改】不再使用页面内固定的div，而是动态创建
+        const existingModal = document.getElementById('ws-mobile-detail-container');
+        if (existingModal) existingModal.remove(); // 如果旧弹窗存在，先移除
 
-        // 激活模态框
-        mobileModal.classList.add('active');
+        // 1. 创建弹窗的根元素（遮罩层）
+        const mobileModal = document.createElement('div');
+        mobileModal.id = 'ws-mobile-detail-container';
+        mobileModal.className = 'ws-mobile-detail-modal';
 
-        // 为新渲染的内容绑定事件
-        bindDetailEvents(mobileContentContainer, mod, isEnabled);
+        // 2. 创建内容容器和关闭按钮
+        mobileModal.innerHTML = `
+            <div id="ws-mobile-detail-content" class="ws-mobile-detail-content">
+                ${detailHtml}
+            </div>
+            <div id="ws-mobile-close-btn-action" class="ws-mobile-close-btn">×</div>
+        `;
+
+        // 3. 将弹窗附加到 document.body
+        document.body.appendChild(mobileModal);
+
+        // 4. 激活弹窗（触发CSS动画）
+        // 使用 setTimeout 确保元素已渲染，从而使过渡动画生效
+        setTimeout(() => {
+            mobileModal.classList.add('active');
+        }, 10); // 一个很小延迟即可
+
+        // 5. 为新创建的弹窗绑定事件
+        // 注意：事件绑定的上下文现在是 mobileModal
+        bindDetailEvents(mobileModal.querySelector('#ws-mobile-detail-content'), mod, isEnabled);
 
     } else {
         desktopContainer.innerHTML = detailHtml;
@@ -18313,35 +18800,69 @@ function simpleMarkdownParser(text) {
 }
 //  为详情面板绑定事件的函数
 function bindDetailEvents(container, mod, isEnabled) {
-    // --- 新增：为移动端弹窗绑定关闭事件 ---
-    const mobileModal = document.getElementById('ws-mobile-detail-container');
+     const mobileModal = document.getElementById('ws-mobile-detail-container');
     const closeBtn = document.getElementById('ws-mobile-close-btn-action');
 
     const closeModal = () => {
-        if (mobileModal) mobileModal.classList.remove('active');
+        if (mobileModal) {
+            mobileModal.classList.remove('active');
+            // 在动画结束后移除DOM元素，防止突然消失
+            mobileModal.addEventListener('transitionend', () => {
+                if (mobileModal.parentNode) {
+                    mobileModal.parentNode.removeChild(mobileModal);
+                }
+            }, { once: true }); // 确保事件只触发一次
+        }
     };
 
     if (closeBtn) closeBtn.onclick = closeModal;
+
     // 点击遮罩层背景关闭
     if (mobileModal) {
         mobileModal.onclick = (e) => {
+            // 点击的目标必须是遮罩层本身，而不是其子元素（内容区）
             if (e.target === mobileModal) {
                 closeModal();
             }
         };
     }
-    container.querySelector('[data-action="sub-author"]')?.addEventListener('click', async (e) => {
-        const newState = await toggleSubscription(mod.author, 'author', mod.author);
-        e.target.className = `sub-btn ${newState ? 'subscribed' : ''}`;
-        e.target.innerHTML = `${newState ? '❤️ 已订阅' : '🤍 订阅作者'}`;
+    
+
+ 
+ 
+    container.querySelector('[data-action="inject-data"]')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '正在获取...';
+
+        try {
+            // 使用 API.request 方法来获取单个 mod 的完整详情
+            const fullModData = await API.request(`/mods/${mod.id}`);
+
+            if (fullModData && fullModData.content) {
+                 
+                 
+                showNovaAlert(`已将模组 [${fullModData.name}] 的最新内容放到了令小盒。`);
+             window.GameAPI.triggerassa(`/setinput ${fullModData.content}\n`);
+         
+             
+            } else {
+                console.warn('该 text 模组没有内容可供注入。');
+                showNovaAlert('此模组没有可注入的数据。');
+            }
+        } catch (error) {
+            console.error('获取模组内容失败:', error);
+            showNovaAlert(`获取数据失败: ${error.message}`);
+        } finally {
+            // 恢复按钮状态
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
     });
 
-    container.querySelector('[data-action="sub-mod"]')?.addEventListener('click', async (e) => {
-        const newState = await toggleSubscription(mod.id, 'mod', mod.name);
-        e.target.className = `control-btn sub-btn ${newState ? 'subscribed' : ''}`;
-        e.target.innerHTML = `${newState ? '🔔 已订阅' : '🔕 订阅更新'}`;
-    });
 
+ 
     container.querySelector('[data-action="toggle-script"]')?.addEventListener('click', async () => {
         if (mod.scriptUrl === 'local') {
             await toggleLocalStatus(mod.id, !isEnabled);
@@ -18409,6 +18930,98 @@ function bindDetailEvents(container, mod, isEnabled) {
         }
         // 重新渲染详情以更新按钮状态
         renderDetailPanel(mod);
+    });
+
+  container.querySelector('[data-action="sub-author"]')?.addEventListener('click', async (e) => {
+        // 检查登录
+        if (!state.user) { showAuthModal(); return; }
+        const btn = e.currentTarget;
+        const newState = await toggleSubscription(mod.author, 'author', mod.author);
+        btn.className = `sub-btn ${newState ? 'subscribed' : ''}`;
+        // 更新为图标
+        btn.innerHTML = `${newState ? '❤️' : '🤍'} ${newState ? '已订阅' : '订阅作者'}`; // 作者订阅暂时保留心形Emoji，因为它比较特殊
+    });
+
+    // 【修复】模组订阅按钮的点击事件
+    container.querySelector('[data-action="sub-mod"]')?.addEventListener('click', async (e) => {
+        if (!state.user) { showAuthModal(); return; }
+        const btn = e.currentTarget;
+        const newState = await toggleSubscription(mod.id, 'mod', mod.name);
+        btn.className = `control-btn sub-btn ${newState ? 'subscribed' : ''}`;
+        // 更新为图标
+        btn.innerHTML = `<span class="ws-btn-icon">${newState ? ICONS.subscribed : ICONS.subscribe}</span>`;
+    });
+
+    // 【修复】点赞按钮的点击事件
+    container.querySelector('[data-action="like-mod"]')?.addEventListener('click', async (e) => {
+        if (!state.user) { showAuthModal(); return; }
+        const btn = e.currentTarget;
+        try {
+            const res = await API.toggleLike(mod.id);
+            mod.likes = res.likes;
+
+            const isNowLiked = !state.user.likedMods.includes(mod.id);
+
+            if (isNowLiked) {
+                state.user.likedMods.push(mod.id);
+            } else {
+                state.user.likedMods = state.user.likedMods.filter(id => id !== mod.id);
+            }
+            localStorage.setItem('ws_user_info', JSON.stringify(state.user));
+
+            // 更新按钮状态和图标
+            btn.classList.toggle('subscribed', isNowLiked);
+            btn.innerHTML = `
+                <span class="ws-btn-icon">${isNowLiked ? ICONS.liked : ICONS.like}</span>
+                <span id="ws-like-count">${mod.likes}</span>
+            `;
+        } catch (err) {
+            showNovaAlert(err.message);
+        }
+    });
+    // 【新增】发送评论事件
+    container.querySelector('[data-action="post-comment"]')?.addEventListener('click', async (e) => {
+        const input = container.querySelector('#ws-comment-input');
+        const content = input.value.trim();
+        if (!content) return;
+
+        const btn = e.target;
+        btn.disabled = true;
+        btn.innerText = '...';
+
+        try {
+            const res = await API.postComment(mod.id, content);
+            // 更新本地数据
+            if (!mod.comments) mod.comments = [];
+            mod.comments.push(res.comment);
+
+            // 刷新评论列表显示 (简单起见，直接追加 HTML)
+            const listContainer = container.querySelector('#ws-comment-list-container');
+            const newCommentHtml = `
+                <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 0; animation: fadeIn 0.5s;">
+                    <div style="font-size: 0.85em; color: var(--primary-color); display:flex; justify-content:space-between;">
+                        <span>${res.comment.authorName || res.comment.author}</span>
+                        <span style="color: #666;">刚刚</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: var(--text-color); margin-top: 4px;">${res.comment.content}</div>
+                </div>`;
+
+            // 如果之前是"暂无评论"，清空它
+            if (listContainer.innerText.includes('暂无评论')) listContainer.innerHTML = '';
+
+            listContainer.insertAdjacentHTML('afterbegin', newCommentHtml);
+            input.value = '';
+
+            // 更新标题计数
+            const title = container.querySelector('.ws-detail-comments h3');
+            if(title) title.innerText = `评论 (${mod.comments.length})`;
+
+        } catch (err) {
+            showNovaAlert(err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = '发送';
+        }
     });
 }
  
@@ -18613,8 +19226,8 @@ init: async function() {
 },
 showInputModal:showInputModal,
         runMods: executeActiveMods,
-       downloadWorldBook: downloadFile  
-       
+       downloadWorldBook: downloadFile  ,
+       showAuth: () => showAuthModal(() => refreshView(false))
     };
 })();
 
@@ -47125,13 +47738,13 @@ function setupReconfigModal() {
       
         { name: '私聊群聊开', uid: 55, group: 'private-chat', category: 'gameplay', desc: '启用通讯系统' },
         { name: '私聊群聊关', uid: 56, group: 'private-chat', category: 'gameplay', desc: '关闭通讯系统' },
-        { name: '战斗模式开', uid: 74, group: 'battle', category: 'gameplay', desc: '启用回合制战斗' },
+        // { name: '战斗模式开', uid: 74, group: 'battle', category: 'gameplay', desc: '启用回合制战斗' },
          { name: '造物中立', uid: 19, group: 'attitude', category: 'gameplay', desc: '造物态度中立' },
         { name: '造物恶意', uid: 4, group: 'attitude', category: 'gameplay', desc: '造物充满敌意' },
         { name: '造物崇敬', uid: 3, group: 'attitude', category: 'gameplay', desc: '你是造物主' },
         { name: '无造物', uid: 38, group: 'attitude', category: 'gameplay', desc: '不再出现造物' },
  
-        { name: '战斗模式关', uid: 75, group: 'battle', category: 'gameplay', desc: '自由叙事战斗' },
+        // { name: '战斗模式关', uid: 75, group: 'battle', category: 'gameplay', desc: '自由叙事战斗' },
  
         { name: '资源消耗', uid: 58, category: 'gameplay', desc: '启用体力/物资消耗' },
         { name: '分阶段好感', uid: 65, category: 'gameplay', desc: '好感度分级系统' },
