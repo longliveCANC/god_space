@@ -15558,7 +15558,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.2';
+window.current_game_version = '3.8.3';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
