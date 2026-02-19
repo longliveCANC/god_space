@@ -65,7 +65,8 @@
         "#脚本"
     ],
     "description": "[弃用了，整合到了超复杂npc档案那里。去那里开。最好也把这里的脚本关掉][0113支持对Npc进行关注以及角色关系图，当然需要配合超复杂npc使用。然后关键记忆支持快捷删除了]\n[1218现在支持加载立绘了，需要游戏版本3.4.15及其以上][跟随主题]开启该脚本后，左上角会单独有npc小球，美化字段基于原版，兼容原版和超复杂npc，其他的也不会报错，就是美化效果差一点。",
-    "scriptUrl": "",
+    "scriptUrl": "https://longlivecanc.github.io/god_space/workShop/scripts/mod00_null.js",
+  
     "worldBookUrl": "" 
     
   } ,{

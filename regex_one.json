@@ -15558,7 +15558,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.1';
+window.current_game_version = '3.8.2';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -34481,22 +34481,39 @@ function _updateStatusValue(data, path, valueStr) {
         recursiveUpdate(originalValue, finalValue);
     }
     // 决策 B: 如果原值是 [Value, Desc] 数组，但新值是基本类型
-    else if (Array.isArray(originalValue) && originalValue.length >= 2 && !Array.isArray(finalValue)) {
-        originalValue[0] = finalValue;
-    }
-    // 决策 C: 类型匹配或普通覆盖 (兜底)
-    else {
-        // 只有在非对象/非特殊数组的情况下，才允许直接覆盖
-        // 这样避免了 user.当前装备 被直接替换成没有描述的简单对象
-        if (!isPlainObject(originalValue) && !Array.isArray(originalValue)) {
-            parentLevel[finalKey] = finalValue;
+      if (Array.isArray(originalValue) && originalValue.length >= 2 && typeof originalValue[1] === 'string') {
+        const isFinalSimple = typeof finalValue !== 'object' || finalValue === null;
+
+        if (isFinalSimple) {
+            // ✅ 安全操作：新值是简单类型，只更新数组的第一个元素
+            originalValue[0] = finalValue;
         } else {
-            // 如果走到这里，说明试图用简单值覆盖复杂结构，触发保护，拒绝操作或仅尝试递归
-            if (isPlainObject(originalValue) && isPlainObject(finalValue)) {
-                 recursiveUpdate(originalValue, finalValue);
-            }
+            // 🛑 危险操作：新值是对象或数组，明确拦截
+            console.warn(`[Guardian] 🛡️ 结构守护：阻止了将描述性数组 '${finalKey}' 覆盖为复杂对象/数组的操作。`);
+            return; // 拦截
         }
+        return; // 处理完毕，退出函数
     }
+
+    // --- 第二层守护：防止简单类型被复杂类型覆盖 ---
+    const isOriginalSimple = typeof originalValue !== 'object' || originalValue === null;
+    const isFinalComplex = typeof finalValue === 'object' && finalValue !== null;
+
+    if (isOriginalSimple && isFinalComplex) {
+        console.warn(`[Guardian] 🛡️ 结构守护：阻止了将简单值 '${finalKey}' (原值: ${originalValue}) 覆盖为复杂对象/数组的操作。`);
+        return; // 拦截
+    }
+
+    // --- 第三层守护：处理对象之间的递归更新 ---
+    if (isPlainObject(originalValue) && isPlainObject(finalValue)) {
+        // console.log(`[Guardian] 启动深度结构保护更新: ${finalKey}`);
+        recursiveUpdate(originalValue, finalValue);
+        return; // 处理完毕，退出函数
+    }
+
+    // --- 兜底操作：执行安全的常规赋值 ---
+    // 能走到这里，说明不是特殊数组，不是简单->复杂，也不是对象->对象，是安全的常规覆盖
+    parentLevel[finalKey] = finalValue;
 }
      function _updateStatDataOnTurnEnd(originalData, currentData, taskStartDateOverride) {
         // //console.log("[Stat] ⏰ 回合结束，以【兼容守护版】的绝对时间逻辑检查时间流逝...");
