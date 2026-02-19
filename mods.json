@@ -8,6 +8,7 @@
      "tags": ["官方/重要/⭐公告", "#世界书"],
     "description": "3.7.15版本后，启用脚本会直接加载了。\ndlc需要开启无世界观，然后将世界书挂在全局。其他有世界书的mod都得挂全局。\n真的会有想投稿的吗？如果有一些问题要反馈，请来这里 <a style=\"color:green\" href=\"https://discord.com/channels/1134557553011998840/1395120919407493183\" target=\"_blank\">→Discord频道←</a> 找assa。\n文件是简陋的接口文档",
     "scriptUrl": "",
+    "comments":[],
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/@type.txt",  "previewImage": ""
   },   {
     "id": "mod00",
@@ -112,20 +113,7 @@
     "scriptUrl": "",
     "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/自定义词条世界书.json",
     "previewImage": ""
-  } , {
-    "id": "x-mod-原版骰",
-    "name": "原版骰",
-    "author": "assa",
-    "version": "1.0",
-        "tags": [
-        "检定与规则/检定与规则",
-        "#世界书"
-    ],
-    "description": "合理性审查之骰转正了，这里是原本骰，若有需要可以下载使用",
-    "scriptUrl": "",
-    "worldBookUrl": "https://longlivecanc.github.io/god_space/workShop/worldBooks/小蝌蚪找妈妈-mod-合理性审查之骰.json",
-    "previewImage": ""
-  } ,{
+  }   ,{
     "id": "x-mod-小世界",
     "name": "小世界其乐无穷",
        "authorToken":"a8933b36-717a-4ba7-b979-626d85b62b92",
