@@ -3,9 +3,12 @@
 
     // 🔴 配置区域
     const SERVER_URL = "ws://106.55.104.134:6677";
-
+ const HEARTBEAT_INTERVAL = 2000; // 每 2 秒发送一次心跳
+    const HEARTBEAT_TIMEOUT = 1000;  // 1 秒内没收到心跳回复就认为超时
+    const RECONNECT_INTERVAL = 1000; // 重连间隔缩短为 1 秒
     // 状态管理
     const State = {
+        
         socket: null,
         isConnected: false,
         currentRole: null, // 'host' | 'client'
@@ -18,6 +21,16 @@
         isChatMode: false,  
         hostIsEditing: false, 
          isCommandModalActive: false,  
+         isGracefulDisconnect: false, // [新增] 是否为主动断开
+        reconnectAttempts: 0, // [新增] 重连尝试次数
+        maxReconnectAttempts: 5, // [新增] 最大重连次数
+        reconnectInterval: RECONNECT_INTERVAL,
+        lastConnectionInfo: { role: null, roomId: null },
+
+        // [优化] 心跳相关状态
+        heartbeatIntervalId: null, // 客户端发送心跳的定时器
+        heartbeatTimeoutId: null,  // 等待服务器响应的定时器
+        isReconnecting: false,
     };
 window.MultiplayerState = {
         isClient: function() {
@@ -369,7 +382,84 @@ window.MultiplayerState = {
 
             observer.observe(modal, { attributes: true });
         },
+ startHeartbeat: function() {
+            this.stopHeartbeat(); // 先确保旧的定时器已清除
 
+            State.heartbeatIntervalId = setInterval(() => {
+                if (State.socket && State.socket.readyState === WebSocket.OPEN) {
+                    // 发送心跳包
+                    State.socket.send(JSON.stringify({ type: 'ping' }));
+
+                    // 设置一个超时计时器，如果服务器在指定时间内没有响应 pong，就认为连接断开
+                    State.heartbeatTimeoutId = setTimeout(() => {
+                        console.warn('[Heartbeat] 服务器心跳响应超时！立即触发重连...');
+                        if (State.socket) {
+                            // 不要调用 close()，因为我们想立即重连，而不是等待 onclose 事件
+                            // 直接调用 handleDisconnectOrReconnect 来处理
+                            this.handleDisconnectOrReconnect();
+                        }
+                    }, HEARTBEAT_TIMEOUT);
+
+                } else {
+                    // 如果在心跳间隔时就发现连接已断开，也立即触发重连
+                    console.warn('[Heartbeat] 检测到 WebSocket 状态异常，立即触发重连...');
+                    this.handleDisconnectOrReconnect();
+                }
+            }, HEARTBEAT_INTERVAL);
+        },
+
+        // [优化] 停止心跳
+        stopHeartbeat: function() {
+            clearInterval(State.heartbeatIntervalId);
+            clearTimeout(State.heartbeatTimeoutId);
+            State.heartbeatIntervalId = null;
+            State.heartbeatTimeoutId = null;
+        },
+
+ handleDisconnectOrReconnect: function() {
+    // 1. 如果是主动断开，则不进行重连
+    if (State.isGracefulDisconnect) {
+        this.resetState();
+        showNovaAlert('联机服务已断开');
+        return;
+    }
+
+    // 2. [核心] 如果已经在重连过程中，则立即返回，防止重复执行
+    if (State.isReconnecting) {
+        console.log('[Reconnect] 已在重连流程中，忽略本次触发。');
+        return;
+    }
+
+    // 3. 锁上状态，开始重连流程
+    State.isReconnecting = true;
+    this.stopHeartbeat(); // 停止心跳，防止干扰
+    State.isConnected = false;
+    if (State.socket) {
+        State.socket.onclose = null; // 清理旧的监听器
+        State.socket.onerror = null;
+        State.socket.close(); // 确保旧连接被关闭
+        State.socket = null;
+    }
+    this.renderFloatingBalls(); // 更新UI
+
+    // 4. 检查重连次数
+    if (State.reconnectAttempts < State.maxReconnectAttempts) {
+        State.reconnectAttempts++;
+        showNovaAlert(`连接丢失！1秒后进行第 ${State.reconnectAttempts} 次重连...`);
+
+        // [关键修复] 使用 setTimeout 确保 connect 调用在下一个事件循环中，并且只执行一次
+        setTimeout(() => {
+            console.log(`[Reconnect] 执行第 ${State.reconnectAttempts} 次重连尝试...`);
+            this.connect(State.lastConnectionInfo.role, State.lastConnectionInfo.roomId, true);
+        }, State.reconnectInterval);
+
+    } else {
+        showNovaAlert('重连失败，请检查网络后手动重新连接。');
+        this.resetState(); // 耗尽所有重连次数后，彻底重置状态
+    }
+},
+
+ 
         // [修改] 劫持 triggerassa 以实现追加逻辑
         hijackTriggerAssa: function() {
             if (typeof window.triggerassa === 'function' && !window.originalTriggerAssa) {
@@ -460,7 +550,7 @@ window.MultiplayerState = {
         },
 
         // 渲染联机大厅 (根据当前状态动态显示)
-        async renderLobby() {  
+ async renderLobby() {
             const old = document.querySelector('.mp-modal');
             if (old) old.remove();
 
@@ -485,7 +575,10 @@ window.MultiplayerState = {
                             <button id="mp-toggle-panel-btn" class="mp-btn">${State.isCommandPanelEnabled ? '✅ 关闭公屏' : '⬜️ 开启公屏'}</button>
                             <button id="mp-dissolve-btn" class="mp-btn danger">🚫 解散房间</button>
                           `
-                        : `<button id="mp-leave-btn" class="mp-btn danger">🚪 退出房间</button>`
+                        : `
+                            <button id="mp-sync-data-btn" class="mp-btn">🔄 一键同步</button>
+                            <button id="mp-leave-btn" class="mp-btn danger">🚪 退出房间</button>
+                          ` // [修改] 为玩家添加“一键同步”按钮
                     }
                 `;
             } else {
@@ -514,13 +607,17 @@ window.MultiplayerState = {
             if (State.roomId) {
                 this.updateLobbyPlayerList();
                 if (State.currentRole === 'host') {
-                    document.getElementById('mp-dissolve-btn').onclick = () => this.sendAction('dissolve_room');
-                     
-                        document.getElementById('mp-toggle-panel-btn').onclick = () => {
+                    document.getElementById('mp-dissolve-btn').onclick = () => {
+                        // [修改] 增加主动断开标志
+                        State.isGracefulDisconnect = true;
+                        this.sendAction('dissolve_room');
+                        if (State.socket) State.socket.close();
+                    };
+
+                    document.getElementById('mp-toggle-panel-btn').onclick = () => {
                         const newIsEnabledState = !State.isCommandPanelEnabled;
                         this.sendAction('toggle_command_panel', { isEnabled: newIsEnabledState });
 
-                       
                         if (newIsEnabledState) {
                             const commandArea = document.getElementById('command-edit-area');
                             if (commandArea) {
@@ -529,23 +626,30 @@ window.MultiplayerState = {
                         }
                     };
 
-                } else {
-              document.getElementById('mp-leave-btn').onclick = () => {
-                // 1. 先向服务器发送离开请求
-                this.sendAction('leave_room');
+                } else { // 玩家的按钮事件
+                    // [新增] 玩家同步按钮的事件处理
+                    document.getElementById('mp-sync-data-btn').onclick = async () => {
+                        const confirmSync = await new Promise(resolve => {
+                            createConfirmModal('确认同步',
+                                `此操作将用主机的游戏数据覆盖您当前的进度（包括角色卡、世界设定、历史记录等），此过程不可逆！\n\n是否确认同步？`,
+                                () => resolve(true),
+                                () => resolve(false)
+                            );
+                        });
+                        if (confirmSync) {
+                            showNovaAlert('已向主机发送同步请求，请稍候...');
+                            this.sendAction('request_full_sync');
+                        }
+                    };
 
-                // 2. 立即重置本地状态
-                this.resetState();
-
-                // 3. 显示提示信息
-                showNovaAlert('您已退出房间');
-
-                // 4. （可选，但推荐）如果WebSocket连接还存在，主动关闭它
-                if (State.socket) {
-                    State.socket.close();
-                }
-            };
-     
+                    document.getElementById('mp-leave-btn').onclick = () => {
+                        // [修改] 增加主动断开标志
+                        State.isGracefulDisconnect = true;
+                        this.sendAction('leave_room');
+                        if (State.socket) {
+                            State.socket.close();
+                        }
+                    };
                 }
             } else {
                 document.getElementById('mp-create-btn').onclick = () => this.connect('host');
@@ -705,90 +809,156 @@ window.MultiplayerState = {
             }).reverse().join(''); // 最新的在上面
         },
 
-          async connect(role, roomId = null) {
+ async connect(role, roomId = null, isReconnect = false) {
+    // 1. 如果不是重连（即首次连接），则初始化所有状态
+    if (!isReconnect) {
+        State.isGracefulDisconnect = false;
+        State.isReconnecting = false; // 重置重连锁
+        State.reconnectAttempts = 0;  // 重置尝试次数
+        State.lastConnectionInfo = { role, roomId }; // 保存连接信息
+        const statusDiv = document.getElementById('mp-status-text');
+        if (statusDiv) statusDiv.innerText = '正在连接服务器...';
+
+        let playerName = "User";
+        if (typeof SillyTavern !== 'undefined' && SillyTavern.name1) {
+            playerName = SillyTavern.name1;
+        }
+
+        let playerDesc = "No description.";
+        try {
+            const descElem = document.getElementById('persona_description');
+            if (descElem) playerDesc = descElem.value;
+            else playerDesc = await EjsTemplate.evalTemplate('');
+        } catch (e) { console.warn("简介获取失败", e); }
+
+        State.myInfo = { name: playerName, desc: playerDesc };
+
+        if (role === 'client') {
+            const confirm = await new Promise(resolve => {
+                createConfirmModal('数据上传警告',
+                    `即将连接至房间 [${roomId}]。\n您的ID [${playerName}] 及当前角色设定将被上传至主机。\n是否确认授权？`,
+                    () => resolve(true),
+                    () => resolve(false)
+                );
+            });
+            if (!confirm) {
+                if (statusDiv) statusDiv.innerText = '操作已取消';
+                return;
+            }
+        }
+    }
+
+    // 2. 初始化 WebSocket
+    try {
+        console.log(`[Connect] 尝试连接到 ${SERVER_URL}...`);
+        State.socket = new WebSocket(SERVER_URL);
+    } catch (e) {
+        console.error("WebSocket 初始化失败:", e);
+        State.isReconnecting = false;
+        this.handleDisconnectOrReconnect();
+        return;
+    }
+
+    // 3. 绑定事件处理器
+    State.socket.onopen = () => {
+        console.log('[onopen] WebSocket 连接成功！');
+        State.isConnected = true;
+        State.reconnectAttempts = 0;
+        State.isReconnecting = false; // 解锁！
+
+        if (isReconnect) {
+            showNovaAlert('联机服务已重新连接！');
+        } else {
             const statusDiv = document.getElementById('mp-status-text');
-            if (statusDiv) statusDiv.innerText = '正在连接服务器...';
- 
-            let playerName = "User";
-            if (typeof SillyTavern !== 'undefined' && SillyTavern.name1) {
-                playerName = SillyTavern.name1;
-            }
+            if (statusDiv) statusDiv.innerText = '握手成功...';
+        }
 
-            let playerDesc = "No description.";
-             try {
-                
-                const descElem = document.getElementById('persona_description');
-                if (descElem) playerDesc = descElem.value;
-                else playerDesc = await EjsTemplate.evalTemplate('<%= persona_description.value %>');
-            } catch (e) { console.warn("简介获取失败", e); }
+        // [关键修复] 在发送前再次检查连接状态
+        if (State.socket.readyState === WebSocket.OPEN) {
+            const payload = { playerInfo: State.myInfo };
+            const currentRole = State.lastConnectionInfo.role;
+            const targetRoomId = State.lastConnectionInfo.roomId;
 
-
-            State.myInfo = { name: playerName, desc: playerDesc };
-
-            // 客户端警告
-            if (role === 'client') {
-                const confirm = await new Promise(resolve => {
-                    createConfirmModal('数据上传警告',
-                        `即将连接至房间 [${roomId}]。\n您的ID [${playerName}] 及当前角色设定将被上传至主机。\n是否确认授权？`,
-                        () => resolve(true),
-                        () => resolve(false)
-                    );
-                });
-                if (!confirm) {
-                    if (statusDiv) statusDiv.innerText = '操作已取消';
-                    return;
+            if (currentRole === 'host') {
+                const createPayload = { type: 'create_room', ...payload };
+                if (targetRoomId) {
+                    createPayload.roomId = targetRoomId;
                 }
+                State.socket.send(JSON.stringify(createPayload));
+            } else { // client
+                State.socket.send(JSON.stringify({ type: 'join_room', roomId: targetRoomId, ...payload }));
             }
 
-            // 初始化 WebSocket
-            try {
-                State.socket = new WebSocket(SERVER_URL);
-            } catch (e) {
-                showNovaAlert("WebSocket 初始化失败");
+            // 只有在成功发送后才启动心跳
+            this.startHeartbeat();
+        } else {
+            console.warn('[onopen] 连接在 onopen 回调执行期间关闭，重新触发重连。');
+            // 如果状态已经不是 OPEN，说明连接瞬间又断了，需要重新走重连逻辑
+            this.handleDisconnectOrReconnect();
+        }
+    };
+
+    State.socket.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'pong') {
+            clearTimeout(State.heartbeatTimeoutId);
+            return;
+        }
+        await this.handleSocketMessage(data);
+    };
+
+    State.socket.onclose = (event) => {
+        console.log(`[onclose] WebSocket 连接已关闭。 Code: ${event.code}`);
+        State.isReconnecting = false;
+        this.handleDisconnectOrReconnect();
+    };
+
+    State.socket.onerror = (err) => {
+        console.error('[onerror] WebSocket 发生错误:', err);
+        State.isReconnecting = false;
+        this.handleDisconnectOrReconnect();
+    };
+},
+ sendAction: function(type, data = {}) {
+            // 如果 socket 不存在或连接已断开
+            if (!State.socket || State.socket.readyState !== WebSocket.OPEN) {
+                console.warn(`[sendAction] 尝试发送 '${type}' 失败，连接已断开。立即触发重连...`);
+                showNovaAlert("连接已断开，正在尝试立即重连...");
+
+                // 立即触发重连逻辑，而不是等待
+                this.handleDisconnectOrReconnect();
+
+                // 由于连接已断，本次发送失败，直接返回
                 return;
             }
 
-            State.socket.onopen = () => {
-                State.isConnected = true;
-                if (statusDiv) statusDiv.innerText = '握手成功...';
-                const payload = { playerInfo: State.myInfo };
-                if (role === 'host') {
-                    State.socket.send(JSON.stringify({ type: 'create_room', ...payload }));
-                } else {
-                    State.socket.send(JSON.stringify({ type: 'join_room', roomId: roomId, ...payload }));
-                }
-            };
-
-           State.socket.onmessage = async (event) => {
-                const data = JSON.parse(event.data);
-               await this.handleSocketMessage(data);
-            };
-
-            State.socket.onclose = () => {
-                
-                this.resetState();
-                showNovaAlert('联机服务已断开');
-            };
+            // 连接正常，直接发送
+            State.socket.send(JSON.stringify({ type, ...data }));
         },
 
-        sendAction: function(type, data = {}) {
-            if (State.socket && State.socket.readyState === WebSocket.OPEN) {
-                State.socket.send(JSON.stringify({ type, ...data }));
-            }
-        },
+        // [优化] resetState 需要停止心跳
+   resetState: function() {
+    this.stopHeartbeat(); // 停止所有心跳活动
+    if (State.socket) {
+        State.socket.onclose = null; // 避免在主动重置时触发不必要的重连
+        State.socket.close();
+    }
+    State.socket = null;
+    State.roomId = null;
+    State.currentRole = null;
+    State.players = [];
+    State.isConnected = false;
+    State.lastConnectionInfo = { role: null, roomId: null };
 
-        resetState: function() {
-            State.socket = null;
-            State.roomId = null;
-            State.currentRole = null;
-            State.players = [];
-            this.renderFloatingBalls(); // 清空球
- State.isConnected = false;
-            // 如果大厅开着，刷新它
-            if (document.querySelector('.mp-modal')) {
-                this.renderLobby();
-            }
-        },
+    // [关键修复] 重置所有重连相关状态
+    State.reconnectAttempts = 0;
+    State.isReconnecting = false; // 解锁！
+
+    this.renderFloatingBalls();
+    if (document.querySelector('.mp-modal')) {
+        this.renderLobby();
+    }
+},
          showPlayerShout: function(playerName, message, isChat = false) {
             const ball = document.querySelector(`.mp-ball[data-player-name="${playerName}"]`);
             const container = document.getElementById('mp-floating-container');
@@ -829,164 +999,154 @@ setTimeout(() => {
 
         },
 
-         async handleSocketMessage(data) {
+     async handleSocketMessage(data) {
                 switch (data.type) {
                     case 'room_created':
                         State.currentRole = 'host';
                         State.roomId = data.roomId;
+
+                       
+                        State.lastConnectionInfo.roomId = data.roomId;
+
                         showNovaAlert(`房间 ${data.roomId} 已创建`);
                         this.renderLobby();
-                        this.setupInputInterface(); // [修改] 房主也设置输入界面
+                        this.setupInputInterface();
+                         this.startHeartbeat(); 
                         break;
 
                     case 'joined_success':
                         State.currentRole = 'client';
                         State.roomId = data.roomId;
+
+                        // [修复] 客户端成功加入后，同样用服务器确认的ID更新重连信息
+                        State.lastConnectionInfo.roomId = data.roomId;
+
                         showNovaAlert(`成功加入房间 ${data.roomId}`);
                         this.renderLobby();
-                        this.setupInputInterface(); // [修改] 调用新函数
+                        this.setupInputInterface();
+                        this.startHeartbeat();  
                         break;
-          case 'player_shout':
-                     
-                    this.showPlayerShout(data.senderName, data.content);
-                    break;
-          
 
-                     case 'room_update':
-                   
-                    if (State.currentRole === 'host' && typeof TavernHelper !== 'undefined') {
-                        const oldPlayers = new Set(State.players.map(p => p.name));
-                        const newPlayers = new Set(data.players.map(p => p.name));
+                    case 'player_shout':
+                        this.showPlayerShout(data.senderName, data.content);
+                        break;
 
-                        // 遍历新列表，更新或添加玩家信息
-                        data.players.forEach(player => {
-                            if (player.name !== State.myInfo.name) { // 不处理自己
-                                const varName = `player_${player.name}`;
-                                const content = `${player.desc}\nStatus: Online`;
-                                TavernHelper.insertOrAssignVariables({ [varName]: content }, { type: 'chat' });
-                            }
-                        });
+                    case 'room_update':
+                        if (State.currentRole === 'host' && typeof TavernHelper !== 'undefined') {
+                            const oldPlayers = new Set(State.players.map(p => p.name));
+                            const newPlayers = new Set(data.players.map(p => p.name));
 
-                        // 找出离开的玩家并删除其变量
-                        oldPlayers.forEach(oldName => {
-                            if (!newPlayers.has(oldName) && oldName !== State.myInfo.name) {
-                                const varName = `player_${oldName}`;
-                                // 删除变量（通过设置为空字符串或特定标记）
-                                TavernHelper.insertOrAssignVariables({ [varName]: 'Status: Offline。' }, { type: 'chat' });
-                            }
-                        });
-                    }
+                            data.players.forEach(player => {
+                                if (player.name !== State.myInfo.name) {
+                                    const varName = `player_${player.name}`;
+                                    const content = `${player.desc}\nStatus: Online`;
+                                    TavernHelper.insertOrAssignVariables({ [varName]: content }, { type: 'chat' });
+                                }
+                            });
 
-                    // 核心：更新玩家列表和状态
-                   State.players = data.players;
-                       
-                       // 🔴 修改: 直接从服务端接收权威状态，不再猜测
-                    if (data.isCommandPanelEnabled !== undefined) {
-                        State.isCommandPanelEnabled = data.isCommandPanelEnabled;
-                    }
-                    if (data.commandPanelContent !== undefined) {
-                        State.commandPanelContent = data.commandPanelContent;
-                    }
-
-                    // 如果大厅是打开的，重新渲染它以更新按钮文本
-                    if (document.querySelector('.mp-modal')) {
-                        this.renderLobby();
-                    }
-
-                    this.updateLobbyPlayerList(); // 更新玩家列表DOM
-                    this.renderFloatingBalls();   // 根据新状态重新渲染悬浮球
-                    break;
-
-                case 'room_dissolved':
-                    showNovaAlert('房间已解散');
-                    if (State.socket) State.socket.close();
-                    this.resetState();
-                    break;
-
-                case 'client_msg':
-                    if (State.currentRole === 'host') this.handleHostReceiveMsg(data);
-                    break;
-
-                case 'host_stream':
-                    if (State.currentRole === 'client') this.handleClientReceiveStream(data);
-                    break;
-
-                
-                case 'client_input_sync':
-                    if (State.currentRole === 'client') {
-                        console.log("接收到了主机传来的user消息");
-                        const userMessage = { role: 'user', content: data.content };
-                     if (typeof conversationHistory !== 'undefined' && Array.isArray(conversationHistory)) {
-                            conversationHistory.push(userMessage);
-                            await window.saveHistory();
-                            await window.processUpdateMemoryCommands(data.content);
-                             await new Promise(resolve => setTimeout(resolve, 500));
-                            worldHelper.renderHistory();
-                       
+                            oldPlayers.forEach(oldName => {
+                                if (!newPlayers.has(oldName) && oldName !== State.myInfo.name) {
+                                    const varName = `player_${oldName}`;
+                                    TavernHelper.insertOrAssignVariables({ [varName]: 'Status: Offline。' }, { type: 'chat' });
+                                }
+                            });
                         }
-                    }
-                    break;
 
-              
-                case 'host_history_sync':
-                    if (State.currentRole === 'client') {
-                        // 移除临时的流式气泡
-                        const tempBubble = document.getElementById('mp-ai-bubble');
-                        if (tempBubble) tempBubble.remove();
-                              
-                        // 将最终消息添加到历史并渲染
-                        if (typeof conversationHistory !== 'undefined' && Array.isArray(conversationHistory)) {
-                            conversationHistory.push(data.message);
-                            await window.saveHistory();
-                            await window.processUpdateMemoryCommands(data.message.content);
-                             await new Promise(resolve => setTimeout(resolve, 500));
-                            worldHelper.renderHistory(false,true);
-                       
+                        State.players = data.players;
+                        if (data.isCommandPanelEnabled !== undefined) {
+                            State.isCommandPanelEnabled = data.isCommandPanelEnabled;
                         }
-                    }
-                    break;
+                        if (data.commandPanelContent !== undefined) {
+                            State.commandPanelContent = data.commandPanelContent;
+                        }
 
-                case 'error':
-                    showNovaAlert(`错误: ${data.message}`);
-                    if (document.getElementById('mp-status-text')) {
-                        document.getElementById('mp-status-text').innerText = data.message;
-                    }
-                    break;
-              case 'chat_broadcast':
-                    // 1. 存入历史 (保留最近50条)
-                    State.chatHistory.push(data);
-                    if (State.chatHistory.length > 50) State.chatHistory.shift();
+                        if (document.querySelector('.mp-modal')) {
+                            this.renderLobby();
+                        }
 
-                    // 2. 显示气泡 (使用不同的样式)
-                    this.showPlayerShout(data.senderName, data.content, true);
+                        this.updateLobbyPlayerList();
+                        this.renderFloatingBalls();
+                        break;
 
-                    // 3. 如果看板弹窗正开着，实时更新列表
-                    this.updateChatHistoryDOM();
-                    break;
+                    case 'room_dissolved':
+                        // [修改] 增加主动断开标志，让 onclose 处理后续
+                        State.isGracefulDisconnect = true;
+                        showNovaAlert('房间已解散');
+                        if (State.socket) State.socket.close();
+                        break;
 
-                // [新增] 接收房主编辑状态
-                case 'host_status_update':
-                    State.hostIsEditing = data.isEditing;
-                    this.renderFloatingBalls(); // 刷新球体显示状态
-                    break;
+                    case 'client_msg':
+                        if (State.currentRole === 'host') this.handleHostReceiveMsg(data);
+                        break;
 
-                // [新增] 接收房主返回的实时看板数据
-                case 'panel_data_sync':
-                    this.updatePanelContentDOM(data.content);
-                    break;
+                    case 'host_stream':
+                        if (State.currentRole === 'client') this.handleClientReceiveStream(data);
+                        break;
 
-                // [新增] 房主收到请求，发送数据
-                case 'request_panel_sync':
-                    if (State.currentRole === 'host') {
-                        const commandArea = document.getElementById('command-edit-area');
-                        const content = commandArea ? commandArea.value : "";
-                        this.sendAction('return_command_panel', {
-                            requesterId: data.requesterId,
-                            content: content
-                        });
-                    }
-                    break;
-       case 'request_storage_sync':
+                    case 'client_input_sync':
+                        if (State.currentRole === 'client') {
+                            console.log("接收到了主机传来的user消息");
+                            const userMessage = { role: 'user', content: data.content };
+                            if (typeof conversationHistory !== 'undefined' && Array.isArray(conversationHistory)) {
+                                conversationHistory.push(userMessage);
+                                await window.saveHistory();
+                                await window.processUpdateMemoryCommands(data.content);
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                worldHelper.renderHistory();
+                            }
+                        }
+                        break;
+
+                    case 'host_history_sync':
+                        if (State.currentRole === 'client') {
+                            const tempBubble = document.getElementById('mp-ai-bubble');
+                            if (tempBubble) tempBubble.remove();
+
+                            if (typeof conversationHistory !== 'undefined' && Array.isArray(conversationHistory)) {
+                                conversationHistory.push(data.message);
+                                await window.saveHistory();
+                                await window.processUpdateMemoryCommands(data.message.content);
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                worldHelper.renderHistory(false,true);
+                            }
+                        }
+                        break;
+
+                    case 'error':
+                        showNovaAlert(`错误: ${data.message}`);
+                        if (document.getElementById('mp-status-text')) {
+                            document.getElementById('mp-status-text').innerText = data.message;
+                        }
+                        break;
+
+                    case 'chat_broadcast':
+                        State.chatHistory.push(data);
+                        if (State.chatHistory.length > 50) State.chatHistory.shift();
+                        this.showPlayerShout(data.senderName, data.content, true);
+                        this.updateChatHistoryDOM();
+                        break;
+
+                    case 'host_status_update':
+                        State.hostIsEditing = data.isEditing;
+                        this.renderFloatingBalls();
+                        break;
+
+                    case 'panel_data_sync':
+                        this.updatePanelContentDOM(data.content);
+                        break;
+
+                    case 'request_panel_sync':
+                        if (State.currentRole === 'host') {
+                            const commandArea = document.getElementById('command-edit-area');
+                            const content = commandArea ? commandArea.value : "";
+                            this.sendAction('return_command_panel', {
+                                requesterId: data.requesterId,
+                                content: content
+                            });
+                        }
+                        break;
+
+                    case 'request_storage_sync':
                         if (State.currentRole === 'host') {
                             const content = localStorage.getItem('assaCommandQueue') || '';
                             this.sendAction('return_storage_content', {
@@ -996,9 +1156,100 @@ setTimeout(() => {
                         }
                         break;
 
-                    // [新增] 客户端接收到最终的 localStorage 内容
                     case 'storage_data_sync':
                         this.updatePanelContentDOM(data.content);
+                        break;
+
+                    // [新增] 房主：收到同步请求，打包并返回数据
+                    case 'request_full_sync_forward':
+                        if (State.currentRole === 'host') {
+                            showNovaAlert('收到玩家的数据同步请求，正在打包数据...');
+                            try {
+                                const combinedData = {};
+                                // 从全局变量或 localStorage 中安全地获取数据
+                                if (typeof currentGameData !== 'undefined' && currentGameData) combinedData.stat_data = currentGameData;
+                                if (typeof assaSettingsData !== 'undefined' && assaSettingsData) combinedData.assa_data = assaSettingsData;
+                                if (typeof playCharacterData !== 'undefined' && playCharacterData) combinedData.play_character_data = playCharacterData;
+                                if (typeof conversationHistory !== 'undefined' && conversationHistory) combinedData.zeroLevelHistory = conversationHistory;
+
+                                if (Object.keys(combinedData).length === 0) {
+                                    showNovaAlert('错误：没有可供同步的数据。');
+                                    return;
+                                }
+
+                                // 将打包好的数据通过服务器转发给请求者
+                                this.sendAction('return_full_sync', {
+                                    requesterId: data.requesterId,
+                                    data: combinedData
+                                });
+                                showNovaAlert('数据已打包并发送给玩家。');
+
+                            } catch (e) {
+                                console.error("打包同步数据时出错:", e);
+                                showNovaAlert('打包数据失败，请查看控制台日志。');
+                            }
+                        }
+                        break;
+
+                    // [新增] 玩家：接收到完整数据，进行导入并刷新
+  case 'full_sync_data':
+                        if (State.currentRole === 'client') {
+                            showNovaAlert('接收到主机数据，开始应用...');
+                            try {
+                                const importedData = data.data;
+                                if (!importedData || Object.keys(importedData).length === 0) {
+                                    throw new Error("接收到的同步数据为空或无效。");
+                                }
+
+                                // 1. 直接更新内存中的全局变量
+                                let dataApplied = false;
+                                if (importedData.stat_data) {
+                                    currentGameData = importedData.stat_data;
+                             
+                                    dataApplied = true;
+                                }
+                                if (importedData.assa_data) {
+                                    assaSettingsData = importedData.assa_data;
+                                  
+                                    dataApplied = true;
+                                }
+                                if (importedData.play_character_data) {
+                                playCharacterData = importedData.play_character_data;
+                             
+                                    dataApplied = true;
+                                }
+await insertOrAssignVariables(importedData, { type: 'chat' });
+                                // 2. 使用您提供的逻辑来处理历史记录
+                                if (importedData.zeroLevelHistory) {
+                                    // 直接覆盖当前会话的历史记录
+                                    conversationHistory = importedData.zeroLevelHistory;
+
+                                    // 调用全局的保存函数来持久化历史记录
+                                    if (typeof window.saveHistory === 'function') {
+                                        await window.saveHistory();
+                                        // addNovaLog("已更新并保存：核心历史记录 (conversationHistory)");
+                                    } else {
+                                        // addNovaLog("警告：全局 saveHistory 函数未找到，历史记录可能未持久化。", 'warning');
+                                    }
+                                    dataApplied = true;
+                                }
+
+                                if (!dataApplied) {
+                                    throw new Error("同步数据中不包含任何可应用的内容。");
+                                }
+
+                                showNovaAlert('✓ 数据同步完成！正在刷新界面以应用所有变更...', 'success');
+
+                                // 最终通过刷新页面来确保所有UI组件（角色卡、世界信息等）都从更新后的变量中加载数据
+                                setTimeout(() => {
+                                      worldHelper.renderHistory();
+                                }, 2000);
+
+                            } catch (err) {
+                                showNovaAlert(`✗ 数据同步失败: ${err.message}`, 'error');
+                                console.error("处理同步数据时出错:", err);
+                            }
+                        }
                         break;
                 }
             },
@@ -1060,109 +1311,84 @@ setTimeout(() => {
             }
         },
 
-   setupInputInterface: function() {
+ setupInputInterface: function() {
             const sendBtn = document.getElementById('send-button');
             const userInput = document.getElementById('user-input');
             if (!sendBtn || !userInput) return;
 
-            // 如果已经设置过，就跳过，防止重复绑定
             if (document.body.getAttribute('data-mp-interface-setup') === 'true') {
                 return;
             }
             document.body.setAttribute('data-mp-interface-setup', 'true');
 
-
-            // 1. 保存原始按钮的克隆，用于恢复
             const originalBtnClone = sendBtn.cloneNode(true);
-            originalBtnClone.id = 'send-button-original-clone'; // 给个不同的ID
+            originalBtnClone.id = 'send-button-original-clone';
 
-            // 2. 创建我们的联机模式发送按钮
-            const multiplayerBtn = sendBtn.cloneNode(true);
-            multiplayerBtn.id = 'send-button-multiplayer';
-
-
-            // 3. 定义联机模式下的发送逻辑
-            const performMultiplayerSend = () => {
+            // [核心修复] 将发送逻辑定义为一个绑定了正确'this'的函数
+            const performMultiplayerSend = function() {
                 const userInputElem = document.getElementById('user-input');
                 let userText = userInputElem ? userInputElem.value.trim() : "";
                 if (!userText) return;
 
-                if (State.socket && State.socket.readyState === WebSocket.OPEN) {
-                    // 在联机模式下，无论是房主还是客户端，"话"都是发聊天消息
-                    if (State.isChatMode) {
-                        this.sendAction('client_chat', { content: userText });
-                    } else {
-                        // 只有客户端在"行"模式下才需要上传给主机
-                        if (State.currentRole === 'client') {
-                            const commandArea = document.getElementById('command-edit-area');
-                            let combinedText = userText;
-                            if (commandArea && commandArea.value.trim()) {
-                                combinedText = commandArea.value.trim() + '\n' + userText;
-                            }
-                            this.sendAction('client_msg', { content: combinedText });
-                            showNovaAlert("指令已上传至主机");
-                        }
-                        // 注意：房主在"行"模式下不走这里，因为按钮被换掉了
-                    }
-                    if (userInputElem) userInputElem.value = '';
+                // 'this' 在这里由 .bind(this) 保证是 Multiplayer 对象
+                if (State.isChatMode) {
+                    this.sendAction('client_chat', { content: userText });
                 } else {
-                    showNovaAlert("未连接到联机服务");
+                    if (State.currentRole === 'client') {
+                        const commandArea = document.getElementById('command-edit-area');
+                        let combinedText = userText;
+                        if (commandArea && commandArea.value.trim()) {
+                            combinedText = commandArea.value.trim() + '\n' + userText;
+                        }
+                        this.sendAction('client_msg', { content: combinedText });
+                        showNovaAlert("指令已上传至主机");
+                    }
                 }
-            };
+                if (userInputElem) userInputElem.value = '';
+            }.bind(this); // <--- 在函数定义时就绑定'this'
 
-            // 4. 给我们的联机按钮绑定事件
-            multiplayerBtn.addEventListener('click', performMultiplayerSend);
+            const multiplayerBtn = sendBtn.cloneNode(true);
+            multiplayerBtn.id = 'send-button-multiplayer';
+            multiplayerBtn.addEventListener('click', performMultiplayerSend); // 直接使用已绑定的函数
 
-
-            // 5. 注入模式切换按钮
             const switchBtn = document.createElement('div');
             switchBtn.id = 'mp-mode-switch';
             switchBtn.innerText = '行';
             switchBtn.title = "点击切换：行动 / 对话";
             userInput.parentNode.insertBefore(switchBtn, userInput);
 
-            // 6. 核心逻辑：切换按钮时，替换发送按钮
             switchBtn.onclick = () => {
                 State.isChatMode = !State.isChatMode;
                 switchBtn.innerText = State.isChatMode ? '话' : '行';
                 switchBtn.className = State.isChatMode ? 'chat-mode' : '';
                 userInput.placeholder = State.isChatMode ? '输入对话内容...' : '在这里输入你的行动...';
 
-                // 如果是房主，并且切换到了"行动"模式，就换回原始按钮
                 const currentSendBtn = document.getElementById('send-button');
                 if (State.currentRole === 'host' && !State.isChatMode) {
-                    // 恢复到最原始的按钮逻辑
                     if (currentSendBtn) {
-                         // 必须先克隆再替换，以保证事件监听器是最原始的
                         const freshOriginalClone = originalBtnClone.cloneNode(true);
                         freshOriginalClone.id = 'send-button';
                         currentSendBtn.parentNode.replaceChild(freshOriginalClone, currentSendBtn);
                     }
                 } else {
-                    // 否则（客户端，或房主的"话"模式），使用我们的联机按钮
                     if (currentSendBtn) {
                         const freshMpClone = multiplayerBtn.cloneNode(true);
                         freshMpClone.id = 'send-button';
-                        // 重新绑定一次点击事件，因为克隆不会带事件
+                        // [核心修复] 重新克隆的按钮也需要绑定正确的事件
                         freshMpClone.addEventListener('click', performMultiplayerSend);
                         currentSendBtn.parentNode.replaceChild(freshMpClone, currentSendBtn);
                     }
                 }
             };
 
-            // 7. 劫持回车键
             userInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                     event.stopImmediatePropagation();
                     event.preventDefault();
-
-                    // 回车键的行为跟随当前按钮的点击行为
                     document.getElementById('send-button').click();
                 }
             }, true);
 
-            // 初始状态设置：如果是房主，默认就是"行"模式，所以初始时不需要替换按钮。
-            // 如果是客户端，则需要立即替换成我们的联机按钮。
             if (State.currentRole === 'client') {
                  const currentSendBtn = document.getElementById('send-button');
                  const freshMpClone = multiplayerBtn.cloneNode(true);
