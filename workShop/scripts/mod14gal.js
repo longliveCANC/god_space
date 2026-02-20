@@ -2651,14 +2651,18 @@ playNextChunk() {
                         padding: 0;
                         width: 100vw;
                         height: 100vh;
-                        overflow: hidden;
+                        overflow-y: auto;
                         background: transparent;
                         display: flex;
+                         
+                       
                         justify-content: center;
-                        align-items: center;
                         position: relative; /* 确保关闭按钮绝对定位相对于 body */
                     }
-
+           .content-wrapper {
+                        margin: auto; /* <<<--- 核心魔法：自动处理居中和溢出 */
+                        max-width: 100%; /* 确保内容不会水平溢出 */
+                    }
                     /* --- 新增：右上角关闭按钮样式 --- */
                     .mod14-internal-close {
                         position: fixed;
@@ -2710,7 +2714,9 @@ playNextChunk() {
                     <div class="mod14-internal-close" onclick="window.parent.galManager.closeAttachmentModal()">×</div>
 
                     <!-- 内容区域 -->
-                    ${this.currentAttachmentsContent}
+                      <div class="content-wrapper">
+                        ${this.currentAttachmentsContent}
+                    </div>
                 </body>
                 </html>
             `;
