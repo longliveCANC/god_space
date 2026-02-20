@@ -2184,7 +2184,311 @@ reloadDataAndRestart() {
             cancelAnimationFrame(this.animationId);
         }
     }
+function createLetterHtml(content, from, time) {
+  const rawContent = content.replace(/\|/g, '\n').trim(); // 将 | 替换为真实换行
+    const uniqueId = 'letter-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
 
+    // 默认值处理
+    const timeStr = time || new Date().toLocaleDateString();
+    const charStr = from || "一位关心你的人";
+    const bodyStr = rawContent || "有些话，我想亲口对你说...";
+
+ const beautifiedHtml = `<html>
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Ma+Shan+Zheng&family=Long+Cang&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --env-color: #f3e6d3;
+            --env-shadow: #dccab0;
+            --paper-color: #fffdf7;
+            --text-color: #2c2218;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: sans-serif;
+            background: transparent;
+            /* 允许滚动，防止内容被截断 */
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent; /* 可选，让它彻底隐形 */
+        }
+        /* 容器 */
+        .letter-container {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            margin: 40px auto;
+            perspective: 1000px;
+            /* 初始高度适应信封，打开后由JS或内容撑开 */
+            min-height: 300px;
+            transition: all 0.5s ease;
+        }
+
+        /* 信封外壳 */
+        .envelope {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            background: transparent; /* 背景透明，由部件组成 */
+            transform: rotate(-3deg); /* 初始倾斜 */
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            z-index: 10;
+            user-select: none;
+        }
+
+        .envelope:hover {
+            transform: rotate(-1deg) scale(1.01);
+        }
+
+        /* 打开状态：信封扶正 */
+        .letter-container.open .envelope {
+            transform: rotate(0deg);
+            cursor: default;
+        }
+
+        /* 信封各个部件 */
+        .env-part {
+            position: absolute;
+            transition: all 0.5s ease;
+        }
+
+        /* 信封背景 */
+        .env-bg {
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--env-color);
+            border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        /* 底部盖子 */
+        .flap-bottom {
+            bottom: 0; left: 0; width: 100%; height: 60%;
+            background: #e6d5be;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 20;
+        }
+
+        /* 左右盖子 */
+        .flap-side-left {
+            top: 0; left: 0; width: 50%; height: 100%;
+            background: #ebdcc8;
+            clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+            z-index: 19;
+        }
+        .flap-side-right {
+            top: 0; right: 0; width: 50%; height: 100%;
+            background: #ebdcc8;
+            clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
+            z-index: 19;
+        }
+
+        /* 顶部盖子 (活动的) */
+        .flap-top {
+            top: 0; left: 0; width: 100%; height: 55%;
+            background: var(--env-color);
+            clip-path: polygon(0% 0%, 50% 100%, 100% 0%);
+            transform-origin: top;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 21;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+        }
+
+        /* 打开时：顶部盖子翻开 */
+        .letter-container.open .flap-top {
+            transform: rotateX(180deg);
+            z-index: 1; /* 翻到后面去 */
+        }
+
+        /* 打开时：其他信封部件变淡并下移，让位给信纸 */
+        .letter-container.open .env-bg,
+        .letter-container.open .flap-bottom,
+        .letter-container.open .flap-side-left,
+        .letter-container.open .flap-side-right {
+            opacity: 0.4; /* 变淡而不是完全消失 */
+            transform: translateY(50px);
+            pointer-events: none;
+        }
+
+        /* 火漆印章 */
+        .wax-seal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -20%);
+            width: 55px; height: 55px;
+            background: radial-gradient(circle at 30% 30%, #c0392b, #922b21);
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.9);
+            font-family: serif;
+            font-size: 28px;
+            border: 2px dashed rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .letter-container.open .wax-seal {
+            opacity: 0;
+            transform: translate(-50%, -20%) scale(1.5);
+            pointer-events: none;
+        }
+
+        /* --- 信纸 --- */
+        .paper {
+            position: absolute;
+            top: 10px; left: 5%;
+            width: 90%;
+            height: 90%; /* 初始高度 */
+            background: var(--paper-color);
+            padding: 25px 30px;
+            box-sizing: border-box;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5; /* 初始在信封内部 */
+            opacity: 0; /* 初始不可见，或者微露 */
+            transform: translateY(20px);
+
+            /* 纹理 */
+            background-image: repeating-linear-gradient(var(--paper-color) 0px, var(--paper-color) 28px, #e8e8e8 29px);
+            line-height: 29px;
+            overflow: hidden;
+        }
+
+        /* 信纸打开状态 */
+        .letter-container.open .paper {
+            position: relative; /* 关键：变为相对定位，撑开父容器高度 */
+            top: 0; left: 0;
+            width: 100%;
+            height: auto; /* 高度自适应内容 */
+            min-height: 400px;
+            opacity: 1;
+            transform: translateY(-20px); /* 稍微向上浮出 */
+            z-index: 100; /* 覆盖在一切之上 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 2px;
+        }
+
+        .paper-content {
+            font-family: 'Long Cang', 'Ma Shan Zheng', 'Caveat', cursive;
+            color: var(--text-color);
+            font-size: 19px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            position: relative;
+            z-index: 2;
+        }
+
+        .paper-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #8a7f75;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .paper-footer {
+            margin-top: 40px;
+            text-align: right;
+            font-family: 'Caveat', cursive;
+            font-size: 24px;
+            color: #5d4037;
+        }
+
+        /* 邮戳 */
+        .stamp {
+            position: absolute;
+            bottom: 30px; right: 20px;
+            width: 90px; height: 90px;
+            border: 3px double rgba(192, 57, 43, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-20deg);
+            color: rgba(192, 57, 43, 0.3);
+            font-weight: bold;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s 0.5s;
+        }
+        .letter-container.open .stamp { opacity: 1; }
+
+        /* 深色模式适配 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --env-color: #3e3b36;
+                --paper-color: #e6dfd3; /* 稍微暗一点的纸色，保护眼睛 */
+                --text-color: #1a1a1a;
+            }
+            .paper {
+                background-image: repeating-linear-gradient(var(--paper-color) 0px, var(--paper-color) 28px, #d1c8ba 29px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="letter-container" id="${uniqueId}">
+        <!-- 信封整体 -->
+        <div class="envelope" onclick="openLetter('${uniqueId}')">
+
+            <!-- 信封部件 -->
+            <div class="env-part env-bg"></div>
+            <div class="env-part flap-side-left"></div>
+            <div class="env-part flap-side-right"></div>
+            <div class="env-part flap-bottom"></div>
+
+            <!-- 信纸 (初始在信封内) -->
+            <div class="paper">
+                <div class="paper-header">
+                    <span>${timeStr}</span>
+                    <span>FROM: ${charStr}</span>
+                </div>
+                <div class="paper-content">${bodyStr}</div>
+                <div class="paper-footer">
+                    Yours,<br>${charStr}
+                </div>
+                <div class="stamp">CONFIDENTIAL</div>
+            </div>
+
+            <!-- 顶部盖子和火漆 -->
+            <div class="env-part flap-top"></div>
+            <div class="wax-seal">❤</div>
+        </div>
+    </div>
+
+    <script>
+        function openLetter(id) {
+            const container = document.getElementById(id);
+            if (container && !container.classList.contains('open')) {
+                container.classList.add('open');
+
+                // 简单的音效模拟或震动（如果支持）
+                if (navigator.vibrate) navigator.vibrate(20);
+            }
+        }
+    </script>
+</body>
+</html>`;
+
+    return beautifiedHtml;
+
+}
     // --- 3. 核心逻辑类 ---
     class NovaNPCSystemV2 {
           KEY_MAP = {
@@ -2659,7 +2963,7 @@ this.allItems.forEach((item, index) => {
             const data = npc.data;
   this.loadCG(npc.name);
             // --- 妈妈帮你更新了忽略列表 ---
-            const ignoreKeys = ['外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp','game批注','nsfw'];
+            const ignoreKeys = ['ta的爱意','他的爱意','她的爱意','外貌', '好感度', '未定字段', '_is_protected', '_filter', '性别', '年龄', 'hp','game批注','nsfw'];
 
 
             // --- 0. 顶部区域：名字、外貌、好感度 (这部分保持不变) ---
@@ -2929,6 +3233,31 @@ this.allItems.forEach((item, index) => {
                 root.appendChild(metaBox);
                 ignoreKeys.push('game批注');
             }
+  const loveKey = Object.keys(data).find(k => /^(ta|他|她)的爱意$/.test(k));
+
+    if (loveKey && data[loveKey]) {
+        const sec = document.createElement('div');
+        sec.className = 'mod01-section';
+
+        // 创建一个iframe来隔离信封的样式和脚本
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = '450px'; // 给一个合适的初始高度
+        iframe.style.border = 'none';
+        // iframe.style.overflow = 'hidden';
+        // iframe.setAttribute('scrolling', 'no');
+
+        // 调用我们新封装的函数来生成HTML
+        const letterHtml = createLetterHtml(data[loveKey], npc.name, "此刻");
+
+        iframe.srcdoc = letterHtml; // 使用srcdoc填充内容
+
+        sec.appendChild(iframe);
+        root.appendChild(sec);
+
+        // 把它加入忽略列表，防止被通用逻辑再次渲染
+        ignoreKeys.push(loveKey);
+    }
         }
 
         // 在 NovaNPCSystemV2 类中，可以放在 renderCard 之后
@@ -3699,298 +4028,10 @@ renderDeepObject(container, val) {
                 charStr = "Mystery";
             }
 
-            const uniqueId = 'letter-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-
+         
             // --- 构建 HTML ---
-            const beautifiedHtml = `<html>
-<head>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Ma+Shan+Zheng&family=Long+Cang&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --env-color: #f3e6d3;
-            --env-shadow: #dccab0;
-            --paper-color: #fffdf7;
-            --text-color: #2c2218;
-        }
+        const beautifiedHtml = createLetterHtml(bodyStr, charStr, timeStr);
 
-        body {
-            margin: 0;
-            padding: 10px;
-            font-family: sans-serif;
-            background: transparent;
-            /* 允许滚动，防止内容被截断 */
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        /* 容器 */
-        .letter-container {
-            position: relative;
-            width: 100%;
-            max-width: 550px;
-            margin: 40px auto;
-            perspective: 1000px;
-            /* 初始高度适应信封，打开后由JS或内容撑开 */
-            min-height: 300px;
-            transition: all 0.5s ease;
-        }
-
-        /* 信封外壳 */
-        .envelope {
-            position: relative;
-            width: 100%;
-            height: 280px;
-            background: transparent; /* 背景透明，由部件组成 */
-            transform: rotate(-3deg); /* 初始倾斜 */
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            z-index: 10;
-            user-select: none;
-        }
-
-        .envelope:hover {
-            transform: rotate(-1deg) scale(1.01);
-        }
-
-        /* 打开状态：信封扶正 */
-        .letter-container.open .envelope {
-            transform: rotate(0deg);
-            cursor: default;
-        }
-
-        /* 信封各个部件 */
-        .env-part {
-            position: absolute;
-            transition: all 0.5s ease;
-        }
-
-        /* 信封背景 */
-        .env-bg {
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--env-color);
-            border-radius: 6px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            z-index: 1;
-        }
-
-        /* 底部盖子 */
-        .flap-bottom {
-            bottom: 0; left: 0; width: 100%; height: 60%;
-            background: #e6d5be;
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-            z-index: 20;
-        }
-
-        /* 左右盖子 */
-        .flap-side-left {
-            top: 0; left: 0; width: 50%; height: 100%;
-            background: #ebdcc8;
-            clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
-            z-index: 19;
-        }
-        .flap-side-right {
-            top: 0; right: 0; width: 50%; height: 100%;
-            background: #ebdcc8;
-            clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
-            z-index: 19;
-        }
-
-        /* 顶部盖子 (活动的) */
-        .flap-top {
-            top: 0; left: 0; width: 100%; height: 55%;
-            background: var(--env-color);
-            clip-path: polygon(0% 0%, 50% 100%, 100% 0%);
-            transform-origin: top;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 21;
-            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
-        }
-
-        /* 打开时：顶部盖子翻开 */
-        .letter-container.open .flap-top {
-            transform: rotateX(180deg);
-            z-index: 1; /* 翻到后面去 */
-        }
-
-        /* 打开时：其他信封部件变淡并下移，让位给信纸 */
-        .letter-container.open .env-bg,
-        .letter-container.open .flap-bottom,
-        .letter-container.open .flap-side-left,
-        .letter-container.open .flap-side-right {
-            opacity: 0.4; /* 变淡而不是完全消失 */
-            transform: translateY(50px);
-            pointer-events: none;
-        }
-
-        /* 火漆印章 */
-        .wax-seal {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -20%);
-            width: 55px; height: 55px;
-            background: radial-gradient(circle at 30% 30%, #c0392b, #922b21);
-            border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            z-index: 30;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255,255,255,0.9);
-            font-family: serif;
-            font-size: 28px;
-            border: 2px dashed rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-        }
-
-        .letter-container.open .wax-seal {
-            opacity: 0;
-            transform: translate(-50%, -20%) scale(1.5);
-            pointer-events: none;
-        }
-
-        /* --- 信纸 --- */
-        .paper {
-            position: absolute;
-            top: 10px; left: 5%;
-            width: 90%;
-            height: 90%; /* 初始高度 */
-            background: var(--paper-color);
-            padding: 25px 30px;
-            box-sizing: border-box;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 5; /* 初始在信封内部 */
-            opacity: 0; /* 初始不可见，或者微露 */
-            transform: translateY(20px);
-
-            /* 纹理 */
-            background-image: repeating-linear-gradient(var(--paper-color) 0px, var(--paper-color) 28px, #e8e8e8 29px);
-            line-height: 29px;
-            overflow: hidden;
-        }
-
-        /* 信纸打开状态 */
-        .letter-container.open .paper {
-            position: relative; /* 关键：变为相对定位，撑开父容器高度 */
-            top: 0; left: 0;
-            width: 100%;
-            height: auto; /* 高度自适应内容 */
-            min-height: 400px;
-            opacity: 1;
-            transform: translateY(-20px); /* 稍微向上浮出 */
-            z-index: 100; /* 覆盖在一切之上 */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            border-radius: 2px;
-        }
-
-        .paper-content {
-            font-family: 'Long Cang', 'Ma Shan Zheng', 'Caveat', cursive;
-            color: var(--text-color);
-            font-size: 19px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            position: relative;
-            z-index: 2;
-        }
-
-        .paper-header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 8px;
-            margin-bottom: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            color: #8a7f75;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .paper-footer {
-            margin-top: 40px;
-            text-align: right;
-            font-family: 'Caveat', cursive;
-            font-size: 24px;
-            color: #5d4037;
-        }
-
-        /* 邮戳 */
-        .stamp {
-            position: absolute;
-            bottom: 30px; right: 20px;
-            width: 90px; height: 90px;
-            border: 3px double rgba(192, 57, 43, 0.3);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform: rotate(-20deg);
-            color: rgba(192, 57, 43, 0.3);
-            font-weight: bold;
-            font-size: 14px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 1s 0.5s;
-        }
-        .letter-container.open .stamp { opacity: 1; }
-
-        /* 深色模式适配 */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --env-color: #3e3b36;
-                --paper-color: #e6dfd3; /* 稍微暗一点的纸色，保护眼睛 */
-                --text-color: #1a1a1a;
-            }
-            .paper {
-                background-image: repeating-linear-gradient(var(--paper-color) 0px, var(--paper-color) 28px, #d1c8ba 29px);
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="letter-container" id="${uniqueId}">
-        <!-- 信封整体 -->
-        <div class="envelope" onclick="openLetter('${uniqueId}')">
-
-            <!-- 信封部件 -->
-            <div class="env-part env-bg"></div>
-            <div class="env-part flap-side-left"></div>
-            <div class="env-part flap-side-right"></div>
-            <div class="env-part flap-bottom"></div>
-
-            <!-- 信纸 (初始在信封内) -->
-            <div class="paper">
-                <div class="paper-header">
-                    <span>${timeStr}</span>
-                    <span>FROM: ${charStr}</span>
-                </div>
-                <div class="paper-content">${bodyStr}</div>
-                <div class="paper-footer">
-                    Yours,<br>${charStr}
-                </div>
-                <div class="stamp">CONFIDENTIAL</div>
-            </div>
-
-            <!-- 顶部盖子和火漆 -->
-            <div class="env-part flap-top"></div>
-            <div class="wax-seal">❤</div>
-        </div>
-    </div>
-
-    <script>
-        function openLetter(id) {
-            const container = document.getElementById(id);
-            if (container && !container.classList.contains('open')) {
-                container.classList.add('open');
-
-                // 简单的音效模拟或震动（如果支持）
-                if (navigator.vibrate) navigator.vibrate(20);
-            }
-        }
-    </script>
-</body>
-</html>`;
 
             // 替换内容
             const lastIndex = content.lastIndexOf(fullMatch);
