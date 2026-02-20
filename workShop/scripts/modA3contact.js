@@ -926,7 +926,7 @@ window.MultiplayerState = {
                 showNovaAlert("连接已断开，正在尝试立即重连...");
 
                 // 立即触发重连逻辑，而不是等待
-                this.handleDisconnectOrReconnect();
+                // this.handleDisconnectOrReconnect();
 
                 // 由于连接已断，本次发送失败，直接返回
                 return;
