@@ -15558,7 +15558,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.6';
+window.current_game_version = '3.8.7';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -15661,7 +15661,7 @@ let userName = '用户';
         'on': 10,
         'off': 29
     };
-       // 💖 唯一真身守护咒语 (外部HTML版) 💖
+        
     if (window.isZeroLevelUIInitialized) {
         ////console.log("[HTML] ⚠️ 检测到重复召唤，已启动守护屏障，阻止了UI脚本的第二次初始化。");
     } else {
@@ -20864,7 +20864,7 @@ function showScrollingText(elementId, text, colorVar, duration = 2000) {
         const cleanValue = (val) => {
             if (typeof val === 'string') {
                 // 如果是字符串，就温柔地脱掉它的引号外衣。
-                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'")|| (val.startsWith('`') && val.endsWith('`')))) {
                     return val.slice(1, -1);
                 }
             }
@@ -27911,7 +27911,7 @@ const tryParseJson = (str) => {
     }
 
     let content = str.trim();
-    if ((content.startsWith("'") && content.endsWith("'")) || (content.startsWith('"') && content.endsWith('"'))) {
+    if ((content.startsWith("'") && content.endsWith("'")) || (content.startsWith('"') && content.endsWith('"'))|| (content.startsWith('`') && content.endsWith('`'))) {
         content = content.slice(1, -1).trim();
     }
     str = content;
@@ -33242,12 +33242,12 @@ function _updatePlayerValue(data, path, valueStr) {
     // 1. 净化路径和新值
     // 首先，像拂去尘埃一样，清理掉路径和值字符串两端可能存在的引号。
     let cleanedPath = path;
-    if (typeof cleanedPath === 'string' && (cleanedPath.startsWith('"') && cleanedPath.endsWith('"')) || (cleanedPath.startsWith("'") && cleanedPath.endsWith("'"))) {
+    if (typeof cleanedPath === 'string' && (cleanedPath.startsWith('"') && cleanedPath.endsWith('"')) || (cleanedPath.startsWith("'") && cleanedPath.endsWith("'"))|| (cleanedPath.startsWith('`') && cleanedPath.endsWith('`'))) {
         cleanedPath = cleanedPath.slice(1, -1);
     }
 
     let cleanedValueStr = valueStr;
-    if (typeof cleanedValueStr === 'string' && (cleanedValueStr.startsWith('"') && cleanedValueStr.endsWith('"')) || (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))) {
+    if (typeof cleanedValueStr === 'string' && (cleanedValueStr.startsWith('"') && cleanedValueStr.endsWith('"')) || (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))|| (cleanedValueStr.startsWith('`') && cleanedValueStr.endsWith('`'))) {
         cleanedValueStr = cleanedValueStr.slice(1, -1);
     }
 
@@ -34390,13 +34390,13 @@ function _updateStatusValue(data, path, valueStr) {
 
     // 尝试去除值的首尾引号
     if ((cleanedValueStr.startsWith('"') && cleanedValueStr.endsWith('"')) ||
-        (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))) {
+        (cleanedValueStr.startsWith("'") && cleanedValueStr.endsWith("'"))|| (cleanedValueStr.startsWith('`') && cleanedValueStr.endsWith('`'))) {
         cleanedValueStr = cleanedValueStr.slice(1, -1);
     }
 
     // 尝试解析 JSON (处理对象或数组输入)
     if ((cleanedValueStr.startsWith('{') && cleanedValueStr.endsWith('}')) ||
-        (cleanedValueStr.startsWith('[') && cleanedValueStr.endsWith(']'))) {
+        (cleanedValueStr.startsWith('[') && cleanedValueStr.endsWith(']'))|| (cleanedValueStr.startsWith('`') && cleanedValueStr.endsWith('`'))) {
         try {
             finalValue = JSON.parse(cleanedValueStr);
         } catch (e) {
@@ -34640,9 +34640,9 @@ const parseGenericArgs = (str) => {
     if (typeof s !== 'string') return s;
     let str = s;
     // 递归去除外层引号
-    while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
-        str = str.slice(1, -1);
-    }
+ while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"')) || (str.startsWith('`') && str.endsWith('`'))) {
+    str = str.slice(1, -1);
+}
     return str;
 };
 const extractBalancedArgs = (str, startTrigger) => {
@@ -35064,7 +35064,7 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
     // 先去除可能的外层引号
     let cleanParamsStr = allParamsStr.trim();
     if ((cleanParamsStr.startsWith("'") && cleanParamsStr.endsWith("'")) ||
-        (cleanParamsStr.startsWith('"') && cleanParamsStr.endsWith('"'))) {
+        (cleanParamsStr.startsWith('"') && cleanParamsStr.endsWith('"'))|| (cleanParamsStr.startsWith('`') && cleanParamsStr.endsWith('`'))) {
         cleanParamsStr = cleanParamsStr.slice(1, -1);
     }
     
@@ -35229,7 +35229,7 @@ function cleanParam(param) {
     // 递归移除所有外层引号
     let str = param;
     while ((str.startsWith('"') && str.endsWith('"')) || 
-           (str.startsWith("'") && str.endsWith("'"))) {
+           (str.startsWith("'") && str.endsWith("'"))||(str.startsWith("`") && str.endsWith("`"))) {
         str = str.slice(1, -1);
     }
     return str;
@@ -35283,7 +35283,7 @@ function cleanParam(param) {
         if (args.length >= 2) {
             const clean = (s) => {
                 let str = s;
-                while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+                while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))|| (str.startsWith('`') && str.endsWith('`'))) {
                     str = str.slice(1, -1);
                 }
                 return str;
@@ -35338,7 +35338,7 @@ if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attrib
                const clean = (s) => {
     let str = s;
     // 递归去除外层引号，直到没有引号为止
-    while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
+    while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))|| (str.startsWith('`') && str.endsWith('`'))) {
         str = str.slice(1, -1);
     }
     return str;
@@ -35478,7 +35478,7 @@ if (parentObject && parentObject.hasOwnProperty(keyArg)) {
                                     const realPath = path.substring(0, lastDotIndex);
                                     const realKey = path.substring(lastDotIndex + 1);
                                     // 此时，第三个参数才是真正的value
-                                     if ((valueStr.startsWith("'") && valueStr.endsWith("'")) || (valueStr.startsWith('"') && valueStr.endsWith('"'))) {
+                                     if ((valueStr.startsWith("'") && valueStr.endsWith("'")) || (valueStr.startsWith('"') && valueStr.endsWith('"'))|| (valueStr.startsWith('`') && valueStr.endsWith('`'))) {
                                         valueStr = valueStr.slice(1, -1);
                                      }
                                     assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, realPath, realKey, valueStr);
@@ -35756,7 +35756,7 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                             const path1Str = cleanPath(args[0]); // 修改这里：添加 unquote
   let path2Str = args[1].trim();
     if ((path2Str.startsWith("'") && path2Str.endsWith("'")) ||
-        (path2Str.startsWith('"') && path2Str.endsWith('"'))) {
+        (path2Str.startsWith('"') && path2Str.endsWith('"'))|| (path2Str.startsWith('`') && path2Str.endsWith('`'))) {
         path2Str = path2Str.slice(1, -1);
     }
 
@@ -37828,7 +37828,7 @@ if (!validationEntry || !validationEntry.content || validationEntry.content.trim
              let cleanCommand = assaCommandQueue.trim();
  
         // 检查字符串是否以引号开头和结尾，如果是，就将它们剥离！
-        if (cleanCommand.startsWith('"') && cleanCommand.endsWith('"')) {
+        if (cleanCommand.startsWith('"') && cleanCommand.endsWith('"')&& cleanCommand.endsWith('`')) {
             cleanCommand = cleanCommand.slice(1, -1);
             ////console.log("检测到并移除了包裹指令的引号。");
         }
@@ -44925,9 +44925,9 @@ addAlias("经验值", String(chatdata.xp_role || ''));
 const iscreatedLock= String(chatdata.created_lock||'true');
 const isThingsRecord = String(chatdata.things_record||'true');
  const is_genji = String(chatdata.is_genji||'false');
-  const is_complex_task = String(chatdata.is_complex_task||'true');
-    const map_rule = String(chatdata.map_rule||'');
-    const multiPlayer_mode = String(chatdata.multiPlayer_mode||'false');
+ const is_complex_task = String(chatdata.is_complex_task||'true');
+const map_rule = String(chatdata.map_rule||'');
+const multiPlayer_mode = String(chatdata.multiPlayer_mode||'false');
 
 is_user_relative_attr =String(chatdata.is_user_relative_attr||'false');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
