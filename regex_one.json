@@ -15558,7 +15558,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.3';
+window.current_game_version = '3.8.4';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -15617,7 +15617,7 @@ let batches = 1;
 let playerinput = "";
 let double_api = "false"; // 控制是否双重发送。暂时为了调试先这样
 let enable_preset_2nd_pass = "true"; // 控制第二次发送是否启用酒馆预设
-let userInputStart = "\n)};//历史内容结束\n\n\n用户(玩家)输入行动，user input start：\n\n\n[";
+let userInputStart = "\n用户(玩家)输入行动，user input start：\n\n\n[";
 let userInputEnd = "\n]\n\n\n用户(玩家)行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意：";
 
     let worldBookState = {
@@ -18492,7 +18492,7 @@ setupUploadBox('ws-upload-box-img');
 
         const term = (document.getElementById('workshop-search-input-v2').value || '').toLowerCase();
         state.searchTerm = term;
-console.log('当前订阅状态 (state.subscriptions):', state.subscriptions);
+//console.log('当前订阅状态 (state.subscriptions):', state.subscriptions);
          const allMods = [...allLocalMods, ...allRemoteMods];
 
             // 【步骤1: 筛选】 - 使用以下重构后的逻辑
@@ -37374,6 +37374,7 @@ const finalEntriesToProcess = [...nonGroupedEntries, ...groupWinners];
             }
         }
        // --- [新增代码块开始] ---
+       let absoluteTopPrompts = '';
         // --- 5.5. 注入外部自定义提示词 ---
      if (!ignoreGlobalInjects && typeof INJECTED_PROMPTS !== 'undefined') {
             //console.log(`[Nova's Prompt Assembler] 开始注入 ${INJECTED_PROMPTS.length} 个自定义提示词...`);
@@ -37471,7 +37472,7 @@ content = content.replace(/\{\{(?!random::?)[\s\S]*?\}\}/g, '');
         return []; // 出错时返回空数组
     }
 };
-
+window.assembleComplexPrompt = assembleComplexPrompt;
  
 const sendCustomGenerationRequest = async (promptText, options = {}) => {
     // 1. 接收 apiSettings 对象和 signal
@@ -38261,7 +38262,7 @@ recentMessagesForPrompt = recentMessagesForPrompt.map(msg => ({
             promptsForAI.push({
                 role: 'user',
                 // 💖 这里是关键，我们使用从上面传下来的 userText 变量
-                 content: userInputStart + userText +  userInputEnd
+                 content: ")};\n\n\n"+userInputStart + userText +  userInputEnd
            
               });
              let userText_format = userText.replace(/<updateMemory>(?:(?!<updateMemory>)[\s\S])*?<\/updateMemory>/gs, '')
@@ -38370,11 +38371,11 @@ const cleanedPromptsForAI = promptsForAI.map((msg, index) => {
                     }
                 }, 100);
             };
-            const streamListener = (fullText) => {
+   const streamListener = (fullText) => {
                 partialAiResponse = fullText;
                 throttledRender(fullText);
              // === 外部流式钩子：把每次过滤后的完整文本暴露出去（例如给 IIFE / 服务器） ===
-    try {
+        try {
         if (typeof window !== 'undefined' && typeof window.novaStreamHook === 'function') {
             window.novaStreamHook({
                 text: fullText,
@@ -39304,7 +39305,7 @@ let backupData = {};
     }
 }
 window.handleSend = handleSend;
- 
+
  
  async function checkAndRestoreDirtyWorldbooks() {
     //console.log("[Nova's Safety Net] 正在启动时检查是否有未恢复的世界书 (from IndexedDB)...");
@@ -47811,7 +47812,7 @@ function setupReconfigModal() {
         { name: '二次渲染', key: 'if_render_after_2batch', default: 'true', desc: '异步变量层生成结束后，对全部内容重新渲染。异步最好开启这个去渲染弹幕和选项区' },
         { name: '识小球不渲染', key: 'is_worldbook_lock', default: 'false', desc: '识小球将不会渲染（可能起到一个节省性能的作用）' },
         { name: '等待骰子', key: 'if_waiting_roll', default: 'false', desc: '可以无限反悔骰子而不用浪费多余的token去重roll' },
-           { name: '异步前确认', key: 'if_confirm_phase2_generation', default: 'false', desc: '开启后，在生成异步前，会弹出一个确认框' },
+        { name: '异步前确认', key: 'if_confirm_phase2_generation', default: 'false', desc: '开启后，在生成异步前，会弹出一个确认框' },
  
         { name: '快速备份', key: 'is_quick_rewirte_backup', default: 'false', desc: '每次修改变量的时候自动备份到当前快照，同时删除楼层时立刻应用变量' },
        { name: '不去除玩家消息', key: 'is_chat_mode', default: 'false', desc: '开启后，玩家过往输入的消息会被附带发给AI。默认是只留最新输入' },
@@ -59514,7 +59515,7 @@ async function sendApiRequest(messages, options = {}, signal) {
         };
     }
 }
- 
+
 // 接收第三个参数 `signal`，这是我们从上层函数一路传递下来的中断信号
 async function sendRequest(settings, messages, signal) {
  
