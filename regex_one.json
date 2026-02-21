@@ -15558,7 +15558,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.4';
+window.current_game_version = '3.8.6';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -38261,8 +38261,8 @@ recentMessagesForPrompt = recentMessagesForPrompt.map(msg => ({
     
             promptsForAI.push({
                 role: 'user',
-                // 💖 这里是关键，我们使用从上面传下来的 userText 变量
-                 content: ")};\n\n\n"+userInputStart + userText +  userInputEnd
+                //   这里是关键，我们使用从上面传下来的 userText 变量
+                 content: " \n\n\n"+userInputStart + userText +  userInputEnd
            
               });
              let userText_format = userText.replace(/<updateMemory>(?:(?!<updateMemory>)[\s\S])*?<\/updateMemory>/gs, '')
