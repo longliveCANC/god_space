@@ -60745,7 +60745,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function checkAndPerformAutoArchive() {
         // 仅当用户在任务界面开启了自动归档时才执行
-        if (localStorage.getItem('gs_auto_archive') !== 'true') {
+        if (localStorage.getItem('gs_auto_archive') === 'false') {
             return;
         }
 
