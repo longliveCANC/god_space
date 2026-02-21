@@ -59842,8 +59842,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 1. 配置管理
     const STORAGE_KEY = 'ai_user_input_settings';
     let settings = {
-        userInputStart: "\n)};//历史内容结束\n\n\n用户(玩家)输入行动，user input start：\n\n\n[",
-        userInputEnd: "\n]\n\n\n用户(玩家)行动结束，user input end。\n \n\n\n 在输出正文之前，以下信息/要求还需要注意："
+        userInputStart: "//历史内容结束\n\n\n用户(玩家)输入行动，user input start：\n\n\n[",
+        userInputEnd: "\n]\n\n\n用户(玩家)行动结束，user input end。\n \n\n\n "
     };
 
     // 从 localStorage 加载
