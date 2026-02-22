@@ -17393,10 +17393,18 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
             dlBtn.onclick = () => {
                 // 【修改】如果 is_dowload_raw_name 为 true 则截取 URL 文件名
                 // 如果该字段不存在(undefined)或为 false，则使用 id.json
-                const fileName = mod.is_dowload_raw_name
-                    ? mod.worldBookUrl.split('/').pop()
-                    : `${mod.id}.json`;
+                 let fileName;
 
+        if (mod.is_dowload_by_id === true) {
+            // 1. 最高优先级：如果 is_dowload_by_id 为 true，则使用 mod ID 命名
+            fileName = `${mod.id}.json`;
+        } else if (mod.worldBookFilename) {
+            // 2. 第二优先级：如果存在记录的原始文件名，则使用它
+            fileName = mod.worldBookFilename;
+        } else {
+            // 3. 回退逻辑：从 URL 中截取文件名
+            fileName = mod.worldBookUrl.split('/').pop();
+        }
                 window.NovaWorkshop.downloadWorldBook(mod.worldBookUrl, fileName);
             };
         }
@@ -18826,9 +18834,6 @@ function bindDetailEvents(container, mod, isEnabled) {
             }
         };
     }
-    
-
- 
  
     container.querySelector('[data-action="inject-data"]')?.addEventListener('click', async (e) => {
         const btn = e.currentTarget;
@@ -18841,8 +18846,8 @@ function bindDetailEvents(container, mod, isEnabled) {
             const fullModData = await API.request(`/mods/${mod.id}`);
 
             if (fullModData && fullModData.content) {
-                 
-                 
+ 
+                 fullModData.content  = fullModData.content.replace(/user/g, SillyTavern.name1);
                 showNovaAlert(`已将模组 [${fullModData.name}] 的最新内容放到了令小盒。`);
              window.GameAPI.triggerassa(`/setinput ${fullModData.content}\n`);
          
@@ -18874,8 +18879,21 @@ function bindDetailEvents(container, mod, isEnabled) {
         renderDetailPanel(mod);
     });
 
-    container.querySelector('[data-action="download-wb"]')?.addEventListener('click', () => {
-        const fileName = mod.is_dowload_raw_name ? mod.worldBookUrl.split('/').pop() : `${mod.id}.json`;
+  container.querySelector('[data-action="download-wb"]')?.addEventListener('click', () => {
+        // 【修改】增加 is_dowload_by_id 的最高优先级判断
+        let fileName;
+
+        if (mod.is_dowload_by_id === true) {
+            // 1. 最高优先级：如果 is_dowload_by_id 为 true，则使用 mod ID 命名
+            fileName = `${mod.id}.json`;
+        } else if (mod.worldBookFilename) {
+            // 2. 第二优先级：如果存在记录的原始文件名，则使用它
+            fileName = mod.worldBookFilename;
+        } else {
+            // 3. 回退逻辑：从 URL 中截取文件名
+            fileName = mod.worldBookUrl.split('/').pop();
+        }
+
         window.NovaWorkshop.downloadWorldBook(mod.worldBookUrl, fileName);
     });
 
@@ -27325,7 +27343,7 @@ function normalizeWorldbookEntry(raw) {
             if (isManualTrigger) toastr.warning('未找到有效的更新日志。');
             return;
         }
-
+        
         const latestVersionInfo = updateLogs[updateLogs.length - 1];
         const latestVersion = latestVersionInfo.version;
 
@@ -27444,7 +27462,6 @@ async function performRegexUpdate() {
       find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<build>([\\s\\S]*?)<\\/build>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)|<options\\b[^>]*>[\\s\\S]*?<\/options>/gs"
           
         };
-
 
  // 1. 过滤掉旧的“统一”和“去除1”法则，保留所有其他的法则。
 const otherCharacterRules = allCharacterRules.filter(
