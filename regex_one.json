@@ -15558,7 +15558,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.8';
+window.current_game_version = '3.8.9';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -18880,14 +18880,14 @@ function bindDetailEvents(container, mod, isEnabled) {
     });
 
   container.querySelector('[data-action="download-wb"]')?.addEventListener('click', () => {
-        // 【修改】增加 is_dowload_by_id 的最高优先级判断
+         
         let fileName;
 
          if (mod.is_dowload_by_id === true ||mod.is_dowload_by_id === "true") {
-            // 1. 最高优先级：如果 is_dowload_by_id 为 true，则使用 mod ID 命名
+             
             fileName = `${mod.id}.json`;
         } else if (mod.worldBookFilename) {
-            // 2. 第二优先级：如果存在记录的原始文件名，则使用它
+           
             fileName = mod.worldBookFilename;
         } else {
             // 3. 回退逻辑：从 URL 中截取文件名
@@ -34516,10 +34516,15 @@ function _updateStatusValue(data, path, valueStr) {
     const isOriginalSimple = typeof originalValue !== 'object' || originalValue === null;
     const isFinalComplex = typeof finalValue === 'object' && finalValue !== null;
 
-    if (isOriginalSimple && isFinalComplex) {
-        console.warn(`[Guardian] 🛡️ 结构守护：阻止了将简单值 '${finalKey}' (原值: ${originalValue}) 覆盖为复杂对象/数组的操作。`);
-        return; // 拦截
-    }
+ if (isOriginalSimple && isFinalComplex) {
+    console.warn(`[Guardian] 🛡️ 结构守护：阻止了将简单值 '${finalKey}' (原值: ${originalValue}) 覆盖为复杂对象/数组的操作。`);
+    return; // 拦截
+}
+// 守护B (新增)：禁止用简单类型覆盖复杂类型
+else if (isOriginalComplex && isFinalSimple) {
+    console.warn(`[Guardian] 🛡️ 结构守护：阻止了将复杂结构 '${finalKey}' 覆盖为简单值的操作。`);
+    return; // 拦截
+}
 
     // --- 第三层守护：处理对象之间的递归更新 ---
     if (isPlainObject(originalValue) && isPlainObject(finalValue)) {
