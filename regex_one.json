@@ -17395,7 +17395,7 @@ try{ emailjs.init('kDLEJZKjDhhihIqV1'); }catch{}
                 // 如果该字段不存在(undefined)或为 false，则使用 id.json
                  let fileName;
 
-        if (mod.is_dowload_by_id === true) {
+        if (mod.is_dowload_by_id === true ||mod.is_dowload_by_id === "true") {
             // 1. 最高优先级：如果 is_dowload_by_id 为 true，则使用 mod ID 命名
             fileName = `${mod.id}.json`;
         } else if (mod.worldBookFilename) {
@@ -18883,7 +18883,7 @@ function bindDetailEvents(container, mod, isEnabled) {
         // 【修改】增加 is_dowload_by_id 的最高优先级判断
         let fileName;
 
-        if (mod.is_dowload_by_id === true) {
+         if (mod.is_dowload_by_id === true ||mod.is_dowload_by_id === "true") {
             // 1. 最高优先级：如果 is_dowload_by_id 为 true，则使用 mod ID 命名
             fileName = `${mod.id}.json`;
         } else if (mod.worldBookFilename) {
