@@ -15558,7 +15558,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.9';
+window.current_game_version = '3.8.10';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -34513,9 +34513,11 @@ function _updateStatusValue(data, path, valueStr) {
     }
 
     // --- 第二层守护：防止简单类型被复杂类型覆盖 ---
-    const isOriginalSimple = typeof originalValue !== 'object' || originalValue === null;
-    const isFinalComplex = typeof finalValue === 'object' && finalValue !== null;
+ const isOriginalSimple = typeof originalValue !== 'object' || originalValue === null;
+const isOriginalComplex = !isOriginalSimple; // 是对象或数组
 
+const isFinalSimple = typeof finalValue !== 'object' || finalValue === null;
+const isFinalComplex = !isFinalSimple; // 是对象或数组
  if (isOriginalSimple && isFinalComplex) {
     console.warn(`[Guardian] 🛡️ 结构守护：阻止了将简单值 '${finalKey}' (原值: ${originalValue}) 覆盖为复杂对象/数组的操作。`);
     return; // 拦截
