@@ -37251,9 +37251,7 @@ async function extractAndStoreBatchContent(batchNumber) {
  */
   const assembleComplexPrompt = async (params = {}) => {
     // 🆕 1. 修改参数解构，增加 excludedBookNames
-    const { continuationText, targetBookNames, excludedBookNames = [], ignoreGlobalInjects = false } = params;
-    //console.log("[Nova's Prompt Assembler] 开始为你编织独特的灵感丝线...");
-
+    const { continuationText, targetBookNames, specialBookNames = [], excludedBookNames = [], ignoreGlobalInjects = false } = params;
     try {
         // --- 1. 获取所有相关的世界书条目 ---
         const targetPrefixes = targetBookNames && targetBookNames.length > 0
@@ -37267,6 +37265,23 @@ async function extractAndStoreBatchContent(batchNumber) {
         const charBooks = getCharWorldbookNames('current');
         const allBoundBookNames = new Set([...globalBooks, charBooks.primary, ...charBooks.additional].filter(Boolean));
 
+ if (specialBookNames && specialBookNames.length > 0) {
+    const allAvailableBookNames = getWorldbookNames(); // 获取所有存在的世界书名称
+
+    for (const specialName of specialBookNames) {
+        // 检查这个特殊世界书是否存在
+        if (allAvailableBookNames.includes(specialName)) {
+            // 如果世界书已经被绑定，则发出提示
+            if (allBoundBookNames.has(specialName)) {
+                toastr.info(`特殊世界书 "${specialName}"会在后台加载，不需要挂全局，你待会记得解绑一下。`);
+            } else {
+                // 如果世界书未被绑定，则添加到待加载集合中
+                allBoundBookNames.add(specialName);
+                // console.log(`[Nova's Prompt Assembler] 已加载未绑定的特殊世界书: ${specialName}`); // 调试用
+            }
+        }
+    }
+}
         // 🆕 2. 修改筛选逻辑：排除优先级最高
         const filteredBookNames = [...allBoundBookNames].filter(name => {
             // [Step 1] 排除检查 (优先级最高)
@@ -60822,7 +60837,7 @@ if (status === '已完成' && String(task['_filter'])!="true") {
     }
 
     // 注册到 before_ai_response_save 钩子上
-    window.NovaHooks.add('before_message_render', processAutoArchiveBeforeRender);
+    window.NovaHooks.add('before_ai_response_save', processAutoArchiveBeforeRender);
 
     console.log('[Task System] Auto-archive hook registered on before_ai_response_save.');
 })();
