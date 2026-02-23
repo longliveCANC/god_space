@@ -4732,6 +4732,7 @@ opacity: 0.6;
     appearance: none;
     position: relative;
     width: 60px;  /* 开关宽度 */
+    min-width: 60px;  /* 开关宽度 */
     height: 28px; /* 开关高度 */
     border: 1px solid var(--border-color);
     border-radius: 15px; /* 胶囊形状 */
@@ -12617,7 +12618,7 @@ pointer-events: auto;
       background: rgba(0, 0, 0, 0.35);
 backdrop-filter: blur(8px);
 -webkit-backdrop-filter: blur(8px);
-        z-index: ;
+        z-index: 9999;
         display: flex; /* 新增：使用 flex 轻松实现居中 */
         align-items: center; /* 新增：垂直居中 */
         justify-content: center; /* 新增：水平居中 */
@@ -14735,14 +14736,14 @@ backdrop-filter: blur(8px);
     </button>
 </div>
                 <div class="setting-item">
-                    <label>(本存档内)模组重置</label>
+                    <label>(本存档内)模组重置，即游戏内功能的配置</label>
                     <button id="open-reconfig-modal-btn" class="control-btn-special">调整模组</button>
                 </div>
                 <div class="setting-item">
                     <label>记忆上一次的开局模组配置(只能记开局的)</label>
                     <input type="checkbox" id="remember-mod-choice"   checked>
                 </div>
-                            <div class="setting-item">
+                   <div class="setting-item">
                     <label for="streaming-toggle">
                         <span id="streaming-status-indicator" style="font-weight: bold;"></span> 流式传输
                     </label>
@@ -14750,7 +14751,10 @@ backdrop-filter: blur(8px);
                         <button id="streaming-toggle" class="switch-btn" data-state="on">开启</button>
                     </div>
                 </div>
-
+   <div class="setting-item">
+                    <label>异步也流式输出(api的源需和酒馆聊天补全来源一致)</label>
+                    <input type="checkbox" id="streaming-yibu-toggle">
+                </div>
                 <div id="simple-streaming-options" class="setting-item" style="display: none; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px; margin-left: 20px;">
                     <label for="simple-streaming-toggle">启用简易流式(降低性能消耗)</label>
                     <input type="checkbox" id="simple-streaming-toggle" >
@@ -15558,7 +15562,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.11';
+window.current_game_version = '3.8.12';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -15598,6 +15602,7 @@ let ISNEWMAP = "false";
 let isEmphasizeTime = "false";
 let is_user_relative_attr= "false";
 let is_simple_stream = "false";
+let is_stream_yibu = "false";
 let old_doubleapi = "false";
 let noBackup = "false";
 let is_restore_prompt = "true";
@@ -22274,6 +22279,8 @@ document.addEventListener('click', (e) => {
      try {
          const rememberChoice = localStorage.getItem('rememberModChoice') === 'true';
          const rememberCheckbox = document.getElementById('remember-mod-choice');
+
+     
          if (rememberCheckbox) {
              rememberCheckbox.checked = rememberChoice;
              
@@ -37513,9 +37520,23 @@ content = content.replace(/\{\{(?!random::?)[\s\S]*?\}\}/g, '');
 };
 window.assembleComplexPrompt = assembleComplexPrompt;
  
+ /**
+ * 发送生成请求的统一入口。
+ *
+ * @param {Array<{role: string, content: string}> | string} promptText - 发送给模型的提示或消息历史。
+ * @param {object} options - 包含API设置、UI元素和中断信号的选项对象。
+ * @param {HTMLElement} [options.buttonElement] - 可选，用于更新状态的按钮元素。
+ * @param {AbortSignal} [options.signal] - 可选，用于中断 fetch 请求的 AbortSignal。
+ * @param {object} [options.apiSettings] - 可选，自定义API的设置。
+ * @param {string} [options.generationId] - 可选，用于流式生成的唯一ID。
+ * @returns {Promise<string>} - 返回模型生成的文本。
+ */
 const sendCustomGenerationRequest = async (promptText, options = {}) => {
-    // 1. 接收 apiSettings 对象和 signal
-    const { buttonElement, signal, apiSettings } = options;
+    // 1. 解构传入的参数
+    const { buttonElement, signal, apiSettings, generationId } = options;
+
+    // 准备消息格式
+    const messages = Array.isArray(promptText) ? promptText : [{ role: 'user', content: String(promptText) }];
 
     if (buttonElement) {
         buttonElement.textContent = '生成中…';
@@ -37523,55 +37544,102 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
     }
 
     try {
-        // 2. 判定使用哪个API
-        // 如果没有传入 apiSettings，或者全局开关关闭，则使用主API (generateRaw)
-        const isSecondApiEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
-        const shouldUseDefault = !apiSettings || !isSecondApiEnabled;
-
-        if (shouldUseDefault) {
-            const reason = !apiSettings ? '未提供API配置' : '自定义API总开关未开启';
-            //console.log(`[Nova] 使用主API (generateRaw) | 原因: ${reason}`);
-
-            /** @type {GenerateRawConfig} */
-            const rawConfig = {
-                max_chat_history: 0,
-                ordered_prompts: Array.isArray(promptText) ? promptText : [{ role: 'user', content: String(promptText) }]
-            };
-
-            return await generateRaw(rawConfig);
-        }
-
-        // 3. 使用自定义API (sendRequest)
-        //console.log(`[Nova] 使用自定义API | 配置名: ${apiSettings.name || 'Unnamed'}`);
-
+        // 检查中断信号
         if (signal?.aborted) {
             throw new Error('用户取消生成');
         }
 
-        // 准备消息格式
-        const messages = Array.isArray(promptText) ? promptText : [{ role: 'user', content: String(promptText) }];
+        // 2. 核心判断：当 is_stream_yibu 为 "true" 时，强制使用流式 generateRaw
+        // 全局变量 is_stream_yibu
+        if (is_stream_yibu === "true") {
+            console.log("[Nova] 检测到流式模式 (is_stream_yibu)，强制使用 generateRaw(stream=true)。");
 
-        // 直接调用最底层的 sendRequest，传入配置和消息
-        const result = await sendRequest(apiSettings, messages, signal);
+            /** @type {GenerateRawConfig} */
+            const generateConfig = {
+                generation_id: generationId, // 传入 generationId 以支持流式响应
+                should_stream: true,         // 强制开启流式
+                should_silence: true,        // 通常在流式模式下静默，由事件监听器处理输出
+                overrides: {                 // 清空上下文，确保只使用提供的 prompt
+                    world_info_before: '', persona_description: '', char_description: '',
+                    char_personality: '', scenario: '', world_info_after: '',
+                    dialogue_examples: '', chat_history: { prompts: [] }
+                },
+                max_chat_history: 0,         // 不使用历史记录
+                ordered_prompts: messages    // 使用格式化后的消息
+            };
 
-        return result; // sendRequest 成功时直接返回文本，失败时会抛出错误
+            // 从 localStorage 的 API 池中读取并应用自定义 API 配置
+            // 假设 'mod21-api-select' 是你的 API 选择器 ID
+            const selectedApiId = document.getElementById('mod21-api-select')?.value;
+
+            // 只有当选择的不是默认或V2时，才尝试从池中加载
+            if (selectedApiId && selectedApiId !== 'default' && selectedApiId !== 'custom_v2') {
+                try {
+                    const pool = JSON.parse(localStorage.getItem('nova_multi_api_pool') || '{}');
+                    const apiData = pool[selectedApiId];
+                    if (apiData) {
+                        console.log(`[Nova] 流式请求将使用API池中的配置: ${apiData.name || selectedApiId}`);
+                        generateConfig.custom_api = {
+                            apiurl: apiData.api_url,
+                            key: apiData.api_key,
+                            model: apiData.model,
+                            source: apiData.source || 'openai',
+                            max_tokens: apiData.max_tokens,
+                            temperature: apiData.temperature,
+                            top_p: apiData.top_p,
+                            frequency_penalty: apiData.frequency_penalty,
+                            presence_penalty: apiData.presence_penalty
+                        };
+                    }
+                } catch (e) {
+                    console.error("[Nova] 解析API池配置时出错:", e);
+                }
+            }
+
+            // 调用流式 generateRaw，注意：这个函数可能不会直接返回结果文本
+            // 而是通过事件触发更新。此处的 await 只是等待调用完成。
+            await generateRaw(generateConfig);
+
+            // 在流式模式下，通常没有直接的返回值，所以我们返回一个空字符串或提示信息
+            return ''; // 或者可以返回一个提示，表明流式输出已开始
+        }
+
+        // 3. 沿用旧逻辑：处理非流式 (is_stream_yibu !== "true") 的情况
+        const isSecondApiEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
+        const shouldUseDefault = !apiSettings || !isSecondApiEnabled;
+
+        if (shouldUseDefault) {
+            // 使用主API (非流式)
+            const reason = !apiSettings ? '未提供API配置' : '自定义API总开关未开启';
+            console.log(`[Nova] 使用主API (generateRaw) | 原因: ${reason}`);
+            const rawConfig = {
+                max_chat_history: 0,
+                ordered_prompts: messages
+            };
+            return await generateRaw(rawConfig);
+        } else {
+            // 使用自定义API (非流式)
+            console.log(`[Nova] 使用自定义API (非流式) | 配置名: ${apiSettings.name || 'Unnamed'}`);
+            return await sendRequest(apiSettings, messages, signal);
+        }
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            //console.log('[Nova] 请求被用户成功中断。');
+            console.log('[Nova] 请求被用户成功中断。');
         } else {
-            console.error('[生成失败]', error);
+            console.error('[Nova] 生成失败:', error);
         }
-        // 将错误继续向上抛出，由 handleSend 的 try...catch 块统一处理
+        // 将错误继续向上抛出，以便上层统一处理
         throw error;
     } finally {
         if (buttonElement) {
+            // 对于非流式请求，这里会立即恢复按钮状态。
+            // 对于流式请求，您可能需要在监听流结束的事件中恢复按钮状态。
             buttonElement.textContent = '生成';
             buttonElement.disabled = false;
         }
     }
 };
-
 async function handleSend(options = {}) {
     const abortSignal = NovaAbortController.start();
     setTimeout(() =>  console.log('等待锁释放'), 50);
@@ -39688,10 +39756,19 @@ updateRollCardToggleVisual();
 const streamingStatusIndicator = document.getElementById('streaming-status-indicator');
 const simpleStreamingOptions = document.getElementById('simple-streaming-options');
 const simpleStreamingToggle = document.getElementById('simple-streaming-toggle');
+const streamingyibuToggle = document.getElementById('streaming-yibu-toggle');
 
+     if(localStorage.getItem('streamingYibuEnabled') === null){
+        localStorage.setItem('streamingYibuEnabled','false')
+    }
+    const isStreamingyibuEnabled =  localStorage.getItem('streamingYibuEnabled') === 'true' ;
+    if(isStreamingyibuEnabled ){
+ streamingyibuToggle.checked = true;
+    } 
 function updateStreamingToggleState() {
+
     const isStreamingEnabled = localStorage.getItem('streamingEnabled') === null ? true : localStorage.getItem('streamingEnabled') === 'true';
-    
+
     if (isStreamingEnabled) {
         streamingToggle.dataset.state = 'on';
         streamingToggle.textContent = '开启';
@@ -39702,6 +39779,7 @@ function updateStreamingToggleState() {
         // 加载并设置简易流式状态
         const isSimpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') === 'true';
         simpleStreamingToggle.checked = isSimpleStreamingEnabled;
+        
     } else {
         streamingToggle.dataset.state = 'off';
         streamingToggle.textContent = '关闭';
@@ -39721,6 +39799,10 @@ streamingToggle.addEventListener('click', () => {
 // 简易流式复选框改变事件（只定义一次）
 simpleStreamingToggle.addEventListener('change', () => {
     localStorage.setItem('simpleStreamingEnabled', String(simpleStreamingToggle.checked));
+});
+
+streamingyibuToggle.addEventListener('change', () => {
+    localStorage.setItem('streamingYibuEnabled', String(streamingyibuToggle.checked));
 });
 
 // 初始化状态
@@ -44972,6 +45054,10 @@ is_user_relative_attr =String(chatdata.is_user_relative_attr||'false');
 isEmphasizeTime = String(chatdata.emphasize_time||'false');
 const simpleStreamingEnabled = localStorage.getItem('simpleStreamingEnabled') || 'false';
  is_simple_stream = String(simpleStreamingEnabled);
+
+ const  streamingYibuEnabled = localStorage.getItem('streamingYibuEnabled') || 'false';
+ is_stream_yibu = String(streamingYibuEnabled);
+
  old_doubleapi = String(chatdata.old_doubleapi||'false');
 
 double_api = String(chatdata.double_api||'false');
