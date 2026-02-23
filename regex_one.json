@@ -12617,7 +12617,7 @@ pointer-events: auto;
       background: rgba(0, 0, 0, 0.35);
 backdrop-filter: blur(8px);
 -webkit-backdrop-filter: blur(8px);
-        z-index: 9999;
+        z-index: ;
         display: flex; /* 新增：使用 flex 轻松实现居中 */
         align-items: center; /* 新增：垂直居中 */
         justify-content: center; /* 新增：水平居中 */
@@ -34920,7 +34920,7 @@ if(hasSummaryUpdate){
 }, 200); // 200ms 内多次调用只会触发一次
 
 window.processUpdateMemoryCommands = processUpdateMemoryCommands;
-async function processUpdateMemoryCommands(commandText, message_id=-1) {
+ async function processUpdateMemoryCommands(commandText, message_id=-1) {
     message_id = -1;
        updateDetails = {
         variable: false,
@@ -34998,19 +34998,19 @@ const originalWorldName = Array.isArray(originalWorldNameArray)
     : originalWorldNameArray;
 const originalWorldNameIsValid = originalWorldName !== undefined && originalWorldName !== null;
 
-//console.log(`[Core] 📍 原世界名: '${originalWorldName}' (有效: ${originalWorldNameIsValid})`);
+console.log(`[Core] 📍 原世界名: '${originalWorldName}' (有效: ${originalWorldNameIsValid})`);
 
    // ✨ DP奖励回合清零逻辑 ✨
         if (statDataToUpdate && statDataToUpdate.dp_bonus) {
             if (statDataToUpdate.dp_bonus[0] !== 0) {
-                 //console.log(`[Updater] 🔄 每回合清理DP奖励值... 原值: ${statDataToUpdate.dp_bonus[0]}`);
+                 console.log(`[Updater] 🔄 每回合清理DP奖励值... 原值: ${statDataToUpdate.dp_bonus[0]}`);
                 statDataToUpdate.dp_bonus[0] = 0;
             }
         }
 
              
         if (assaDataToUpdate && assaDataToUpdate.global_lore && assaDataToUpdate.global_lore.资源条) {
-            //console.log(`[Updater] 💖 世界心跳：开始处理每轮资源消耗...`);
+            console.log(`[Updater] 💖 世界心跳：开始处理每轮资源消耗...`);
             const resourceBars = assaDataToUpdate.global_lore.资源条;
             for (const resourceName in resourceBars) {
                 const resource = resourceBars[resourceName];
@@ -35023,7 +35023,7 @@ const originalWorldNameIsValid = originalWorldName !== undefined && originalWorl
                         const oldValue = Number(resource.当前值) || 0;
                         // 扣除消耗，并确保不会低于0
                         resource.当前值 = Math.max(0, oldValue - consumption);
-                        //console.log(`[Updater] ✨ 资源[${resourceName}]消耗 ${consumption}，当前值从 ${oldValue} 变为 ${resource.当前值}`);
+                        console.log(`[Updater] ✨ 资源[${resourceName}]消耗 ${consumption}，当前值从 ${oldValue} 变为 ${resource.当前值}`);
                     }
 
                     // 确保当前值不会超过最大值，以防万一
@@ -35099,7 +35099,7 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
         const hasMoreParams = afterBrace.replace(/['"]/g, '').trim().length > 0;
 
         if (!hasMoreParams) {
-            //console.log(`[Core] 💖 set_status(单参数对象): 检测到全量更新模式，启动结构保护合并...`);
+            console.log(`[Core] 💖 set_status(单参数对象): 检测到全量更新模式，启动结构保护合并...`);
             try {
                 const parsedObject = JSON.parse(cleanParamsStr.trim());
 
@@ -35107,7 +35107,7 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
                 // ✅ 替换为：调用结构保护递归函数
                 _recursiveStructureUpdate(statDataToUpdate, parsedObject);
 
-                //console.log(`[Core] ✅ stat_data 已安全更新 (保留了数组结构和描述)`);
+                console.log(`[Core] ✅ stat_data 已安全更新 (保留了数组结构和描述)`);
                 collectedBatchOps.push({
                     type: 'set_status',
                     path: 'root',
@@ -35128,13 +35128,13 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
                     if (jsonMatch && jsonMatch[2] && jsonMatch[3]) {
                         const path = cleanPath(jsonMatch[2]);  
                         const jsonValueString = jsonMatch[3]; // 第三个括号里是完整的JSON对象
-                        // //console.log(`【信使阶段 V5】 💖 万能钥匙模式触发！路径: '${path}'，值: '${jsonValueString}'`);
+                        // console.log(`【信使阶段 V5】 💖 万能钥匙模式触发！路径: '${path}'，值: '${jsonValueString}'`);
 
                         // 直接将捕获到的路径和完整的JSON字符串传递给守护者
                         _updateStatusValue(statDataToUpdate, path, jsonValueString);
 
                     } else {
-                         // //console.log("【信使阶段 V5】 --- JSON优先模式未匹配，回退至常规解析流程 ---");
+                         // console.log("【信使阶段 V5】 --- JSON优先模式未匹配，回退至常规解析流程 ---");
 
                         let extractedParams = [];
 
@@ -35145,13 +35145,13 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
                     while ((regexMatch = quoteRegex.exec(allParamsStr)) !== null) {
                         extractedParams.push(regexMatch[1]);
                     }
-                    //console.log("主方案（容器识别）提取结果:", extractedParams);
+                    console.log("主方案（容器识别）提取结果:", extractedParams);
 
                     // --- 检查并启动备用方案 ---
                     // 如果主方案提取到的参数不足2个，说明这很可能是一条纯数字指令
                     // --- 检查并启动备用方案 ---
                     if (extractedParams.length < 2) {
-                        //console.log("【信使阶段 V4】 --- 主方案参数不足，启动备-1（逗号分割） ---");
+                        console.log("【信使阶段 V4】 --- 主方案参数不足，启动备-1（逗号分割） ---");
                         const paramsByComma = allParamsStr.split(',').map(p => p.trim());
 
                         if (paramsByComma.length >= 2) {
@@ -35162,7 +35162,7 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
                         } else {
                             // 💖【新增：终极后备方案 - 引号解析】💖
                             // 如果连逗号分割都失败了，我们尝试解析被""包裹的参数
-                            //console.log("【信使阶段 V4】 --- 备用方案-1失败，启动备-2（双引号解析） ---");
+                            console.log("【信使阶段 V4】 --- 备用方案-1失败，启动备-2（双引号解析） ---");
                             const doubleQuoteRegex = /"([^"]*)"/g;
                             let doubleQuoteMatch;
                             const finalParams = [];
@@ -35172,13 +35172,13 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
 
                             // 只要这个方案能解析出至少2个参数，我们就采纳它
                             if (finalParams.length >= 2) {
-                                //console.log("备-2（双引号解析）提取结果:", finalParams);
+                                console.log("备-2（双引号解析）提取结果:", finalParams);
                                 extractedParams = finalParams;
                             }
                         }
                     }
 
-                    //console.log("最终确定的所有参数:", extractedParams);
+                    console.log("最终确定的所有参数:", extractedParams);
 
                     // --- 最终处理与传递 ---
                     if (extractedParams.length >= 2) {
@@ -35186,10 +35186,10 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
                         // 逻辑不变：有第3个参数就用它，没有就用第2个
                         const newValue = extractedParams.length > 2 ? extractedParams[2] : extractedParams[1];
 
-                        //console.log("最终确定的路径 (path):", path);
-                        //console.log("最终确定的新值 (newValue):", newValue);
+                        console.log("最终确定的路径 (path):", path);
+                        console.log("最终确定的新值 (newValue):", newValue);
 
-                        //console.log("【信使阶段 V4】 --- 精准传递给守护者 ---");
+                        console.log("【信使阶段 V4】 --- 精准传递给守护者 ---");
                          _updateStatusValue(statDataToUpdate, path, newValue);
                               collectedBatchOps.push({
                             type: 'set_status',
@@ -35197,7 +35197,7 @@ if (line.trim().startsWith('set_status') || /\bset_status\s*\(/.test(line)) {
                             value: newValue
                         });
                         } else {
-                             // //console.log("【信使阶段 V5】 --- 警告：所有方案均告失败，有效参数不足，操作中止 ---");
+                             // console.log("【信使阶段 V5】 --- 警告：所有方案均告失败，有效参数不足，操作中止 ---");
                         }
                     }
 
@@ -35265,7 +35265,7 @@ function cleanParam(param) {
         const content = extractBalancedArgs(line, 'memory');
 
         if (!content) {
-            //console.log(`[Core] ⚠️ memory 指令格式无法解析: ${line}`);
+            console.log(`[Core] ⚠️ memory 指令格式无法解析: ${line}`);
             continue;
         }
 
@@ -35316,7 +35316,7 @@ function cleanParam(param) {
             const firstArgClean = clean(args[0]);
 
                        if (firstArgClean === 'status') {
-    //console.log(`[Core] 💖 导流：检测到 memory 的第一参数为 'status'（无子路径），转发到 set_status 处理`);
+    console.log(`[Core] 💖 导流：检测到 memory 的第一参数为 'status'（无子路径），转发到 set_status 处理`);
     // 直接传递剩余参数，不做路径处理
     const newArgs = args.slice(1);
     const setStatusLine = `set_status(${newArgs.join(', ')})`;
@@ -35326,7 +35326,7 @@ function cleanParam(param) {
 
 
              if (firstArgClean.startsWith('status.')) {
-                //console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'status.' 开头，转发到 set_status 处理`);
+                console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'status.' 开头，转发到 set_status 处理`);
                 // 移除 'status.' 前缀
                 const newFirstArg = "'" + firstArgClean.substring(7) + "'";
                 // 重新构造参数列表
@@ -35336,7 +35336,7 @@ function cleanParam(param) {
                 continue;
             }
 if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attribute.')) {
-    //console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'player_attr.' 或 'attribute.' 开头，转发到 set_attribute 处理`);
+    console.log(`[Core] 💖 导流：检测到 memory 的第一参数以 'player_attr.' 或 'attribute.' 开头，转发到 set_attribute 处理`);
     
     // 根据实际的前缀长度移除
     let newFirstArg;
@@ -35355,7 +35355,7 @@ if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attrib
         }
    
         // if (args.length < 2) {
-        //     //console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
+        //     console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
         //     continue;
         // }
 
@@ -35377,7 +35377,7 @@ if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attrib
                              const lastDotInKey = keyArg.lastIndexOf('.');
                                // =========== 🔽 修改开始 🔽 ===========
                              if (lastDotInKey !== -1 && !path.startsWith('summary')) {
-                                //console.log(`[Core] 💖 memory-op(路径延伸): 检测到复合key '${keyArg}'，正在智能重组路径...`);
+                                console.log(`[Core] 💖 memory-op(路径延伸): 检测到复合key '${keyArg}'，正在智能重组路径...`);
                                 // 我们把 keyArg 中最后一个点前面的部分，接到 path 的后面
                                 const additionalPath = unquote(keyArg.substring(0, lastDotInKey));
                                 path = `${path}.${additionalPath}`;
@@ -35385,7 +35385,7 @@ if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attrib
                                 // 剩下最后一部分，才是我们真正的钥匙
                      keyArg = unquote(keyArg.substring(lastDotInKey + 1)); // 修改这里：添加 unquote
 
-                                //console.log(`[Core] ✨ 重组后 -> Path: '${path}', Key: '${keyArg}'`);
+                                console.log(`[Core] ✨ 重组后 -> Path: '${path}', Key: '${keyArg}'`);
                             }
                             // =========== 🔼 修改结束 🔼 ===========
 
@@ -35399,7 +35399,7 @@ if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attrib
 
                                  if (path === potentialParentPath) {
                                   const newKey = unquote(thirdArgClean.substring(lastDotIndexThird + 1)); // 修改这里：添加 unquote
-                                     //console.log(`[Core] 💖 memory-op(智能重命名): 检测到新格式，将 '${path}.${keyArg}' 重命名为 '${path}.${newKey}'`);
+                                     console.log(`[Core] 💖 memory-op(智能重命名): 检测到新格式，将 '${path}.${keyArg}' 重命名为 '${path}.${newKey}'`);
 
                                      // 导航到父对象
                                      const pathParts = path.split('.');
@@ -35417,7 +35417,7 @@ if (firstArgClean.startsWith('player_attr.') || firstArgClean.startsWith('attrib
 if (parentObject && parentObject.hasOwnProperty(keyArg)) {
     parentObject[newKey] = parentObject[keyArg]; // 复制值到新键
     delete parentObject[keyArg]; // 删除旧键
-    //console.log(`[Core] ✅ 重命名成功。`);
+    console.log(`[Core] ✅ 重命名成功。`);
        collectedBatchOps.push({
                                type: 'rename',
                                path: path,
@@ -35442,7 +35442,7 @@ if (parentObject && parentObject.hasOwnProperty(keyArg)) {
             if (phaseGoodwill && phaseGoodwill.hasOwnProperty(keyArg)) {
                 phaseGoodwill[newKey] = phaseGoodwill[keyArg];
                 delete phaseGoodwill[keyArg];
-                //console.log(`[Core] 💖 同步重命名分阶段好感: '${keyArg}' -> '${newKey}'`);
+                console.log(`[Core] 💖 同步重命名分阶段好感: '${keyArg}' -> '${newKey}'`);
             }
         } catch (e) {
             console.warn(`[Core] ⚠️ 同步分阶段好感时出错:`, e);
@@ -35458,7 +35458,7 @@ if (parentObject && parentObject.hasOwnProperty(keyArg)) {
                           if (path.includes('群员')) {
                                  const originalPath = path;
                                  path = path.replaceAll('群员', '小队信息');
-                                 //console.log(`[Core] 💖 路径别名转换: '${originalPath}' -> '${path}'`);
+                                 console.log(`[Core] 💖 路径别名转换: '${originalPath}' -> '${path}'`);
                              }
                              // 💖 妈妈为你注入的、能识别多种伪装的全新智能核心 💖
 
@@ -35492,9 +35492,9 @@ if (parentObject && parentObject.hasOwnProperty(keyArg)) {
                              // 核心判断逻辑：只要满足任一伪装条件，就切换模式
                              if (isJsonString(keyArg) || isValueMatch) {
                                 if (isJsonString(keyArg)) {
-                                     //console.log(`[Core] 💖 memory-op(智能识别): 检测到JSON格式伪装，切换为双参数模式解析。`);
+                                     console.log(`[Core] 💖 memory-op(智能识别): 检测到JSON格式伪装，切换为双参数模式解析。`);
                                 } else {
-                                     //console.log(`[Core] 💖 memory-op(智能识别): 检测到值匹配伪装，切换为双参数模式解析。`);
+                                     console.log(`[Core] 💖 memory-op(智能识别): 检测到值匹配伪装，切换为双参数模式解析。`);
                                 }
 
                                 const lastDotIndex = path.lastIndexOf('.');
@@ -35540,7 +35540,7 @@ if (targetObj && typeof targetObj === 'object') {
             const existingValueStr = String(existingValue);
             
             if (keyArgStr === existingValueStr) {
-                //console.log(`[Core] 💖 检测到旧值伪装: keyArg '${keyArg}' 实际是 '${existingKey}' 的旧值，自动修正为使用原key`);
+                console.log(`[Core] 💖 检测到旧值伪装: keyArg '${keyArg}' 实际是 '${existingKey}' 的旧值，自动修正为使用原key`);
                 // 修正：使用找到的原始 key，而不是 keyArg
                 assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, existingKey, finalValue);
                 continue; // 跳到外层循环继续处理下一条指令
@@ -35571,12 +35571,12 @@ if (typeof finalValue === 'string' && finalValue.startsWith('_')) {
         if (targetValue === null || 
             targetValue === undefined || 
             (typeof targetValue === 'object' && Object.keys(targetValue).length === 0)) {
-            //console.log(`[Core] 💖 memory-op(智能跳过): 检测到 value '${finalValue}' 以 _ 开头，但 key '${keyArg}' 无有效内容，跳过此指令`);
+            console.log(`[Core] 💖 memory-op(智能跳过): 检测到 value '${finalValue}' 以 _ 开头，但 key '${keyArg}' 无有效内容，跳过此指令`);
             continue; // 跳过这条指令
         }
     } else {
         // 如果路径本身不存在，也跳过
-        //console.log(`[Core] 💖 memory-op(智能跳过): 检测到 value '${finalValue}' 以 _ 开头，但路径 '${path}' 不存在，跳过此指令`);
+        console.log(`[Core] 💖 memory-op(智能跳过): 检测到 value '${finalValue}' 以 _ 开头，但路径 '${path}' 不存在，跳过此指令`);
         continue;
     }
 }
@@ -35601,7 +35601,7 @@ if (typeof finalValue === 'string' && finalValue.startsWith('_')) {
              const targetIsShown = targetObject._showInEJS === false || String(targetObject._showInEJS) === 'false';
 
              if(targetIsFiltered && targetIsShown) {
-                //console.log(`[Core] 💖 memory-op(水晶外壳守护): 检测到对 '${path}.${keyArg}' 的整体替换操作，但其受到守护，操作被跳过。`);
+                console.log(`[Core] 💖 memory-op(水晶外壳守护): 检测到对 '${path}.${keyArg}' 的整体替换操作，但其受到守护，操作被跳过。`);
                 continue; // 跳过这条指令，保护它不被覆盖
              }
          }
@@ -35613,13 +35613,13 @@ if (typeof finalValue === 'object' && finalValue !== null && !Array.isArray(fina
 
     // 检查 value 对象是否只有一个 key，且这个 key 和 keyArg 相同
     if (valueKeys.length === 1 && valueKeys[0] === String(keyArg)) {
-        //console.log(`[Core] 💖 智能审查(value展开): 检测到 value 对象只有一个 key '${valueKeys[0]}'，与参数 key '${keyArg}' 相同，自动展平`);
+        console.log(`[Core] 💖 智能审查(value展开): 检测到 value 对象只有一个 key '${valueKeys[0]}'，与参数 key '${keyArg}' 相同，自动展平`);
 
         // 提取内层的真实值
         const innerValue = finalValue[valueKeys[0]];
 
-        //console.log(`[Core] ✨ 原 Value:`, finalValue);
-        //console.log(`[Core] ✨ 展开后 Value:`, innerValue);
+        console.log(`[Core] ✨ 原 Value:`, finalValue);
+        console.log(`[Core] ✨ 展开后 Value:`, innerValue);
 
         // 直接用内层值替换
         assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, innerValue);
@@ -35658,14 +35658,14 @@ if (lastPathSegment === keyArg) {
 }
 
 if (isDuplicate) {
-    //console.log(`[Core] 💖 智能审查(去重): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${keyArg}' 重复（${duplicateReason}），自动去重`);
+    console.log(`[Core] 💖 智能审查(去重): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${keyArg}' 重复（${duplicateReason}），自动去重`);
     path = pathParts.slice(0, -1).join('.');
-    //console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
+    console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
 }
  // === 审查2：事件字段展平 ===
 if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !== null && !Array.isArray(finalValue)) {
-    //console.log(`[Core] 💖 智能审查(事件展平): 检测到事件路径下赋值对象，自动去除中间层级`);
-    //console.log(`[Core] 原 Path: '${path}', Key: '${keyArg}'`);
+    console.log(`[Core] 💖 智能审查(事件展平): 检测到事件路径下赋值对象，自动去除中间层级`);
+    console.log(`[Core] 原 Path: '${path}', Key: '${keyArg}'`);
     
  
     const pathToEvent = path;  
@@ -35683,14 +35683,14 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
         }
     }
     
-    //console.log(`[Core] ✨ 已将对象内容直接展开到事件下`);
+    console.log(`[Core] ✨ 已将对象内容直接展开到事件下`);
  
     continue; // 跳过后面的 AssaOps._memoryOperation
 }
 
  
   if (path.includes('global_lore.npc') || path.includes('world_lore.npc') || path.includes('global_lore.小队信息')) {
-    //console.log(`[Core] 💖 智能审查(NPC去重): 检测到NPC路径 '${path}.${keyArg}'，开始检查重复...`);
+    console.log(`[Core] 💖 智能审查(NPC去重): 检测到NPC路径 '${path}.${keyArg}'，开始检查重复...`);
 
     // 提取NPC名称和其后的路径
     let npcName;
@@ -35712,13 +35712,13 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
         pathAfterNpc = '';
     }
 
-    //console.log(`[Core] 🔍 提取到NPC名称: '${npcName}'`);
+    console.log(`[Core] 🔍 提取到NPC名称: '${npcName}'`);
 
     const pathsToCheck = ['global_lore.npc', 'global_lore.小队信息', 'world_lore.npc'];
     const currentBasePath = path.match(/^(global_lore\.npc|global_lore\.小队信息|world_lore\.npc)/)?.[0] || path;
     const otherPaths = pathsToCheck.filter(p => p !== currentBasePath);
 
-    //console.log(`[Core] 🔍 当前基础路径: '${currentBasePath}'，需要检查的其他路径:`, otherPaths);
+    console.log(`[Core] 🔍 当前基础路径: '${currentBasePath}'，需要检查的其他路径:`, otherPaths);
 
     for (const checkPath of otherPaths) {
         const pathParts = checkPath.split('.');
@@ -35735,7 +35735,7 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
    if (targetObj && targetObj.hasOwnProperty(npcName)) {
             // 关键修正：只有当找到NPC的基础路径(checkPath)与当前指令的基础路径(currentBasePath)不同时，才进行重构
             if (checkPath !== currentBasePath) {
-                //console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于不同的路径 '${checkPath}'，自动重构路径`);
+                console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于不同的路径 '${checkPath}'，自动重构路径`);
 
                 // =========== 🔽 修改开始 🔽 ===========
                 // 新路径 = 找到的基础路径 + NPC名 + (可选的)原路径中NPC之后的部分
@@ -35753,16 +35753,16 @@ if (path.includes('.事件') && typeof finalValue === 'object' && finalValue !==
                         // pathAfterNpc 是 .事件, newKey 是 '事件'
                         path = `${checkPath}.${npcName}`;
                         keyArg = newKey; // keyArg 变为 '事件'
-                        //console.log(`[Core] ✨ 路径重构(深度): Path -> '${path}', Key -> '${keyArg}'`);
+                        console.log(`[Core] ✨ 路径重构(深度): Path -> '${path}', Key -> '${keyArg}'`);
                     }
                     // 如果 pathAfterNpc 为空，则保持原样，后续的去重逻辑会处理 `path.零号` 和 `key.零号` 的问题。
                 }
                 // =========== 🔼 修改结束 🔼 ===========
 
-                //console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
+                console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${keyArg}'`);
             } else {
                 // 如果在当前路径下就找到了，说明指令本身就是对这个NPC的操作，无需重构，直接跳出检查即可。
-                //console.log(`[Core] 🔍 NPC '${npcName}' 已在当前路径 '${currentBasePath}' 中，无需切换。`);
+                console.log(`[Core] 🔍 NPC '${npcName}' 已在当前路径 '${currentBasePath}' 中，无需切换。`);
             }
             break; // 无论是否重构，找到后都应停止检查
         }
@@ -35799,12 +35799,12 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                                 if (parentPath1.includes('群员')) {
                                     const originalPath = parentPath1;
                                     parentPath1 = parentPath1.replaceAll('群员', '小队信息');
-                                    //console.log(`[Core] 💖 路径别名转换(源): '${originalPath}' -> '${parentPath1}'`);
+                                    console.log(`[Core] 💖 路径别名转换(源): '${originalPath}' -> '${parentPath1}'`);
                                 }
                                 if (parentPath2.includes('群员')) {
                                     const originalPath = parentPath2;
                                     parentPath2 = parentPath2.replaceAll('群员', '小队信息');
-                                    //console.log(`[Core] 💖 路径别名转换(目标): '${originalPath}' -> '${parentPath2}'`);
+                                    console.log(`[Core] 💖 路径别名转换(目标): '${originalPath}' -> '${parentPath2}'`);
                                 }
                                 // 辅助函数：根据路径字符串找到父对象
                                 const findParent = (data, parentPathStr) => {
@@ -35828,7 +35828,7 @@ assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, path, keyArg, fina
                                 // }
 // 情况一：重命名 (父路径相同，键名不同)
 if (parentPath1 === parentPath2 && key1 !== key2) {
-    //console.log(`[Core] 💖 memory-op(重命名): 将 '${key1}' 重命名为 '${key2}'`);
+    console.log(`[Core] 💖 memory-op(重命名): 将 '${key1}' 重命名为 '${key2}'`);
     const valueToRename = parent1[key1];
     delete parent1[key1];
     parent1[key2] = valueToRename;
@@ -35851,7 +35851,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
             if (phaseGoodwill && phaseGoodwill.hasOwnProperty(key1)) {
                 phaseGoodwill[key2] = phaseGoodwill[key1];
                 delete phaseGoodwill[key1];
-                //console.log(`[Core] 💖 同步重命名分阶段好感: '${key1}' -> '${key2}'`);
+                console.log(`[Core] 💖 同步重命名分阶段好感: '${key1}' -> '${key2}'`);
             }
         } catch (e) {
             console.warn(`[Core] ⚠️ 同步分阶段好感时出错:`, e);
@@ -35868,7 +35868,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
 
                                 // 情况二：移动 (父路径不同，键名相同)
                                 if (parentPath1 !== parentPath2 && key1 === key2) {
-                                    //console.log(`[Core] 💖 memory-op(移动): 将 '${path1Str}' 的值移动到 '${path2Str}'`);
+                                    console.log(`[Core] 💖 memory-op(移动): 将 '${path1Str}' 的值移动到 '${path2Str}'`);
                                     const valueToMove = parent1[key1];
                                     // 复用我们强大的 _memoryOperation 来进行写入，它会自动创建不存在的路径
                                     assaDataToUpdate = AssaOps._memoryOperation(assaDataToUpdate, parentPath2, key2, valueToMove);
@@ -35887,7 +35887,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
                             // 如果不符合上述两种特殊情况，就执行原来的 "path.key", "value" 逻辑
                             const fullPath = cleanPath(path1Str);
                             // if (lastDotIndex1 === -1) {
-                            //      //console.log(`[Core] ⚠️ memory 指令格式错误 (两参数时第一个必须包含'.'): ${line}`);
+                            //      console.log(`[Core] ⚠️ memory 指令格式错误 (两参数时第一个必须包含'.'): ${line}`);
                             //      continue;
                             //      }
                                     let path = cleanPath(fullPath.substring(0, lastDotIndex1)); // 💖 清理路径// ✨ 由 const 改为 let
@@ -35896,7 +35896,7 @@ if (parentPath1 === parentPath2 && key1 !== key2) {
 
                                  // 💖 新增：summary 路径特殊处理（二参数模式）💖
 if (path.startsWith('summary')) {
-    //console.log(`[Core] 💖 memory-op(summary模式-两参数): 检测到summary路径，重新解析完整key`);
+    console.log(`[Core] 💖 memory-op(summary模式-两参数): 检测到summary路径，重新解析完整key`);
     // 对于 summary 路径，只取第一个点之前的部分作为 path
     const firstDotIndex = fullPath.indexOf('.');
     if (firstDotIndex !== -1) {
@@ -35905,14 +35905,14 @@ if (path.startsWith('summary')) {
         if (secondDotIndex !== -1) {
             path = fullPath.substring(0, secondDotIndex);
             key = unquote(clean(fullPath.substring(secondDotIndex + 1)));
-            //console.log(`[Core] ✨ summary模式重新解析 -> Path: '${path}', Key: '${key}'`);
+            console.log(`[Core] ✨ summary模式重新解析 -> Path: '${path}', Key: '${key}'`);
         }
     }
 }
                              if (path.includes('群员')) {
                                  const originalPath = path;
                                  path = path.replaceAll('群员', '小队信息');
-                                 //console.log(`[Core] 💖 路径别名转换: '${originalPath}' -> '${path}'`);
+                                 console.log(`[Core] 💖 路径别名转换: '${originalPath}' -> '${path}'`);
                              }
  
 
@@ -35921,12 +35921,12 @@ if (path.startsWith('summary')) {
 const pathParts = path.split('.');
 const lastPathSegment = pathParts[pathParts.length - 1];
 if (lastPathSegment === key) {
-    //console.log(`[Core] 💖 智能审查(去重-两参数): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${key}' 重复，自动去重`);
+    console.log(`[Core] 💖 智能审查(去重-两参数): 检测到 path 最后一段 '${lastPathSegment}' 与 key '${key}' 重复，自动去重`);
     path = pathParts.slice(0, -1).join('.');
-    //console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
+    console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
 }
  if (path.includes('global_lore.npc') || path.includes('world_lore.npc') || path.includes('global_lore.小队信息')) {
-    //console.log(`[Core] 💖 智能审查(NPC去重-两参数): 检测到NPC路径 '${path}.${key}'，开始检查重复...`);
+    console.log(`[Core] 💖 智能审查(NPC去重-两参数): 检测到NPC路径 '${path}.${key}'，开始检查重复...`);
 
     let npcName;
     let npcMatch = null;
@@ -35946,13 +35946,13 @@ if (lastPathSegment === key) {
         pathAfterNpc = '';
     }
 
-    //console.log(`[Core] 🔍 提取到NPC名称: '${npcName}'`);
+    console.log(`[Core] 🔍 提取到NPC名称: '${npcName}'`);
 
     const pathsToCheck = ['global_lore.npc', 'global_lore.小队信息', 'world_lore.npc'];
     const currentBasePath = path.match(/^(global_lore\.npc|global_lore\.小队信息|world_lore\.npc)/)?.[0] || path;
     const otherPaths = pathsToCheck.filter(p => p !== currentBasePath);
 
-    //console.log(`[Core] 🔍 当前基础路径: '${currentBasePath}'，需要检查的其他路径:`, otherPaths);
+    console.log(`[Core] 🔍 当前基础路径: '${currentBasePath}'，需要检查的其他路径:`, otherPaths);
 
     for (const checkPath of otherPaths) {
         const pathParts = checkPath.split('.');
@@ -35969,7 +35969,7 @@ if (lastPathSegment === key) {
       if (targetObj && targetObj.hasOwnProperty(npcName)) {
             // 关键修正：只有当找到NPC的基础路径(checkPath)与当前指令的基础路径(currentBasePath)不同时，才进行重构
             if (checkPath !== currentBasePath) {
-                //console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于不同的路径 '${checkPath}'，自动重构路径`);
+                console.log(`[Core] ✨ 发现同名NPC '${npcName}' 已存在于不同的路径 '${checkPath}'，自动重构路径`);
 
                 // =========== 🔽 修改开始 🔽 ===========
 
@@ -35982,7 +35982,7 @@ if (lastPathSegment === key) {
                 const lastPathSegment = newPathParts[newPathParts.length - 1];
 
                 if (lastPathSegment === newKey) {
-                    //console.log(`[Core] 💖 智能审查(重构后去重): 检测到重构路径的最后部分 '${lastPathSegment}' 与 key '${newKey}' 重复，自动修正。`);
+                    console.log(`[Core] 💖 智能审查(重构后去重): 检测到重构路径的最后部分 '${lastPathSegment}' 与 key '${newKey}' 重复，自动修正。`);
                     // 修正：路径只取到父级，key 保持不变
                     path = newPathParts.slice(0, -1).join('.');
                     // key 保持 newKey 即可，因为后续逻辑会使用它
@@ -35996,9 +35996,9 @@ if (lastPathSegment === key) {
 
                 // =========== 🔼 修改结束 🔼 ===========
 
-                //console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
+                console.log(`[Core] ✨ 修正后 -> Path: '${path}', Key: '${key}'`);
             } else {
-                //console.log(`[Core] 🔍 NPC '${npcName}' 已在当前路径 '${currentBasePath}' 中，无需切换。`);
+                console.log(`[Core] 🔍 NPC '${npcName}' 已在当前路径 '${currentBasePath}' 中，无需切换。`);
             }
             break; // 无论是否重构，找到后都应停止检查
         }
@@ -36011,7 +36011,7 @@ if (lastPathSegment === key) {
 if (typeof valueToProcess === 'string') {
     const trimmedValue = valueToProcess.trim().replace(/^["']|["']$/g, '');
     if (/^[+\-]\d+(\.\d+)?$/.test(trimmedValue)) {
-        //console.log(`[Core] 💖 memory-op(相对值-两参数): 检测到相对值 '${trimmedValue}'，正在计算...`);
+        console.log(`[Core] 💖 memory-op(相对值-两参数): 检测到相对值 '${trimmedValue}'，正在计算...`);
         
         // 导航到目标对象获取当前值
         const pathParts = path.split('.');
@@ -36031,7 +36031,7 @@ if (typeof valueToProcess === 'string') {
             
             if (!isNaN(currentValue) && !isNaN(relativeValue)) {
                 const newValue = currentValue + relativeValue;
-                //console.log(`[Core] ✨ 相对值计算: ${currentValue} ${trimmedValue} = ${newValue}`);
+                console.log(`[Core] ✨ 相对值计算: ${currentValue} ${trimmedValue} = ${newValue}`);
                 valueToProcess = String(newValue);
             } else {
                 console.warn(`[Core] ⚠️ 相对值计算失败: 当前值或相对值不是有效数字`);
@@ -36054,7 +36054,7 @@ const finalValue = tryParseJson(valueToProcess);
                            });
                     
                             } else { // args.length < 2
-                             //console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
+                             console.log(`[Core] ⚠️ memory 指令参数不足: ${line}`);
                              continue;
                         }
 
@@ -36074,14 +36074,14 @@ if (line.includes('delete') && !line.includes('deleteMapMemo')) {
 
         if (args.length === 1) {
             // 💖 单参数模式: delete('path.key')
-            //console.log(`[Core] 💖 delete-op(单参数模式): 检测到 delete('path.key') 写法。`);
+            console.log(`[Core] 💖 delete-op(单参数模式): 检测到 delete('path.key') 写法。`);
             const fullPath = cleanPath(unquote(args[0]));
             const lastDotIndex = fullPath.lastIndexOf('.');
 
             if (lastDotIndex !== -1) {
                 path = fullPath.substring(0, lastDotIndex);
                 key = fullPath.substring(lastDotIndex + 1);
-                //console.log(`[Core] ✨ 解析结果 -> Path: '${path}', Key: '${key}'`);
+                console.log(`[Core] ✨ 解析结果 -> Path: '${path}', Key: '${key}'`);
             } else {
                 console.warn(`[Core] ⚠️ delete-op: 单参数模式下，参数 '${fullPath}' 中不包含 '.'，无法确定路径和键，操作中止。`);
                 continue; // 跳过此无效指令
@@ -36103,7 +36103,7 @@ if (line.includes('delete') && !line.includes('deleteMapMemo')) {
                                 && Object.keys(assaDataToUpdate.world_lore[categoryToClear]).length > 0;
 
                 if (hasContent) {
-                     //console.log(`[Core] [Updater] 🚩 检测到世界重置指令...`);
+                     console.log(`[Core] [Updater] 🚩 检测到世界重置指令...`);
                      worldResetTriggered = false; // 注意：您代码中这里是 false，我予以保留
                      // 同步清理主要地点表
                      assaDataToUpdate = await AssaOps._deleteOperation(assaDataToUpdate, 'map.主要地点表', 'all', statDataToUpdate);
@@ -36161,12 +36161,12 @@ if (match) {
         if (!isNaN(tableIndex) && !isNaN(rowIndex)) {
             const data = parseFlexibleData(dataString); // 使用我们已有的灵活解析函数
             assaDataToUpdate = AssaOps._updateRowOperation(assaDataToUpdate, tableIndex, rowIndex, data);
-             // //console.log(`[Core] [Updater] ✅ 成功识别并执行 updateMapMemo`);
+             // console.log(`[Core] [Updater] ✅ 成功识别并执行 updateMapMemo`);
         } else {
-             // //console.log(`[Core] [Updater] ⚠️ 在 updateMapMemo 命令中无法解析 tableIndex 或 rowIndex: ${line}`);
+             // console.log(`[Core] [Updater] ⚠️ 在 updateMapMemo 命令中无法解析 tableIndex 或 rowIndex: ${line}`);
         }
     } else {
-         // //console.log(`[Core] [Updater] ⚠️ 在 updateMapMemo 命令中未找到有效的数据部分: ${line}`);
+         // console.log(`[Core] [Updater] ⚠️ 在 updateMapMemo 命令中未找到有效的数据部分: ${line}`);
     }
     continue;
 }
@@ -36181,11 +36181,11 @@ if (match) {
                     if (action === 'all') {
                         // 识别到 "all"，调用我们新的清空工具
                         assaDataToUpdate = AssaOps._clearTableOperation(assaDataToUpdate, tableIndex);
-                        //console.log(`[Core] [Updater] ✅ 成功识别并执行 deleteMapMemo(all)`);
+                        console.log(`[Core] [Updater] ✅ 成功识别并执行 deleteMapMemo(all)`);
                     } else if (rowIndex !== null) {
                         // 识别到行号，调用旧的删除单行工具
                         assaDataToUpdate = AssaOps._deleteRowOperation(assaDataToUpdate, tableIndex, rowIndex);
-                        //console.log(`[Core] [Updater] ✅ 成功识别并执行 deleteMapMemo(rowIndex)`);
+                        console.log(`[Core] [Updater] ✅ 成功识别并执行 deleteMapMemo(rowIndex)`);
                     }
                     continue; // 处理完毕，进入下一行
                 }
@@ -36210,15 +36210,15 @@ if (match) {
 
                         const data = parseFlexibleData(dataString);
                         assaDataToUpdate = AssaOps._insertRowOperation(assaDataToUpdate, tableIndex, data);
-                         // //console.log(`[Core] [Updater] ✅ 成功识别并执行 insertMapMemo`);
+                         // console.log(`[Core] [Updater] ✅ 成功识别并执行 insertMapMemo`);
                     } else {
-                          // //console.log(`[Core] [Updater] ⚠️ 在 insertMapMemo 命令中未找到有效的数据部分: ${line}`);
+                          // console.log(`[Core] [Updater] ⚠️ 在 insertMapMemo 命令中未找到有效的数据部分: ${line}`);
                     }
                     continue;
                 }
 
                 if (!line.startsWith('//')) {
-                     // //console.log(`[Core] [Updater] ⚠️ 无法识别的命令: ${line}`);
+                     // console.log(`[Core] [Updater] ⚠️ 无法识别的命令: ${line}`);
                 }
 
             } catch (error) {
@@ -36241,8 +36241,8 @@ if (match) {
         const keys = Object.keys(obj);
         if (keys.length > 0) {
             const allKeysAreUnderscore = keys.every(k => k.startsWith('_'));
-            if (allKeysAreUnderscore && parentObj && parentKey) {
-                //console.log(`[Core] 💖 清理空壳: 删除只含 _ 开头属性的对象 '${parentKey}'`);
+            if (allKeysAreUnderscore && parentObj && parentKey && parentKey!="small") {
+                console.log(`[Core] 💖 清理空壳: 删除只含 _ 开头属性的对象 '${parentKey}'`);
                 delete parentObj[parentKey];
             }
         }
@@ -36251,7 +36251,7 @@ if (match) {
     // 对整个 assaDataToUpdate 进行清理
     if (assaDataToUpdate) {
         cleanEmptyUnderscoreObjects(assaDataToUpdate);
-        //console.log(`[Core] ✨ 已完成 _ 开头空壳对象的清理检查`);
+        console.log(`[Core] ✨ 已完成 _ 开头空壳对象的清理检查`);
     }
   
         // ✨ 伤害处理逻辑 ✨
@@ -36259,12 +36259,12 @@ if (match) {
             const damage = parseInt(statDataToUpdate.hurt_value[0], 10);
                
             if (!isNaN(damage) && damage !== 0) {
-                 // //console.log(`[Updater] 💖 检测到伤害: ${damage}。正在处理...`);
+                 // console.log(`[Updater] 💖 检测到伤害: ${damage}。正在处理...`);
                 if (playDataToUpdate.衍生属性 && playDataToUpdate.衍生属性.生命值) {
                     const life = playDataToUpdate.衍生属性.生命值;
                     const oldHP = life.当前值[0];
                     life.当前值[0] = Math.max(0, oldHP - damage);
-                     // //console.log(`[Updater] ✨ 生命值从 ${oldHP} 变为 ${life.当前值[0]}`);
+                     // console.log(`[Updater] ✨ 生命值从 ${oldHP} 变为 ${life.当前值[0]}`);
                 }
                 // 💖 处理完后，立刻将伤害值清零，防止重复计算
                 statDataToUpdate.hurt_value[0] = 0;
@@ -36278,7 +36278,7 @@ if (match) {
             // 美德
             if (statDataToUpdate.符合美德的 && (statDataToUpdate.符合美德的[0] === 'true' || statDataToUpdate.符合美德的[0] === true)) {
                 if (willpower.当前值[0] < willpower.上限[0]) {
-                    //console.log("[Updater] 💖 美德触发！意志力已恢复至上限。");
+                    console.log("[Updater] 💖 美德触发！意志力已恢复至上限。");
                     willpower.当前值[0] = willpower.上限[0];
                 }
                 // 💖 别忘了重置开关
@@ -36287,7 +36287,7 @@ if (match) {
             // 恶德
             if (statDataToUpdate.符合恶德的 && (statDataToUpdate.符合恶德的[0] === 'true' || statDataToUpdate.符合恶德的[0] === true)) {
                 if (willpower.当前值[0] < willpower.上限[0]) {
-                    //console.log("[Updater] 🔥 恶德触发！意志力恢复1点。");
+                    console.log("[Updater] 🔥 恶德触发！意志力恢复1点。");
                     willpower.当前值[0] = Math.min(willpower.上限[0], willpower.当前值[0] + 1);
                 }
                  // 💖 别忘了重置开关
@@ -36312,7 +36312,7 @@ if (match) {
             if (config.flags.clean_small_flag === true) {
                 // 条件是：大总结的数量必须比“升旗时”要多，证明新的一轮已经开始
                 if (bigSummaryKeys.length > (parseInt(config.counters.big_length_on_flag, 10) || 0)) {
-                    //console.log(`[Core] [Updater] 💖 旧任务结算：Small摘要清理条件满足，正在清空...`);
+                    console.log(`[Core] [Updater] 💖 旧任务结算：Small摘要清理条件满足，正在清空...`);
                     const smallKeys = Object.keys(summary.small);
             
             // 检查 small summary 中是否有数据
@@ -36323,11 +36323,11 @@ if (match) {
                 // 重新赋值 summary.small，只保留最新的那一条记录
                 summary.small = { [latestKey]: summary.small[latestKey] };
                 
-                //console.log(`[Core] [Updater] ✅ 已保留最新一条摘要：Key 为 ${latestKey}`);
+                console.log(`[Core] [Updater] ✅ 已保留最新一条摘要：Key 为 ${latestKey}`);
             } else {
                 // 如果 small summary 为空，则保持为空
                 summary.small = {}; 
-                //console.log(`[Core] [Updater] Small摘要已为空，无需操作。`);
+                console.log(`[Core] [Updater] Small摘要已为空，无需操作。`);
             }
                     config.flags.clean_small_flag = false; // 放下旗帜，旧任务完成！
                 }
@@ -36336,7 +36336,7 @@ if (match) {
             // 1b. 检查是否需要清理 big summary
             if (config.flags.clean_big_flag === true) {
                  if (bigSummaryKeys.length > (parseInt(config.counters.big_length_on_big_flag, 10) || 0)) {
-                    //console.log(`[Core] [Updater] 🔥 旧任务结算：Big摘要清理条件满足，正在清理旧条目...`);
+                    console.log(`[Core] [Updater] 🔥 旧任务结算：Big摘要清理条件满足，正在清理旧条目...`);
                     const latestKey = bigSummaryKeys[bigSummaryKeys.length - 1];
                     const latestValue = summary.big[latestKey];
                     summary.big = { [latestKey]: latestValue };
@@ -36362,9 +36362,9 @@ if (match) {
                  if (worldResetTriggered ) {
       
                    
-                     //console.log(`[Core] [Updater] 🚩 新任务评估：世界重置指令已触发，为下一轮升起Small摘要清理旗帜。`);
+                     console.log(`[Core] [Updater] 🚩 新任务评估：世界重置指令已触发，为下一轮升起Small摘要清理旗帜。`);
                 } else {
-                    //console.log(`[Core] [Updater] 🚩 新任务评估：Small摘要已满，为下一轮升起清理旗帜。`);
+                    console.log(`[Core] [Updater] 🚩 新任务评估：Small摘要已满，为下一轮升起清理旗帜。`);
                     
                 }
                 config.flags.clean_small_flag = true;
@@ -36375,7 +36375,7 @@ if (match) {
             // 2b. 检查 big summary 是否在这一轮又满了
             const cleanBigCount = parseInt(config.clean_big_count, 10) || 20;
             if (config.flags.clean_big_flag === false && finalBigSummaryKeys.length >= cleanBigCount) {
-                //console.log(`[Core] [Updater] 🚩 新任务评估：Big摘要已满，为下一轮升起清理旗帜。`);
+                console.log(`[Core] [Updater] 🚩 新任务评估：Big摘要已满，为下一轮升起清理旗帜。`);
                 config.flags.clean_big_flag = true;
                 config.counters.big_length_on_big_flag = finalBigSummaryKeys.length;
             }
@@ -36420,16 +36420,16 @@ if (match) {
 
         // 如果时间确实流逝了，就施展祝福魔法
         if (daysPassedForResource > 0) {
-            //console.log(`[Core] 💖 资源心跳：检测到时间流逝 ${daysPassedForResource.toFixed(2)} 天，开始滋养世界万物...`);
+            console.log(`[Core] 💖 资源心跳：检测到时间流逝 ${daysPassedForResource.toFixed(2)} 天，开始滋养世界万物...`);
             // 调用我们新准备的工具箱
             _updateMapResources(assaDataToUpdate, daysPassedForResource);
         }
     }
 
         } else {
-             // //console.log(`[Core] [Updater] Informational: 在命令块中未找到有效的命令。`);
+             // console.log(`[Core] [Updater] Informational: 在命令块中未找到有效的命令。`);
         }
-       //console.log(`[Core] 📨 批量通知：已捕获 ${collectedBatchOps.length} 个操作，正在生成通知...`);
+       console.log(`[Core] 📨 批量通知：已捕获 ${collectedBatchOps.length} 个操作，正在生成通知...`);
        
 
         const finalWorldNameArray = statDataToUpdate?.world?.name;
@@ -36437,7 +36437,7 @@ if (match) {
 
 if (originalWorldNameIsValid && finalWorldName && originalWorldName !== finalWorldName) {
  
-            //console.log(`[Core] 🔄 世界切换检测：从 [${originalWorldName}] 切换到 [${finalWorldName}]，启动数据交换...`);
+            console.log(`[Core] 🔄 世界切换检测：从 [${originalWorldName}] 切换到 [${finalWorldName}]，启动数据交换...`);
 
             // ✨ 妈妈为你准备的合并魔法（辅助函数）✨
             const deepMerge = (target, source) => {
@@ -36455,7 +36455,7 @@ if (originalWorldNameIsValid && finalWorldName && originalWorldName !== finalWor
 
             // 步骤 1: 将当前(切换前)的 world_lore 数据增量备份到旧世界名下
        if (assaDataToUpdate.world_lore && typeof originalWorldName === 'string' && originalWorldName.trim() !== '') {
-                //console.log(`[Core] 📦 正在将 [${originalWorldName}] 的最终数据增量备份...`);
+                console.log(`[Core] 📦 正在将 [${originalWorldName}] 的最终数据增量备份...`);
                 // 确保备份结构存在
                 if (!assaDataToUpdate.world_backup) assaDataToUpdate.world_backup = {};
                 if (!assaDataToUpdate.world_backup[originalWorldName]) assaDataToUpdate.world_backup[originalWorldName] = {};
@@ -36473,27 +36473,27 @@ if (originalWorldNameIsValid && finalWorldName && originalWorldName !== finalWor
             } else {
                 // ✨ 可选：打印一条日志说明跳过了备份
                 if (assaDataToUpdate.world_lore) {
-                     //console.log(`[Core] ℹ️ 旧世界名 [${originalWorldName}] 为空或无效，跳过备份步骤。`);
+                     console.log(`[Core] ℹ️ 旧世界名 [${originalWorldName}] 为空或无效，跳过备份步骤。`);
                 }
             }
 
             // 步骤 2: 检查新世界名是否存在备份，如果存在，则恢复数据
             if (assaDataToUpdate.world_backup && assaDataToUpdate.world_backup[finalWorldName]) {
-                //console.log(`[Core] 📥 发现 [${finalWorldName}] 的备份数据，正在恢复到当前 world_lore...`);
+                console.log(`[Core] 📥 发现 [${finalWorldName}] 的备份数据，正在恢复到当前 world_lore...`);
                 const backupData = assaDataToUpdate.world_backup[finalWorldName];
 
                 // 恢复 npc (覆盖)
                 if (backupData.npc) {
                     assaDataToUpdate.world_lore.npc = JSON.parse(JSON.stringify(backupData.npc));
-                    //console.log(`[Core] ✅ 已恢复 world_lore.npc`);
+                    console.log(`[Core] ✅ 已恢复 world_lore.npc`);
                 }
                 // 恢复 settings (覆盖)
                 if (backupData.settings) {
                     assaDataToUpdate.world_lore.settings = JSON.parse(JSON.stringify(backupData.settings));
-                    //console.log(`[Core] ✅ 已恢复 world_lore.settings`);
+                    console.log(`[Core] ✅ 已恢复 world_lore.settings`);
                 }
             } else {
-                //console.log(`[Core] ℹ️ 新世界 [${finalWorldName}] 没有找到备份数据，将使用当前 world_lore 的状态。`);
+                console.log(`[Core] ℹ️ 新世界 [${finalWorldName}] 没有找到备份数据，将使用当前 world_lore 的状态。`);
             }
         }
 
@@ -36514,12 +36514,12 @@ if (originalWorldNameIsValid && finalWorldName && originalWorldName !== finalWor
 
 
 
- //console.log(`[Core] 🌊 开始更新核心 'chat' 域...`);
+ console.log(`[Core] 🌊 开始更新核心 'chat' 域...`);
 try {
     // 直接更新，让 updateVariablesWith 自己处理重试
     await updateVariablesWith(updater, { type: 'chat' });
     
-    //console.log(`[Core] ✅ 'chat' 域更新成功！`);
+    console.log(`[Core] ✅ 'chat' 域更新成功！`);
     
 } catch (error) {
     console.error(`[Core] ❌ 更新 'chat' 域时发生错误:`, error);
@@ -36529,7 +36529,7 @@ try {
 
  if (is_quick_rewirte_backup === "true") {
     try {
-        //console.log(`[Core] 💾 快速备份已启用，正在同步更新数据到存档...`);
+        console.log(`[Core] 💾 快速备份已启用，正在同步更新数据到存档...`);
         
         // 获取最新的聊天变量
         const currentChatVars = await TavernHelper.getVariables({ type: 'chat' });
@@ -36563,7 +36563,7 @@ try {
         // 调用快照存档函数
         await saveSnapshot(turnId, currentChatVars, currentSwipeIndex);
         
-        //console.log(`[Core] ✅ 快速备份完成！已同步到 Turn:${turnId} Branch:${currentSwipeIndex}`);
+        console.log(`[Core] ✅ 快速备份完成！已同步到 Turn:${turnId} Branch:${currentSwipeIndex}`);
     } catch (error) {
         console.warn(`[Core] ⚠️ 快速备份过程中出现错误:`, error);
         // 快速备份失败不应中断主流程
