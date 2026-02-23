@@ -517,25 +517,22 @@ let currentChatTarget = null; // 当前聊天的ID (群名 或 成员名)
 
     // --- 修改结束 ---
 };
-  function getGroupList() {
+ function getGroupList() {
         try {
-            let data = assaSettingsData || {};
-            return Object.keys(data.group_info || {});
+            // 群组列表现在直接是 group_history 的顶层键
+            return Object.keys(assaSettingsData.group_history || {});
         } catch (e) { return []; }
     }
 
     // 获取指定群的成员信息
     function getGroupMembers(groupName) {
         try {
+            // 成员信息在 group_info 中，结构可能与 history 不同
             let data = assaSettingsData || {};
-            // 如果指定了群名，取该群；否则取第一个群（兼容旧逻辑）或是空
             const gName = groupName || Object.keys(data.group_info || {})[0];
-            if (!gName) return {};
+            if (!gName || !data.group_info || !data.group_info[gName]) return {};
 
-            const groupData = data.group_info[gName] || {};
-            const members = groupData.members || {};
-
-            // 解析
+            const members = data.group_info[gName].members || {};
             const parsedMembers = {};
             for (let key in members) {
                 try { parsedMembers[key] = typeof members[key] === 'string' ? JSON.parse(members[key]) : members[key]; }
@@ -548,42 +545,39 @@ let currentChatTarget = null; // 当前聊天的ID (群名 或 成员名)
     // 获取所有有过私聊记录的成员列表
     function getPrivateChatList() {
         try {
-            let data = assaSettingsData || {};
-            const privateChats = new Set();
-            Object.keys(data).forEach(key => {
-                if (key.startsWith('private_history.')) {
-                    // key 格式: private_history.成员名.时间戳
-                    const parts = key.split('.');
-                    if (parts.length >= 2) {
-                        privateChats.add(parts[1]);
-                    }
-                }
-            });
-            return Array.from(privateChats);
+            // 假设 private_history 也是类似的嵌套结构
+            return Object.keys(assaSettingsData.private_history || {});
         } catch (e) { return []; }
     }
 
-    // 通用历史记录获取 (支持群聊和私聊)
+    // 【核心修改】通用历史记录获取 (适配嵌套结构)
     function getChatHistory(targetId, type, startIndex = 0, count = -1) {
         try {
             let data = assaSettingsData || {};
-            const prefix = type === 'group' ? `group_history.${targetId}.` : `private_history.${targetId}.`;
+            const historySource = type === 'group' ? data.group_history : data.private_history;
 
-            // 筛选出符合前缀的键
-            const allKeys = Object.keys(data).filter(k => k.startsWith(prefix)).sort(); // 时间戳通常是可排序的字符串
+            // 检查目标是否存在于历史记录中
+            if (!historySource || !historySource[targetId]) {
+                return { messages: [], hasMore: false };
+            }
 
-            if (allKeys.length === 0) return { messages: [], hasMore: false };
+            // 获取该目标下的所有时间戳键并排序
+            const allTimestampKeys = Object.keys(historySource[targetId]);
 
-            const endIndex = allKeys.length - startIndex;
+            if (allTimestampKeys.length === 0) return { messages: [], hasMore: false };
+
+            // 分页逻辑 (与之前相同)
+            const endIndex = allTimestampKeys.length - startIndex;
             const startSliceIndex = (count === -1) ? 0 : Math.max(0, endIndex - count);
-            const keysToLoad = allKeys.slice(startSliceIndex, endIndex);
+            const keysToLoad = allTimestampKeys.slice(startSliceIndex, endIndex);
 
             let messages = [];
-            keysToLoad.forEach(key => {
-                const msgs = data[key];
+            keysToLoad.forEach(tsKey => {
+                // 从 historySource[targetId] 中获取消息数组
+                const msgs = historySource[targetId][tsKey];
                 if (Array.isArray(msgs)) {
                     msgs.forEach(m => {
-                        m._ts = key;
+                        m._ts = tsKey; // 附加时间戳用于调试
                         messages.push(m);
                     });
                 }
@@ -596,14 +590,18 @@ let currentChatTarget = null; // 当前聊天的ID (群名 或 成员名)
         }
     }
 
-    // 获取最新一条消息用于预览
+    // 获取最新一条消息用于预览 (现在应该可以正常工作了)
     function getLastMessage(targetId, type) {
-        const history = getChatHistory(targetId, type, 0, 1); // 只取最后1个时间戳块
+        // 这个函数不需要修改，因为它依赖于 getChatHistory
+        const history = getChatHistory(targetId, type, 0, 1);
         if (history.messages.length > 0) {
             return history.messages[history.messages.length - 1];
         }
         return null;
     }
+ 
+
+  
 
     // --- 4. 渲染逻辑 ---
     const chatBox = document.getElementById('mod21-chat-box');
@@ -656,8 +654,13 @@ let currentChatTarget = null; // 当前聊天的ID (群名 或 成员名)
             const avatarChar = name.charAt(0);
            const avatarHtml = `<div class="mod21-msg-avatar" style="background:${avatarColor}" onclick="showMemberInfo('${name}')">${avatarChar}</div>`;
             // 头衔标签
-            let tagsHtml = '';
-            if (!isMe) {
+             let tagsHtml = '';
+            // 仅在群聊中且非本人消息时显示头衔
+            if (!isMe && currentChatType === 'group') {
+                // 尝试从当前群组获取成员信息
+                const members = getGroupMembers(currentChatTarget);
+                const memberInfo = members[name] || { "群头衔": "群员", "群等级": "LV1" }; // 提供默认值
+
                 const level = memberInfo['群等级'] || 'LV1';
                 const title = memberInfo['群头衔'] || '';
                 const role = memberInfo['群身份'] || '群员';
@@ -667,7 +670,6 @@ let currentChatTarget = null; // 当前聊天的ID (群名 或 成员名)
                 else if (role === '管理员') tagsHtml += `<span class="mod21-tag mod21-tag-admin">管理</span>`;
                 if (title) tagsHtml += `<span class="mod21-tag mod21-tag-title">${title}</span>`;
             }
-
             // 引用内容 (Type 3)
             let quoteHtml = '';
             if (type === 3 && msgData[3]) {
@@ -736,21 +738,34 @@ if (bubble) {
             chatBox.insertBefore(div, chatBox.firstChild);
         }
     }
- function renderMessageList() {
+  function renderMessageList() {
         const container = document.getElementById('mod21-msg-list-container');
         container.innerHTML = '';
 
-        // 1. 渲染群组
-        const groups = getGroupList();
-        groups.forEach(groupName => {
+        // --- 新逻辑：合并所有已知的聊天会话 ---
+        const allGroupTargets = new Set(getGroupList()); // 从 group_info 获取所有群
+
+        // 【关键修改】从 group_history 中也提取群名，以防万一
+        Object.keys(assaSettingsData || {}).forEach(key => {
+            if (key.startsWith('group_history.')) {
+                const parts = key.split('.');
+                if (parts.length >= 2) {
+                    allGroupTargets.add(parts[1]);
+                }
+            }
+        });
+
+        const allPrivateTargets = new Set(getPrivateChatList()); // 从 private_history 获取
+
+        // 1. 渲染所有群组
+        allGroupTargets.forEach(groupName => {
             const lastMsg = getLastMessage(groupName, 'group');
             const unread = unreadCounts[groupName] || 0;
             createListItem(container, groupName, lastMsg, 'group', unread);
         });
 
-        // 2. 渲染私聊
-        const privateChats = getPrivateChatList();
-        privateChats.forEach(memberName => {
+        // 2. 渲染所有私聊
+        allPrivateTargets.forEach(memberName => {
             const lastMsg = getLastMessage(memberName, 'private');
             const unread = unreadCounts[memberName] || 0;
             createListItem(container, memberName, lastMsg, 'private', unread);
@@ -876,17 +891,7 @@ if (bubble) {
     });
 
     // 返回按钮逻辑更新
-    btnBack.addEventListener('click', () => {
-        currentChatTarget = null; // 退出聊天
-        currentChatType = null;
 
-        chatPage.classList.remove('mod21-page-active');
-        chatPage.classList.add('mod21-page-inactive-right');
-        listPage.classList.remove('mod21-page-inactive-left');
-        listPage.classList.add('mod21-page-active');
-
-        renderMessageList(); // 返回时刷新列表以更新预览
-    });
 
     // 手机打开时
     aiOrbButton.addEventListener('click', () => {
@@ -942,39 +947,19 @@ function hideReplyBar() {
     const btnSettingsClose = document.getElementById('mod21-settings-close');
     const inputField = document.getElementById('mod21-input');
     const sendBtn = document.getElementById('mod21-send');
+    btnBack.addEventListener('click', () => {
+        currentChatTarget = null; // 退出聊天
+        currentChatType = null;
 
-    // 打开/关闭手机
- aiOrbButton.addEventListener('click', () => {
-        overlay.classList.remove('mod21-hidden');
-        updateTime();
+        chatPage.classList.remove('mod21-page-active');
+        chatPage.classList.add('mod21-page-inactive-right');
+        listPage.classList.remove('mod21-page-inactive-left');
+        listPage.classList.add('mod21-page-active');
 
-        // --- 修改：重置并加载初始历史记录 ---
-        chatBox.innerHTML = '';
-        isLoadingMore = false;
-        hasMoreHistory = true;
-        currentHistoryIndex = 0;
-        // 注意：这里我们只加载数据用于预览，而不渲染到聊天框
-        const initialData = getGroupHistory(0, HISTORY_BATCH_SIZE);
-
-        // --- 更新主界面最新消息预览 ---
-        if (initialData.messages.length > 0) {
-            const lastMsg = initialData.messages[initialData.messages.length - 1];
-            const previewEl = document.querySelector('#mod21-entry-group .mod21-list-preview');
-            if (previewEl) {
-                let previewText = "";
-                const type = lastMsg[0];
-                const name = lastMsg[1];
-                let content = lastMsg[2];
-                if (type === 2) {
-                    content = lastMsg[1] + ' ' + lastMsg[2];
-                    previewText = `[系统消息] ${content.substring(0, 20)}...`;
-                } else {
-                    previewText = `${name}: ${content.substring(0, 20)}...`;
-                }
-                previewEl.textContent = previewText.replace(/<[^>]+>/g, '[图片]');
-            }
-        }
+        renderMessageList(); // 返回时刷新列表以更新预览
     });
+    // 打开/关闭手机
+ 
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -989,28 +974,7 @@ function hideReplyBar() {
     let currentHistoryIndex = 0;
     const HISTORY_BATCH_SIZE = 2; // 每次加载的时间戳数量
 
-    entryGroup.addEventListener('click', () => {
-        // --- 新增：动态获取成员数量并更新标题 ---
-        const members = getGroupMembers();
-        const memberCount = Object.keys(members).length;
-        const chatTitle = document.querySelector('#mod21-chat-page .mod21-nav-title');
-        if (chatTitle) {
-            chatTitle.textContent = `异世界交流群(${memberCount})`;
-        }
-        // --- 修改结束 ---
-
-        chatBox.innerHTML = ''; // 清空聊天框
-        isLoadingMore = false;
-        hasMoreHistory = true;
-        currentHistoryIndex = 0;
-
-        loadMoreHistory(); // 调用加载函数进行初始加载
-
-        listPage.classList.remove('mod21-page-active');
-        listPage.classList.add('mod21-page-inactive-left');
-        chatPage.classList.remove('mod21-page-inactive-right');
-        chatPage.classList.add('mod21-page-active');
-    });
+ 
  // --- 新增：加载更多历史记录的函数 ---
     function loadMoreHistory() {
         if (isLoadingMore || !hasMoreHistory) return;
@@ -1068,36 +1032,17 @@ function hideReplyBar() {
             loadMoreHistory();
         }
     });
- btnBack.addEventListener('click', () => {
-    chatPage.classList.remove('mod21-page-active');
-    chatPage.classList.add('mod21-page-inactive-right');
-    listPage.classList.remove('mod21-page-inactive-left');
-    listPage.classList.add('mod21-page-active');
+  btnBack.addEventListener('click', () => {
+        currentChatTarget = null; // 退出聊天
+        currentChatType = null;
 
-    // --- 新增代码开始 ---
-    const history = getGroupHistory();
-    if (history.length > 0) {
-        const lastMsg = history[history.length - 1];
-        const previewEl = document.querySelector('#mod21-entry-group .mod21-list-preview');
-        if (previewEl) {
-            let previewText = "";
-            const type = lastMsg[0];
-            const name = lastMsg[1];
-            let content = lastMsg[2];
+        chatPage.classList.remove('mod21-page-active');
+        chatPage.classList.add('mod21-page-inactive-right');
+        listPage.classList.remove('mod21-page-inactive-left');
+        listPage.classList.add('mod21-page-active');
 
-            if (type === 2) {
-                // 系统消息的 content 就是通告内容
-                previewText = `[系统消息] ${content.substring(0, 20)}...`;
-            } else {
-                // 普通消息
-                previewText = `${name}: ${content.substring(0, 20)}...`;
-            }
-            // 替换图片占位符，避免显示原始标签
-            previewEl.textContent = previewText.replace(/<图片id:[^>]+>/g, '[图片]');
-        }
-    }
-    // --- 新增代码结束 ---
-});
+        renderMessageList(); // 返回时刷新列表以更新预览
+    });
 
     // 设置
     btnSettings.addEventListener('click', () => {
@@ -1118,198 +1063,263 @@ function hideReplyBar() {
     let isGenerating = false;
     const generationId = 'mod21_qq_gen';
 
-        async function handleSend() {
-        // 1. 中止逻辑：如果正在生成，则调用 stopGenerationById
-        if (isGenerating) {
-            // 使用您提供的参考代码中的正确方法
-            if (typeof stopGenerationById === 'function') {
-                stopGenerationById(generationId); // generationId 是我们在下面定义的 'mod21_qq_gen'
-            } else {
-                showToast("中止功能当前不可用。");
-                // 即使中止函数不可用，也尝试手动重置UI
-                isGenerating = false;
-                sendBtn.disabled = false;
-                sendBtn.textContent = '发送';
-                inputField.disabled = false;
-            }
-            // 注意：这里不立即重置UI，而是等待 GENERATION_ENDED 事件来处理，以确保流程统一
-            return;
+ async function handleSend() {
+    // 1. 中止逻辑
+    if (isGenerating) {
+        if (typeof stopGenerationById === 'function') {
+            stopGenerationById(generationId);
+        } else {
+            showToast("中止功能当前不可用。");
+            isGenerating = false;
+            sendBtn.disabled = false;
+            sendBtn.textContent = '发送';
+            inputField.disabled = false;
         }
-        let text = inputField.value.trim();
-        if (!text) return;
+        return;
+    }
 
-        // 渲染自己的消息
-   let messageToSend;
-    if (currentReplyInfo) {
+    const text = inputField.value.trim();
+    if (!text) return;
+
+    // 【核心修正】在函数开头捕获回复状态
+    const replyInfoForThisSend = currentReplyInfo; // 将当前回复状态存入局部变量
+
+    // 2. 渲染自己的消息
+    let messageToSend;
+    if (replyInfoForThisSend) { // 使用局部变量判断
         // 如果是回复状态
-        const quoteText = `${currentReplyInfo.content.substring(0, 5)}...@${currentReplyInfo.name}`;
+        const quoteText = `${replyInfoForThisSend.content.substring(0, 20)}...@${replyInfoForThisSend.name}`;
         messageToSend = [3, "我", text, quoteText];
-        
-        hideReplyBar(); // 发送后隐藏回复栏
+
+        hideReplyBar(); // 发送后隐藏回复栏 (现在在这里调用是安全的)
     } else {
         // 普通消息
         messageToSend = [1, "我", text];
     }
 
     renderMessage(messageToSend);
-        inputField.value = '';
+    inputField.value = '';
 
-        // --- 关键检查点 ---
-        isGenerating = true;
-        sendBtn.textContent = '中断';
-        sendBtn.disabled = false; // <<<<<<< 确保按钮在变为“中断”后没有被禁用！
-        inputField.disabled = true; // 只禁用输入框
-         
+    // 3. 设置UI为生成中状态
+    isGenerating = true;
+    sendBtn.textContent = '中断';
+    sendBtn.disabled = false;
+    inputField.disabled = true;
 
-        try {
-            // --- 新增代码开始 ---
-            // 1. 获取最近的时间戳
-             const d = new Date();
-            const newTimestamp = `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+    try {
+        // 4. 构建 memory 指令
+        const d = new Date();
+        const newTimestamp = `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
 
-        
-            let messageArrayForMemory;
-            if (currentReplyInfo) {
-                 const quoteText = `${currentReplyInfo.content.substring(0, 5)}...@${currentReplyInfo.name}`;
-                 messageArrayForMemory = `[3,"${SillyTavern.name1}","${text.replace(/"/g, '\\"')}","${quoteText.replace(/"/g, '\\"')}"]`;
-            } else {
-                 messageArrayForMemory = `[1,"${SillyTavern.name1}","${text.replace(/"/g, '\\"')}"]`;
-            }
- let memoryKey = '';
+        let messageArrayForMemory;
+        if (replyInfoForThisSend) { // 【核心修正】再次使用局部变量来构建 memory 指令
+            const quoteText = `${replyInfoForThisSend.content.substring(0, 20)}...@${replyInfoForThisSend.name}`;
+            messageArrayForMemory = `[3, "${SillyTavern.name1}", "${text.replace(/"/g, '\\"')}", "${quoteText.replace(/"/g, '\\"')}"]`;
+        } else {
+            messageArrayForMemory = `[1, "${SillyTavern.name1}", "${text.replace(/"/g, '\\"')}"]`;
+        }
+
+        let memoryKey = '';
         if (currentChatType === 'group') {
             memoryKey = `group_history.${currentChatTarget}.${newTimestamp}-user`;
         } else {
             memoryKey = `private_history.${currentChatTarget}.${newTimestamp}-user`;
         }
         const command = `memory('${memoryKey}', [${messageArrayForMemory}]);`;
-            if (typeof processUpdateMemoryCommands === 'function') {
-                await processUpdateMemoryCommands(command);
-            } else {
-                console.warn("processUpdateMemoryCommands function is not available.");
-            }
-             
 
-             
-            // 插入变量
-            await TavernHelper.insertOrAssignVariables({ mod21玩家输入: text }, { type: 'chat' });
-
-            // 组装 Prompt (这里简化，实际应调用 complex prompt)
-            // 注意：这里需要根据你的实际环境调用 Tavern 的生成接口
-            // 假设使用 generateRaw
-
-            // 读取配置
-            const specialBookNames = JSON.parse(localStorage.getItem('mod21_special_worldbooks') || '[]');
-            const promptPrompts = await assembleComplexPrompt({
-                specialBookNames: specialBookNames,
-                targetBookNames: specialBookNames,
-                continuationText: '',
-                ignoreGlobalInjects: true
-            });
-
-            const generateConfig = {
-                generation_id: generationId, should_stream: true, should_silence: true,
-                overrides: {
-                    world_info_before: '', persona_description: '', char_description: '',
-                    char_personality: '', scenario: '', world_info_after: '',
-                    dialogue_examples: '', chat_history: { prompts: [] }
-                },
-                max_chat_history: 0, ordered_prompts: promptPrompts
-            };
-
-            // API 配置 (略，复用之前的逻辑)
-            const selectedApiId = document.getElementById('mod21-api-select').value;
-             if (selectedApiId !== 'default' && selectedApiId !== 'custom_v2') {
-                try {
-                    const pool = JSON.parse(localStorage.getItem('nova_multi_api_pool') || '{}');
-                    const apiData = pool[selectedApiId];
-                    if (apiData) {
-                        generateConfig.custom_api = {
-                            apiurl: apiData.api_url, key: apiData.api_key, model: apiData.model,
-                            source: apiData.source || 'openai', max_tokens: apiData.max_tokens,
-                            temperature: apiData.temperature, top_p: apiData.top_p,
-                            frequency_penalty: apiData.frequency_penalty, presence_penalty: apiData.presence_penalty
-                        };
-                    }
-                } catch (e) { console.error("API Config Error", e); }
-            }
-
-            await generateRaw(generateConfig);
-
-        } catch (e) {
-            console.error(e);
-            isGenerating = false;
-            sendBtn.textContent = '发送';
-            sendBtn.disabled = false;
-            inputField.disabled = false;
-            showToast("发送失败");
+        if (typeof processUpdateMemoryCommands === 'function') {
+            await processUpdateMemoryCommands(command);
+        } else {
+            console.warn("processUpdateMemoryCommands function is not available.");
         }
+
+        // 5. 触发AI生成 (后续代码保持不变)
+        await TavernHelper.insertOrAssignVariables({
+            mod21玩家输入: messageArrayForMemory,
+            mod21当前聊天: currentChatTarget
+        }, { type: 'chat' });
+
+        const specialBookNames = JSON.parse(localStorage.getItem('mod21_special_worldbooks') || '[]');
+        const promptPrompts = await assembleComplexPrompt({
+            specialBookNames: specialBookNames,
+            targetBookNames: specialBookNames,
+            continuationText: '',
+            ignoreGlobalInjects: true
+        });
+
+        const generateConfig = {
+            generation_id: generationId, should_stream: true, should_silence: true,
+            overrides: {
+                world_info_before: '', persona_description: '', char_description: '',
+                char_personality: '', scenario: '', world_info_after: '',
+                dialogue_examples: '', chat_history: { prompts: [] }
+            },
+            max_chat_history: 0, ordered_prompts: promptPrompts
+        };
+
+        const selectedApiId = document.getElementById('mod21-api-select').value;
+        if (selectedApiId !== 'default' && selectedApiId !== 'custom_v2') {
+            try {
+                const pool = JSON.parse(localStorage.getItem('nova_multi_api_pool') || '{}');
+                const apiData = pool[selectedApiId];
+                if (apiData) {
+                    generateConfig.custom_api = {
+                        apiurl: apiData.api_url, key: apiData.api_key, model: apiData.model,
+                        source: apiData.source || 'openai', max_tokens: apiData.max_tokens,
+                        temperature: apiData.temperature, top_p: apiData.top_p,
+                        frequency_penalty: apiData.frequency_penalty, presence_penalty: apiData.presence_penalty
+                    };
+                }
+            } catch (e) { console.error("API Config Error", e); }
+        }
+
+        await generateRaw(generateConfig);
+
+    } catch (e) {
+        console.error(e);
+        isGenerating = false;
+        sendBtn.textContent = '发送';
+        sendBtn.disabled = false;
+        inputField.disabled = false;
+        showToast("发送失败");
     }
+}
 
     sendBtn.addEventListener('click', handleSend);
     inputField.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleSend();
     });
 
-    // 流式监听
-    let buffer = "";
-    let isInsideChat = false;
+ 
+ // 外部或 GENERATION_STARTED 中定义
+let renderedMessageCount = 0;
+let isInsideChatTag = false;
+let isInsideMemoryBlock = false;
+let currentStreamType = null;
+let currentStreamTarget = null;
 
-    eventOn(iframe_events.GENERATION_STARTED, (id) => {
-        if (id === generationId) {
-            buffer = "";
-            isInsideChat = false;
+// 在 GENERATION_STARTED 事件中重置所有状态
+eventOn(iframe_events.GENERATION_STARTED, (id) => {
+    if (id === generationId) {
+        renderedMessageCount = 0;
+        isInsideChatTag = false;
+        isInsideMemoryBlock = false;
+        currentStreamType = null;
+        currentStreamTarget = null;
+    }
+});
+
+/**
+ * 【再修正·混合模式版】流式事件监听器
+ * 结合状态机和计数器，处理不完整的流式数据，同时防止重复渲染。
+ */
+eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, (text, id) => {
+    if (id !== generationId || !text) return;
+
+    let buffer = text; // 将当前完整文本加载到临时缓冲区进行解析
+
+    // --- 状态机驱动的解析 ---
+
+    // 1. 寻找 <chat> 的起点
+    if (!isInsideChatTag) {
+        const chatStartIndex = buffer.indexOf('<chat>');
+        if (chatStartIndex !== -1) {
+            isInsideChatTag = true;
+            buffer = buffer.substring(chatStartIndex + 6); // 进入 <chat> 内部
         }
-    });
+    }
 
-    eventOn(iframe_events.STREAM_TOKEN_RECEIVED_INCREMENTALLY, (text, id) => {
-        if (id === generationId) {
-            buffer += text;
+    if (!isInsideChatTag) return; // 如果还没进入 <chat>，则等待
 
-            // 检测 <chat> 开始
-            if (!isInsideChat && buffer.includes('<chat>')) {
-                isInsideChat = true;
-                buffer = buffer.split('<chat>')[1]; // 丢弃前面的思考过程
-            }
-
-            if (isInsideChat) {
-                // 尝试解析 buffer 中的数组
-                // 格式通常是 memory('...',[ [1...], [1...] ]);
-                // 我们需要提取 [] 里面的内容
-                // 这是一个简化的流式解析器，寻找完整的 [x,x,x] 模式
-
-                 const regex = /\[\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*"((?:[^"\\]|\\.)*)")?\s*\]/g;
-                let match;
-
-                while ((match = regex.exec(buffer)) !== null) {
-                    const type = parseInt(match[1]);
-                    const field1 = match[2].replace(/\\"/g, '"');
-                    const field2 = match[3].replace(/\\"/g, '"');
-                    const field3 = match[4] ? match[4].replace(/\\"/g, '"') : null;
-
-                    let msgArray;
-                    if (type === 2) {
-                        // 系统消息: [2, "通知人", "通告内容"]
-                        msgArray = [type, field1, field2];
-                    } else {
-                        // 其他消息: [type, "名字", "内容", "引用"]
-                        msgArray = [type, field1, field2, field3];
-                    }
-
-                    renderMessage(msgArray);
-
-                    // 截断 buffer，保留未匹配的部分
-                    buffer = buffer.substring(match.index + match[0].length);
-                    regex.lastIndex = 0; // 重置正则索引
-                }
-            }
-
-            // 检测 </chat>
-            if (buffer.includes('</chat>')) {
-                isInsideChat = false;
-                // 结束
-            }
+    // 2. 在 <chat> 内部，寻找 memory 指令的起点
+    if (!isInsideMemoryBlock) {
+        // 这个正则只匹配头部，不关心结尾
+        const headerRegex = /memory\('(group|private)_history\.([^.]+)\.[^']+',\s*\[/;
+        const headerMatch = buffer.match(headerRegex);
+        if (headerMatch) {
+            isInsideMemoryBlock = true;
+            currentStreamType = headerMatch[1];
+            currentStreamTarget = headerMatch[2];
+            // 截取掉指令头，只留下消息数组部分
+            buffer = buffer.substring(headerMatch.index + headerMatch[0].length);
         }
-    });
+    }
+
+    if (!isInsideMemoryBlock) return; // 如果还没进入 memory 消息块，则等待
+
+    // 3. 在 memory 块内部，解析所有已形成的消息
+    // 这个正则可以匹配单个的 [...] 数组
+    const messageRegex = /\[\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*"((?:[^"\\]|\\.)*)")?\s*\]/g;
+
+    const allFoundMessages = [];
+    let match;
+    // 从 buffer 中尽可能多地解析出完整的消息数组
+    while ((match = messageRegex.exec(buffer)) !== null) {
+        const type = parseInt(match[1]);
+        const field1 = match[2].replace(/\\"/g, '"');
+        const field2 = match[3] ? match[3].replace(/\\"/g, '"') : "";
+        const field3 = match[4] ? match[4].replace(/\\"/g, '"') : null;
+        const msgArray = (type === 2) ? [type, field1, field2] : [type, field1, field2, field3];
+        allFoundMessages.push(msgArray);
+    }
+
+    // 4. 使用计数器去重，只渲染新发现的消息
+    if (allFoundMessages.length > renderedMessageCount) {
+        const newMessages = allFoundMessages.slice(renderedMessageCount);
+
+        newMessages.forEach(msgArray => {
+            if (currentStreamTarget === currentChatTarget && currentStreamType === currentChatType) {
+                renderMessage(msgArray);
+            } else if (currentStreamTarget) {
+                unreadCounts[currentStreamTarget] = (unreadCounts[currentStreamTarget] || 0) + 1;
+                updateUnreadUI();
+            }
+        });
+
+        // 更新已渲染消息的计数
+        renderedMessageCount = allFoundMessages.length;
+    }
+
+    // 5. 检查流是否结束，以便重置状态（可选，但有助于健壮性）
+    if (buffer.includes('</chat>')) {
+        isInsideChatTag = false;
+        isInsideMemoryBlock = false;
+    }
+});
+
+
+ 
+
+
+ 
+
+
+ 
+
+    function updateUnreadUI() {
+        let totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
+
+        // 更新返回按钮上的红点
+        let backBadgeEl = document.querySelector('.mod21-back-badge');
+        if (!backBadgeEl) {
+            backBadgeEl = document.createElement('div');
+            backBadgeEl.className = 'mod21-back-badge';
+            btnBack.style.position = 'relative';
+            btnBack.appendChild(backBadgeEl);
+        }
+        backBadgeEl.classList.toggle('show', chatPage.classList.contains('mod21-page-active') && totalUnread > 0);
+
+        // 更新底部 Tab 上的红点
+        const tabBadge = document.getElementById('mod21-tab-msg-badge');
+        if (tabBadge) {
+            tabBadge.classList.toggle('show', totalUnread > 0);
+        }
+
+        // 如果当前在消息列表页，刷新列表以显示红点
+        if (listPage.classList.contains('mod21-page-active') && document.getElementById('mod21-msg-list-container').style.display !== 'none') {
+            renderMessageList();
+        }
+    }
  let lastRawResponse = "还没有收到任何AI的响应。";
 
     // 为新按钮添加事件监听
