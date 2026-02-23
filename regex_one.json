@@ -12617,7 +12617,7 @@ pointer-events: auto;
       background: rgba(0, 0, 0, 0.35);
 backdrop-filter: blur(8px);
 -webkit-backdrop-filter: blur(8px);
-        z-index: 20000;
+        z-index: 9999;
         display: flex; /* 新增：使用 flex 轻松实现居中 */
         align-items: center; /* 新增：垂直居中 */
         justify-content: center; /* 新增：水平居中 */
