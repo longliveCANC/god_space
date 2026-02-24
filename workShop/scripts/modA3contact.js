@@ -34,11 +34,11 @@
     };
 window.MultiplayerState = {
         isClient: function() {
-            // 当角色是 'client' 并且处于连接状态时，返回 true
+            
             return State.currentRole !== 'host' ;
         },
          isConnected: function() {
-            // 当角色是 'client' 并且处于连接状态时，返回 true
+            
             return State.isConnected;
         },
         getMyInfo: function() {
@@ -1478,47 +1478,43 @@ await insertOrAssignVariables(importedData, { type: 'chat' });
                 showNovaAlert(`收到 ${playerName} 的数据`);
             }
         },
-
- setupInputInterface: function() {
+  setupInputInterface: function() {
             const sendBtn = document.getElementById('send-button');
             const userInput = document.getElementById('user-input');
             if (!sendBtn || !userInput) return;
 
+            // 使用属性来防止重复注入
             if (document.body.getAttribute('data-mp-interface-setup') === 'true') {
                 return;
             }
             document.body.setAttribute('data-mp-interface-setup', 'true');
 
-            const originalBtnClone = sendBtn.cloneNode(true);
-            originalBtnClone.id = 'send-button-original-clone';
-
-            // [核心修复] 将发送逻辑定义为一个绑定了正确'this'的函数
+            // 1. 定义联机发送的核心逻辑
             const performMultiplayerSend = function() {
                 const userInputElem = document.getElementById('user-input');
                 let userText = userInputElem ? userInputElem.value.trim() : "";
                 if (!userText) return;
 
-                // 'this' 在这里由 .bind(this) 保证是 Multiplayer 对象
+                // 根据“行”或“话”模式，决定发送的消息类型
                 if (State.isChatMode) {
                     this.sendAction('client_chat', { content: userText });
                 } else {
+                    // 客户端的“行动”模式，总是发送 client_msg
                     if (State.currentRole === 'client') {
-                        const commandArea = document.getElementById('command-edit-area');
-                        let combinedText = userText;
-                        if (commandArea && commandArea.value.trim()) {
-                            combinedText = commandArea.value.trim() + '\n' + userText;
-                        }
-                        this.sendAction('client_msg', { content: combinedText });
+                        this.sendAction('client_msg', { content: userText });
                         showNovaAlert("指令已上传至主机");
                     }
+                    // 房主的“行动”模式，通过新按钮触发，同样是 client_msg
+                    else if (State.currentRole === 'host') {
+                        this.sendAction('client_msg', { content: userText });
+                        showNovaAlert("行动指令已作为玩家消息发送");
+                    }
                 }
+                // 发送后清空输入框
                 if (userInputElem) userInputElem.value = '';
-            }.bind(this); // <--- 在函数定义时就绑定'this'
+            }.bind(this); // 绑定 'this' 到 Multiplayer 对象
 
-            const multiplayerBtn = sendBtn.cloneNode(true);
-            multiplayerBtn.id = 'send-button-multiplayer';
-            multiplayerBtn.addEventListener('click', performMultiplayerSend); // 直接使用已绑定的函数
-
+            // 2. 创建模式切换按钮 (行/话)
             const switchBtn = document.createElement('div');
             switchBtn.id = 'mp-mode-switch';
             switchBtn.innerText = '行';
@@ -1528,44 +1524,56 @@ await insertOrAssignVariables(importedData, { type: 'chat' });
             switchBtn.onclick = () => {
                 State.isChatMode = !State.isChatMode;
                 switchBtn.innerText = State.isChatMode ? '话' : '行';
-                switchBtn.className = State.isChatMode ? 'chat-mode' : '';
+                switchBtn.classList.toggle('chat-mode', State.isChatMode);
                 userInput.placeholder = State.isChatMode ? '输入对话内容...' : '在这里输入你的行动...';
-
-                const currentSendBtn = document.getElementById('send-button');
-                if (State.currentRole === 'host' && !State.isChatMode) {
-                    if (currentSendBtn) {
-                        const freshOriginalClone = originalBtnClone.cloneNode(true);
-                        freshOriginalClone.id = 'send-button';
-                        currentSendBtn.parentNode.replaceChild(freshOriginalClone, currentSendBtn);
-                    }
-                } else {
-                    if (currentSendBtn) {
-                        const freshMpClone = multiplayerBtn.cloneNode(true);
-                        freshMpClone.id = 'send-button';
-                        // [核心修复] 重新克隆的按钮也需要绑定正确的事件
-                        freshMpClone.addEventListener('click', performMultiplayerSend);
-                        currentSendBtn.parentNode.replaceChild(freshMpClone, currentSendBtn);
-                    }
-                }
             };
 
+            // 3. 【核心修改】根据角色决定界面布局
+            if (State.currentRole === 'host') {
+                // **房主逻辑：增加一个专用的“联机发送”按钮**
+                const multiplayerSendBtn = document.createElement('button');
+                multiplayerSendBtn.id = 'send-button-multiplayer';
+                multiplayerSendBtn.textContent = '➤'; // 使用一个简洁的图标
+                multiplayerSendBtn.className = 'control-btn-special'; // 使用游戏内样式
+                multiplayerSendBtn.title = '以玩家身份发送行动或对话';
+                multiplayerSendBtn.style.marginRight = '5px'; // 与原发送按钮隔开
+
+                // 将新按钮插入到原生发送按钮的左边
+                sendBtn.parentNode.insertBefore(multiplayerSendBtn, sendBtn);
+
+                // 为新按钮绑定联机发送逻辑
+                multiplayerSendBtn.addEventListener('click', performMultiplayerSend);
+
+                // **重要：** 不再修改或替换原生的 sendBtn，它将永远保留其“发送给AI”的原始功能。
+
+            } else {
+                // **客户端逻辑：替换原生发送按钮**
+                // (这个逻辑保持不变，因为客户端没有“发送给AI”的功能)
+                const multiplayerBtn = sendBtn.cloneNode(true);
+                multiplayerBtn.id = 'send-button'; // 替换掉原按钮
+                multiplayerBtn.addEventListener('click', performMultiplayerSend);
+                sendBtn.parentNode.replaceChild(multiplayerBtn, sendBtn);
+            }
+
+            // 4. 统一处理回车键事件
             userInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                     event.stopImmediatePropagation();
                     event.preventDefault();
-                    document.getElementById('send-button').click();
-                }
-            }, true);
 
-            if (State.currentRole === 'client') {
-                 const currentSendBtn = document.getElementById('send-button');
-                 const freshMpClone = multiplayerBtn.cloneNode(true);
-                 freshMpClone.id = 'send-button';
-                 freshMpClone.addEventListener('click', performMultiplayerSend);
-                 currentSendBtn.parentNode.replaceChild(freshMpClone, currentSendBtn);
-            }
+                    // 房主的回车键总是触发原生发送（提交给AI）
+                    if (State.currentRole === 'host') {
+                        document.getElementById('send-button').click();
+                    }
+                    // 客户端的回车键触发联机发送
+                    else {
+                        // 客户端的发送按钮已经被替换，所以ID仍然是 'send-button'
+                        document.getElementById('send-button').click();
+                    }
+                }
+            }, true); // 使用捕获阶段以确保最高优先级
+
         },
- 
 
 
         // Hook 房主流
@@ -1730,3 +1738,4 @@ await insertOrAssignVariables(importedData, { type: 'chat' });
 
   
 })();
+ 
