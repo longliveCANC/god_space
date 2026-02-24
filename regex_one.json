@@ -15563,7 +15563,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.13';
+window.current_game_version = '3.8.14';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -37613,11 +37613,11 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
             // 而是通过事件触发更新。此处的 await 只是等待调用完成。
             await generateRaw(generateConfig);
 
-            // 在流式模式下，通常没有直接的返回值，所以我们返回一个空字符串或提示信息
+           
             return ''; // 或者可以返回一个提示，表明流式输出已开始
         }
 
-        // 3. 沿用旧逻辑：处理非流式 (is_stream_yibu !== "true") 的情况
+         
         const isSecondApiEnabled = localStorage.getItem('enable_custom_api_v2') === 'true';
         const shouldUseDefault = !apiSettings || !isSecondApiEnabled;
 
@@ -38046,7 +38046,7 @@ if(ifScanMemory === "true"){
            if (!isReroll && !isContinuation) {
               conversationHistory.push(userMessage);
                if (typeof window.MultiplayerState?.isClient === 'function' && !window.MultiplayerState.isClient() && window.MultiplayerState.isConnected()) {
-                    //console.log('[Multiplayer] 同步主机用户输入到客户端...');
+                    console.log('[Multiplayer] 同步主机用户输入到客户端...');
                     // 通过 window.Multiplayer 调用 sendAction
                     window.Multiplayer.sendAction('client_input_sync', { content: userMessage.content });
                 }
@@ -53008,8 +53008,42 @@ return statusHtml + locationHtml + equipmentHtml + otherSkillHtml;
  
 
       // --- 开始替换 ---
-function executeChoice(fullCommand, cardElement, successText, keepUiActive = false) {
+ function executeChoice(fullCommand, cardElement, successText, keepUiActive = false) {
     try {
+        // --- 联机逻辑注入点 (增强版) ---
+        // 检查 Multiplayer 脚本是否加载，以及当前是否是房主
+        if (typeof window.MultiplayerState !== 'undefined' && !window.MultiplayerState.isClient()) {
+            const myInfo = window.MultiplayerState.getMyInfo();
+            const hostName = myInfo.name || '房主';
+            let contentToSend = '';
+            let commandModified = false;
+
+            // 统一处理两种需要转换的指令
+            if (fullCommand.startsWith('/send ')) {
+                console.log('[executeChoice - Injected Logic] 拦截到房主的 /send 指令。');
+                // 提取 /send 后面的内容
+                contentToSend = fullCommand.substring(6);
+                commandModified = true;
+
+            } else if (fullCommand.startsWith('/setinput ')) {
+                console.log('[executeChoice - Injected Logic] 拦截到房主的 /setinput 指令。');
+                // 提取 /setinput 后面的内容
+                contentToSend = fullCommand.substring(10);
+                commandModified = true;
+            }
+
+            // 如果指令被修改，则重新构建它
+            if (commandModified) {
+                // 重新构造成统一的 /setinput "名字": 内容 格式
+                const newCommandText = `/setinput "${hostName}": ${contentToSend}`;
+                console.log(`[executeChoice - Injected Logic] 指令已转换为: "${newCommandText}"`);
+
+                // 将修改后的指令赋值回 fullCommand，以便后续逻辑使用
+                fullCommand = newCommandText;
+            }
+        }
+        // --- 联机逻辑结束 ---
+
         if (typeof triggerassa !== 'undefined') {
             triggerassa(fullCommand);
         } else {

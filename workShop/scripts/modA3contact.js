@@ -461,26 +461,52 @@ window.MultiplayerState = {
 
  
         // [修改] 劫持 triggerassa 以实现追加逻辑
-        hijackTriggerAssa: function() {
+    hijackTriggerAssa: function() {
+            // 确保只劫持一次
             if (typeof window.triggerassa === 'function' && !window.originalTriggerAssa) {
                 window.originalTriggerAssa = window.triggerassa;
 
                 window.triggerassa = (text) => {
+                    // 【新逻辑】首先检查是否是房主，以及是否是 /send 指令
+                    if (State.currentRole === 'host' && text.startsWith('/send ')) {
+                        // 1. 提取 /send 后面的内容
+                        const contentToSend = text.substring(6); // 从第6个字符开始，即"/send "之后
+
+                        // 2. 获取房主自己的名字
+                        const hostName = State.myInfo.name || '房主';
+
+                        // 3. 构造成新的指令文本，格式为 /setinput "玩家名": 内容
+                        const newCommandText = `/setinput "${hostName}": ${contentToSend}`;
+
+                        // 4. 调用原始的 triggerassa 函数执行新指令
+                        // 这会将内容追加到主输入框
+                        window.originalTriggerAssa(newCommandText);
+
+                        // 可以在这里加一个提示，方便调试
+                        showNovaAlert(`指令已转换为玩家行动`);
+
+                        // 处理完毕，直接返回，不执行后续逻辑
+                        return;
+                    }
+
+                    // 【旧逻辑】处理玩家消息追加到令小盒的逻辑
                     // 条件：我是房主，并且令小盒是打开的
                     if (State.currentRole === 'host' && State.isCommandModalActive) {
                         const commandArea = document.getElementById('command-edit-area');
-                        if (commandArea) {
+                        if (commandArea && text.startsWith('/setinput ')) {
                             const currentVal = commandArea.value;
                             const newContent = text.replace(/^\/setinput\s+/, '');
 
                             commandArea.value = currentVal + (currentVal ? '\n' : '') + newContent;
-                            commandArea.dispatchEvent(new Event('input')); // 触发更新
+                            // 触发 input 事件，以便其他可能存在的监听器能够响应
+                            commandArea.dispatchEvent(new Event('input'));
                             showNovaAlert('收到新数据，已追加到令小盒');
                         } else {
-                            window.originalTriggerAssa(text); // 降级处理
+                            // 如果令小盒未打开，或者指令不是 /setinput，则执行原始逻辑
+                            window.originalTriggerAssa(text);
                         }
                     } else {
-                        // 否则执行原有逻辑
+                        // 如果不是房主，或者不满足任何特殊条件，执行原始逻辑
                         window.originalTriggerAssa(text);
                     }
                 };
