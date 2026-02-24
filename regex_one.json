@@ -13088,6 +13088,7 @@ backdrop-filter: blur(8px);
         </div>
         <input type="radio" id="mode-chat" name="world-mode" value="41">
     </div>
+    
     <div class="choice-world-card" data-value="54">
         <label for="mode-wasteland">dlc:末日</label>
         <div class="world-description">
@@ -13096,7 +13097,7 @@ backdrop-filter: blur(8px);
         <input type="radio" id="mode-wasteland" name="world-mode" value="54">
         <div class="bookmark-button" title="进入无世界观模式-请跳过第二页，并使用手动发送，然后自己检查并编辑【令】小盒里的内容，填写你的自定义开局/指令" data-tooltip="进入无世界观模式-请跳过第二页，并使用手动发送，然后自己检查并编辑【令】小盒里的内容，填写你的自定义开局/指令"></div>
     </div>
-
+ 
 </div>
 
 
@@ -15562,21 +15563,29 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.12';
+window.current_game_version = '3.8.13';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
 let storyChapters = [];
 let currentChapterIndex = 0;
 let isReadingModeOpen = false;
- 
+
 
 let currencyAliases = {
     "积分": ["乐园币", "主神点", "源点","游戏币","货币","奖励点数"],
     "支线剧情": ["灵魂结晶", "因果点","攻略点","时空碎片","能量结晶","灵魂碎片"],
     "经验值": ["属性点", "历练点"]
 };
-
+let worldCardData = {
+    'mode-godspace':      'https://longlivecanc.github.io/god_space/backImages/主神.png',
+    'mode-reincarnation': 'https://longlivecanc.github.io/god_space/backImages/轮回乐园.png',
+    'mode-infinite':      'https://longlivecanc.github.io/god_space/backImages/无限恐怖.png',
+    'mode-love':          'https://longlivecanc.github.io/god_space/backImages/快穿攻略.png',
+    'mode-chat':          'https://longlivecanc.github.io/god_space/backImages/诸天群聊.png',
+    'mode-wasteland':     'https://longlivecanc.github.io/god_space/backImages/末日.png',
+    // 你可以继续为 'mode-2' 等其他 id 添加图片 URL
+     };
  let PATH_ALIASES = {
     '货币': ['currency', 'Currency', 'CURRENCY'],
     // 未来可以在这里添加更多别名配置
@@ -21705,7 +21714,7 @@ if (teammateCountLabel) teammateCountLabel.textContent = '人数';
         identitySelectElement.dispatchEvent(new Event('change')); // 最后这里也用新工具
 
     } catch (e) {
-        console.error("妈妈在施展“词语替换”魔法时出错了，不过别担心:", e);
+        console.error("在施展“词语替换”时出错了，不过别担心，我们继续。", e);
     }
 }
 
@@ -21827,23 +21836,23 @@ async clear(storeName) {
 };
 window.imageDB = imageDB;
  imageDB.init();
+ // 1. 更新数据结构，使用 input 的 id 作为 key
 
-const worldCardData = {
-    '1':  'https://longlivecanc.github.io/god_space/backImages/主神.png',
-    '22': 'https://longlivecanc.github.io/god_space/backImages/轮回乐园.png',
-    '5':  'https://longlivecanc.github.io/god_space/backImages/无限恐怖.png',
-    '34': 'https://longlivecanc.github.io/god_space/backImages/快穿攻略.png',
-    '41': 'https://longlivecanc.github.io/god_space/backImages/诸天群聊.png',
-    '54':'https://longlivecanc.github.io/god_space/backImages/末日.png',
-};
+
 async function applyImagesWithCache() {
     const cards = document.querySelectorAll('.choice-world-card');
     for (const card of cards) {
-        const cardValue = card.dataset.value;
-        const imageUrl = worldCardData[cardValue];
+        // 2. 在卡片内部查找 input 元素
+        const inputElement = card.querySelector('input[type="radio"]');
 
-        if (!imageUrl) continue;
+        if (!inputElement) continue; // 如果没找到 input，则跳过
 
+        // 3. 使用 input 的 id 来获取图片 URL
+        const cardId = inputElement.id;
+        const imageUrl = worldCardData[cardId];
+
+        if (!imageUrl) continue; // 如果该 id 没有对应的图片 URL，则跳过
+ 
         try {
             let cachedImage = await imageDB.get('RemoteCache', imageUrl);
             let objectURL;
@@ -24103,7 +24112,7 @@ const customActionButton = document.getElementById('custom-action-button');
 const customActionInputContainer = document.getElementById('custom-action-input-container');
 const customActionInput = document.getElementById('custom-action-input');
  customActionButton.addEventListener('click', async () => {
-    playSound(clickSound, 0.7);
+    //playSound(clickSound, 0.7);
     if (customActionInputContainer.style.display === 'none') {
         customActionInputContainer.style.display = 'block';
         customActionButton.textContent = '[ <发送自定义指令> ]';
@@ -24232,7 +24241,7 @@ const saveTeammatesBtn = document.getElementById('save-teammates-btn');
     }
 
     backButton.addEventListener('click', () => {
-        playSound(clickSound, 0.8);
+        //playSound(clickSound, 0.8);
         if (page2.classList.contains('active')) {
             page2.classList.remove('active');
             page1.classList.add('active');
@@ -24253,12 +24262,7 @@ const saveTeammatesBtn = document.getElementById('save-teammates-btn');
         try { sound.currentTime = 0; sound.volume = volume; sound.play(); } catch (e) { console.warn("无法播放音效:", e); }
     }
 
-      // --- 页面切换逻辑 ---
-
- /**
- * 💖 妈妈为你修正好的、更完美的“记忆刻印”魔法 💖
- * 它现在能更聪明地处理所有选择，保证记忆的纯净。
- */
+  
 async function handleModeSelection() {
     startSetupButton.disabled = true;
 
@@ -24540,7 +24544,7 @@ try {
 } 
 
 startSetupButton.addEventListener('click', () => {
-        playSound(clickSound, 0.8);
+        //playSound(clickSound, 0.8);
         handleModeSelection();
     });
 
@@ -24556,7 +24560,7 @@ startSetupButton.addEventListener('click', () => {
     }
 
 nextPageButton.addEventListener('click', () => {
-    playSound(clickSound, 0.8);
+  
 
     // 保存第一页数据
     firstPageData.taskTone = getSelectionValue('task-tone-select', 'custom-task-tone');
@@ -24672,7 +24676,7 @@ nextPageButton.addEventListener('click', () => {
             if (selectedOption) {
                 identityDescription.textContent = selectedOption.dataset.description || '';
             }
-            playSound(clickSound, 0.5);
+            //playSound(clickSound, 0.5);
 
             const fixedTeamCheckbox = document.getElementById('is-fixed-team');
             if (selectedOption && selectedOption.textContent.includes('新手')) {
@@ -24830,7 +24834,7 @@ nextPageButton.addEventListener('click', () => {
 
                 label.addEventListener('click', (event) => {
                     event.stopPropagation();
-                    playSound(clickSound, 0.6);
+                    //playSound(clickSound, 0.6);
 
                     if (label.classList.contains('active')) {
                        return;
@@ -24949,7 +24953,7 @@ nextPageButton.addEventListener('click', () => {
     };
  // --- 妈妈为你编写的全新魔法：从世界书读取队友模板 ---
 async function loadTeammatesFromLorebook() {
-    playSound(clickSound, 0.7);
+    //playSound(clickSound, 0.7);
     ////console.log(`💖 妈妈正在为你从世界书(uid=${LOREBOOK_UID})中读取队友信息...`);
     try {
         const allEntries = await getLorebookEntries(LOREBOOK_NAME);
@@ -24996,7 +25000,7 @@ async function loadTeammatesFromLorebook() {
 
  // --- 妈妈为你编写的全新魔法：将当前队友信息保存到世界书 ---
 async function saveTeammatesToLorebook() {
-    playSound(clickSound, 0.8);
+    //playSound(clickSound, 0.8);
     const teammateItems = teammatesList.querySelectorAll('.teammate-item');
     if (teammateItems.length === 0) {
        showNovaAlert('我的孩子，还没有可以保存的队友信息哦。');
@@ -25071,7 +25075,7 @@ async function saveTeammatesToLorebook() {
 
     // 函数：平均分配点数
     function distributePointsAverage() {
-        playSound(clickSound, 0.7);
+        //playSound(clickSound, 0.7);
         resetPoints(); // 首先，妈妈帮你把所有点数都拿回来放好
 
         const allocatableItems = document.querySelectorAll('.分配项');
@@ -25649,7 +25653,7 @@ async function saveCurrentBuildAsTemplate() {
        showNovaAlert('请给这个模板起名。');
         return;
     }
-    playSound(clickSound, 0.8);
+    //playSound(clickSound, 0.8);
 
     ////console.log(`📦 正在为你的加点方案“${templateName}”制作一个珍贵的备份...`);
 
@@ -25782,7 +25786,20 @@ function safeValue(element, defaultValue = '') {
 }
  async function generateFullCommand(isMission, customText = null) {
 
-     
+     function getSafeValue(id, defaultValue = '') {
+        const element = document.getElementById(id);
+        return element ? element.value : defaultValue;
+    }
+
+    // 安全地获取被选中的选项，如果元素不存在则返回一个空对象
+    function getSafeSelectedOption(id) {
+        const select = document.getElementById(id);
+        if (select && select.selectedIndex !== -1) {
+            return select.options[select.selectedIndex];
+        }
+        // 返回一个模拟的、安全的空选项对象，防止后续代码读取 .text 或 .value 时报错
+        return { text: '', value: '无' };
+    }
     // 检查全局是否存在联机状态接口，并且当前是否为客户端模式
     if (typeof window.MultiplayerState?.isClient === 'function' && window.MultiplayerState.isClient() && window.MultiplayerState.isConnected()) {
   
@@ -25940,8 +25957,9 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
     }
         }  else {
             // --- 其他所有世界的通用篇章 ---
-             const camp = document.getElementById('paradise-camp').value;
-             const paradiseIdentity = document.getElementById('paradise-identity').value;
+            const camp = getSafeValue('paradise-camp', '轮回乐园');
+        const paradiseIdentity = getSafeValue('paradise-identity', '新人');
+
             // 妈妈帮你定义的指令模板，解耦又清晰
             const commandTemplates = {
                 mission: {
@@ -25957,10 +25975,11 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
                 }
             };
 
-            const getRandomOption = (value, optionsArray) => {
-                if (!optionsArray || optionsArray.length === 0) return value;
-                return value === '随机' ? optionsArray[Math.floor(Math.random() * optionsArray.length)] : value;
-            };
+           const getRandomOption = (value, optionsArray) => {
+            if (!value) value = '随机'; // 如果没有值，默认为随机
+            if (!optionsArray || optionsArray.length === 0) return value;
+            return value === '随机' ? optionsArray[Math.floor(Math.random() * optionsArray.length)] : value;
+        };
 
             let finalType = getRandomOption(firstPageData.worldType, worldTypes);
             if (finalType === '自定义但未填写') finalType = '一个未知的';
@@ -26052,11 +26071,8 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
 
         // --- 共通的属性和天赋附加指令 ---
         let updates = [];
-        const virtueSelect = document.getElementById('virtue-select');
-        updates.push(`set_attribute('概念段.美德与恶德.美德', "正义", "${virtueSelect.value}");`);
-        const viceSelect = document.getElementById('vice-select');
-        updates.push(`set_attribute('概念段.美德与恶德.恶德', "愤怒", "${viceSelect.value}");`);
-
+   updates.push(`set_attribute('概念段.美德与恶德.美德', "正义", "${getSafeValue('virtue-select', '正义')}");`);
+    updates.push(`set_attribute('概念段.美德与恶德.恶德', "愤怒", "${getSafeValue('vice-select', '愤怒')}");`);
 
   if (typeof window.MultiplayerState?.isClient === 'function' && !window.MultiplayerState.isClient() && window.MultiplayerState.isConnected()) {
          document.querySelectorAll('.分配项').forEach(item => {
@@ -26105,9 +26121,9 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
             finalCommand += `${updates.join('\n')}\n`;
         }
 
-             // --- 天赋指令 ---
+        // --- 天赋指令 ---
         const talentSelect = document.getElementById('talent-select');
-        let selectedOption = talentSelect.options[talentSelect.selectedIndex];
+        let selectedOption = getSafeSelectedOption('talent-select');
         let selectedTalentTitle = selectedOption.text.trim();
         let selectedTalentValue = selectedOption.value;
 
@@ -26126,7 +26142,7 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
                 selectedTalentValue = '无';
             }
         } else if (selectedTalentValue === '自定义') {
-            selectedTalentValue = document.getElementById('custom-talent-input').value.trim() || '一个神秘的、尚未被命名的天赋';
+            selectedTalentValue = getSafeValue('custom-talent-input', '一个神秘的、尚未被命名的天赋');
             selectedTalentTitle = '天赋';
         }
 
@@ -26147,7 +26163,7 @@ ${indexData[selectedTimeline] || indexData["末日中途"]}
         return finalCommand;
     }
  
-/* 💖 妈妈为你设计的、简洁而强大的指令官（脱离酒馆环境版） 💖 */
+ 
 async function sendCommand(command, button, successText, showWarning) {
      
     button.textContent = `[ 指令发送中... ]`;
@@ -26253,7 +26269,7 @@ const allBoundWorldbooks = [
 
 
 initButton.addEventListener('click', async () => {
-    playSound(clickSound, 0.8);
+    //playSound(clickSound, 0.8);
     initButton.textContent = '[ 指令生成中.. ]';
     // 明确传递 null 作为 customText
     const finalCommand = await generateFullCommand(true, null);
@@ -26261,7 +26277,7 @@ initButton.addEventListener('click', async () => {
 });
 
 godSpaceButton.addEventListener('click', async () => {
-    playSound(clickSound, 0.8);
+    //playSound(clickSound, 0.8);
     godSpaceButton.textContent = '[ 指令生成中.. ]';
     // 明确传递 null 作为 customText
     const finalCommand = await generateFullCommand(false, null);
@@ -37568,29 +37584,26 @@ const sendCustomGenerationRequest = async (promptText, options = {}) => {
                 ordered_prompts: messages    // 使用格式化后的消息
             };
 
-            // 从 localStorage 的 API 池中读取并应用自定义 API 配置
-            // 假设 'mod21-api-select' 是你的 API 选择器 ID
-            const selectedApiId = document.getElementById('mod21-api-select')?.value;
-
+           
+       
             // 只有当选择的不是默认或V2时，才尝试从池中加载
-            if (selectedApiId && selectedApiId !== 'default' && selectedApiId !== 'custom_v2') {
-                try {
-                    const pool = JSON.parse(localStorage.getItem('nova_multi_api_pool') || '{}');
-                    const apiData = pool[selectedApiId];
-                    if (apiData) {
-                        console.log(`[Nova] 流式请求将使用API池中的配置: ${apiData.name || selectedApiId}`);
+       if (apiSettings) {
+    try {
+        
+ 
+                        console.log(`[Nova] 流式请求将使用配置: ${apiSettings.name}`);
                         generateConfig.custom_api = {
-                            apiurl: apiData.api_url,
-                            key: apiData.api_key,
-                            model: apiData.model,
-                            source: apiData.source || 'openai',
-                            max_tokens: apiData.max_tokens,
-                            temperature: apiData.temperature,
-                            top_p: apiData.top_p,
-                            frequency_penalty: apiData.frequency_penalty,
-                            presence_penalty: apiData.presence_penalty
+                            apiurl: apiSettings.api_url,
+                            key: apiSettings.api_key,
+                            model: apiSettings.model,
+                            source: apiSettings.source || 'openai',
+                            max_tokens: apiSettings.max_tokens,
+                            temperature: apiSettings.temperature,
+                            top_p: apiSettings.top_p,
+                            frequency_penalty: apiSettings.frequency_penalty,
+                            presence_penalty: apiSettings.presence_penalty
                         };
-                    }
+              
                 } catch (e) {
                     console.error("[Nova] 解析API池配置时出错:", e);
                 }
@@ -61608,7 +61621,7 @@ text:'2、点击右上角的重载。当然你先别点重载，点了引导程�
             selector: '#workshop-mod-list',
   delay: 500,
 title: '如何挂载一个世界书',
-text:'那么如何挂载世界书呢？就是直接点击下载世界书，导入酒馆，然后外挂在全局或者角色都生效了。', 
+text:'那么如何挂载世界书呢？就是直接点击下载世界书，导入酒馆，然后外挂在全局或者角色就生效了。当然，你也可以点击一键导入', 
     onStart: () => {
         const targetElement = document.querySelector('#workshop-mod-list');
         if (targetElement) {
