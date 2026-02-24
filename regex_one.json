@@ -15761,10 +15761,10 @@ game = new Game();
 </think>
 <build>
 回顾指令格式：
-add_update: memory('path.key', 'new_value');//new_value can be string/num/json object
-rename: memory('path.old_key', 'path.new_key');
-move: memory('old_path.key', 'new_path.key');
-delete: delete('path', 'key');
+memory('path.key', 'new_value');//新增或删除。new_value can be string/num/json object
+memory('path.old_key', 'path.new_key');//重命名
+memory('old_path.key', 'new_path.key');//移动
+delete('path', 'key');//删除
 回顾完毕。
 </build>
                 `,
