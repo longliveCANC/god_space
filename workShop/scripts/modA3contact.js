@@ -980,7 +980,7 @@ async connect(role, roomId = null, isReconnect = false, extraOptions = {}) {
         try {
             const descElem = document.getElementById('persona_description');
             if (descElem) playerDesc = descElem.value;
-            else playerDesc = await EjsTemplate.evalTemplate('');
+            else playerDesc = await EjsTemplate.evalTemplate('<%= persona_description.value %>');
         } catch (e) { console.warn("简介获取失败", e); }
 
         State.myInfo = { name: playerName, desc: playerDesc };
