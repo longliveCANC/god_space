@@ -8,7 +8,7 @@
     const RECONNECT_INTERVAL = 1000; // 重连间隔缩短为 1 秒
     // 状态管理
     const State = {
-        
+          publicRooms: [],
         socket: null,
         isConnected: false,
         currentRole: null, // 'host' | 'client'
@@ -583,14 +583,23 @@ window.MultiplayerState = {
                 `;
             } else {
                 // 未加入房间
+                    const publicRoomsHtml = `
+                    <div class="mp-divider"></div>
+                    <h4 style="text-align:center; color:var(--secondary-color); margin: 15px 0;">公开房间列表</h4>
+                    <div id="mp-public-rooms-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); padding: 5px;">
+                        <!-- 公开房间将在这里动态渲染 -->
+                    </div>
+                `;
+
                 contentHtml = `
                     <h3>SYSTEM LINK</h3>
                     <div id="mp-controls">
                         <button id="mp-create-btn" class="mp-btn">我要建房</button>
                         <div class="mp-divider"></div>
-                        <input type="text" id="mp-room-id" class="mp-input" placeholder="输入房间号">
+                        <input type="text" id="mp-room-id" class="mp-input" placeholder="输入房间号加入私有房间">
                         <button id="mp-join-btn" class="mp-btn">我要进房</button>
                     </div>
+                    ${publicRoomsHtml} <!-- 插入公开房间列表 -->
                 `;
             }
 
@@ -651,13 +660,17 @@ window.MultiplayerState = {
                         }
                     };
                 }
-            } else {
-                document.getElementById('mp-create-btn').onclick = () => this.connect('host');
+            }  else {
+                // 修改：为“我要建房”按钮添加新逻辑
+                document.getElementById('mp-create-btn').onclick = () => this.showCreateRoomOptions();
                 document.getElementById('mp-join-btn').onclick = () => {
                     const rid = document.getElementById('mp-room-id').value;
                     if (!rid) return showNovaAlert('请输入房间号');
                     this.connect('client', rid);
                 };
+                // 新增：渲染公开房间列表并请求更新
+                this.renderPublicRoomsList();
+                this.sendAction('request_public_rooms');
             }
         },
 
@@ -673,7 +686,77 @@ window.MultiplayerState = {
                 </div>
             `).join('');
         },
+ showCreateRoomOptions: async function() {
+            const old = document.querySelector('.mp-modal');
+            if (old) old.remove();
 
+            const modal = document.createElement('div');
+            modal.className = 'mp-modal';
+            modal.innerHTML = `
+                <h3>创建房间</h3>
+                <input type="text" id="mp-room-title" class="mp-input" placeholder="房间标题 (公开时显示)">
+                <textarea id="mp-room-remark" class="mp-input" placeholder="房间备注 (公开时显示)" rows="3"></textarea>
+                <div class="mp-divider"></div>
+                <button id="mp-create-private-btn" class="mp-btn">创建私有房间</button>
+                <button id="mp-create-public-btn" class="mp-btn" style="border-color: var(--success-color); color: var(--success-color);">创建公开房间</button>
+                <div class="mp-divider"></div>
+                <button id="mp-back-to-lobby-btn" class="mp-btn" style="border-color:var(--text-secondary-color); color:var(--text-secondary-color)">返回</button>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('mp-back-to-lobby-btn').onclick = () => this.renderLobby();
+
+            const createAction = async (isPublic) => {
+                const title = document.getElementById('mp-room-title').value;
+                const remark = document.getElementById('mp-room-remark').value;
+
+                if (isPublic) {
+                    const confirmPublic = await new Promise(resolve => {
+                        createConfirmModal('隐私警告',
+                            `创建公开房间会将您的部分游戏设定（如角色简介）和本次的聊天记录共享给其他玩家。<br><br>请确认您了解并接受此风险。`,
+                            () => resolve(true),
+                            () => resolve(false)
+                        );
+                    });
+                    if (!confirmPublic) return;
+                }
+                // 注意：connect 函数需要修改以接收这些新参数
+                this.connect('host', null, false, { isPublic, title, remark });
+            };
+
+            document.getElementById('mp-create-private-btn').onclick = () => createAction(false);
+            document.getElementById('mp-create-public-btn').onclick = () => createAction(true);
+        },
+
+        // 新增：渲染公开房间列表的DOM
+        renderPublicRoomsList: function() {
+            const listContainer = document.getElementById('mp-public-rooms-list');
+            if (!listContainer) return;
+
+            if (State.publicRooms.length === 0) {
+                listContainer.innerHTML = '<div style="text-align:center; color:var(--text-secondary-color); padding: 10px;">当前没有公开的房间</div>';
+                return;
+            }
+
+            listContainer.innerHTML = State.publicRooms.map(room => `
+                <div style="border-bottom: 1px solid var(--border-color); padding: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: var(--primary-color);">${room.title}</strong> (${room.playerCount}人)
+                        <div style="font-size: 0.9em; color: var(--text-secondary-color);">${room.remark}</div>
+                        <div style="font-size: 0.8em; color: #888;">房主: ${room.hostName} | ID: ${room.id}</div>
+                    </div>
+                    <button class="mp-btn" style="width: auto; padding: 5px 10px; margin: 0;" data-room-id="${room.id}">加入</button>
+                </div>
+            `).join('');
+
+            // 为所有新的“加入”按钮绑定事件
+            listContainer.querySelectorAll('button[data-room-id]').forEach(btn => {
+                btn.onclick = () => {
+                    const roomId = btn.getAttribute('data-room-id');
+                    this.connect('client', roomId);
+                };
+            });
+        },
   renderFloatingBalls: function() {
             const container = document.getElementById('mp-floating-container');
             if (!container) return;
@@ -809,7 +892,7 @@ window.MultiplayerState = {
             }).reverse().join(''); // 最新的在上面
         },
 
- async connect(role, roomId = null, isReconnect = false) {
+async connect(role, roomId = null, isReconnect = false, extraOptions = {}) {
     // 1. 如果不是重连（即首次连接），则初始化所有状态
     if (!isReconnect) {
         State.isGracefulDisconnect = false;
@@ -875,23 +958,23 @@ window.MultiplayerState = {
 
         // [关键修复] 在发送前再次检查连接状态
         if (State.socket.readyState === WebSocket.OPEN) {
-            const payload = { playerInfo: State.myInfo };
-            const currentRole = State.lastConnectionInfo.role;
-            const targetRoomId = State.lastConnectionInfo.roomId;
+                    const payload = { playerInfo: State.myInfo };
+                    const currentRole = State.lastConnectionInfo.role;
+                    const targetRoomId = State.lastConnectionInfo.roomId;
 
-            if (currentRole === 'host') {
-                const createPayload = { type: 'create_room', ...payload };
-                if (targetRoomId) {
-                    createPayload.roomId = targetRoomId;
-                }
-                State.socket.send(JSON.stringify(createPayload));
-            } else { // client
-                State.socket.send(JSON.stringify({ type: 'join_room', roomId: targetRoomId, ...payload }));
-            }
+                    if (currentRole === 'host') {
+                        // 修改：合并 extraOptions
+                        const createPayload = { type: 'create_room', ...payload, ...extraOptions };
+                        if (targetRoomId) {
+                            createPayload.roomId = targetRoomId;
+                        }
+                        State.socket.send(JSON.stringify(createPayload));
+                    } else { // client
+                        State.socket.send(JSON.stringify({ type: 'join_room', roomId: targetRoomId, ...payload }));
+                    }
 
-            // 只有在成功发送后才启动心跳
-            this.startHeartbeat();
-        } else {
+                    this.startHeartbeat();
+                } else {
             console.warn('[onopen] 连接在 onopen 回调执行期间关闭，重新触发重连。');
             // 如果状态已经不是 OPEN，说明连接瞬间又断了，需要重新走重连逻辑
             this.handleDisconnectOrReconnect();
@@ -1013,18 +1096,29 @@ setTimeout(() => {
                         this.setupInputInterface();
                          this.startHeartbeat(); 
                         break;
-
+               case 'public_rooms_list':
+                        State.publicRooms = data.rooms;
+                        // 如果大厅是打开的，就刷新列表
+                        if (document.querySelector('.mp-modal') && !State.roomId) {
+                            this.renderPublicRoomsList();
+                        }
+                        break;
                     case 'joined_success':
                         State.currentRole = 'client';
                         State.roomId = data.roomId;
-
-                        // [修复] 客户端成功加入后，同样用服务器确认的ID更新重连信息
                         State.lastConnectionInfo.roomId = data.roomId;
 
                         showNovaAlert(`成功加入房间 ${data.roomId}`);
                         this.renderLobby();
                         this.setupInputInterface();
-                        this.startHeartbeat();  
+                        this.startHeartbeat();
+
+                        // 新增：自动发送系统指令
+                        if (typeof triggerassa === 'function') {
+                            const joinMessage = `<系统指令：有新的玩家 ${State.myInfo.name} 加入，你需要将该玩家加入的过程合理融入剧情>`;
+                            // 注意：这个指令是客户端发给主机的，所以使用 client_msg
+                            this.sendAction('client_msg', { content: joinMessage });
+                        }
                         break;
 
                     case 'player_shout':
