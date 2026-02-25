@@ -15563,7 +15563,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.14';
+window.current_game_version = '3.8.15';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -31032,21 +31032,40 @@ const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S
 
     // --- 商店 ---
     const allShopMatches = [...cleanedContent.matchAll(/<shop_item>((?:(?!<shop_item>)[\s\S])*?)<\/shop_item>/gs)];
-  if (allShopMatches.length > 0) {
-    const lastShopMatch = allShopMatches[allShopMatches.length - 1];
-    let shopData = lastShopMatch[1].trim();
+   if (allShopMatches.length > 0) {
+    const lastShopMatch = allDanmuMatches[allDanmuMatches.length - 1]; // 修正这里，应该是 allShopMatches
+    let rawShopContent = lastShopMatch[1].trim(); // 获取 <shop_item> 标签内的原始内容
 
     const shopOrb = document.getElementById('shop-wrapper-orb');
-    if (shopOrb && shopData) {
+    if (shopOrb && rawShopContent) { // 确保 rawShopContent 不为空
         shopOrb.classList.add('orb-flash');
 
         try {
-            // 第1步: 清理和解析JSON (这部分逻辑不变)
-            if (!shopData.startsWith('[')) {
-                shopData = `[${shopData}]`;
+            let jsonString = extractJsonFromResponse(rawShopContent);
+            let parsedData;
+
+            // 尝试直接解析 extractJsonFromResponse 得到的结果
+            try {
+                parsedData = JSON.parse(jsonString);
+            } catch (e) {
+                // 如果直接解析失败，说明 extractJsonFromResponse 提取到的内容本身不是一个完整的JSON
+                // 此时，我们尝试将其包裹成一个数组的数组
+                console.warn('[Shop] extractJsonFromResponse 提取的内容无法直接解析，尝试包裹修复。', e);
+                const cleanedContent = rawShopContent.trim().replace(/,$/, ''); // 移除末尾逗号
+                const wrappedJsonString = `[${cleanedContent}]`;
+                try {
+                    parsedData = JSON.parse(wrappedJsonString);
+                } catch (e2) {
+                    console.error('[Shop] 包裹修复后仍无法解析 JSON。', e2);
+                    throw new Error('无法从AI响应中解析有效的商品数据。');
+                }
             }
-            let parsedData = tryParseJson(shopData);
-            let itemsAsArrays = Array.isArray(parsedData[0]) ? parsedData : [parsedData];
+
+            // 确保 parsedData 是一个数组，并且其元素也是数组（即 [[...], [...]] 结构）
+            // 如果 parsedData 是一个单层数组，例如 ["item1", 100, ...]，则将其包裹成 [[...]]
+            let itemsAsArrays = Array.isArray(parsedData) && parsedData.every(item => Array.isArray(item))
+                ? parsedData
+                : [parsedData];
 
             if (!Array.isArray(itemsAsArrays) || itemsAsArrays.length <= 1) {
  console.warn('解析商品失败了一次，我们继续尝试。');
@@ -31126,8 +31145,8 @@ const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S
         shopOrb.addEventListener('animationend', () => {
             shopOrb.classList.remove('orb-flash');
         }, { once: true });
-        }
     }
+}
 }
 
 function manageBattleLifecycle(initialCombatDataFromPrompt) {
@@ -51765,178 +51784,102 @@ otherSkillSelections.forEach(skillInput => {
 setupWorldBookEventListeners();
 setupSkillChoicePanel();
 
-
-  function extractJsonFromResponse(responseText) {
-    /**
-     * 内部帮助函数：使用堆栈计数法寻找匹配的闭合括号位置
-     * 能够忽略字符串内部的括号，精准定位 JSON 结束位置
-     */
-    function findBalancedClosing(text, startIndex) {
-        let depth = 0;
-        let inString = false;
-        let escape = false;
-
-        for (let i = startIndex; i < text.length; i++) {
-            const char = text[i];
-
-            // 处理转义字符 (如 \")
-            if (escape) {
-                escape = false;
-                continue;
-            }
-            if (char === '\\') {
-                escape = true;
-                continue;
-            }
-
-            // 处理字符串状态 (忽略字符串内的 [])
-            if (char === '"') {
-                inString = !inString;
-                continue;
-            }
-
-            // 如果不在字符串内，处理层级
-            if (!inString) {
-                if (char === '[') {
-                    depth++;
-                } else if (char === ']') {
-                    depth--;
-                    // 当层级归零时，找到了匹配的结束括号
-                    if (depth === 0) {
-                        return i;
-                    }
-                }
-            }
-        }
-        return -1;
-    }
-
-    // ================= 提取逻辑开始 =================
-
-    let extractedContent = null;
-
-    // 1. 优先尝试 Markdown JSON 代码块 (最准确)
-    const jsonBlockMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+ function extractJsonFromResponse(responseText) {
+    // 1. 清理原始文本：移除首尾空白和可能的 Markdown 代码块
+    let content = responseText.trim();
+    const jsonBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     if (jsonBlockMatch) {
-        extractedContent = jsonBlockMatch[1].trim();
+        content = jsonBlockMatch[1].trim();
     }
 
-    // 2. 如果没有代码块，使用智能扫描 + 堆栈计数
-    if (!extractedContent) {
-        // 查找可能的 JSON 数组开头
-        // 优先查找 [[ 或 [{ 这种嵌套结构（特征更明显，不易误判）
-        // 其次查找 [" (普通字符串数组)
-        let startMatch = responseText.match(/\[\s*(?:\[|\{)/);
-
-        // 如果没找到嵌套结构，再尝试找普通数组，但要小心
-        if (!startMatch) {
-            startMatch = responseText.match(/\[\s*"/);
-        }
-
-        if (startMatch) {
-            const startIndex = startMatch.index;
-            const endIndex = findBalancedClosing(responseText, startIndex);
-
-            if (endIndex !== -1) {
-                extractedContent = responseText.substring(startIndex, endIndex + 1);
-            }
-        }
+    // 2. 尝试直接解析
+    try {
+        // 验证是否已经是有效的 JSON (例如 `[["item1"], ["item2"]]`)
+        JSON.parse(content);
+        console.log('[extractJsonFromResponse] 步骤 1: 直接解析成功。');
+        return content;
+    } catch (e) {
+        console.warn('[extractJsonFromResponse] 步骤 1: 直接解析失败，进入步骤 2。', e.message);
     }
 
-    // 3. 如果还是没找到，尝试最后的保底（整个文本找首尾）
-    if (!extractedContent) {
-        const firstOpen = responseText.indexOf('[');
-        const lastClose = responseText.lastIndexOf(']');
-        if (firstOpen !== -1 && lastClose > firstOpen) {
-            extractedContent = responseText.substring(firstOpen, lastClose + 1);
-        }
+    // 3. 尝试包裹后解析
+    try {
+        // 移除末尾可能存在的逗号，然后用 `[]` 包裹
+        const wrappedContent = `[${content.replace(/,\s*$/, '')}]`;
+        JSON.parse(wrappedContent);
+        console.log('[extractJsonFromResponse] 步骤 2: 包裹 `[]` 后解析成功。');
+        return wrappedContent;
+    } catch (e2) {
+        console.error('[extractJsonFromResponse] 步骤 2: 包裹 `[]` 后解析失败，进入步骤 3。', e2.message);
     }
 
-    // ================= 验证与修复逻辑 =================
-
-    if (extractedContent) {
-        try {
-            // 尝试直接解析，验证是否有效
-            JSON.parse(extractedContent);
-            return extractedContent;
-        } catch (e) {
-            console.warn('JSON 解析失败，尝试自动修复常见错误...', e);
-
-            // 修复 1: 去除末尾多余的逗号 (AI 常见错误: [1, 2,])
-            // 匹配：逗号 + 任意空白 + 结束括号/花括号
-            let fixedContent = extractedContent.replace(/,\s*([\]}])/g, '$1');
-
-            // 修复 2: 尝试将单引号替换为双引号 (如果 AI 用了 JS 格式而非 JSON)
-            // 注意：这只是简单替换，复杂的字符串内含单引号可能会出错，但作为保底值得一试
-            if (!fixedContent.includes('"') && fixedContent.includes("'")) {
-                 fixedContent = fixedContent.replace(/'/g, '"');
-            }
-
-            try {
-                JSON.parse(fixedContent);
-                return fixedContent; // 修复成功
-            } catch (e2) {
-                console.error('JSON 自动修复失败', e2);
-                // 即使修复失败，也返回提取到的原始内容，交给后续流程处理（可能会有更高级的解析器）
-                     console.warn('尝试降级方案：逐行扫描提取有效的 JSON 数组...');
-                const lineScannedResult = extractJsonByLineScanning(responseText);
-                if (lineScannedResult) {
-                    //console.log('逐行扫描成功！');
-                    return lineScannedResult;
-                }
-                return extractedContent;
-            }
-        }
+    // 4. 尝试调用 extractJsonByLineScanning (作为最终降级方案)
+    console.warn('[extractJsonFromResponse] 步骤 3: 尝试调用 extractJsonByLineScanning...');
+    const lineScannedResult = extractJsonByLineScanning(content); // 使用清理后的 content
+    if (lineScannedResult) {
+        console.log('[extractJsonFromResponse] 步骤 3: extractJsonByLineScanning 成功。');
+        return lineScannedResult;
     }
 
+    // 5. 如果所有方法都失败，返回 null
+    console.error('[extractJsonFromResponse] 所有解析方法均失败。');
     return null;
 }
-
 function extractJsonByLineScanning(responseText) {
+    console.log('[extractJsonByLineScanning] 开始逐行扫描...');
     const lines = responseText.split('\n');
     const validJsonItems = [];
 
-    for (let line of lines) {
-        // 去掉行首尾空白
-        line = line.trim();
-        
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        console.log(`[extractJsonByLineScanning] 处理行 ${i + 1}:`, line.substring(0, 100) + '...');
+
         // 跳过空行和注释
         if (!line || line.startsWith('//')) {
+            console.log(`[extractJsonByLineScanning] 跳过空行或注释行 ${i + 1}.`);
             continue;
         }
 
-        // 去掉末尾可能的逗号
-        if (line.endsWith(',')) {
-            line = line.slice(0, -1).trim();
+        // 临时移除末尾可能的逗号，以便 JSON.parse 能够处理
+        let tempLine = line;
+        if (tempLine.endsWith(',')) {
+            tempLine = tempLine.slice(0, -1).trim();
+            console.log(`[extractJsonByLineScanning] 行 ${i + 1} 移除末尾逗号后:`, tempLine.substring(0, 100) + '...');
         }
 
         // 检查是否看起来像 JSON 数组 (以 [ 开头，] 结尾)
-        if (!line.startsWith('[') || !line.endsWith(']')) {
+        if (!tempLine.startsWith('[') || !tempLine.endsWith(']')) {
+            console.warn(`[extractJsonByLineScanning] 行 ${i + 1} 不符合 JSON 数组格式 (缺少方括号)。`);
             continue;
         }
 
         // 尝试解析这一行
         try {
-            const parsedItem = JSON.parse(line);
+            const parsedItem = JSON.parse(tempLine);
             // 验证是否是数组格式
             if (Array.isArray(parsedItem)) {
                 validJsonItems.push(parsedItem);
+                console.log(`[extractJsonByLineScanning] 成功解析行 ${i + 1} 为有效JSON数组。`);
+            } else {
+                console.warn(`[extractJsonByLineScanning] 行 ${i + 1} 解析成功但不是数组。`);
             }
         } catch (e) {
             // 这一行格式不标准，跳过
-            console.warn('跳过格式不标准的行:', line.substring(0, 50));
+            console.warn(`[extractJsonByLineScanning] 行 ${i + 1} 解析失败:`, e.message, '原始行:', tempLine.substring(0, 100) + '...');
             continue;
         }
     }
 
     // 如果成功提取到有效项，组装成 JSON 数组字符串返回
     if (validJsonItems.length > 0) {
-        return JSON.stringify(validJsonItems);
+        const result = JSON.stringify(validJsonItems);
+        console.log(`[extractJsonByLineScanning] 成功收集 ${validJsonItems.length} 个有效JSON项，返回:`, result.substring(0, 200) + '...');
+        return result;
     }
 
+    console.log('[extractJsonByLineScanning] 未能从逐行扫描中提取任何有效JSON项。');
     return null;
 }
-
 
  /**
  * 新增：设置AI生成商品按钮的功能 (V5 - 持久化与关键词版)
@@ -52167,32 +52110,48 @@ customPromptInput.addEventListener('blur', () => {
 
     try {
         // 第1步：提取 JSON 内容
-        let cleanedText = extractJsonFromResponse(responseText);
+        let cleanedJsonString = extractJsonFromResponse(responseText);
 
-        if (!cleanedText) {
+        if (!cleanedJsonString) {
             throw new Error('无法从响应中提取有效的 JSON 数据。');
         }
 
-        const parsedData = JSON.parse(cleanedText);
+        const parsedData = JSON.parse(cleanedJsonString);
+
+        // ====================================================================
+        // 核心修改：确保 parsedData 是一个数组，并过滤掉所有非数组元素
+        // ====================================================================
+        if (!Array.isArray(parsedData)) {
+            throw new Error('解析后的数据不是一个数组。');
+        }
+
+        // 过滤掉所有不是数组的脏数据，比如 "测试文本"
+        const itemsAsArrays = parsedData.filter(item => Array.isArray(item));
+        // ====================================================================
+
 
         // 第2步: 将每个内部数组映射为一个结构化对象
-        const newItems = parsedData.map(itemArray => {
-            if (!Array.isArray(itemArray) || itemArray.length < 6) {
-                console.warn('跳过格式错误的商品:', itemArray);
+        const newItems = itemsAsArrays.map(itemArray => {
+            // 确保 itemArray 长度至少为6
+            if (itemArray.length < 6) {
+                console.warn('跳过格式错误的商品数组（长度不足）:', itemArray);
                 return null;
             }
+            // 确保 itemArray[3] (rank) 是一个对象，如果不是，则使用空对象
+            const rank = typeof itemArray[3] === 'object' && itemArray[3] !== null ? itemArray[3] : {};
+
             return {
                 name: itemArray[0],
                 price: itemArray[1],
                 type: itemArray[2],
-                rank: itemArray[3],
+                rank: rank,
                 effect: itemArray[4],
                 description: itemArray[5]
             };
         }).filter(item => item !== null);
 
         if (newItems.length === 0) {
-            throw new Error('AI返回的数据格式不符合商品结构要求。');
+            throw new Error('AI返回的数据格式不符合商品结构要求（未找到任何有效商品）。');
         }
 
         // 第3步：获取已存在的商品
