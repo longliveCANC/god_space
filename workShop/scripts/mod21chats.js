@@ -343,6 +343,42 @@
 
         /* 底部Tab激活样式 */
         .mod21-tab-active { color: var(--mod21-primary-color) !important; font-weight: bold; }
+
+        .mod21-chat-container {
+    flex: 1; overflow-y: auto; padding: 15px;
+    display: flex; flex-direction: column; gap: 15px;
+    background-color: #f2f2f2;
+    
+}
+ 
+ .mod21-scroll-to-bottom {
+    /* 关键修改：相对于页面而不是滚动容器定位 */
+    position: absolute;
+    /* 调整位置，使其在输入框上方 */
+    bottom: 65px; /* 50px(输入框) + 15px(间距) */
+    right: 15px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--mod21-primary-color);
+    border: 1px solid var(--mod21-border);
+    border-radius: 20px;
+    /* 只放一个箭头或文字，调整padding */
+    padding: 8px 10px;
+    font-size: 18px; /* 增大图标/文字大小 */
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 20;
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+
+.mod21-scroll-to-bottom.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
     `;
     document.head.appendChild(style);
 
@@ -418,9 +454,10 @@
                 </div>
             </div>
             <div class="mod21-chat-container" id="mod21-chat-box">
-                <!-- 消息将在这里渲染 -->
-            </div>
-            <div class="mod21-input-bar">
+                <!-- 消息将在这里渲染 --> 
+              
+    </div>
+    <div class="mod21-input-bar">
                 <button class="mod21-icon-btn" onclick="showToast('暂未开发')">${icons.plus}</button>
                 <button class="mod21-icon-btn" onclick="showToast('暂未开发')">${icons.face}</button>
                 <input type="text" class="mod21-input-field" id="mod21-input" placeholder="发消息...">
@@ -429,6 +466,9 @@
         </div>
 
     </div> <!-- 关闭新增的容器 -->
+  <div class="mod21-scroll-to-bottom" id="mod21-scroll-to-bottom">
+        <span>↓</span> <!-- 使用一个简单的向下箭头 -->
+    </div>
             <!-- 设置模态框 (隐藏) -->
             <div class="mod21-settings-modal mod21-hidden" id="mod21-settings-modal">
                 <div class="mod21-settings-content">
@@ -668,7 +708,7 @@
             div.innerHTML = content; // content is "通告内容"
         } else {
             // 普通消息 / 回复 / 私聊
-            const isMe = name === '我' || name === '阿萨'; // 假设玩家名字
+            const isMe = name === '我' || name === SillyTavern.name1; // 假设玩家名字
             div.className = `mod21-msg-row ${isMe ? 'mod21-me' : ''}`;
 
             // 头像
@@ -759,7 +799,8 @@ if (bubble) {
             // 插入到顶部
             chatBox.insertBefore(div, chatBox.firstChild);
         }
-    }
+  
+}
   function renderMessageList() {
         const container = document.getElementById('mod21-msg-list-container');
         container.innerHTML = '';
@@ -840,7 +881,7 @@ if (bubble) {
         });
 
         allMembers.forEach(member => {
-            if (member === '我' || member === '阿萨') return; // 排除自己
+            if (member === '我' || member === SillyTavern.name1) return; // 排除自己
 
             const div = document.createElement('div');
             div.className = 'mod21-list-item';
@@ -857,51 +898,61 @@ if (bubble) {
         });
     }
 
-  function openChat(targetId, type) {
-        currentChatTarget = targetId;
-        currentChatType = type;
+ function openChat(targetId, type) {
+    const unreadCount = unreadCounts[targetId] || 0;
 
-        // 清除未读
-        unreadCounts[targetId] = 0;
-        updateUnreadUI();
+    currentChatTarget = targetId;
+    currentChatType = type;
 
-        // 更新标题
-        const chatTitle = document.querySelector('#mod21-chat-page .mod21-nav-title');
-        if (type === 'group') {
-            const count = Object.keys(getGroupMembers(targetId)).length;
-            chatTitle.textContent = `${targetId}(${count})`;
-        } else {
-            chatTitle.textContent = targetId;
-        }
+    unreadCounts[targetId] = 0;
+    updateUnreadUI();
 
-        // 重置状态
-        chatBox.innerHTML = '';
-        isLoadingMore = false;
-        hasMoreHistory = true;
-        currentHistoryIndex = 0;
-
-        // 【关键修改】调用时传入 true，并等待加载完毕
-        loadMoreHistory(true).then(() => {
-            // 使用极短的延时确保浏览器完成渲染，scrollHeight 是最终值
-            setTimeout(() => {
-                if (chatScrollPositions[targetId] !== undefined) {
-                    // 如果有记忆位置，恢复位置
-                    chatBox.scrollTop = chatScrollPositions[targetId];
-                    console.log(`[MOD21] Restored scroll for ${targetId} to ${chatScrollPositions[targetId]}`);
-                } else {
-                    // 如果没有记忆位置（第一次进入），滚动到底部
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                    console.log(`[MOD21] First time entry for ${targetId}, scrolling to bottom.`);
-                }
-            }, 10); // 10ms 延时通常足够
-        });
-
-        // 切换页面
-        listPage.classList.remove('mod21-page-active');
-        listPage.classList.add('mod21-page-inactive-left');
-        chatPage.classList.remove('mod21-page-inactive-right');
-        chatPage.classList.add('mod21-page-active');
+    const chatTitle = document.querySelector('#mod21-chat-page .mod21-nav-title');
+    if (type === 'group') {
+        const count = Object.keys(getGroupMembers(targetId)).length;
+        chatTitle.textContent = `${targetId}(${count})`;
+    } else {
+        chatTitle.textContent = targetId;
     }
+
+    chatBox.innerHTML = '';
+    isLoadingMore = false;
+    hasMoreHistory = true;
+    currentHistoryIndex = 0;
+
+    // 关键修改：不再需要手动创建按钮，只需确保点击事件被绑定
+    const scrollToBottomBtn = document.getElementById('mod21-scroll-to-bottom');
+    scrollToBottomBtn.onclick = () => {
+        chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+    };
+    // 初始隐藏按钮
+    scrollToBottomBtn.classList.remove('show');
+
+
+    loadMoreHistory(true).then(() => {
+        setTimeout(() => {
+            const allMessages = chatBox.querySelectorAll('.mod21-msg-row, .mod21-system-msg');
+
+            if (unreadCount > 0 && unreadCount < allMessages.length) {
+                const firstUnreadMessage = allMessages[allMessages.length - unreadCount];
+                if (firstUnreadMessage) {
+                    chatBox.scrollTop = firstUnreadMessage.offsetTop - 50;
+                }
+            } else if (chatScrollPositions[targetId] !== undefined) {
+                chatBox.scrollTop = chatScrollPositions[targetId];
+            } else {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+            // 立即检查一次滚动按钮的显示状态
+            checkScrollButtonVisibility();
+        }, 50);
+    });
+
+    listPage.classList.remove('mod21-page-active');
+    listPage.classList.add('mod21-page-inactive-left');
+    chatPage.classList.remove('mod21-page-inactive-right');
+    chatPage.classList.add('mod21-page-active');
+}
      document.querySelectorAll('.mod21-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.mod21-tab-btn').forEach(b => {
@@ -1076,15 +1127,29 @@ function hideReplyBar() {
     // 【新增】创建一个防抖版的保存函数，延迟250ms执行
     const debouncedSaveScroll = debounce(saveCurrentScrollPosition, 250);
 
-    chatBox.addEventListener('scroll', () => {
-        // 【关键修改】触发防抖保存，而不是立即保存
-        debouncedSaveScroll();
+ function checkScrollButtonVisibility() {
+    const btn = document.getElementById('mod21-scroll-to-bottom');
+    if (!btn) return;
 
-        // 当滚动到顶部时加载更多 (这个逻辑不变)
-        if (chatBox.scrollTop === 0 && !isLoadingMore && hasMoreHistory) {
-            loadMoreHistory();
-        }
-    });
+    // 100px 的容差，避免在非常接近底部时按钮还显示
+    const isAtBottom = (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight) < 100;
+
+    if (!isAtBottom) {
+        btn.classList.add('show');
+    } else {
+        btn.classList.remove('show');
+    }
+}
+
+// 修改现有的滚动事件监听器
+chatBox.addEventListener('scroll', () => {
+    debouncedSaveScroll();
+    checkScrollButtonVisibility(); // 在滚动时调用检查函数
+
+    if (chatBox.scrollTop === 0 && !isLoadingMore && hasMoreHistory) {
+        loadMoreHistory();
+    }
+});
    btnBack.addEventListener('click', () => {
         // 【关键修改】移除这里的保存逻辑，因为它不可靠
         // if (currentChatTarget) {
@@ -1248,99 +1313,122 @@ function hideReplyBar() {
     });
 
  
-  // --- 全局状态变量 ---
- // --- 全局状态变量 ---
-// 为每个聊天目标独立记录已渲染的消息数量
- // --- 全局状态变量 ---
-// 记录每个聊天目标已渲染的消息数量 { "神人Q群": 5, "群主": 2 }
-let renderedMessageCounts = {};
+ let processedMessages = new Set(); // 记录已解析的消息位置（防重）
+let messageQueue = [];             // 消息缓冲队列
+let isProcessingQueue = false;     // 队列消费锁
 
-// 在 GENERATION_STARTED 事件中重置所有状态
+// 2. 重置逻辑
 eventOn(iframe_events.GENERATION_STARTED, (id) => {
     if (id === generationId) {
-        console.log('[MOD21] >> Generation Started. Resetting stream state.');
-        renderedMessageCounts = {};
+        console.log('[MOD21] >> Generation Started. Resetting stream & queue.');
+        processedMessages.clear();
+        messageQueue = [];
+        isProcessingQueue = false;
     }
 });
 
-/**
- * 【最终流式修正版】
- * 逻辑：先定位所有 memory 块的头部，确定每个块的管辖范围，
- * 然后在范围内流式解析消息，不需要等待块结束。
- */
+// 3. 生产者：负责解析文本并将新消息推入队列
 eventOn(iframe_events.STREAM_TOKEN_RECEIVED_FULLY, (text, id) => {
     if (id !== generationId || !text) return;
-
-    // 1. 找到所有 memory 指令的头部位置
-    // 例如: memory('group_history.神人Q群.xxx', [
-    const headerRegex = /memory\('(group|private)_history\.([^.]+)\.[^']+',\s*\[/g;
+console.log(`[MOD21 Debug] Text len: ${text.length}, Last char: ${text.replace(/\n/g, '\\n')}`);
+ 
+    // 正则：极度宽松模式，提取 memory 块头部
+    const headerRegex = /memory\s*\(\s*['"]([^'"]+)['"]\s*,\s*\[/g;
     const headers = [];
     let match;
 
     while ((match = headerRegex.exec(text)) !== null) {
+        const rawParams = match[1];
+        const parts = rawParams.split('.');
+
+        // 简单的容错解析
+        let type = 'group';
+        let target = '未知';
+        if (parts.length >= 2) {
+            type = parts[0].startsWith('private') ? 'private' : 'group';
+            target = parts[1];
+        }
+
         headers.push({
-            type: match[1],      // group 或 private
-            target: match[2],    // 群名 或 人名
-            start: match.index + match[0].length, // 内容起始位置（跳过头部）
-            index: match.index   // 头部在全文的起始位置（用于计算下一个块的开始）
+            type: type,
+            target: target,
+            start: match.index + match[0].length,
+            index: match.index
         });
     }
 
-    // 如果没找到任何头部，说明还没生成到那里，直接返回
     if (headers.length === 0) return;
 
-    // 2. 遍历每个头部，确定其内容范围并解析消息
+    // 遍历所有块解析消息
     for (let i = 0; i < headers.length; i++) {
         const currentHeader = headers[i];
         const nextHeader = headers[i + 1];
-
-        // 确定当前块的结束位置：
-        // 如果有下一个块，就到下一个块的头部之前；否则，一直到文本末尾
         const endPos = nextHeader ? nextHeader.index : text.length;
-
-        // 截取当前块的内容（这里包含了该块下已生成的所有消息）
         const content = text.substring(currentHeader.start, endPos);
 
-        // 3. 在当前块范围内解析消息
-        // 只要消息闭合了 `]`，就能被匹配到，不需要等待 `]);`
+        // 消息正则
         const messageRegex = /\[\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"(?:\s*,\s*"((?:[^"\\]|\\.)*)")?(?:\s*,\s*"((?:[^"\\]|\\.)*)")?\s*\]/g;
-
         let msgMatch;
-        let currentBlockMsgIndex = 0; // 当前块内的消息序号
 
         while ((msgMatch = messageRegex.exec(content)) !== null) {
-            // 获取该目标已渲染的消息数
-            const renderedCount = renderedMessageCounts[currentHeader.target] || 0;
+            const absoluteIndex = currentHeader.start + msgMatch.index;
 
-            // 防重判断：如果当前序号小于已渲染数，说明是旧消息，跳过
-            if (currentBlockMsgIndex < renderedCount) {
-                currentBlockMsgIndex++;
-                continue;
-            }
+            // 防重检查
+            if (processedMessages.has(absoluteIndex)) continue;
+            processedMessages.add(absoluteIndex);
 
-            // --- 发现新消息，开始处理 ---
+            // 解析字段
             const type = parseInt(msgMatch[1]);
             const field1 = msgMatch[2].replace(/\\"/g, '"');
             const field2 = msgMatch[3] ? msgMatch[3].replace(/\\"/g, '"') : "";
             const field3 = msgMatch[4] ? msgMatch[4].replace(/\\"/g, '"') : null;
             const msgArray = (type === 2) ? [type, field1, field2] : [type, field1, field2, field3];
 
-            // 路由判断：是当前窗口的消息 -> 渲染；否则 -> 加红点
-            if (currentHeader.target === currentChatTarget && currentHeader.type === currentChatType) {
-                renderMessage(msgArray);
-            } else {
-                unreadCounts[currentHeader.target] = (unreadCounts[currentHeader.target] || 0) + 1;
-                updateUnreadUI();
-            }
-
-            // 更新计数器
-            renderedMessageCounts[currentHeader.target] = (renderedMessageCounts[currentHeader.target] || 0) + 1;
-            currentBlockMsgIndex++;
+            // 【关键】不直接渲染，而是推入队列
+            console.log(`[MOD21 Queue] Enqueue msg for ${currentHeader.target}`);
+            messageQueue.push({
+                target: currentHeader.target,
+                type: currentHeader.type, // 'group' or 'private'
+                data: msgArray
+            });
         }
     }
+
+    // 每次有新消息入队，都尝试启动消费者
+    processMessageQueue();
 });
 
+// 4. 消费者：负责按节奏渲染消息
+async function processMessageQueue() {
+    // 如果正在处理中，直接返回，避免多重循环
+    if (isProcessingQueue) return;
 
+    isProcessingQueue = true;
+
+    while (messageQueue.length > 0) {
+        // 取出队首消息
+        const task = messageQueue.shift();
+
+        // 路由逻辑：判断是渲染还是加红点
+        // 注意：这里必须实时判断 currentChatTarget，因为用户可能在排队过程中切换了窗口
+        if (task.target === currentChatTarget && task.type === currentChatType) {
+            renderMessage(task.data);
+        } else {
+            unreadCounts[task.target] = (unreadCounts[task.target] || 0) + 1;
+            updateUnreadUI();
+        }
+
+        // 【核心】模拟打字机延迟
+        // 随机延迟 300ms 到 800ms，模拟真实的阅读/发送节奏
+        // 如果队列堆积太多（超过5条），加速处理以防延迟过高
+        let delay = Math.random() * 500 + 300;
+        if (messageQueue.length > 5) delay = 100;
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    isProcessingQueue = false;
+}
  
 
 

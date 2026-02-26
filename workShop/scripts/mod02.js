@@ -55,7 +55,7 @@
                 "description": ["", "关于这个造物的精准、详细介绍，包括心智、外形等，严格按照要求来设计。不少于50字"]
             },
             "user": {
-                "name": "user",
+                "name": SillyTavern.name1,
                 "nick_name":"",
                 "status":["","用户当前所拥有的buff和debuff，多个状态用;分隔"],
                 "total_task":[0,"完成的任务总量，完成/失败一个任务后，结算的时候加一"],
@@ -523,7 +523,7 @@
                         generateResetCommands(currentPath, value, commands);
                     } else {
                         // 是叶子节点（值或数组），生成指令
-                        const originalValue = Array.isArray(value) ? value[0] : value;
+                        const originalValue = JSON.stringify(value);
                         // 移除前缀用于指令
                         let commandPath = currentPath;
                         // 这里我们只处理 statData 的重置
@@ -531,6 +531,7 @@
 
                         // 生成指令
                         // 注意：这里由于是重置，我们明确知道是 set_status
+ EjsTemplate.evalTemplate(`<%_  setLocalVar("stat_data.${commandPath}",${originalValue}) %>`);
                         const command = `set_status('${commandPath}', '${originalValue}'); // 重置为默认值`;
                          // 使用 statData. 前缀作为 key 存入 commandsToExecute 以确保唯一性
                         commands['statData.' + currentPath] = command;
