@@ -37739,7 +37739,7 @@ async function handleSend(options = {}) {
         return;
     }
 
-    //console.log(`[Nova Pipeline] 执行中: Batch ${currentBatchIndex} - ${currentStepConfig?.name || 'Init'} (Ex: ${currentExBatchIndex})`);
+    console.log(`[Nova Pipeline] 执行中: Batch ${currentBatchIndex} - ${currentStepConfig?.name || 'Init'} (Ex: ${currentExBatchIndex})`);
 
     // 2. 更新变量传递给外界 (batch, exbatch)
     await TavernHelper.insertOrAssignVariables(
@@ -37770,10 +37770,7 @@ async function handleSend(options = {}) {
 
     // 2. 强制开启提示词模板
     try {
-        /**
-         * 调用 setFeatures 方法，传入 { enabled: true } 对象，
-         * 确保提示词模板功能被开启。
-         */
+       
         EjsTemplate.setFeatures({ enabled: true,sandbox:false });
         
         // 强制开启成功后，给出提示
@@ -37792,7 +37789,7 @@ async function handleSend(options = {}) {
  
   
  
-     // --- 🆕 API 配置加载逻辑 (Multi-API Support) 🆕 ---
+     
     let customApiSettings = null;
     // 根据当前 ExBatch 配置决定使用哪个 API
     const apiConfigKey = currentStepConfig?.api_config;
@@ -38057,9 +38054,12 @@ if(ifScanMemory === "true"){
     }
 
         if (!isReroll) {
-        if (!userText || sendButton.disabled) {
+        if (sendButton.disabled) {
             overlay.classList.remove('active'); // 如果无效，也别忘了开锁
             return;
+        }
+        if(!userText){
+            userText = "继续";
         }
          const userMessage = { role: 'user', content: userText };
            if (!isReroll && !isContinuation) {
