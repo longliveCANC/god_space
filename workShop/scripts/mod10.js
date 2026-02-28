@@ -106,17 +106,16 @@
 
                 if (hasInstructionForCurrent) {
                     target = 'current';
-                    tempContent = processedCurrentResponse; // 注意：修改时要用未净化的版本
+                    tempContent = processedCurrentResponse;  
                     console.log('[Refiner DEBUG] Target identified: CURRENT response.');
                 } else if (hasInstructionForHistory) {
                     target = 'history';
-                    tempContent = lastAiMessage.content; // 注意：修改时要用未净化的版本
+                    tempContent = lastAiMessage.content;  
                     console.log('[Refiner DEBUG] Target identified: HISTORY message.');
                 } else {
                     console.warn('[Refiner DEBUG] No target found. None of the instructions match the purified current response or history.');
                 }
-                // --- 判断逻辑修正结束 ---
-
+          
                 if (target) {
                     let modificationCount = 0;
                     console.log('[Refiner DEBUG] Starting replacement loop. Initial tempContent length:', tempContent.length);
@@ -146,18 +145,18 @@
                         }
                     }
 if (modificationCount > 0) {
-    // 使用 setTimeout 来延迟执行通知，延迟时间设置为 2000 毫秒 (2秒)
+     
     setTimeout(() => {
-        // 在延迟的回调函数内部，再次检查函数是否存在，这是一个好习惯
+         
         if (window.GameAPI && typeof window.GameAPI.showUpdateNotification === 'function') {
             const notificationMessage = formatInstructionsForNotification(refineInstructions);
             window.GameAPI.showUpdateNotification(notificationMessage);
         }
-        // 你也可以把 console.log 放在这里，让它和通知一起延迟显示
+        
         console.log(`[Refiner Plugin] Applied ${modificationCount} corrections and showed notification after 2s delay.`);
-    }, 2000); // 这里的 2000 就是延迟的毫秒数
+    }, 2000);  
 
-    // 这个 log 会立即执行，因为它在 setTimeout 的外部
+   
     console.log(`[Refiner Plugin] Modifications found. Notification scheduled to show in 2 seconds.`);
 }
                 }

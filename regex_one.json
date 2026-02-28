@@ -15563,7 +15563,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.15';
+window.current_game_version = '3.8.16';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -18631,7 +18631,7 @@ setupUploadBox('ws-upload-box-img');
         </div>`;
     }
 
-    // 【修改】在卡片HTML中增加点赞数显示
+   
     card.innerHTML = `
         ${imgHtml}
         <div class="mod-preview-info">
@@ -18676,7 +18676,7 @@ const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
         return `<span class="mod-preview-tag-badge" >${tagName}</span>`;
     }).join('');
     // 按钮组构建
-    // 【修改】按钮组构建：点赞按钮增加数字显示
+    
     let actionsHtml = '';
 
      actionsHtml += `<button class="control-btn sub-btn ${isLiked ? 'subscribed' : ''}" data-action="like-mod" style="margin-right:5px;">
@@ -18684,7 +18684,7 @@ const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
         <span id="ws-like-count">${mod.likes || 0}</span>
     </button>`;
 
-    // 【修改】订阅按钮使用图标
+    
     if (mod.scriptUrl !== 'local' && mod.type !== 'text') {
         actionsHtml += `<button class="control-btn sub-btn ${isModSubbed ? 'subscribed' : ''}" data-action="sub-mod" title="${isModSubbed ? '取消订阅' : '订阅更新'}">
             <span class="ws-btn-icon">${isModSubbed ? ICONS.subscribed : ICONS.subscribe}</span>
@@ -18705,7 +18705,7 @@ const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
         actionsHtml += `<button class="control-btn" data-action="edit-local">✏️ 编辑</button>`;
     }
 
-    // 【修改点1】图片处理：无图片则不显示任何内容，节省空间
+    
     const imgDisplay = mod.previewImage
         ? `<img src="${mod.previewImage}" class="ws-detail-img" data-action="zoom-img">`
         : ``; // 空字符串
@@ -18768,9 +18768,9 @@ const featureTags = (mod.tags || []).filter(t => t.startsWith('#'));
         </div>
     `;
 
-    // --- 修改点：移动端渲染逻辑 ---
+     
   if (window.innerWidth <= 768) {
-        // 【核心修改】不再使用页面内固定的div，而是动态创建
+         
         const existingModal = document.getElementById('ws-mobile-detail-container');
         if (existingModal) existingModal.remove(); // 如果旧弹窗存在，先移除
 
@@ -19151,7 +19151,7 @@ function highlightSelectedCard() {
 
         //console.log(`[Workshop] 加载: 远程(${activeRemote.length}) + 本地(${activeLocal.length})`);
 
-        // 【修改】远程脚本加载逻辑：网络优先 -> 覆盖备份 -> 失败则读取备份
+        
         const remotePromises = activeRemote.map(async (mod) => {
             try {
                 if(!mod.cachedData.scriptUrl || mod.cachedData.scriptUrl.trim() === "") return;
@@ -19370,7 +19370,7 @@ async function loadGitHubIndexMap(indexUrl, baseUrl, fallbackData = {}) {
         }
 
         const key = keys[index];
-        // 调整后的代码片段（只需要修改 loadGitHubIndexMap 函数内部的这一小段）：
+       
 const values = Array.isArray(remoteIndex[key]) 
                ? remoteIndex[key] 
                : []; // 如果不是数组，则视为空，防止非数组值被迭代
@@ -20515,7 +20515,7 @@ legendary_presence: (val) =>
       }
     }
  
-// ========== 修改位置1：完全替换 showAchievementToast 函数 ==========
+ 
 function showAchievementToast(achievement) {
     // 计算当前应该显示的位置
     const existingToasts = document.querySelectorAll('.achievement-toast');
@@ -20555,7 +20555,7 @@ function showAchievementToast(achievement) {
     }, 5000);
 }
 
-// ========== 修改位置2：添加弹窗位置调整函数 ==========
+ 
 // 在 showAchievementToast 函数后面添加：
 function adjustToastPositions() {
     const toasts = document.querySelectorAll('.achievement-toast');
@@ -20636,7 +20636,7 @@ function adjustToastPositions() {
     `;
 }
 
-// ========== 修改位置3：添加翻页功能 ==========
+ 
 // 在 renderAchievements 函数后面添加：
  function changeAchievementsPage(direction) {
     // 首先，从 localStorage 读取数据
@@ -21998,7 +21998,7 @@ document.querySelectorAll('.hud-toggle').forEach(toggle => {
     const prevBtn = document.getElementById('galaxy-nav-prev');
     const nextBtn = document.getElementById('galaxy-nav-next');
 
-    // 🔧 修改开始：动态获取所有星系
+     
     const galaxyWrappers = Array.from(document.querySelectorAll('.galaxy-wrapper'));
     const totalGalaxies = galaxyWrappers.length;
     
@@ -22152,7 +22152,7 @@ document.addEventListener('click', (e) => {
   function applyArrangedLayout() {
         const isMobile = window.innerWidth <= 768;
 
-        // 🔧 修改：动态获取所有星系
+        
         const galaxySystems = document.querySelectorAll('.galaxy-system');
         
         galaxySystems.forEach(container => {
@@ -22219,7 +22219,7 @@ document.addEventListener('click', (e) => {
 
 
  function reRandomizeWithCollisionCheck() {
-    // 🔧 修改：动态获取所有星系
+     
     const galaxyContainers = document.querySelectorAll('.galaxy-system');
     
     galaxyContainers.forEach(container => {
@@ -25266,7 +25266,7 @@ wrapperDiv.appendChild(titleDiv);
             // 判断是否是最终属性（包含"基础"或直接是数组）
        if (value.基础 && Array.isArray(value.基础)) {
     // 情况1: { "灵根": { "基础": [0, "描述"], "传奇": [...] } }
-    // 🔧 修改：只处理"基础"，忽略"传奇"等其他子键
+    
     if (Array.isArray(value.基础)) {
         const path = `${parentPath}.${key}.基础`;
         targetGalaxyEl.innerHTML += createPointAllocator(
@@ -26547,7 +26547,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
         const iframe = document.createElement('iframe');
         iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
 
-        // --- 修改点 1: 允许垂直拉伸和内部滚动 ---
+        
         iframe.style.width = '100%';
         iframe.style.border = 'none';
         iframe.style.resize = 'vertical'; // 允许用户手动拉伸高度
@@ -26559,7 +26559,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
         const frameId = 'reading-scroll-' + Date.now() + Math.random();
         iframe.id = frameId;
 
-        // --- 修改点 2: 监听器逻辑优化 ---
+      
         // 监听高度变化消息
         window.addEventListener('message', function(event) {
             if(event.data.frameId === frameId && event.data.height) {
@@ -26572,7 +26572,7 @@ processedContent = limitConsecutiveNewlines(processedContent);
         }, false);
 
         // 准备完整的 HTML 内容 (包含自动调整高度的脚本)
-        // --- 修改点 3: 内部样式优化，隐藏默认滚动条但允许滚动，增强脚本兼容性 ---
+       
         const fullHtmlContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -27482,7 +27482,7 @@ async function performRegexUpdate() {
         const oldPurgeRuleTemplate = allCharacterRules[purgeRuleIndex];
         const updatedPurgeRule = {
             ...oldPurgeRuleTemplate, // ♥ 继承所有旧有属性，如id, placement, markdownOnly等！
-      find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<build>([\\s\\S]*?)<\\/build>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)|<options\\b[^>]*>[\\s\\S]*?<\/options>/gs"
+      find_regex: "/<(statusAnalyze|loreAnalyze|attributeAnalyze|variableAnalyze|memoryAnalyze|mapAnalyze|status_analyze|lore_analyze|attribute_analyze|variable_analyze|memory_analyze|map_analyze|dynamicAnalyze|realityCheck|moduleAnalyze|updateStatus|build|世界书条目|danmu|options|roll)>([\\s\\S]*?)<\\/\\1>|<updateMemory>([\\s\\S]*?)<\\/updateMemory>|<updateMemory>[\\s\\S]*|<variableAnalyze>[\\s\\S]*|<statusAnalyze>[\\s\\S]*|<mapAnalyze>[\\s\\S]*|<loreAnalyze>[\\s\\S]*|<attributeAnalyze>[\\s\\S]*|<memoryAnalyze>[\\s\\S]*|<moduleAnalyze>([\\s\\S]*?)<\/realityCheck>|(【✓检索执行完成】)|(【✓思考执行完成】)|(<!--[\\s\\S]*?-->)|<options\\b[^>]*>[\\s\\S]*?<\/options>/gs"
           
         };
 
@@ -28423,7 +28423,7 @@ window.GlobalChatAudio = {
         const cardSong = normalize(songName);
         const currentSongName = normalize(currentSong.song);
 
-        // 关键修改：只比较歌名
+        // 只比较歌名
         return (currentSongName.includes(cardSong) || cardSong.includes(currentSongName));
     };
 
@@ -31033,7 +31033,7 @@ const allDanmuMatches = [...cleanedContent.matchAll(/<danmu>((?:(?!<danmu>)[\s\S
     // --- 商店 ---
     const allShopMatches = [...cleanedContent.matchAll(/<shop_item>((?:(?!<shop_item>)[\s\S])*?)<\/shop_item>/gs)];
    if (allShopMatches.length > 0) {
-    const lastShopMatch = allDanmuMatches[allDanmuMatches.length - 1]; // 修正这里，应该是 allShopMatches
+    const lastShopMatch = allShopMatches[allShopMatches.length - 1]; // 修正这里，应该是 allShopMatches
     let rawShopContent = lastShopMatch[1].trim(); // 获取 <shop_item> 标签内的原始内容
 
     const shopOrb = document.getElementById('shop-wrapper-orb');

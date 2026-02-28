@@ -39,7 +39,7 @@
 
             // 2. 提取 Code
             const codeMatch = innerContent.match(/<CharCode>([\s\S]*?)<\/CharCode>/);
-            const codeStr = codeMatch ? codeMatch[1].trim() : <q>""</q>;
+            const codeStr = codeMatch ? codeMatch[1].trim() : "";
 
             // 3. 存入 assaSettingsData
             // 结构: assaData.forms['形态名']
@@ -85,7 +85,7 @@
         return hookData;
     });
 
-    console.log(<q>"[CharSystem] Parser Plugin Loaded."</q>);
+    console.log("[CharSystem] Parser Plugin Loaded.");
 })();
 (function() {
     // ============================================================
@@ -200,9 +200,9 @@
             const runVisuals = new Function('container', code);
 
             runVisuals(container);
-            console.log(<q>"Mod11: AI 代码执行成功"</q>);
+            console.log("Mod11: AI 代码执行成功");
         } catch (err) {
-            console.error(<q>"Mod11: AI 代码执行失败"</q>, err);
+            console.error("Mod11: AI 代码执行失败", err);
             container.innerHTML = `<div style="color:red; text-align:center;">渲染错误: ${err.message}</div>`;
         }
     }
@@ -315,6 +315,6 @@
 
     // 启动
     overrideOrbClick();
-    console.log(<q>"Mod11: 动态角色展示系统已就绪。"</q>);
+    console.log("Mod11: 动态角色展示系统已就绪。");
 
 })();
