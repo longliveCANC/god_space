@@ -15563,7 +15563,7 @@ backdrop-filter: blur(8px);
 </body>
 
 <script>
-window.current_game_version = '3.8.16';
+window.current_game_version = '3.8.17';
  
  let prompts_be_sent = null;
  let collectedBatchOps = [];
@@ -32624,7 +32624,7 @@ if (isCombat) {
     `;
 }
 
-let damageHTML = (isCombat && damage > 0) ? `<div class="roll-card-damage">受到伤害: ${damage}</div>` : '';
+// let damageHTML = (isCombat && damage > 0) ? `<div class="roll-card-damage">受到伤害: ${damage}</div>` : '';
 
 // 根据 outcomeLevel 添加对应的类
 const outcomeClass = {
@@ -32644,7 +32644,7 @@ const cardHTML = `
             <div class="roll-card-outcome ${outcomeClass}">${outcomeLevel}</div>
             <div class="roll-card-description">"${outcomeDesc}"</div>
             <div class="roll-card-description" style="margin-top: 5px; opacity: 0.8;">${performanceDesc}</div>
-            ${damageHTML}
+             
         </div>
     </div>
 `;
