@@ -63,6 +63,129 @@
       }, obj);
   }
 
+  function resolveFn(name) {
+      try {
+          if (typeof window !== 'undefined' && typeof window[name] === 'function') {
+              return window[name];
+          }
+      } catch (e) {}
+      try {
+          // eslint-disable-next-line no-new-func
+          const fn = Function(`return (typeof ${name} === 'function') ? ${name} : null;`)();
+          return typeof fn === 'function' ? fn : null;
+      } catch (e) {
+          return null;
+      }
+  }
+
+  async function updateWorldbookPromptEntries(payload) {
+      const {
+          worldbookPrefix = 'x-mod',
+          environmentEntryName = 'environment_details',
+          selectedFilesEntryName = 'selected_code_files',
+          environmentDetails = '',
+          selectedCodeFiles = '',
+      } = payload || {};
+
+      const getGlobalWorldbookNamesFn = resolveFn('getGlobalWorldbookNames');
+      const updateWorldbookWithFn = resolveFn('updateWorldbookWith');
+      const getWorldbookFn = resolveFn('getWorldbook');
+      const replaceWorldbookFn = resolveFn('replaceWorldbook');
+      const createWorldbookEntriesFn = resolveFn('createWorldbookEntries');
+
+      if (!getGlobalWorldbookNamesFn) {
+          throw new Error('getGlobalWorldbookNames is not available in runtime');
+      }
+
+      const globalNames = getGlobalWorldbookNamesFn() || [];
+      if (!Array.isArray(globalNames) || globalNames.length === 0) {
+          throw new Error('No global worldbook is enabled');
+      }
+
+      const worldbookName =
+          globalNames.find((n) => typeof n === 'string' && n.startsWith(worldbookPrefix)) || globalNames[0];
+
+      const applyUpdate = (entries) => {
+          let hitEnv = false;
+          let hitFiles = false;
+          const next = (entries || []).map((entry) => {
+              if (!entry || typeof entry !== 'object') return entry;
+              if (entry.name === environmentEntryName) {
+                  hitEnv = true;
+                  return { ...entry, content: String(environmentDetails ?? '') };
+              }
+              if (entry.name === selectedFilesEntryName) {
+                  hitFiles = true;
+                  return { ...entry, content: String(selectedCodeFiles ?? '') };
+              }
+              return entry;
+          });
+          return { next, hitEnv, hitFiles };
+      };
+
+      let updateResult = { hitEnv: false, hitFiles: false };
+
+      const runUpdate = async () => {
+          if (updateWorldbookWithFn) {
+              await updateWorldbookWithFn(worldbookName, (entries) => {
+                  const applied = applyUpdate(entries);
+                  updateResult = { hitEnv: applied.hitEnv, hitFiles: applied.hitFiles };
+                  return applied.next;
+              }, { render: 'debounced' });
+              return;
+          }
+
+          if (getWorldbookFn && replaceWorldbookFn) {
+              const current = await getWorldbookFn(worldbookName);
+              const applied = applyUpdate(current);
+              updateResult = { hitEnv: applied.hitEnv, hitFiles: applied.hitFiles };
+              await replaceWorldbookFn(worldbookName, applied.next, { render: 'debounced' });
+              return;
+          }
+
+          throw new Error('No worldbook update API available');
+      };
+
+      await runUpdate();
+
+      if ((!updateResult.hitEnv || !updateResult.hitFiles) && createWorldbookEntriesFn) {
+          const missingEntries = [];
+          if (!updateResult.hitEnv) {
+              missingEntries.push({
+                  name: environmentEntryName,
+                  enabled: true,
+                  content: String(environmentDetails ?? ''),
+              });
+          }
+          if (!updateResult.hitFiles) {
+              missingEntries.push({
+                  name: selectedFilesEntryName,
+                  enabled: true,
+                  content: String(selectedCodeFiles ?? ''),
+              });
+          }
+
+          if (missingEntries.length > 0) {
+              await createWorldbookEntriesFn(worldbookName, missingEntries, { render: 'debounced' });
+              console.log('[worldbook] created missing prompt entries:', missingEntries.map((x) => x.name));
+              await runUpdate();
+          }
+      }
+
+      if (!updateResult.hitEnv || !updateResult.hitFiles) {
+          throw new Error(
+              `Target entries not found in worldbook "${worldbookName}": env=${updateResult.hitEnv}, files=${updateResult.hitFiles}`
+          );
+      }
+
+      return {
+          worldbookName,
+          updated: updateResult,
+          environmentEntryName,
+          selectedFilesEntryName,
+      };
+  }
+
   ws.onmessage = async (event) => {
     try {
       const msg = JSON.parse(event.data);
@@ -132,6 +255,7 @@
       if (msg.action === 'handleSend') {
         const data = msg.data || {};
         const { userText, options = {} } = data;
+        console.log('[bridge] received handleSend, textLength=', String(userText ?? '').length);
 
         try {
           let inputRef = null;
@@ -159,6 +283,7 @@
       if (msg.action === 'triggerassa') {
         const data = msg.data || {};
         const { args = [] } = data;
+        console.log('[bridge] received triggerassa, argsCount=', Array.isArray(args) ? args.length : 0);
 
         try {
           const api = window.GameAPI || {};
@@ -185,6 +310,33 @@
                    initDisplay();
               }
            } catch(e) { console.error(e); }
+          return;
+      }
+
+      // 5. 更新全局世界书中用于提示词注入的条目
+      if (msg.action === 'updateWorldbookPrompt') {
+          const data = msg.data || {};
+          try {
+              const result = await updateWorldbookPromptEntries(data);
+              console.log('[worldbook] prompt entries updated:', result);
+              if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({
+                      action: 'worldbookPromptUpdateResult',
+                      token: apiToken,
+                      data: { success: true, ...result },
+                  }));
+              }
+          } catch (e) {
+              console.error('[worldbook] prompt update failed:', e);
+              if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({
+                      action: 'worldbookPromptUpdateResult',
+                      token: apiToken,
+                      data: { success: false, error: String(e?.message || e) },
+                  }));
+              }
+          }
+          return;
       }
 
     } catch (error) {
