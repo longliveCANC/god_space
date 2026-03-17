@@ -1,66 +1,89 @@
-//—————— 游戏本体那边的IIFE代码——————
 (function () {
   'use strict';
 
-  console.log('🎮 Nova Game API IIFE Initialized');
-
-  // 1. 获取 Token，如果没有则直接退出
+  console.log('[NovaIIFE] Nova Game API IIFE initialized');
   const apiToken = assaSettingsData && assaSettingsData.token;
   if (!apiToken) {
-      console.error('❌ [NovaIIFE] No token found in window.assaSettingsData.token! API service will not start.');
+      console.error('[NovaIIFE] No token found in window.assaSettingsData.token. API service will not start.');
       return;
   }
-  console.log(`🔑 Token found: ${apiToken.substring(0, 4)}****`);
+  console.log(`[NovaIIFE] Token found: ${apiToken.substring(0, 4)}****`);
 
   const API_IP = 'localhost'; // 192.168.10.6
   const API_PORT = '3001';
 
-  console.log(`🔗 Attempting to connect to ws://${API_IP}:${API_PORT}`);
+  console.log(`[NovaIIFE] Attempting to connect to ws://${API_IP}:${API_PORT}`);
   const ws = new WebSocket(`ws://${API_IP}:${API_PORT}`);
 
   ws.onopen = () => {
-    console.log(`✅ WebSocket connected to ws://${API_IP}:${API_PORT}`);
-    // 发送连接确认，带上 Token
+    console.log(`[NovaIIFE] WebSocket connected to ws://${API_IP}:${API_PORT}`);
     ws.send(JSON.stringify({
       action: 'register',
       role: 'gameClient',
-      token: apiToken // 🔑 身份标识
+      token: apiToken 
     }));
-    console.log('📢 Sent registration as gameClient with token');
+    console.log('[NovaIIFE] Sent registration as gameClient with token');
 
     ws.send(JSON.stringify({ event: 'connected', token: apiToken }));
-
-    // 注册流式钩子
     try {
       window.novaStreamHook = (payload) => {
         if (!payload) return;
 
         if (ws.readyState !== WebSocket.OPEN) {
-          console.warn('⚠️ WebSocket not open, skip novaStreamHook payload');
+          console.warn('[NovaIIFE] WebSocket not open, skip novaStreamHook payload');
           return;
         }
-
-        // 发送流数据时带上 Token，以便服务器知道转发给谁
         ws.send(JSON.stringify({
           action: 'handleSendStream',
           token: apiToken,
           data: payload,
         }));
       };
-      console.log('✅ window.novaStreamHook registered for streaming data');
+      console.log('[NovaIIFE] window.novaStreamHook registered for streaming data');
     } catch (e) {
-      console.error('❌ Failed to register novaStreamHook:', e);
+      console.error('[NovaIIFE] Failed to register novaStreamHook:', e);
     }
   };
-
- // —————— 游戏本体 IIFE 代码片段 (替换原有的 ws.onmessage) ——————
-
-  // 辅助函数：用于解析深层对象路径 (例如 "assaData.global_lore.task")
   function getNestedValue(obj, path) {
       if (!path) return undefined;
       return path.split('.').reduce((prev, curr) => {
           return (prev && prev[curr] !== undefined) ? prev[curr] : undefined;
       }, obj);
+  }
+
+  function toIntOrNull(value) {
+      if (value === undefined || value === null || value === '') return null;
+      const parsed = parseInt(String(value), 10);
+      return Number.isInteger(parsed) ? parsed : null;
+  }
+
+  function clampInt(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+  }
+
+  function resolveConversationRange(total, range) {
+      const safeTotal = Math.max(0, total | 0);
+      const fallbackCount = 4;
+      const count = clampInt(toIntOrNull(range && range.count) ?? fallbackCount, 1, 100);
+
+      const startRaw = toIntOrNull(range && range.start);
+      const beforeRaw = toIntOrNull(range && range.before);
+
+      let startIndex = 0;
+      let endIndex = safeTotal;
+
+      if (startRaw !== null) {
+          startIndex = clampInt(startRaw, 0, safeTotal);
+          endIndex = clampInt(startIndex + count, 0, safeTotal);
+      } else if (beforeRaw !== null) {
+          endIndex = clampInt(beforeRaw, 0, safeTotal);
+          startIndex = clampInt(endIndex - count, 0, safeTotal);
+      } else {
+          endIndex = safeTotal;
+          startIndex = clampInt(endIndex - count, 0, safeTotal);
+      }
+
+      return { startIndex, endIndex, count };
   }
 
   function resolveFn(name) {
@@ -80,7 +103,7 @@
 
   async function updateWorldbookPromptEntries(payload) {
       const {
-          worldbookPrefix = 'x-mod',
+          worldbookPrefix = 'x-mod-dialog-mode',
           environmentEntryName = 'environment_details',
           selectedFilesEntryName = 'selected_code_files',
           environmentDetails = '',
@@ -189,19 +212,15 @@
   ws.onmessage = async (event) => {
     try {
       const msg = JSON.parse(event.data);
-
-      // 1. GET：从 GameAPI 读取状态并回传
       if (msg.action === 'getGameState') {
-        const { correlationId, key } = msg.data || {};
+        const { correlationId, key, range } = msg.data || {};
 
         try {
           const api = window.GameAPI || {};
           let payload;
 
           if (key) {
-            // 【修改点】支持深层路径解析
             if (key === 'all') {
-                // 如果请求 'all'，返回完整的默认数据集
                 payload = {
                   userName: api.userName,
                   assaData: api.assaData,
@@ -209,17 +228,23 @@
                   playCharacterData: api.playCharacterData,
                   conversationHistory: api.conversationHistory,
                 };
+            } else if (key === 'conversationHistory' && range) {
+                const list = Array.isArray(api.conversationHistory) ? api.conversationHistory : [];
+                const { startIndex, endIndex } = resolveConversationRange(list.length, range);
+                payload = {
+                  items: list.slice(startIndex, endIndex),
+                  total: list.length,
+                  startIndex,
+                  endIndex,
+                  hasMoreOld: startIndex > 0,
+                  hasMoreNew: endIndex < list.length,
+                };
             } else {
-                // 尝试解析点号路径 (按需获取)
-                // 例如 key="assaData.global_lore.proactive_queue"
                 payload = getNestedValue(api, key);
             }
-
-            // 如果找不到数据，payload 设为 null
             if (payload === undefined) payload = null;
 
           } else {
-            // 兼容旧逻辑，默认返回主要数据
             payload = {
               userName: api.userName,
               assaData: api.assaData,
@@ -232,13 +257,13 @@
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               action: 'gameStateResponse',
-              token: apiToken, // 🔑 回传时带 Token
+              token: apiToken, 
               correlationId,
               data: payload,
             }));
           }
         } catch (e) {
-          console.error('❌ Failed to collect GameAPI state:', e);
+          console.error('[NovaIIFE] Failed to collect GameAPI state:', e);
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               action: 'gameStateResponse',
@@ -250,8 +275,6 @@
         }
         return;
       }
-
-      // 2. handleSend 调度 (保持不变)
       if (msg.action === 'handleSend') {
         const data = msg.data || {};
         const { userText, options = {} } = data;
@@ -274,12 +297,10 @@
             await handleSend(options);
           }
         } catch (err) {
-          console.error('❌ Error in IIFE handleSend bridge:', err);
+          console.error('[NovaIIFE] Error in IIFE handleSend bridge:', err);
         }
         return;
       }
-
-      // 3. 触发 triggerassa (保持不变)
       if (msg.action === 'triggerassa') {
         const data = msg.data || {};
         const { args = [] } = data;
@@ -295,12 +316,10 @@
             triggerassa(...args);
           }
         } catch (e) {
-          console.error('❌ Error while calling triggerassa:', e);
+          console.error('[NovaIIFE] Error while calling triggerassa:', e);
         }
         return;
       }
-
-      // 4. 处理内存更新指令 (保持不变)
       if (msg.action === 'processUpdateMemoryCommands') {
           const data = msg.data || {};
           const { args = [] } = data;
@@ -312,8 +331,6 @@
            } catch(e) { console.error(e); }
           return;
       }
-
-      // 5. 更新全局世界书中用于提示词注入的条目
       if (msg.action === 'updateWorldbookPrompt') {
           const data = msg.data || {};
           try {
@@ -340,10 +357,10 @@
       }
 
     } catch (error) {
-      console.error('❌ Error parsing message:', error);
+      console.error('[NovaIIFE] Error parsing message:', error);
     }
   };
 
-  ws.onerror = (error) => { console.error('❌ WebSocket error:', error); };
-  ws.onclose = () => { console.log('❌ WebSocket closed'); };
+  ws.onerror = (error) => { console.error('[NovaIIFE] WebSocket error:', error); };
+  ws.onclose = () => { console.log('[NovaIIFE] WebSocket closed'); };
 })();
