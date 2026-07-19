@@ -40,6 +40,110 @@
                 backdrop-filter: blur(5px);
             }
             .mod01-floater:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--glow-color); }
+            .mod01-floater.locked { cursor: default !important; }
+
+            /* 排序控件 */
+            .mod01-sort-controls {
+                display: none;
+                align-items: center;
+                gap: 6px;
+                font-size: 11px;
+                color: var(--text-secondary-color);
+                opacity: 0.7;
+            }
+            .mod01-sort-controls.visible { display: flex; }
+            .mod01-sort-btn {
+                cursor: pointer;
+                padding: 1px 6px;
+                border: 1px solid var(--border-color);
+                border-radius: 3px;
+                background: rgba(255,255,255,0.05);
+                transition: all 0.2s;
+                font-size: 10px;
+            }
+            .mod01-sort-btn:hover, .mod01-sort-btn.active {
+                background: var(--primary-color);
+                color: var(--container-bg-color);
+                border-color: var(--primary-color);
+            }
+            .mod01-sort-divider {
+                width: 1px; height: 12px;
+                background: var(--border-color);
+                margin: 0 2px;
+            }
+
+            /* 自定义排序面板 */
+            .mod01-custom-sort-btn {
+                cursor: pointer;
+                padding: 1px 6px;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                background: transparent;
+                transition: all 0.2s;
+                font-size: 12px;
+                color: var(--text-secondary-color);
+                opacity: 0.5;
+                display: none;
+                line-height: 1;
+            }
+            .mod01-custom-sort-btn.visible { display: inline-block; }
+            .mod01-custom-sort-btn:hover { opacity: 1; color: var(--primary-color); }
+            .mod01-custom-sort-overlay {
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 20000;
+                display: none;
+            }
+            .mod01-custom-sort-overlay.active { display: block; }
+            .mod01-custom-sort-panel {
+                position: fixed;
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                width: 340px; max-height: 70vh;
+                background: var(--container-bg-color);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                z-index: 20001;
+                display: none;
+                flex-direction: column;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                font-family: var(--base-font-family);
+            }
+            .mod01-custom-sort-panel.active { display: flex; }
+            .mod01-custom-sort-panel-header {
+                padding: 12px 15px;
+                border-bottom: 1px solid var(--border-color);
+                display: flex; justify-content: space-between; align-items: center;
+                font-size: 13px; font-weight: bold; color: var(--primary-color);
+            }
+            .mod01-custom-sort-panel-close {
+                cursor: pointer; font-size: 16px; opacity: 0.6; transition: opacity 0.2s;
+            }
+            .mod01-custom-sort-panel-close:hover { opacity: 1; }
+            .mod01-custom-sort-panel-hint {
+                font-size: 10px; color: var(--text-secondary-color);
+                opacity: 0.6; padding: 6px 15px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .mod01-custom-sort-list { overflow-y: auto; flex: 1; padding: 5px 0; }
+            .mod01-custom-sort-item {
+                display: flex; align-items: center;
+                padding: 8px 15px; cursor: grab;
+                border-bottom: 1px solid rgba(255,255,255,0.03);
+                transition: background 0.15s; user-select: none;
+            }
+            .mod01-custom-sort-item:hover { background: rgba(255,255,255,0.05); }
+            .mod01-custom-sort-item.dragging { opacity: 0.3; }
+            .mod01-custom-sort-item.drag-over {
+                border-top: 2px solid var(--primary-color);
+            }
+            .mod01-custom-sort-handle {
+                margin-right: 10px; color: var(--text-secondary-color);
+                opacity: 0.5; font-size: 14px; flex-shrink: 0;
+            }
+            .mod01-custom-sort-item-name {
+                font-size: 13px; color: var(--text-color); flex: 1;
+            }
 
             /* 模态框遮罩 */
             .mod01-overlay {
@@ -2512,10 +2616,46 @@ function createLetterHtml(content, from, time) {
         }
         return matchCount >= 2; // 至少匹配两项才算，避免误判
     }
+    getGenericKeys(npc) {
+        if (!npc) return [];
+        const data = npc.data;
+        const ignoreKeys = ['ta的爱意','他的爱意','她的爱意','外貌','好感度','未定字段','_is_protected','_filter','性别','年龄','hp','game批注','nsfw'];
+        if (data.声线) ignoreKeys.push('声线');
+        if (data.意象) ignoreKeys.push('意象');
+        if (data.事件 && typeof data.事件 === 'object') ignoreKeys.push('事件');
+        if (data.离线事件 && typeof data.离线事件 === 'object') ignoreKeys.push('离线事件');
+        if (data.小习惯) ignoreKeys.push('小习惯');
+        if (data.身份) ignoreKeys.push('身份');
+        if (data.属性) ignoreKeys.push('属性');
+        if (data.表性格) ignoreKeys.push('表性格');
+        if (data.里性格) ignoreKeys.push('里性格');
+        if (data.关键记忆) ignoreKeys.push('关键记忆');
+        if (data.nsfw) ignoreKeys.push('nsfw');
+        const relationRegex = /^(和.+关系)$/;
+        const loveRegex = /^(ta|他|她)的爱意$/;
+        return Object.keys(data).filter(k => {
+            if (k.startsWith('_')) return false;
+            if (ignoreKeys.includes(k)) return false;
+            const value = data[k];
+            if (value === false || String(value).toLowerCase() === 'false') return false;
+            if (relationRegex.test(k)) return false;
+            if (loveRegex.test(k)) return false;
+            return true;
+        });
+    }
         constructor() {
             this.container = null;
             this.allItems = [];
             this.isOpen = false;
+            this.sortState = localStorage.getItem('nova_sort_state') || 'default';
+            this.floaterLocked = localStorage.getItem('nova_floater_lock') === 'true';
+            this.currentDetailNpc = null;
+            try {
+                const saved = JSON.parse(localStorage.getItem('nova_custom_sort_order'));
+                this.customSortOrder = Array.isArray(saved) ? saved : [];
+            } catch (e) {
+                this.customSortOrder = [];
+            }
 
             this.init();
   
@@ -2529,7 +2669,17 @@ function createLetterHtml(content, from, time) {
             // 1. 悬浮球
             this.floater = document.createElement('div');
             this.floater.className = 'mod01-floater';
-            this.floater.innerHTML = '<i class="fas fa-brain"></i> NPC'; // 脑子图标
+            const lockIcon = this.floaterLocked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-brain"></i>';
+            this.floater.innerHTML = `${lockIcon} NPC`;
+            if (this.floaterLocked) this.floater.classList.add('locked');
+
+            const savedLeft = localStorage.getItem('nova_floater_left');
+            const savedTop = localStorage.getItem('nova_floater_top');
+            if (savedLeft !== null && savedTop !== null) {
+                this.floater.style.left = savedLeft;
+                this.floater.style.top = savedTop;
+                this.floater.style.right = 'auto';
+            }
 
             // 2. 快速进入按钮 (新增)
             this.quickBtn = document.createElement('div');
@@ -2538,6 +2688,26 @@ function createLetterHtml(content, from, time) {
 
             document.body.appendChild(this.floater);
             document.body.appendChild(this.quickBtn);
+
+            if (savedLeft !== null && savedTop !== null && this.quickBtn) {
+                const leftVal = parseFloat(savedLeft) || 0;
+                const topVal = parseFloat(savedTop) || 0;
+                this.quickBtn.style.left = `${leftVal + 55}px`;
+                this.quickBtn.style.top = `${topVal + 10}px`;
+            }
+
+            this.floater.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                this.floaterLocked = !this.floaterLocked;
+                localStorage.setItem('nova_floater_lock', this.floaterLocked);
+                if (this.floaterLocked) {
+                    this.floater.innerHTML = '<i class="fas fa-lock"></i> NPC';
+                    this.floater.classList.add('locked');
+                } else {
+                    this.floater.innerHTML = '<i class="fas fa-brain"></i> NPC';
+                    this.floater.classList.remove('locked');
+                }
+            });
 
             // 3. 事件绑定
             // Hover 逻辑：显示快速入口
@@ -2569,6 +2739,7 @@ function createLetterHtml(content, from, time) {
     let startX, startY, initialLeft, initialTop;
 
     this.floater.addEventListener('mousedown', (e) => {
+        if (this.floaterLocked) return;
         isDragging = false;
         startX = e.clientX;
         startY = e.clientY;
@@ -2599,11 +2770,20 @@ function createLetterHtml(content, from, time) {
         const onMouseUp = () => {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
+            localStorage.setItem('nova_floater_left', this.floater.style.left || `${this.floater.offsetLeft}px`);
+            localStorage.setItem('nova_floater_top', this.floater.style.top || `${this.floater.offsetTop}px`);
+            if (this.quickBtn) {
+                const leftVal = parseFloat(this.floater.style.left) || this.floater.offsetLeft;
+                const topVal = parseFloat(this.floater.style.top) || this.floater.offsetTop;
+                localStorage.setItem('nova_quickbtn_left', `${leftVal + 55}px`);
+                localStorage.setItem('nova_quickbtn_top', `${topVal + 10}px`);
+            }
         };
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     });
 this.floater.addEventListener('touchstart', (e) => {
+    if (this.floaterLocked) return;
     isDragging = false;
     const touch = e.touches[0];
     startX = touch.clientX;
@@ -2635,6 +2815,14 @@ this.floater.addEventListener('touchstart', (e) => {
     const onTouchEnd = () => {
         document.removeEventListener('touchmove', onTouchMove);
         document.removeEventListener('touchend', onTouchEnd);
+        localStorage.setItem('nova_floater_left', this.floater.style.left || `${this.floater.offsetLeft}px`);
+        localStorage.setItem('nova_floater_top', this.floater.style.top || `${this.floater.offsetTop}px`);
+        if (this.quickBtn) {
+            const leftVal = parseFloat(this.floater.style.left) || this.floater.offsetLeft;
+            const topVal = parseFloat(this.floater.style.top) || this.floater.offsetTop;
+            localStorage.setItem('nova_quickbtn_left', `${leftVal + 55}px`);
+            localStorage.setItem('nova_quickbtn_top', `${topVal + 10}px`);
+        }
     };
 
     document.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -2653,7 +2841,16 @@ this.floater.addEventListener('touchstart', (e) => {
                     <div class="mod01-header">
                         <div class="mod01-title">角色档案</div>
 
-                        <div style="display:flex; gap:15px;">
+                        <div style="display:flex; gap:15px; align-items:center;">
+                        <div class="mod01-sort-controls" id="mod01-sort-controls">
+                            <span style="font-size:10px; opacity:0.6;">排序:</span>
+                            <div class="mod01-sort-btn active" data-sort="default">默认</div>
+                            <div class="mod01-sort-btn" data-sort="asc">A→Z</div>
+                            <div class="mod01-sort-btn" data-sort="desc">Z→A</div>
+                            <div class="mod01-sort-btn" data-sort="custom">自定义</div>
+                            <div class="mod01-custom-sort-btn" title="编辑自定义排序">⚙</div>
+                        </div>
+                        <div class="mod01-sort-divider"></div>
                         <div class="mod01-relation-toggle">[关系图谱]</div>
                              <div class="mod01-mem-toggle" style="cursor:pointer; opacity:0.7; font-size:12px;">[记忆回廊]</div>
                              <div class="mod01-close">[X]</div>
@@ -2681,9 +2878,41 @@ this.floater.addEventListener('touchstart', (e) => {
                 if(e.target === this.container) this.toggle();
             };
 
+            const sortBtns = this.container.querySelectorAll('.mod01-sort-btn');
+            sortBtns.forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const sortType = btn.dataset.sort;
+                    this.sortState = sortType;
+                    localStorage.setItem('nova_sort_state', sortType);
+                    sortBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    if (this.currentDetailNpc) {
+                        this.renderCard(this.currentDetailNpc);
+                    }
+                };
+            });
+            if (this.sortState !== 'default') {
+                const activeBtn = this.container.querySelector(`.mod01-sort-btn[data-sort="${this.sortState}"]`);
+                if (activeBtn) {
+                    sortBtns.forEach(b => b.classList.remove('active'));
+                    activeBtn.classList.add('active');
+                }
+            }
+
+            const gearBtn = this.container.querySelector('.mod01-custom-sort-btn');
+            if (gearBtn) {
+                gearBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.showCustomSortPanel();
+                };
+            }
+
             // 5. 初始化记忆回廊
             this.memoryGallery = new NovaMemoryGallery(this);
              this.relationGraph = new NovaRelationGraph(this);
+
+            this.initCustomSortPanel();
         }
 
         toggle() {
@@ -2733,6 +2962,11 @@ this.floater.addEventListener('touchstart', (e) => {
             // 默认清空详情或显示引导
             document.getElementById('mod01-detail-root').innerHTML =
                 '<div style="text-align:center;padding:50px;opacity:0.5;">请选择一名角色查看档案</div>';
+            this.currentDetailNpc = null;
+            const sortCtrl = this.container.querySelector('.mod01-sort-controls');
+            if (sortCtrl) sortCtrl.classList.remove('visible');
+            const gearBtn = this.container.querySelector('.mod01-custom-sort-btn');
+            if (gearBtn) gearBtn.classList.remove('visible');
         }
 
         renderList() {
@@ -2960,6 +3194,11 @@ this.allItems.forEach((item, index) => {
        renderCard(npc) {
             const root = document.getElementById('mod01-detail-root');
             root.innerHTML = '';
+            this.currentDetailNpc = npc;
+            const sortCtrl = this.container.querySelector('.mod01-sort-controls');
+            if (sortCtrl) sortCtrl.classList.add('visible');
+            const gearBtn = this.container.querySelector('.mod01-custom-sort-btn');
+            if (gearBtn) gearBtn.classList.add('visible');
             const data = npc.data;
   this.loadCG(npc.name);
             // --- 妈妈帮你更新了忽略列表 ---
@@ -3199,13 +3438,31 @@ this.allItems.forEach((item, index) => {
 
      
 
-          Object.keys(data).forEach(k => {
+          let genericKeys = Object.keys(data).filter(k => {
+                if (k.startsWith('_')) return false;
                 const value = data[k];
-                // ★ 妈妈的重点修改：_ 开头的字段是最高优先级，直接跳过
-                if (k.startsWith('_')) return;
+                if(ignoreKeys.includes(k) || value === false || String(value).toLowerCase() === 'false') return false;
+                return true;
+            });
 
-                // 然后再检查其他忽略条件
-                if(ignoreKeys.includes(k) || value === false || String(value).toLowerCase() === 'false') return;
+            if (this.sortState === 'asc') {
+                genericKeys.sort((a, b) => a.localeCompare(b, 'zh-CN'));
+            } else if (this.sortState === 'desc') {
+                genericKeys.sort((a, b) => b.localeCompare(a, 'zh-CN'));
+            } else if (this.sortState === 'custom') {
+                const order = this.customSortOrder || [];
+                genericKeys.sort((a, b) => {
+                    const idxA = order.indexOf(a);
+                    const idxB = order.indexOf(b);
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+            }
+
+            genericKeys.forEach(k => {
+                const value = data[k];
 
                 const sec = document.createElement('div');
                 sec.className = 'mod01-section';
@@ -3880,7 +4137,169 @@ renderDeepObject(container, val) {
     }
 }
 
-  async loadCG(displayName) {
+        initCustomSortPanel() {
+            this.sortOverlay = document.createElement('div');
+            this.sortOverlay.className = 'mod01-custom-sort-overlay';
+            this.sortPanel = document.createElement('div');
+            this.sortPanel.className = 'mod01-custom-sort-panel';
+            this.sortPanel.innerHTML = `
+                <div class="mod01-custom-sort-panel-header">
+                    <span>自定义区块排序</span>
+                    <span class="mod01-custom-sort-panel-close">✕</span>
+                </div>
+                <div class="mod01-custom-sort-panel-hint">拖拽调整顺序 · 自动保存</div>
+                <div class="mod01-custom-sort-list"></div>
+            `;
+            this.sortOverlay.appendChild(this.sortPanel);
+            document.body.appendChild(this.sortOverlay);
+
+            this.sortList = this.sortPanel.querySelector('.mod01-custom-sort-list');
+            this.sortPanel.querySelector('.mod01-custom-sort-panel-close').onclick = () => this.hideCustomSortPanel();
+            this.sortOverlay.onclick = (e) => {
+                if (e.target === this.sortOverlay) this.hideCustomSortPanel();
+            };
+        }
+
+        showCustomSortPanel() {
+            this.sortOverlay.classList.add('active');
+            this.sortPanel.classList.add('active');
+            this.buildSortList();
+        }
+
+        hideCustomSortPanel() {
+            this.sortOverlay.classList.remove('active');
+            this.sortPanel.classList.remove('active');
+        }
+
+        buildSortList() {
+            this.sortList.innerHTML = '';
+            let order = Array.isArray(this.customSortOrder) ? [...this.customSortOrder] : [];
+
+            if (this.currentDetailNpc) {
+                const genKeys = this.getGenericKeys(this.currentDetailNpc);
+                genKeys.forEach(k => { if (!order.includes(k)) order.push(k); });
+            } else if (this.allItems.length > 0) {
+                const allKeys = new Set();
+                this.allItems.forEach(npc => {
+                    this.getGenericKeys(npc).forEach(k => allKeys.add(k));
+                });
+                const allArr = [...allKeys];
+                order = order.filter(k => allArr.includes(k));
+                allArr.forEach(k => { if (!order.includes(k)) order.push(k); });
+            }
+
+            this.customSortOrder = order;
+            localStorage.setItem('nova_custom_sort_order', JSON.stringify(order));
+
+            order.forEach((key, index) => {
+                const item = document.createElement('div');
+                item.className = 'mod01-custom-sort-item';
+                item.dataset.key = key;
+                item.dataset.index = String(index);
+                item.innerHTML = `
+                    <span class="mod01-custom-sort-handle">≡</span>
+                    <span class="mod01-custom-sort-item-name">${key}</span>
+                `;
+                this.bindItemDrag(item, key);
+                this.sortList.appendChild(item);
+            });
+        }
+
+        bindItemDrag(item, key) {
+            item.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                this.startItemDrag(e, item, key);
+            });
+            item.addEventListener('touchstart', (e) => {
+                this.startItemDrag(e, item, key);
+            }, { passive: false });
+        }
+
+        startItemDrag(e, item, key) {
+            e.preventDefault();
+            const list = this.sortList;
+            const items = [...list.querySelectorAll('.mod01-custom-sort-item')];
+            const currentIdx = items.indexOf(item);
+            if (currentIdx < 0) return;
+
+            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const itemRect = item.getBoundingClientRect();
+            const offsetY = startY - itemRect.top;
+
+            const clone = item.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.zIndex = '99999';
+            clone.style.width = itemRect.width + 'px';
+            clone.style.left = itemRect.left + 'px';
+            clone.style.top = itemRect.top + 'px';
+            clone.style.opacity = '0.9';
+            clone.style.background = 'var(--container-bg-color)';
+            clone.style.border = '1px solid var(--primary-color)';
+            clone.style.boxShadow = '0 5px 20px rgba(0,0,0,0.4)';
+            clone.style.pointerEvents = 'none';
+            clone.style.borderRadius = '4px';
+            document.body.appendChild(clone);
+
+            item.classList.add('dragging');
+
+            let targetIdx = currentIdx;
+            let movedThreshold = 0;
+
+            const onMove = (moveEvent) => {
+                const moveY = moveEvent.type.includes('touch') ? moveEvent.touches[0].clientY : moveEvent.clientY;
+                clone.style.top = (moveY - offsetY) + 'px';
+
+                const listTop = list.getBoundingClientRect().top;
+                const relativeY = moveY - listTop;
+                const itemHeight = itemRect.height;
+                let newIdx = Math.floor((relativeY + list.scrollTop) / itemHeight);
+                newIdx = Math.max(0, Math.min(newIdx, items.length - 1));
+
+                if (newIdx !== targetIdx) {
+                    movedThreshold = 1;
+                    targetIdx = newIdx;
+                    items.forEach((el, i) => {
+                        el.classList.toggle('drag-over', i === newIdx && el !== item);
+                    });
+                }
+            };
+
+            const onEnd = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onEnd);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onEnd);
+
+                document.body.removeChild(clone);
+                item.classList.remove('dragging');
+                items.forEach(el => el.classList.remove('drag-over'));
+
+                if (movedThreshold > 0 && targetIdx >= 0 && targetIdx !== currentIdx) {
+                    this.reorderCustomItem(currentIdx, targetIdx);
+                } else {
+                    this.buildSortList();
+                }
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+        }
+
+        reorderCustomItem(fromIdx, toIdx) {
+            const order = [...this.customSortOrder];
+            const item = order.splice(fromIdx, 1)[0];
+            order.splice(toIdx, 0, item);
+            this.customSortOrder = order;
+            localStorage.setItem('nova_custom_sort_order', JSON.stringify(order));
+            this.buildSortList();
+            if (this.sortState === 'custom' && this.currentDetailNpc) {
+                this.renderCard(this.currentDetailNpc);
+            }
+        }
+
+   async loadCG(displayName) {
             console.log(`[Nova][CG-LOG] 尝试为 '${displayName}' 加载立绘...`);
 
             // 1. 查找或创建立绘容器
